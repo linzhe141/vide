@@ -15,7 +15,7 @@ export function createWindow() {
   const minHeight = 800
   const minWidth = 1200
   mainWindow = new BrowserWindow({
-    title: 'Vite React Tailwind Electron Starter',
+    title: 'vide',
     width: minWidth,
     height: minHeight,
     minWidth,

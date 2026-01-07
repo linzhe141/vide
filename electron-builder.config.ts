@@ -1,8 +1,8 @@
 import type { Configuration } from 'electron-builder'
 
 export default {
-  appId: 'com.example.viteelectronapp',
-  productName: 'Vite React Tailwind Electron Starter',
+  appId: 'me.vide',
+  productName: 'vide',
 
   directories: {
     buildResources: 'resources',

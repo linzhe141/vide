@@ -6,6 +6,7 @@ import App from './src/App'
 import { createElectronSettingStore } from '@/app/src/store/electronSettingStore'
 
 await createElectronSettingStore()
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
