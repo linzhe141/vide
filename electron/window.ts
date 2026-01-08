@@ -21,7 +21,7 @@ export function createWindow() {
     minWidth,
     minHeight,
     icon: iconPath,
-    // titleBarStyle: 'hidden',
+    titleBarStyle: 'hidden',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: true,
@@ -39,4 +39,16 @@ export function createWindow() {
   }
 
   return mainWindow
+}
+
+export function closeWindow() {
+  if (mainWindow) mainWindow.close()
+}
+
+export function maximizeWindow() {
+  if (mainWindow) mainWindow.maximize()
+}
+
+export function minimizeWindow() {
+  if (mainWindow) mainWindow.minimize()
 }

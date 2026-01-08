@@ -1,13 +1,9 @@
 import { app, BrowserWindow } from 'electron'
-import { createWindow } from './window'
-import { setupApplicationMenu } from './menu'
-import { setupIpcHandle } from './ipc'
+import { initApp } from './initApp'
 
 export async function start() {
   await app.whenReady()
-  setupIpcHandle()
-  setupApplicationMenu()
-  createWindow()
+  initApp()
 
   app.on('before-quit', () => {
     console.log('App is quitting, performing cleanup...')
