@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Button } from '@/ui/button'
-import { CheckCircle2, XCircle, SettingsIcon } from 'lucide-react'
+import { Button } from '@/app/src/ui/Button'
+import { SettingsIcon } from 'lucide-react'
+import { Input } from '@/app/src/ui/Input'
+import { Alert } from '@/app/src/ui/Alert'
 
 export function LlmSettings() {
   const [apiKey, setApiKey] = useState('')
@@ -101,12 +103,11 @@ export function LlmSettings() {
             <label className='text-foreground text-sm font-medium'>
               API Key
             </label>
-            <input
+            <Input
               type='password'
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder='sk-...'
-              className='bg-input border-border w-full rounded-xl'
             />
             <p className='text-muted-foreground text-xs'>
               Your LLM provider API key
@@ -118,12 +119,11 @@ export function LlmSettings() {
             <label className='text-foreground text-sm font-medium'>
               Base URL
             </label>
-            <input
+            <Input
               type='url'
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder='https://api.openai.com'
-              className='bg-input border-border w-full rounded-xl'
             />
             <p className='text-muted-foreground text-xs'>
               The API endpoint URL
@@ -133,34 +133,20 @@ export function LlmSettings() {
           {/* Model */}
           <div className='space-y-2'>
             <label className='text-foreground text-sm font-medium'>Model</label>
-            <input
+            <Input
               type='text'
               value={model}
               onChange={(e) => setModel(e.target.value)}
               placeholder='gpt-4'
-              className='bg-input border-border w-full rounded-xl'
             />
             <p className='text-muted-foreground text-xs'>
               The model name to use for chat completions
             </p>
           </div>
-
-          {/* Verification Result */}
           {verificationResult && (
-            <div
-              className={`flex items-center gap-3 rounded-xl p-4 ${
-                verificationResult.success
-                  ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
-              }`}
-            >
-              {verificationResult.success ? (
-                <CheckCircle2 className='h-5 w-5 flex-shrink-0' />
-              ) : (
-                <XCircle className='h-5 w-5 flex-shrink-0' />
-              )}
-              <p className='text-sm'>{verificationResult.message}</p>
-            </div>
+            <Alert variant={verificationResult.success ? 'success' : 'fail'}>
+              {verificationResult.message}
+            </Alert>
           )}
 
           {/* Action Buttons */}
@@ -169,16 +155,10 @@ export function LlmSettings() {
               onClick={handleVerify}
               disabled={verifying}
               variant='outline'
-              className='border-border hover:bg-secondary flex-1 rounded-xl bg-transparent'
             >
               {verifying ? 'Verifying...' : 'Verify Connection'}
             </Button>
-            <Button
-              onClick={handleSave}
-              className='bg-primary hover:bg-primary/90 text-primary-foreground flex-1 rounded-xl'
-            >
-              Save Settings
-            </Button>
+            <Button onClick={handleSave}>Save Settings</Button>
           </div>
         </div>
 

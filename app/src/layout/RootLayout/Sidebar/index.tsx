@@ -1,5 +1,6 @@
 import { cn } from '@/app/src/lib/utils'
 import { SidebarFooter } from './SidebarFooter'
+import { NavLink } from 'react-router'
 
 export function SideBar() {
   return (
@@ -9,9 +10,11 @@ export function SideBar() {
       )}
     >
       <div>
-        <div className='flex size-10 items-center justify-center rounded-full'>
-          logo
-        </div>
+        <NavLink to='/'>
+          <div className='flex size-10 items-center justify-center rounded-full border'>
+            VV
+          </div>
+        </NavLink>
       </div>
 
       <SidebarFooter></SidebarFooter>

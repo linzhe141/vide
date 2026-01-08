@@ -1,3 +1,6 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/700.css';
+
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -7,6 +10,8 @@
   --border: oklch(0.9 0 0);
 
   --primary: oklch(0.55 0.22 250);
+  --text--secondary: oklch(0.474 0.006 286.033);
+  --text--info: oklch(0.694 0.006 286.033);
 }
 
 .dark {
@@ -15,6 +20,7 @@
   --border: oklch(0.3 0 0);
 
   --primary: oklch(0.7 0.19 250);
+  --text--secondary: oklch(0.667 0.001 286.375);
 }
 
 @theme inline {
@@ -22,6 +28,11 @@
   --color-foreground: var(--foreground);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-text-secondary: var(--text--secondary);
+  --color-text-info: var(--text--info);
+
+  --font-sans: 'Inter', sans-serif;
+  --font-inter: 'Inter', sans-serif;
 }
 
 @layer base {

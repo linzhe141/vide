@@ -3,6 +3,8 @@ import RootLayout from '../layout/RootLayout'
 import NotFound from './NotFound'
 import { ErrorBoundary } from './ErrorBoundary'
 
+import { Welcome } from '../pages/welcome'
+
 import { Layout as SettingsLayout } from '../pages/settings/layout'
 import { GeneralSettings } from '../pages/settings/general'
 import { LlmSettings } from '../pages/settings/llm'
@@ -14,6 +16,7 @@ export const router = createHashRouter([
     children: [
       {
         path: '/',
+        Component: Welcome,
       },
       {
         path: '/settings',
