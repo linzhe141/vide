@@ -2,6 +2,7 @@ import { BrowserWindow } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { IS_DEV } from './utils'
+import { ipcMainApi } from './ipc/ipcMain'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const iconPath = path.join(__dirname, '../../../resources/logo.png')
@@ -46,9 +47,22 @@ export function closeWindow() {
 }
 
 export function maximizeWindow() {
-  if (mainWindow) mainWindow.maximize()
+  if (!mainWindow) return
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize()
+  } else {
+    mainWindow.maximize()
+  }
 }
 
 export function minimizeWindow() {
   if (mainWindow) mainWindow.minimize()
+}
+
+export function setupWindowListener() {
+  if (!mainWindow) return
+  mainWindow.on('resize', () => {
+    const isMaximized = mainWindow?.isMaximized() ?? false
+    ipcMainApi.send('changed-window-size', isMaximized)
+  })
 }
