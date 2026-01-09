@@ -1,6 +1,6 @@
 import type { AppManager } from '../appManager'
-import { SettingsIpcMainService } from './settings'
-import { WindowIpcMainService } from './window'
+import { SettingsIpcMainService } from './services/settings'
+import { WindowIpcMainService } from './services/window'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void

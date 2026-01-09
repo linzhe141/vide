@@ -1,7 +1,7 @@
 import { settingsStore } from '@/electron/store/settingsStore'
-import { ipcMainApi } from '../ipcMain'
 import type { AppManager } from '@/electron/appManager'
-import type { IpcMainService } from '..'
+import type { IpcMainService } from '../..'
+import { ipcMainApi } from '../../api/ipcMain'
 
 export class SettingsIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}

@@ -1,6 +1,6 @@
 import type { AppManager } from '@/electron/appManager'
-import { ipcMainApi } from '../ipcMain'
-import type { IpcMainService } from '..'
+import type { IpcMainService } from '../..'
+import { ipcMainApi } from '../../api/ipcMain'
 
 export class WindowIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}

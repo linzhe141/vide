@@ -1,5 +1,5 @@
 import { contextBridge } from 'electron'
-import { ipcRendererApi } from '../ipc/ipcRenderer'
+import { ipcRendererApi } from '../ipc/api/ipcRenderer'
 
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld('ipcRendererApi', ipcRendererApi)

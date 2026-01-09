@@ -2,8 +2,8 @@ import { BrowserWindow } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { IS_DEV } from './utils'
-import { ipcMainApi } from './ipc/ipcMain'
 import type { AppManager } from './appManager'
+import { ipcMainApi } from './ipc/api/ipcMain'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const iconPath = path.join(__dirname, '../../../resources/logo.png')
