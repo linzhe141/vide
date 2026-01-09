@@ -1,16 +1,22 @@
+import type { AppManager } from '@/electron/appManager'
 import { ipcMainApi } from '../ipcMain'
-import { closeWindow, maximizeWindow, minimizeWindow } from '@/electron/window'
+import type { IpcMainService } from '..'
 
-export function setupIpcMainHandle() {
-  ipcMainApi.handle('close-window', () => {
-    closeWindow()
-  })
+export class WindowIpcMainService implements IpcMainService {
+  constructor(private appManager: AppManager) {}
 
-  ipcMainApi.handle('maxmize-window', () => {
-    maximizeWindow()
-  })
+  registerIpcMainHandle() {
+    const windowManager = this.appManager.windowManager
+    ipcMainApi.handle('close-window', () => {
+      windowManager.closeWindow()
+    })
 
-  ipcMainApi.handle('minmize-window', () => {
-    minimizeWindow()
-  })
+    ipcMainApi.handle('maxmize-window', () => {
+      windowManager.maximizeWindow()
+    })
+
+    ipcMainApi.handle('minmize-window', () => {
+      windowManager.minimizeWindow()
+    })
+  }
 }
