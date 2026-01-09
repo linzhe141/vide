@@ -2,11 +2,11 @@ import { settingsStore } from '@/electron/store/settingsStore'
 import { ipcMainApi } from '../ipcMain'
 
 export function setupIpcMainHandle() {
-  ipcMainApi.handle('getStore', () => {
+  ipcMainApi.handle('get-store', () => {
     return settingsStore.store
   })
 
-  ipcMainApi.handle('dispatchStore', (data) => {
+  ipcMainApi.handle('dispatch-store', (data) => {
     Object.entries(data).forEach(([key, newValue]) => {
       settingsStore.set(key, newValue)
     })
