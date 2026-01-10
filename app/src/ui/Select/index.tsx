@@ -39,7 +39,7 @@ export function Select({
             className
           )}
         >
-          <span className={cn(!selected && 'text-foreground/50')}>
+          <span className={cn(!selected && 'text-foreground/50', 'mr-2')}>
             {selected?.label ?? placeholder}
           </span>
           <ChevronDown className='h-4 w-4 opacity-60' />
