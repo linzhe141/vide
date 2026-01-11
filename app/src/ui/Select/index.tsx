@@ -3,8 +3,8 @@ import { ChevronDown } from 'lucide-react'
 import { Popover } from '../Popover'
 import { cn } from '../../lib/utils'
 export interface SelectOption {
-  label: string
-  value: string
+  element: React.ReactNode
+  value: any
 }
 
 interface SelectProps {
@@ -26,6 +26,25 @@ export function Select({
 
   const selected = options.find((opt) => opt.value === value)
 
+  const selectOptionsNode = options.map((o) => {
+    const active = o.value === value
+    return (
+      <div
+        key={o.value}
+        onClick={() => {
+          onChange?.(o.value)
+          setOpen(false)
+        }}
+        className={cn(
+          'hover:bg-foreground/5 cursor-pointer rounded px-2 py-1.5 text-sm',
+          active && 'bg-foreground/10'
+        )}
+      >
+        {o.element}
+      </div>
+    )
+  })
+
   return (
     <Popover
       open={open}
@@ -40,33 +59,14 @@ export function Select({
           )}
         >
           <span className={cn(!selected && 'text-foreground/50', 'mr-2')}>
-            {selected?.label ?? placeholder}
+            {selected?.element ?? placeholder}
           </span>
           <ChevronDown className='h-4 w-4 opacity-60' />
         </button>
       }
       className='p-1'
     >
-      <div className='flex flex-col'>
-        {options.map((opt) => {
-          const active = opt.value === value
-          return (
-            <div
-              key={opt.value}
-              onClick={() => {
-                onChange?.(opt.value)
-                setOpen(false)
-              }}
-              className={cn(
-                'hover:bg-foreground/5 cursor-pointer rounded px-2 py-1.5 text-sm',
-                active && 'bg-foreground/10'
-              )}
-            >
-              {opt.label}
-            </div>
-          )
-        })}
-      </div>
+      <div className='flex flex-col'>{selectOptionsNode}</div>
     </Popover>
   )
 }

@@ -37,7 +37,7 @@ export function Titlebar() {
             window.ipcRendererApi.invoke('minmize-window')
           }}
         >
-          <Minus className='size-4' />
+          <Minus className='size-4 stroke-1' />
         </WindowOperationItem>
 
         <WindowOperationItem
@@ -51,9 +51,9 @@ export function Titlebar() {
           }}
         >
           {isMaximized ? (
-            <Copy className='size-4 rotate-90'></Copy>
+            <Copy className='size-4 rotate-90 stroke-1'></Copy>
           ) : (
-            <Square className='size-4'></Square>
+            <Square className='size-4 stroke-1'></Square>
           )}
         </WindowOperationItem>
 
@@ -61,7 +61,7 @@ export function Titlebar() {
           className='hover:!bg-red-600 hover:!text-white'
           onClick={() => window.ipcRendererApi.invoke('close-window')}
         >
-          <X className='size-4'></X>
+          <X className='size-4 stroke-1'></X>
         </WindowOperationItem>
       </div>
     </div>
