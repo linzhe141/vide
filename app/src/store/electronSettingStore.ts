@@ -1,14 +1,16 @@
 import { create } from 'zustand'
 import type { StoreApi, UseBoundStore } from 'zustand'
 import { forwardToElectronStore } from './forwardToElectronStore'
-import type { Theme } from '@/types'
+import type { LLMConfig, Theme } from '@/types'
 
 type State = {
   theme: Theme
+  llmConfig: LLMConfig
 }
 
 type Actions = {
   setTheme: (theme: Theme) => void
+  setLLMConfig: (config: LLMConfig) => void
 }
 
 export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> =
@@ -21,6 +23,9 @@ export async function createElectronSettingStore() {
         ...initState,
         setTheme: (theme) => {
           set({ theme })
+        },
+        setLLMConfig: (config) => {
+          set({ llmConfig: config })
         },
       }),
       (data: any) => window.ipcRendererApi.invoke('dispatch-store', data)

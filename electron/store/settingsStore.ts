@@ -8,11 +8,22 @@ export type Settings = {
     x: number
     y: number
   } | null
+
+  llmConfig: {
+    apiKey: string
+    baseUrl: string
+    model: string
+  }
 }
 export const settingsStore = new ElectronStore<Settings>({
   defaults: {
     theme: 'dark',
     windowState: null,
+    llmConfig: {
+      apiKey: '',
+      baseUrl: '',
+      model: '',
+    },
   },
   name: 'settings',
   fileExtension: 'json',

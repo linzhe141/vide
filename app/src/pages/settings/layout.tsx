@@ -1,8 +1,11 @@
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import { LinkMenu } from '../../ui/LinkMenu'
 import { LinkMenuItem } from '../../ui/LinkMenu/LinkMenuItem'
 
 export function Layout() {
+  const { pathname } = useLocation()
+
+  const currentLink = pathname
   return (
     <div className='flex h-full'>
       <div className='border-border w-[300px] border-r p-4'>
@@ -13,12 +16,15 @@ export function Layout() {
           </div>
         </div>
         <div>
-          <LinkMenu defaultLink={'/settings'}>
+          <LinkMenu defaultLink={currentLink}>
             <LinkMenuItem
               label='Preferences settings'
               link='/settings'
             ></LinkMenuItem>
-            <LinkMenuItem label='LLM settings' link='llm'></LinkMenuItem>
+            <LinkMenuItem
+              label='LLM settings'
+              link='/settings/llm'
+            ></LinkMenuItem>
           </LinkMenu>
         </div>
       </div>
