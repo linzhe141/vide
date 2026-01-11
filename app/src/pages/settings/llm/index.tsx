@@ -6,9 +6,54 @@ import { Input } from '@/app/src/ui/Input'
 import { Alert } from '@/app/src/ui/Alert'
 import { useElectronSettingStore } from '@/app/src/store/electronSettingStore'
 import type { LLMConfig } from '@/types'
+import { useRef, useCallback, useEffect } from 'react'
+
+export function useAutoDismiss<T>(duration = 3000) {
+  const [state, setState] = useState<T | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  const show = useCallback(
+    (value: T) => {
+      clearTimer()
+      setState(value)
+
+      timerRef.current = setTimeout(() => {
+        setState(null)
+        timerRef.current = null
+      }, duration)
+    },
+    [duration, clearTimer]
+  )
+
+  const hide = useCallback(() => {
+    clearTimer()
+    setState(null)
+  }, [clearTimer])
+
+  // 防止组件卸载时 timer 泄漏
+  useEffect(() => {
+    return () => {
+      clearTimer()
+    }
+  }, [clearTimer])
+
+  return {
+    state,
+    show,
+    hide,
+  }
+}
 
 export function LlmSettings() {
   const { llmConfig, setLLMConfig } = useElectronSettingStore()
+
   const {
     register,
     handleSubmit,
@@ -19,44 +64,43 @@ export function LlmSettings() {
   })
 
   const [verifying, setVerifying] = useState(false)
-  const [verificationResult, setVerificationResult] = useState<{
+
+  const { state: verificationResult, show: showResult } = useAutoDismiss<{
     success: boolean
     message: string
-  } | null>(null)
-
-  // Save
-  const onSave = async (data: LLMConfig) => {
-    console.log('edfasfad')
-    const success = await handleVerify()
-    if (!success) return
-
-    setLLMConfig(data)
-
-    setVerificationResult({
-      success: true,
-      message: 'Settings saved successfully',
-    })
-
-    setTimeout(() => setVerificationResult(null), 3000)
-  }
+  }>(3000)
 
   // Verify
   const handleVerify = async () => {
     const { apiKey, baseUrl, model } = getValues()
 
     setVerifying(true)
-    setVerificationResult(null)
 
     if (!apiKey || !/^https?:\/\//.test(baseUrl) || !model) {
-      setVerificationResult({
+      showResult({
         success: false,
         message: 'Please correctly fill in all fields',
       })
       setVerifying(false)
       return false
     }
+
+    // TODO: 这里可以接 IPC / API 真验证
     setVerifying(false)
     return true
+  }
+
+  // Save
+  const onSave = async (data: LLMConfig) => {
+    const success = await handleVerify()
+    if (!success) return
+
+    setLLMConfig(data)
+
+    showResult({
+      success: true,
+      message: 'Settings saved successfully',
+    })
   }
 
   return (
