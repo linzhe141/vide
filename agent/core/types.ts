@@ -38,14 +38,19 @@ export type CallToolStepPayload = {
   toolCall: ToolCall
 }
 
+export type FinishedStepPayload = {
+  content: string
+}
+
 export type StepPayload =
   | UserInputStepPayload
   | CallLLMStepPayload
   | CallToolStepPayload
+  | FinishedStepPayload
 
 export type StepResult = {
   state: AgentState
-  payload?: any
+  payload: StepPayload
 }
 
 export type StreamContentChunk = {

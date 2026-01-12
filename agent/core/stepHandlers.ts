@@ -39,6 +39,7 @@ export class AgentStepHandlers {
       this.ctx.messages.push({
         role: 'assistant',
         tool_calls: toolCalls,
+        content,
       })
 
       return {

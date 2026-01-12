@@ -24,9 +24,6 @@ export class AgentRuntime {
       case 'call-tool':
         return this.handlers.handleCallTool(payload as CallToolStepPayload)
 
-      case 'finished':
-        return { state: 'finished' }
-
       default:
         throw new Error(`Unknown state: ${this.state}`)
     }

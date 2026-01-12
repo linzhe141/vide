@@ -4,7 +4,7 @@ import { ToolService } from './toolService'
 import { LLMService } from './llmService'
 import { AgentStepHandlers } from './stepHandlers'
 import { AgentRuntime } from './runtime'
-import { WorkflowEngine } from './workflow'
+import { Workflow } from './workflow'
 
 export interface CreateAgentOptions {
   processLLMStream: FnProcessLLMStream
@@ -12,7 +12,7 @@ export interface CreateAgentOptions {
 }
 
 export class Agent {
-  private workflow: WorkflowEngine
+  private workflow: Workflow
 
   constructor(options: CreateAgentOptions) {
     const { processLLMStream, tools } = options
@@ -22,7 +22,7 @@ export class Agent {
     const toolService = new ToolService(tools)
     const handlers = new AgentStepHandlers(ctx, llmService, toolService)
     const runtime = new AgentRuntime(handlers)
-    this.workflow = new WorkflowEngine(runtime)
+    this.workflow = new Workflow(runtime)
   }
 
   async run(input: string) {

@@ -1,22 +1,24 @@
 import type { StepPayload } from './types'
 import { AgentRuntime } from './runtime'
 
-export class WorkflowEngine {
-  constructor(private agent: AgentRuntime) {}
+export class Workflow {
+  constructor(private agentRuntime: AgentRuntime) {}
 
   async start(initialPayload: StepPayload) {
     let payload: StepPayload = initialPayload
 
     while (true) {
-      const result = await this.agent.runStep(payload)
+      const nextStepState = await this.agentRuntime.runStep(payload)
 
-      if (result.state === 'finished') {
-        this.agent.transition('finished')
+      if (nextStepState.state === 'finished') {
+        this.agentRuntime.transition('finished')
+        // just for debugger
+        console.log('finished content', nextStepState.payload)
         return
       }
 
-      this.agent.transition(result.state)
-      payload = result.payload as StepPayload
+      this.agentRuntime.transition(nextStepState.state)
+      payload = nextStepState.payload as StepPayload
     }
   }
 }
