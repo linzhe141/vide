@@ -1,67 +1,22 @@
-import type {
-  Agent,
-  CallLLMStepPayload,
-  CallToolStepPayload,
-  ToolCall,
-  UserInputStepPayload,
-} from './agent'
+import type { StepPayload } from './types'
+import { AgentRuntime } from './runtime'
 
-export class Workflow {
-  toolCalls: ToolCall[] = []
-  constructor(public agent: Agent) {}
+export class WorkflowEngine {
+  constructor(private agent: AgentRuntime) {}
 
-  async precessUserInput(input: string) {
-    const agent = this.agent
-    this.agent.state = 'user-input'
+  async start(initialPayload: StepPayload) {
+    let payload: StepPayload = initialPayload
+
     while (true) {
-      switch (agent.state) {
-        case 'user-input': {
-          const nextState = await agent.runStep({
-            input,
-          } satisfies UserInputStepPayload)
+      const result = await this.agent.runStep(payload)
 
-          if (nextState) {
-            agent.state = nextState.state
-          }
-
-          break
-        }
-
-        case 'call-llm': {
-          const nextState = await agent.runStep({
-            messages: agent.context.messages,
-          } satisfies CallLLMStepPayload)
-
-          if (nextState) {
-            agent.state = nextState.state
-            // @ts-expect-error ignore
-            const newToolCalls: ToolCall[] = nextState.toolCalls as any
-            if (newToolCalls?.length) {
-              this.toolCalls = newToolCalls
-            }
-          }
-          break
-        }
-
-        case 'call-tool': {
-          const toolCall = [...this.toolCalls].shift()
-          if (toolCall) {
-            const nextState = await agent.runStep({
-              toolCall,
-            } satisfies CallToolStepPayload)
-
-            if (nextState) {
-              agent.state = nextState.state
-            }
-          }
-
-          break
-        }
-
-        case 'finished':
-          console.log('✅ Workflow finished')
-          return
+      if (result.state === 'finished') {
+        this.agent.transition('finished')
+        return
       }
+
+      this.agent.transition(result.state)
+      payload = result.payload as StepPayload
     }
   }
 }

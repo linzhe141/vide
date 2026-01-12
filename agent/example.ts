@@ -1,14 +1,13 @@
 import {
-  Agent,
   type Tool,
   type FinishReason,
   type ToolCall,
   type FnProcessLLMStream,
-} from './core/agent'
+} from './core/types'
 
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
-import { Workflow } from './core/workflow'
+import { Agent } from './core/agent'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -113,9 +112,8 @@ const processLLMStream: FnProcessLLMStream = async function* ({
 
 async function main() {
   const input = '成都大后天的天气怎么样，温度怎么样，天气如何'
-  const agent = new Agent(processLLMStream, tools)
-  const workflow = new Workflow(agent)
-  workflow.precessUserInput(input)
+  const agent = new Agent({ processLLMStream, tools })
+  agent.run(input)
 }
 
 main()
