@@ -1,6 +1,5 @@
-import type { ChatMessage } from './types'
+import type { Agent } from './agent'
 
 export class AgentContext {
-  userInput: string | null = null
-  messages: ChatMessage[] = []
+  constructor(public agent: Agent) {}
 }

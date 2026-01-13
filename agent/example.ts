@@ -32,7 +32,7 @@ const tools: Tool[] = [
       },
     },
     async executor() {
-      const city = '成都'
+      const city = '北京'
       const date = '2026-01-11'
       return `city: ${city} date:${date} , 天气：冬雨，湿度高，注意保暖  温度：12°`
     },
@@ -111,9 +111,17 @@ const processLLMStream: FnProcessLLMStream = async function* ({
 }
 
 async function main() {
-  const input = '成都大后天的天气怎么样，温度怎么样，天气如何'
   const agent = new Agent({ processLLMStream, tools })
-  agent.run(input)
+  const session = agent.createSession()
+
+  console.log(
+    '=======================start user input========================='
+  )
+  await session.send('大后天是多好号')
+  console.log(
+    '=======================start user input========================='
+  )
+  await session.send('那北京大后天的天气怎么样')
 }
 
 main()

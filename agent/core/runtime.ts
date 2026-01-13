@@ -9,7 +9,7 @@ import type {
 import { AgentStepHandlers } from './stepHandlers'
 
 export class AgentRuntime {
-  state: AgentState = 'user-input'
+  state: AgentState = 'finished'
 
   constructor(private handlers: AgentStepHandlers) {}
 

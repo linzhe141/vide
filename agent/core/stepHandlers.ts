@@ -1,6 +1,5 @@
 import type { AgentContext } from './context'
-import type { LLMService } from './llmService'
-import type { ToolService } from './toolService'
+import type { Session } from './session'
 import type {
   CallLLMStepPayload,
   CallToolStepPayload,
@@ -11,21 +10,32 @@ import type {
 export class AgentStepHandlers {
   constructor(
     private ctx: AgentContext,
-    private llmService: LLMService,
-    private toolService: ToolService
+    private session: Session
   ) {}
 
+  get sessionsManager() {
+    return this.ctx.agent.sessionsManager
+  }
+
+  get llmService() {
+    return this.ctx.agent.llmService
+  }
+
+  get toolService() {
+    return this.ctx.agent.toolService
+  }
+
   async handleUserInput(payload: UserInputStepPayload): Promise<StepResult> {
-    this.ctx.userInput = payload.input
-    this.ctx.messages.push({
+    this.session.addMessage({
       role: 'user',
       content: payload.input,
     })
 
+    const callLLMMessages = this.session.getMessages()
     return {
       state: 'call-llm',
       payload: {
-        messages: this.ctx.messages,
+        messages: callLLMMessages,
       },
     }
   }
@@ -36,12 +46,12 @@ export class AgentStepHandlers {
     )
 
     if (finishReason === 'tool_calls') {
-      this.ctx.messages.push({
+      this.session.addMessage({
         role: 'assistant',
         tool_calls: toolCalls,
         content,
       })
-
+      // todo
       return {
         state: 'call-tool',
         payload: {
@@ -50,11 +60,10 @@ export class AgentStepHandlers {
       }
     }
 
-    this.ctx.messages.push({
+    this.session.addMessage({
       role: 'assistant',
       content,
     })
-
     return {
       state: 'finished',
       payload: { content },
@@ -65,23 +74,24 @@ export class AgentStepHandlers {
     try {
       const result = await this.toolService.execute(payload.toolCall)
 
-      this.ctx.messages.push({
+      this.session.addMessage({
         role: 'tool',
         tool_call_id: payload.toolCall.id,
         content: JSON.stringify(result),
       })
     } catch (e) {
-      this.ctx.messages.push({
+      this.session.addMessage({
         role: 'tool',
         tool_call_id: payload.toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(e),
       })
     }
 
+    const callLLMMessages = this.session.getMessages()
     return {
       state: 'call-llm',
       payload: {
-        messages: this.ctx.messages,
+        messages: callLLMMessages,
       },
     }
   }

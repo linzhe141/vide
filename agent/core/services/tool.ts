@@ -1,4 +1,4 @@
-import type { Tool, ToolCall } from './types'
+import type { Tool, ToolCall } from '../types'
 
 export class ToolService {
   constructor(private tools: Tool[]) {}

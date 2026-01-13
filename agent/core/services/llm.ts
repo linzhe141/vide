@@ -4,7 +4,7 @@ import type {
   FnProcessLLMStream,
   Tool,
   ToolCall,
-} from './types'
+} from '../types'
 
 export class LLMService {
   constructor(

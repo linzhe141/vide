@@ -4,9 +4,13 @@ import { AgentRuntime } from './runtime'
 export class Workflow {
   constructor(private agentRuntime: AgentRuntime) {}
 
-  async start(initialPayload: StepPayload) {
+  async run(initialPayload: StepPayload) {
     let payload: StepPayload = initialPayload
-
+    if (this.agentRuntime.state === 'finished') {
+      this.agentRuntime.state = 'user-input'
+    } else {
+      throw new Error('An exception occurred while running workflow')
+    }
     while (true) {
       const nextStepState = await this.agentRuntime.runStep(payload)
 
