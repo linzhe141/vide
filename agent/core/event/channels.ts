@@ -52,6 +52,13 @@ export type ToolEvents = {
   }) => void
 }
 
+export type Events =
+  | AgentLifecycleEvents
+  | SessionEvents
+  | WorkflowEvents
+  | LLMEvents
+  | ToolEvents
+
 export type AgentEvents = AgentLifecycleEvents &
   SessionEvents &
   WorkflowEvents &

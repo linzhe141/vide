@@ -1,11 +1,10 @@
-import type { Agent } from '../agent'
+import { toolEvent } from '../event'
 import type { Tool, ToolCall } from '../types'
 
 export class ToolService {
-  constructor(
-    private agent: Agent,
-    private tools: Tool[]
-  ) {}
+  private event = toolEvent
+
+  constructor(private tools: Tool[]) {}
 
   async execute(toolCall: ToolCall) {
     const toolName = toolCall.function.name

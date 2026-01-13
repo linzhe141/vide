@@ -19,7 +19,7 @@ export type ToolCall = {
   type: 'function'
 }
 
-export type AgentState =
+export type WorkflowState =
   | 'user-input'
   | 'call-llm'
   | 'call-tool'
@@ -49,7 +49,7 @@ export type StepPayload =
   | FinishedStepPayload
 
 export type StepResult = {
-  state: AgentState
+  state: WorkflowState
   payload: StepPayload
 }
 

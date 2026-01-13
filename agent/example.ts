@@ -8,6 +8,7 @@ import {
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
 import { Agent } from './core/agent'
+import { onLLMEvent, onSessionEvent, onWorkflowEvent } from './core/apiEvent'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -113,23 +114,31 @@ async function main() {
   const agent = new Agent({ processLLMStream, tools })
   const session = agent.createSession()
 
-  agent.on('session:user-input', ({ sessionId, input }) => {
-    console.log(`${sessionId}-user-input: ${input}`)
+  onWorkflowEvent('workflow:start', ({ sessionId }) => {
+    console.log('workflow:start ' + sessionId)
   })
-  agent.on('llm:request:start', () => {
-    console.log()
-  })
-  agent.on('llm:request:delta', ({ delta }) => {
-    process.stdout.write(delta)
+  onWorkflowEvent('workflow:finished', ({ sessionId }) => {
+    console.log('workflow:finished ' + sessionId)
   })
 
-  agent.on('llm:request:tool-calls', ({ toolCalls }) => {
+  onSessionEvent('session:user-input', ({ sessionId, input }) => {
+    console.log(`${sessionId}-user-input: ${input}`)
+  })
+  onLLMEvent('llm:request:start', () => {
+    console.log()
+  })
+  onLLMEvent('llm:request:start', () => {
+    console.log()
+  })
+  onLLMEvent('llm:request:delta', ({ delta }) => {
+    process.stdout.write(delta)
+  })
+  onLLMEvent('llm:request:tool-calls', ({ toolCalls }) => {
     console.log()
     console.log(JSON.stringify(toolCalls, null, 4))
     console.log()
   })
-
-  agent.on('llm:request:end', ({ finishReason }) => {
+  onLLMEvent('llm:request:end', ({ finishReason }) => {
     console.log()
     console.log('llm:request:end ' + finishReason)
     console.log()

@@ -1,4 +1,4 @@
-import type { Agent } from '../agent'
+import { llmEvent } from '../event'
 import type {
   ChatMessage,
   FinishReason,
@@ -8,8 +8,8 @@ import type {
 } from '../types'
 
 export class LLMService {
+  private event = llmEvent
   constructor(
-    private agent: Agent,
     private processLLMStream: FnProcessLLMStream,
     private tools: Tool[]
   ) {}
@@ -23,7 +23,7 @@ export class LLMService {
       tools: this.tools,
     })) {
       if ('content' in chunk && chunk.content) {
-        this.agent.event.emit('llm:request:delta', {
+        this.event.emit('llm:request:delta', {
           delta: chunk.delta,
           content: chunk.content,
         })
@@ -32,7 +32,7 @@ export class LLMService {
       }
 
       if ('tool_calls' in chunk && chunk.tool_calls) {
-        this.agent.event.emit('llm:request:tool-calls', {
+        this.event.emit('llm:request:tool-calls', {
           toolCalls: chunk.tool_calls,
         })
 

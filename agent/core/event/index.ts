@@ -1,9 +1,16 @@
-import type { AgentEvents } from './channels'
+import type {
+  Events,
+  AgentLifecycleEvents,
+  SessionEvents,
+  WorkflowEvents,
+  LLMEvents,
+  ToolEvents,
+} from './channels'
 
-export class AgentEvent {
-  private listeners: { [K in keyof AgentEvents]?: Array<AgentEvents[K]> } = {}
+export class EventEmitter<T extends Events> {
+  private listeners: { [K in keyof T]?: Array<T[K]> } = {}
 
-  on<K extends keyof AgentEvents>(event: K, handler: AgentEvents[K]) {
+  on<K extends keyof T>(event: K, handler: T[K]) {
     if (!this.listeners[event]) this.listeners[event] = []
     this.listeners[event].push(handler)
     return () => {
@@ -13,11 +20,8 @@ export class AgentEvent {
       }
     }
   }
-
-  emit<K extends keyof AgentEvents>(
-    event: K,
-    ...payload: Parameters<AgentEvents[K]>
-  ) {
+  //@ts-expect-error ignore todo
+  emit<K extends keyof T>(event: K, ...payload: Parameters<T[K]>) {
     const handlers = this.listeners[event]
     if (!handlers) return
     for (const handler of handlers) {
@@ -26,3 +30,9 @@ export class AgentEvent {
     }
   }
 }
+
+export const llmEvent = new EventEmitter<LLMEvents>()
+export const toolEvent = new EventEmitter<ToolEvents>()
+export const sessionEvent = new EventEmitter<SessionEvents>()
+export const workflowEvent = new EventEmitter<WorkflowEvents>()
+export const agentEvent = new EventEmitter<AgentLifecycleEvents>()
