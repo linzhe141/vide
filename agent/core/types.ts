@@ -55,6 +55,7 @@ export type StepResult = {
 
 export type StreamContentChunk = {
   content: string
+  delta: string
   finishReason?: 'stop' | 'tool_calls'
 }
 

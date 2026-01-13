@@ -20,7 +20,7 @@ export class SessionsManager {
       systemPrompt: '',
       messages: [],
     }
-    const sessionId = String('_session_' + Date.now())
+    const sessionId = String('_session_' + crypto.randomUUID())
     const newSession = new Session(newSessionCtx, sessionId)
     this.ctx.sessions.push({
       id: sessionId,

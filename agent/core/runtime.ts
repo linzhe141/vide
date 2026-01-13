@@ -7,11 +7,15 @@ import type {
   CallToolStepPayload,
 } from './types'
 import { AgentStepHandlers } from './stepHandlers'
+import type { Agent } from './agent'
 
 export class AgentRuntime {
   state: AgentState = 'finished'
 
-  constructor(private handlers: AgentStepHandlers) {}
+  constructor(
+    private agent: Agent,
+    private handlers: AgentStepHandlers
+  ) {}
 
   async runStep(payload: StepPayload): Promise<StepResult> {
     switch (this.state) {

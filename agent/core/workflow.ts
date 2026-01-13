@@ -1,10 +1,19 @@
-import type { StepPayload } from './types'
+import type { StepPayload, UserInputStepPayload } from './types'
 import { AgentRuntime } from './runtime'
+import type { Agent } from './agent'
 
 export class Workflow {
-  constructor(private agentRuntime: AgentRuntime) {}
+  constructor(
+    private agent: Agent,
+    private agentRuntime: AgentRuntime
+  ) {}
 
-  async run(initialPayload: StepPayload) {
+  async run(sessionId: string, initialPayload: UserInputStepPayload) {
+    this.agent.event.emit('workflow:start', {
+      sessionId,
+      input: initialPayload.input,
+    })
+
     let payload: StepPayload = initialPayload
     if (this.agentRuntime.state === 'finished') {
       this.agentRuntime.state = 'user-input'
@@ -16,8 +25,9 @@ export class Workflow {
 
       if (nextStepState.state === 'finished') {
         this.agentRuntime.transition('finished')
-        // just for debugger
-        console.log('finished content', nextStepState.payload)
+        this.agent.event.emit('workflow:finished', {
+          sessionId,
+        })
         return
       }
 

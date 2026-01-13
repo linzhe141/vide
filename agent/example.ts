@@ -55,7 +55,7 @@ const processLLMStream: FnProcessLLMStream = async function* ({
   messages,
   tools,
 }) {
-  console.log(JSON.stringify(messages, null, 4))
+  // console.log(JSON.stringify(messages, null, 4))
   const stream = await client.chat.completions.create({
     messages,
     model: DevConfig.llm.model,
@@ -71,13 +71,12 @@ const processLLMStream: FnProcessLLMStream = async function* ({
     const chunkFinishReason = chunk.choices[0].finish_reason
     if (chunkFinishReason) {
       finishReason = chunkFinishReason
-
-      console.log('chunk finishReason -->', finishReason)
     }
     if (delta?.content) {
       content += delta.content
       yield {
         content,
+        delta: delta.content,
         finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
       }
     }
@@ -114,13 +113,30 @@ async function main() {
   const agent = new Agent({ processLLMStream, tools })
   const session = agent.createSession()
 
-  console.log(
-    '=======================start user input========================='
-  )
+  agent.on('session:user-input', ({ sessionId, input }) => {
+    console.log(`${sessionId}-user-input: ${input}`)
+  })
+  agent.on('llm:request:start', () => {
+    console.log()
+  })
+  agent.on('llm:request:delta', ({ delta }) => {
+    process.stdout.write(delta)
+  })
+
+  agent.on('llm:request:tool-calls', ({ toolCalls }) => {
+    console.log()
+    console.log(JSON.stringify(toolCalls, null, 4))
+    console.log()
+  })
+
+  agent.on('llm:request:end', ({ finishReason }) => {
+    console.log()
+    console.log('llm:request:end ' + finishReason)
+    console.log()
+  })
+
   await session.send('大后天是多好号')
-  console.log(
-    '=======================start user input========================='
-  )
+
   await session.send('那北京大后天的天气怎么样')
 }
 

@@ -1,4 +1,4 @@
-import type { AgentContext } from './context'
+import type { Agent } from './agent'
 import type { Session } from './session'
 import type {
   CallLLMStepPayload,
@@ -9,9 +9,13 @@ import type {
 
 export class AgentStepHandlers {
   constructor(
-    private ctx: AgentContext,
+    private agent: Agent,
     private session: Session
   ) {}
+
+  get ctx() {
+    return this.agent.ctx
+  }
 
   get sessionsManager() {
     return this.ctx.agent.sessionsManager
@@ -26,6 +30,11 @@ export class AgentStepHandlers {
   }
 
   async handleUserInput(payload: UserInputStepPayload): Promise<StepResult> {
+    this.agent.event.emit('session:user-input', {
+      sessionId: this.session.id,
+      input: payload.input,
+    })
+
     this.session.addMessage({
       role: 'user',
       content: payload.input,
@@ -41,9 +50,18 @@ export class AgentStepHandlers {
   }
 
   async handleCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
+    this.agent.event.emit('llm:request:start', {
+      sessionId: this.session.id,
+      messages: payload.messages,
+    })
+
     const { content, toolCalls, finishReason } = await this.llmService.call(
       payload.messages
     )
+
+    this.agent.event.emit('llm:request:end', {
+      finishReason,
+    })
 
     if (finishReason === 'tool_calls') {
       this.session.addMessage({
@@ -71,6 +89,12 @@ export class AgentStepHandlers {
   }
 
   async handleCallTool(payload: CallToolStepPayload): Promise<StepResult> {
+    this.agent.event.emit('tool:call:start', {
+      sessionId: this.session.id,
+      toolName: payload.toolCall.function.name,
+      args: payload.toolCall.function.arguments,
+    })
+
     try {
       const result = await this.toolService.execute(payload.toolCall)
 
@@ -79,11 +103,23 @@ export class AgentStepHandlers {
         tool_call_id: payload.toolCall.id,
         content: JSON.stringify(result),
       })
+
+      this.agent.event.emit('tool:call:success', {
+        sessionId: this.session.id,
+        toolName: payload.toolCall.function.name,
+        result: result,
+      })
     } catch (e) {
       this.session.addMessage({
         role: 'tool',
         tool_call_id: payload.toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(e),
+      })
+
+      this.agent.event.emit('tool:call:error', {
+        sessionId: this.session.id,
+        toolName: payload.toolCall.function.name,
+        error: e as Error,
       })
     }
 
