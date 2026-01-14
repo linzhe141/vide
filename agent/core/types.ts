@@ -19,7 +19,7 @@ export type ToolCall = {
   type: 'function'
 }
 
-export type WorkflowState = 'user-input' | 'call-llm' | 'call-tool' | 'human-approve' | 'finished'
+export type WorkflowState = 'user-input' | 'call-llm' | 'call-tools' | 'finished'
 
 export type UserInputStepPayload = {
   input: string
@@ -27,6 +27,10 @@ export type UserInputStepPayload = {
 
 export type CallLLMStepPayload = {
   messages: ChatMessage[]
+}
+
+export type CallToolsStepPayload = {
+  toolCalls: ToolCall[]
 }
 
 export type CallToolStepPayload = {
@@ -40,6 +44,7 @@ export type FinishedStepPayload = {
 export type StepPayload =
   | UserInputStepPayload
   | CallLLMStepPayload
+  | CallToolsStepPayload
   | CallToolStepPayload
   | FinishedStepPayload
 

@@ -39,7 +39,7 @@ export class Agent {
 
 export class AgentSession {
   private workflow: Workflow = null!
-  thread: Thread
+  private thread: Thread
   constructor(private agent: Agent) {
     this.thread = this.agent.threadsManager.createNewThread()
 
@@ -49,5 +49,17 @@ export class AgentSession {
   async send(input: string) {
     const threadId = this.thread.id
     await this.workflow.run(threadId, { input })
+  }
+
+  async humanApprove() {
+    this.workflow.humanApprove()
+  }
+
+  async humanReject(rejectReason: string) {
+    this.workflow.humanReject(rejectReason)
+  }
+
+  setSessionSystemPrompt(prompt: string) {
+    this.agent.threadsManager.setThreadSystemPrompt(this.thread.id, prompt)
   }
 }

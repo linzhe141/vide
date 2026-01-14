@@ -15,6 +15,7 @@ export type TheadEvents = {
 export type WorkflowEvents = {
   'workflow:start': (data: { theadId: string; input: string }) => void
   'workflow:finished': (data: { theadId: string }) => void
+  'workflow:wait-human-approve': (data: any) => void
 }
 
 export type LLMEvents = {
@@ -31,10 +32,10 @@ export type ToolEvents = {
   'tool:call:error': (data: { theadId: string; toolName: string; error: Error }) => void
 }
 
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+  ? I
+  : never
+
 export type Events = AgentLifecycleEvents | TheadEvents | WorkflowEvents | LLMEvents | ToolEvents
 
-export type AgentEvents = AgentLifecycleEvents &
-  TheadEvents &
-  WorkflowEvents &
-  LLMEvents &
-  ToolEvents
+export type AgentEvents = UnionToIntersection<Events>

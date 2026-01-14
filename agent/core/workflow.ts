@@ -1,17 +1,18 @@
 import type {
   WorkflowState,
   CallLLMStepPayload,
-  CallToolStepPayload,
+  CallToolsStepPayload,
   StepPayload,
   StepResult,
   UserInputStepPayload,
+  CallToolStepPayload,
 } from './types'
 import { llmEvent, theadEvent, toolEvent, workflowEvent } from './event'
 
 import type { Thread } from './thread'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
-
+type ResolveType = { status: 'approved' } | { status: 'rejected'; rejectReason: string }
 export class Workflow {
   private state: WorkflowState = 'finished'
   private workflowEvent = workflowEvent
@@ -25,6 +26,7 @@ export class Workflow {
     private toolService: ToolService
   ) {}
 
+  // 每一次启动都是由 user-input 驱动
   async run(theadId: string, initialPayload: UserInputStepPayload) {
     this.workflowEvent.emit('workflow:start', {
       theadId,
@@ -41,14 +43,14 @@ export class Workflow {
       const nextStepState = await this.runStep(payload)
 
       if (nextStepState.state === 'finished') {
-        this.transition('finished')
+        this.setState('finished')
         this.workflowEvent.emit('workflow:finished', {
           theadId,
         })
         return
       }
 
-      this.transition(nextStepState.state)
+      this.setState(nextStepState.state)
       payload = nextStepState.payload as StepPayload
     }
   }
@@ -56,28 +58,25 @@ export class Workflow {
   async runStep(payload: StepPayload): Promise<StepResult> {
     switch (this.state) {
       case 'user-input':
-        return this.handleUserInput(payload as UserInputStepPayload)
+        return this.stateUserInput(payload as UserInputStepPayload)
 
       case 'call-llm':
-        return this.handleCallLLM(payload as CallLLMStepPayload)
+        return this.stateCallLLM(payload as CallLLMStepPayload)
 
-      case 'call-tool':
-        return this.handleCallTool(payload as CallToolStepPayload)
+      case 'call-tools':
+        return this.stateCallTools(payload as CallToolsStepPayload)
 
       default:
         throw new Error(`Unknown state: ${this.state}`)
     }
   }
 
-  transition(next: WorkflowState) {
+  setState(next: WorkflowState) {
     this.state = next
   }
 
-  async handleUserInput(payload: UserInputStepPayload): Promise<StepResult> {
-    this.theadEvent.emit('thead:user-input', {
-      theadId: this.thead.id,
-      input: payload.input,
-    })
+  async stateUserInput(payload: UserInputStepPayload): Promise<StepResult> {
+    this.theadEvent.emit('thead:user-input', { theadId: this.thead.id, input: payload.input })
 
     this.thead.addMessage({
       role: 'user',
@@ -85,15 +84,10 @@ export class Workflow {
     })
 
     const callLLMMessages = this.thead.getMessages()
-    return {
-      state: 'call-llm',
-      payload: {
-        messages: callLLMMessages,
-      },
-    }
+    return { state: 'call-llm', payload: { messages: callLLMMessages } }
   }
 
-  async handleCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
+  async stateCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
     this.llmEvent.emit('llm:request:start', {
       theadId: this.thead.id,
       messages: payload.messages,
@@ -101,36 +95,18 @@ export class Workflow {
 
     const { content, toolCalls, finishReason } = await this.llmService.call(payload.messages)
 
-    this.llmEvent.emit('llm:request:end', {
-      finishReason,
-    })
+    this.llmEvent.emit('llm:request:end', { finishReason })
 
     if (finishReason === 'tool_calls') {
-      this.thead.addMessage({
-        role: 'assistant',
-        tool_calls: toolCalls,
-        content,
-      })
-      // todo
-      return {
-        state: 'call-tool',
-        payload: {
-          toolCall: toolCalls[0],
-        },
-      }
+      this.thead.addMessage({ role: 'assistant', tool_calls: toolCalls, content })
+      return { state: 'call-tools', payload: { toolCalls } }
     }
 
-    this.thead.addMessage({
-      role: 'assistant',
-      content,
-    })
-    return {
-      state: 'finished',
-      payload: { content },
-    }
+    this.thead.addMessage({ role: 'assistant', content })
+    return { state: 'finished', payload: { content } }
   }
 
-  async handleCallTool(payload: CallToolStepPayload): Promise<StepResult> {
+  async handleCallTool(payload: CallToolStepPayload) {
     this.toolEvent.emit('tool:call:start', {
       theadId: this.thead.id,
       toolName: payload.toolCall.function.name,
@@ -164,13 +140,33 @@ export class Workflow {
         error: e as Error,
       })
     }
+  }
+
+  async stateCallTools(payload: CallToolsStepPayload): Promise<StepResult> {
+    const toolCalls = payload.toolCalls
+    for (const toolCall of toolCalls) {
+      await this.waitHumanApprove(toolCall)
+      await this.handleCallTool({ toolCall })
+    }
 
     const callLLMMessages = this.thead.getMessages()
-    return {
-      state: 'call-llm',
-      payload: {
-        messages: callLLMMessages,
-      },
-    }
+    return { state: 'call-llm', payload: { messages: callLLMMessages } }
+  }
+
+  private _resolve: (data: ResolveType) => void = null!
+
+  async humanApprove() {
+    this._resolve({ status: 'approved' })
+  }
+
+  async humanReject(rejectReason: string) {
+    this._resolve({ status: 'rejected', rejectReason })
+  }
+
+  async waitHumanApprove(data: any): Promise<ResolveType> {
+    return new Promise((resolve) => {
+      this._resolve = resolve
+      this.workflowEvent.emit('workflow:wait-human-approve', data)
+    })
   }
 }

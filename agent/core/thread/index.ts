@@ -70,6 +70,13 @@ export class Thread {
   }
 
   getMessages() {
-    return this.ctx.messages
+    let systemPromptMessage: ChatMessage | null = null
+    if (this.ctx.systemPrompt) {
+      systemPromptMessage = {
+        role: 'system',
+        content: this.ctx.systemPrompt,
+      }
+    }
+    return [systemPromptMessage, ...this.ctx.messages].filter(Boolean) as ChatMessage[]
   }
 }

@@ -2,7 +2,7 @@ import { type Tool, type FinishReason, type ToolCall, type FnProcessLLMStream } 
 
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
-import { Agent } from './core/agent'
+import { Agent, AgentSession } from './core/agent'
 import { onLLMEvent, onSessionEvent, onWorkflowEvent } from './core/apiEvent'
 
 const client = new OpenAI({
@@ -102,23 +102,37 @@ const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools 
 
 async function main() {
   const agent = new Agent({ processLLMStream, tools })
-  const thead = agent.createSession()
+  const session = agent.createSession()
 
+  session.setSessionSystemPrompt('使用小红书风格回复')
+  setupEvents(session)
+
+  await session.send('大后天是多好号')
+
+  await session.send('那北京那天的天气怎么样')
+}
+
+function setupEvents(session: AgentSession) {
   onWorkflowEvent('workflow:start', ({ theadId }) => {
-    console.log('workflow:start ' + theadId)
+    console.log('> workflow:start ' + theadId)
+    console.log()
   })
   onWorkflowEvent('workflow:finished', ({ theadId }) => {
-    console.log('workflow:finished ' + theadId)
+    console.log('> workflow:finished ' + theadId)
+    console.log()
+  })
+  onWorkflowEvent('workflow:wait-human-approve', async () => {
+    console.log('> workflow:wait-human-approve')
+    await session.humanApprove()
+    console.log('> humanApprove')
   })
 
   onSessionEvent('thead:user-input', ({ theadId, input }) => {
-    console.log(`${theadId}-user-input: ${input}`)
+    console.log(`> user-input ${theadId}: 
+${input}`)
   })
   onLLMEvent('llm:request:start', () => {
-    console.log()
-  })
-  onLLMEvent('llm:request:start', () => {
-    console.log()
+    console.log('> llm:request:start')
   })
   onLLMEvent('llm:request:delta', ({ delta }) => {
     process.stdout.write(delta)
@@ -130,13 +144,11 @@ async function main() {
   })
   onLLMEvent('llm:request:end', ({ finishReason }) => {
     console.log()
-    console.log('llm:request:end ' + finishReason)
+    console.log('> llm:request:end ' + finishReason)
     console.log()
   })
-
-  await thead.send('大后天是多好号')
-
-  await thead.send('那北京大后天的天气怎么样')
 }
-
-main()
+main().then(() => {
+  console.log()
+  console.log('> main end!')
+})
