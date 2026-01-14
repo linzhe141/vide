@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type PropsWithChildren,
-} from 'react'
+import { createContext, useContext, useState, type PropsWithChildren } from 'react'
 import { useElectronSettingStore } from '../store/electronSettingStore'
 import type { Theme } from '@/types'
 

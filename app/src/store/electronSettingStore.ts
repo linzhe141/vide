@@ -13,8 +13,7 @@ type Actions = {
   setLLMConfig: (config: LLMConfig) => void
 }
 
-export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> =
-  null!
+export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> = null!
 export async function createElectronSettingStore() {
   const initState = await window.ipcRendererApi.invoke('get-store')
   useElectronSettingStore = create<State & Actions>(

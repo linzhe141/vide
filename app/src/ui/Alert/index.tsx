@@ -8,8 +8,7 @@ interface AlertProps extends React.ComponentProps<'div'> {
   variant?: AlertVariant
 }
 
-const baseClass =
-  'w-full rounded-md border px-4 py-3 text-sm flex items-start gap-2'
+const baseClass = 'w-full rounded-md border px-4 py-3 text-sm flex items-start gap-2'
 
 const variantClassMap: Record<AlertVariant, string> = {
   info: `
@@ -40,19 +39,11 @@ const iconMap: Partial<Record<AlertVariant, React.ReactNode>> = {
   fail: <XCircle className='mt-0.5 h-4 w-4 text-red-500' />,
 }
 
-export function Alert({
-  className,
-  variant = 'info',
-  children,
-  ...props
-}: AlertProps) {
+export function Alert({ className, variant = 'info', children, ...props }: AlertProps) {
   const icon = iconMap[variant]
 
   return (
-    <div
-      className={cn(baseClass, variantClassMap[variant], className)}
-      {...props}
-    >
+    <div className={cn(baseClass, variantClassMap[variant], className)} {...props}>
       {icon}
       <div className='flex-1 leading-relaxed'>{children}</div>
     </div>

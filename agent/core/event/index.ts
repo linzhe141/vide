@@ -1,7 +1,7 @@
 import type {
   Events,
   AgentLifecycleEvents,
-  SessionEvents,
+  TheadEvents,
   WorkflowEvents,
   LLMEvents,
   ToolEvents,
@@ -33,6 +33,6 @@ export class EventEmitter<T extends Events> {
 
 export const llmEvent = new EventEmitter<LLMEvents>()
 export const toolEvent = new EventEmitter<ToolEvents>()
-export const sessionEvent = new EventEmitter<SessionEvents>()
+export const theadEvent = new EventEmitter<TheadEvents>()
 export const workflowEvent = new EventEmitter<WorkflowEvents>()
 export const agentEvent = new EventEmitter<AgentLifecycleEvents>()

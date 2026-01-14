@@ -6,9 +6,9 @@ import type {
   StepResult,
   UserInputStepPayload,
 } from './types'
-import { llmEvent, sessionEvent, toolEvent, workflowEvent } from './event'
+import { llmEvent, theadEvent, toolEvent, workflowEvent } from './event'
 
-import type { Session } from './session'
+import type { Thread } from './thread'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
 
@@ -17,17 +17,17 @@ export class Workflow {
   private workflowEvent = workflowEvent
   private llmEvent = llmEvent
   private toolEvent = toolEvent
-  private sessionEvent = sessionEvent
+  private theadEvent = theadEvent
 
   constructor(
-    private session: Session,
+    private thead: Thread,
     private llmService: LLMService,
     private toolService: ToolService
   ) {}
 
-  async run(sessionId: string, initialPayload: UserInputStepPayload) {
+  async run(theadId: string, initialPayload: UserInputStepPayload) {
     this.workflowEvent.emit('workflow:start', {
-      sessionId,
+      theadId,
       input: initialPayload.input,
     })
 
@@ -43,7 +43,7 @@ export class Workflow {
       if (nextStepState.state === 'finished') {
         this.transition('finished')
         this.workflowEvent.emit('workflow:finished', {
-          sessionId,
+          theadId,
         })
         return
       }
@@ -74,17 +74,17 @@ export class Workflow {
   }
 
   async handleUserInput(payload: UserInputStepPayload): Promise<StepResult> {
-    this.sessionEvent.emit('session:user-input', {
-      sessionId: this.session.id,
+    this.theadEvent.emit('thead:user-input', {
+      theadId: this.thead.id,
       input: payload.input,
     })
 
-    this.session.addMessage({
+    this.thead.addMessage({
       role: 'user',
       content: payload.input,
     })
 
-    const callLLMMessages = this.session.getMessages()
+    const callLLMMessages = this.thead.getMessages()
     return {
       state: 'call-llm',
       payload: {
@@ -95,20 +95,18 @@ export class Workflow {
 
   async handleCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
     this.llmEvent.emit('llm:request:start', {
-      sessionId: this.session.id,
+      theadId: this.thead.id,
       messages: payload.messages,
     })
 
-    const { content, toolCalls, finishReason } = await this.llmService.call(
-      payload.messages
-    )
+    const { content, toolCalls, finishReason } = await this.llmService.call(payload.messages)
 
     this.llmEvent.emit('llm:request:end', {
       finishReason,
     })
 
     if (finishReason === 'tool_calls') {
-      this.session.addMessage({
+      this.thead.addMessage({
         role: 'assistant',
         tool_calls: toolCalls,
         content,
@@ -122,7 +120,7 @@ export class Workflow {
       }
     }
 
-    this.session.addMessage({
+    this.thead.addMessage({
       role: 'assistant',
       content,
     })
@@ -134,7 +132,7 @@ export class Workflow {
 
   async handleCallTool(payload: CallToolStepPayload): Promise<StepResult> {
     this.toolEvent.emit('tool:call:start', {
-      sessionId: this.session.id,
+      theadId: this.thead.id,
       toolName: payload.toolCall.function.name,
       args: payload.toolCall.function.arguments,
     })
@@ -142,32 +140,32 @@ export class Workflow {
     try {
       const result = await this.toolService.execute(payload.toolCall)
 
-      this.session.addMessage({
+      this.thead.addMessage({
         role: 'tool',
         tool_call_id: payload.toolCall.id,
         content: JSON.stringify(result),
       })
 
       this.toolEvent.emit('tool:call:success', {
-        sessionId: this.session.id,
+        theadId: this.thead.id,
         toolName: payload.toolCall.function.name,
         result: result,
       })
     } catch (e) {
-      this.session.addMessage({
+      this.thead.addMessage({
         role: 'tool',
         tool_call_id: payload.toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(e),
       })
 
       this.toolEvent.emit('tool:call:error', {
-        sessionId: this.session.id,
+        theadId: this.thead.id,
         toolName: payload.toolCall.function.name,
         error: e as Error,
       })
     }
 
-    const callLLMMessages = this.session.getMessages()
+    const callLLMMessages = this.thead.getMessages()
     return {
       state: 'call-llm',
       payload: {

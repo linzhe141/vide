@@ -6,11 +6,7 @@ interface LinkMenuProps {
   defaultLink: string
   className?: string
 }
-export function LinkMenu({
-  className,
-  defaultLink,
-  children,
-}: PropsWithChildren<LinkMenuProps>) {
+export function LinkMenu({ className, defaultLink, children }: PropsWithChildren<LinkMenuProps>) {
   return (
     <Provider>
       <LinkMenuContainer defaultLink={defaultLink} className={className}>

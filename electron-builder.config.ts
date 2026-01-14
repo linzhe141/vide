@@ -9,12 +9,7 @@ export default {
     output: 'dist/electron-pack',
   },
 
-  files: [
-    'dist/app/**/*',
-    'dist/electron/**/*',
-    'package.json',
-    'resources/**',
-  ],
+  files: ['dist/app/**/*', 'dist/electron/**/*', 'package.json', 'resources/**'],
   asar: true,
   asarUnpack: ['node_modules/**'],
 

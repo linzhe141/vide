@@ -13,9 +13,7 @@ export class IpcService {
     const windowIpcMainService = new WindowIpcMainService(this.appManager)
     windowIpcMainService.registerIpcMainHandle()
 
-    const settingsStoreIpcMainService = new SettingsIpcMainService(
-      this.appManager
-    )
+    const settingsStoreIpcMainService = new SettingsIpcMainService(this.appManager)
     settingsStoreIpcMainService.registerIpcMainHandle()
   }
 }

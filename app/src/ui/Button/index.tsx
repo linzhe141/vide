@@ -34,20 +34,10 @@ const sizeClassMap: Record<ButtonSize, string> = {
   lg: 'h-12 px-6 text-base',
 }
 
-export function Button({
-  className,
-  variant = 'solid',
-  size = 'md',
-  ...props
-}: ButtonProps) {
+export function Button({ className, variant = 'solid', size = 'md', ...props }: ButtonProps) {
   return (
     <button
-      className={cn(
-        baseClass,
-        variantClassMap[variant],
-        sizeClassMap[size],
-        className
-      )}
+      className={cn(baseClass, variantClassMap[variant], sizeClassMap[size], className)}
       {...props}
     />
   )

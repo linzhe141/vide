@@ -10,17 +10,12 @@ const WindowState = {
 } as const
 type WindowStateValue = (typeof WindowState)[keyof typeof WindowState]
 export function Titlebar() {
-  const [windowState, setWindowState] = useState<WindowStateValue>(
-    WindowState.NORMAL
-  )
+  const [windowState, setWindowState] = useState<WindowStateValue>(WindowState.NORMAL)
   useLayoutEffect(() => {
-    const remove = window.ipcRendererApi.on(
-      'changed-window-size',
-      (isMaximized) => {
-        console.log('xxxxxxxx', isMaximized)
-        setWindowState(isMaximized ? WindowState.MAXIMIZED : WindowState.NORMAL)
-      }
-    )
+    const remove = window.ipcRendererApi.on('changed-window-size', (isMaximized) => {
+      console.log('xxxxxxxx', isMaximized)
+      setWindowState(isMaximized ? WindowState.MAXIMIZED : WindowState.NORMAL)
+    })
     return remove
   }, [])
 

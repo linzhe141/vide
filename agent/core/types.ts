@@ -19,12 +19,7 @@ export type ToolCall = {
   type: 'function'
 }
 
-export type WorkflowState =
-  | 'user-input'
-  | 'call-llm'
-  | 'call-tool'
-  | 'human-approve'
-  | 'finished'
+export type WorkflowState = 'user-input' | 'call-llm' | 'call-tool' | 'human-approve' | 'finished'
 
 export type UserInputStepPayload = {
   input: string

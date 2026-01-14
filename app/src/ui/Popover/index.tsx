@@ -1,12 +1,7 @@
 // TODO upgrade floating ui
 import { usePopper, type PopperChildrenProps } from 'react-popper'
 import { cn } from '../../lib/utils'
-import {
-  useEffect,
-  useState,
-  type PropsWithChildren,
-  type ReactNode,
-} from 'react'
+import { useEffect, useState, type PropsWithChildren, type ReactNode } from 'react'
 
 interface PopoverProps {
   open: boolean
@@ -24,12 +19,8 @@ export function Popover({
   placement = 'bottom-start',
   className,
 }: PropsWithChildren<PopoverProps>) {
-  const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(
-    null
-  )
-  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(
-    null
-  )
+  const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null)
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null)
 
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement,
@@ -68,10 +59,7 @@ export function Popover({
           ref={setPopperElement}
           style={styles.popper}
           {...attributes.popper}
-          className={cn(
-            'border-border bg-background z-50 rounded-md border shadow-lg',
-            className
-          )}
+          className={cn('border-border bg-background z-50 rounded-md border shadow-lg', className)}
         >
           {children}
         </div>

@@ -11,9 +11,7 @@ export function SideBar() {
     >
       <div>
         <NavLink to='/'>
-          <div className='flex size-10 items-center justify-center rounded-full border'>
-            VV
-          </div>
+          <div className='flex size-10 items-center justify-center rounded-full border'>VV</div>
         </NavLink>
       </div>
 

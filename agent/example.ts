@@ -1,9 +1,4 @@
-import {
-  type Tool,
-  type FinishReason,
-  type ToolCall,
-  type FnProcessLLMStream,
-} from './core/types'
+import { type Tool, type FinishReason, type ToolCall, type FnProcessLLMStream } from './core/types'
 
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
@@ -21,8 +16,7 @@ const tools: Tool[] = [
     type: 'function',
     function: {
       name: 'get_weather',
-      description:
-        'Get current weather basic on city and normalized date (like 2000-10-10)',
+      description: 'Get current weather basic on city and normalized date (like 2000-10-10)',
       parameters: {
         type: 'object',
         properties: {
@@ -52,10 +46,7 @@ const tools: Tool[] = [
   },
 ]
 
-const processLLMStream: FnProcessLLMStream = async function* ({
-  messages,
-  tools,
-}) {
+const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools }) {
   // console.log(JSON.stringify(messages, null, 4))
   const stream = await client.chat.completions.create({
     messages,
@@ -95,8 +86,7 @@ const processLLMStream: FnProcessLLMStream = async function* ({
           toolCalls[toolCall.index].function.name += toolCall.function.name
         }
         if (toolCall.function?.arguments) {
-          toolCalls[toolCall.index].function.arguments +=
-            toolCall.function.arguments
+          toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
         }
       }
     }
@@ -112,17 +102,17 @@ const processLLMStream: FnProcessLLMStream = async function* ({
 
 async function main() {
   const agent = new Agent({ processLLMStream, tools })
-  const session = agent.createSession()
+  const thead = agent.createSession()
 
-  onWorkflowEvent('workflow:start', ({ sessionId }) => {
-    console.log('workflow:start ' + sessionId)
+  onWorkflowEvent('workflow:start', ({ theadId }) => {
+    console.log('workflow:start ' + theadId)
   })
-  onWorkflowEvent('workflow:finished', ({ sessionId }) => {
-    console.log('workflow:finished ' + sessionId)
+  onWorkflowEvent('workflow:finished', ({ theadId }) => {
+    console.log('workflow:finished ' + theadId)
   })
 
-  onSessionEvent('session:user-input', ({ sessionId, input }) => {
-    console.log(`${sessionId}-user-input: ${input}`)
+  onSessionEvent('thead:user-input', ({ theadId, input }) => {
+    console.log(`${theadId}-user-input: ${input}`)
   })
   onLLMEvent('llm:request:start', () => {
     console.log()
@@ -144,9 +134,9 @@ async function main() {
     console.log()
   })
 
-  await session.send('大后天是多好号')
+  await thead.send('大后天是多好号')
 
-  await session.send('那北京大后天的天气怎么样')
+  await thead.send('那北京大后天的天气怎么样')
 }
 
 main()

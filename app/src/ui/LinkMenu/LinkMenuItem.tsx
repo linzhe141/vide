@@ -9,11 +9,7 @@ interface LinkMenuItemProps {
   className?: string
 }
 
-export function LinkMenuItem({
-  label,
-  link,
-  className,
-}: PropsWithChildren<LinkMenuItemProps>) {
+export function LinkMenuItem({ label, link, className }: PropsWithChildren<LinkMenuItemProps>) {
   const { setActiveLink, activeLink } = useLinkMenu()
   const isActive = activeLink === link
   return (

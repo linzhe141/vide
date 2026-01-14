@@ -112,9 +112,7 @@ export function LlmSettings() {
         </div>
         <div>
           <h1 className='text-foreground text-3xl font-bold'>Settings</h1>
-          <p className='text-muted-foreground'>
-            Configure your LLM API settings
-          </p>
+          <p className='text-muted-foreground'>Configure your LLM API settings</p>
         </div>
       </div>
 
@@ -130,24 +128,18 @@ export function LlmSettings() {
             placeholder='sk-...'
             {...register('apiKey', { required: 'API Key is required' })}
           />
-          {errors.apiKey && (
-            <p className='text-xs text-red-500'>{errors.apiKey.message}</p>
-          )}
+          {errors.apiKey && <p className='text-xs text-red-500'>{errors.apiKey.message}</p>}
         </div>
 
         {/* Base URL */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>
-            Base URL
-          </label>
+          <label className='text-foreground text-sm font-medium'>Base URL</label>
           <Input
             type='url'
             placeholder='https://api.openai.com'
             {...register('baseUrl', { required: 'Base URL is required' })}
           />
-          {errors.baseUrl && (
-            <p className='text-xs text-red-500'>{errors.baseUrl.message}</p>
-          )}
+          {errors.baseUrl && <p className='text-xs text-red-500'>{errors.baseUrl.message}</p>}
         </div>
 
         {/* Model */}
@@ -158,9 +150,7 @@ export function LlmSettings() {
             placeholder='gpt-4'
             {...register('model', { required: 'Model is required' })}
           />
-          {errors.model && (
-            <p className='text-xs text-red-500'>{errors.model.message}</p>
-          )}
+          {errors.model && <p className='text-xs text-red-500'>{errors.model.message}</p>}
         </div>
 
         {verificationResult && (
@@ -171,12 +161,7 @@ export function LlmSettings() {
 
         {/* Actions */}
         <div className='flex items-center gap-3 pt-4'>
-          <Button
-            type='button'
-            onClick={handleVerify}
-            disabled={verifying}
-            variant='outline'
-          >
+          <Button type='button' onClick={handleVerify} disabled={verifying} variant='outline'>
             {verifying ? 'Verifying...' : 'Verify Connection'}
           </Button>
           <Button type='submit'>Save Settings</Button>

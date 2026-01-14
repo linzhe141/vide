@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type PropsWithChildren,
-} from 'react'
+import { createContext, useContext, useState, type PropsWithChildren } from 'react'
 
 type ContextType = {
   activeLink: string
@@ -15,11 +10,7 @@ const Context = createContext<ContextType | undefined>(undefined)
 export function Provider({ children }: PropsWithChildren) {
   const [activeLink, setActiveLink] = useState('')
 
-  return (
-    <Context.Provider value={{ activeLink, setActiveLink }}>
-      {children}
-    </Context.Provider>
-  )
+  return <Context.Provider value={{ activeLink, setActiveLink }}>{children}</Context.Provider>
 }
 
 export function useLinkMenu() {

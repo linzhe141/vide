@@ -43,8 +43,7 @@ export function Welcome() {
             {
               element: (
                 <div className='flex items-center gap-2'>
-                  <Banana className='size-4 stroke-1 text-yellow-500'></Banana>{' '}
-                  Banana
+                  <Banana className='size-4 stroke-1 text-yellow-500'></Banana> Banana
                 </div>
               ),
               value: 'banana',

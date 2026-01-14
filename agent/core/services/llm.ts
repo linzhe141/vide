@@ -1,11 +1,5 @@
 import { llmEvent } from '../event'
-import type {
-  ChatMessage,
-  FinishReason,
-  FnProcessLLMStream,
-  Tool,
-  ToolCall,
-} from '../types'
+import type { ChatMessage, FinishReason, FnProcessLLMStream, Tool, ToolCall } from '../types'
 
 export class LLMService {
   private event = llmEvent
