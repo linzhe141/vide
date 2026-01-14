@@ -12,10 +12,7 @@ import type { Thread } from './threads'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
 
-type ResolveType =
-  | { status: 'approved' }
-  | { status: 'rejected'; rejectReason: string }
-  | { status: 'aborted' }
+type ResolveType = { status: 'approved' } | { status: 'rejected'; rejectReason: string }
 
 export class Workflow {
   private state: WorkflowState = 'finished'
@@ -44,6 +41,7 @@ export class Workflow {
     }
 
     try {
+      console.log(1)
       while (true) {
         // 检查是否已被中止
         if (this.isAborted) {
@@ -146,10 +144,6 @@ export class Workflow {
     for (const toolCall of toolCalls) {
       const approveResult = await this.waitHumanApprove(toolCall)
 
-      if (approveResult.status === 'aborted') {
-        throw new Error('Workflow aborted by user')
-      }
-
       if (approveResult.status === 'rejected') {
         continue
       }
@@ -184,11 +178,6 @@ export class Workflow {
     this.isAborted = true
     if (this.abortController) {
       this.abortController.abort()
-    }
-
-    // 中止人工审批等待
-    if (this._resolve) {
-      this._resolve({ status: 'aborted' })
     }
   }
 }

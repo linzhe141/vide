@@ -26,6 +26,7 @@ export type LLMEvents = {
   'llm-end': (data: { finishReason: FinishReason }) => void
   'llm-result': (data: ChatMessage) => void
   'llm-error': (data: { error: any }) => void
+  'llm-aborted': () => void
 }
 
 export type ToolEvents = {

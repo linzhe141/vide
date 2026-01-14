@@ -10,7 +10,7 @@ export type Tool = ChatCompletionTool & {
   executor: (args: any) => Promise<any>
 }
 
-export type FinishReason = 'stop' | 'tool_calls' | 'error'
+export type FinishReason = 'stop' | 'tool_calls'
 
 export type ToolCall = {
   function: { arguments: string; name: string }

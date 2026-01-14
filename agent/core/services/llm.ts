@@ -9,15 +9,11 @@ export class LLMService {
 
   async call(messages: ChatMessage[], signal: AbortSignal) {
     llmEvent.emit('llm-start', { messages })
-    let isAborted = false
 
     let content = ''
     let toolCalls: ToolCall[] = []
     let finishReason: FinishReason = null!
 
-    signal.onabort = () => {
-      isAborted = true
-    }
     try {
       for await (const chunk of this.processLLMStream({
         messages,
@@ -46,13 +42,13 @@ export class LLMService {
       llmEvent.emit('llm-result', { role: 'assistant', content, tool_calls: toolCalls })
 
       return { content, toolCalls, finishReason: finishReason ?? 'stop' }
-    } catch (error) {
-      if (isAborted) {
-        console.log('lllxxxyyy')
-        return
+    } catch (error: any) {
+      if (signal.aborted) {
+        llmEvent.emit('llm-aborted')
+        throw error
       }
       llmEvent.emit('llm-error', { error })
-      return { content, toolCalls, finishReason: 'error' as const }
+      throw error
     }
   }
 }

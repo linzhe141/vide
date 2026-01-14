@@ -111,10 +111,13 @@ async function main() {
   onWorkflowEvent('workflow-aborted', ({ threadId }) => {
     console.log('workflow-aborted=>', threadId)
   })
-  setTimeout(() => {
-    console.log('session.abort')
+  onWorkflowEvent('workflow-wait-human-approve', () => {
     session.abort()
-  }, 1000)
+  })
+  // setTimeout(() => {
+  //   console.log('session.abort')
+  //   session.abort()
+  // }, 1000)
   await session.send('大后天是多好号')
   console.log('==============================')
   await session.send('那北京那天的天气怎么样')
