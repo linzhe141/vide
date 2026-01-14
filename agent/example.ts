@@ -46,13 +46,16 @@ const tools: Tool[] = [
   },
 ]
 
-const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools }) {
-  const stream = await client.chat.completions.create({
-    messages,
-    model: DevConfig.llm.model,
-    stream: true,
-    tools,
-  })
+const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
+  const stream = await client.chat.completions.create(
+    {
+      messages,
+      model: DevConfig.llm.model,
+      stream: true,
+      tools,
+    },
+    { signal }
+  )
 
   let content = ''
   const toolCalls: ToolCall[] = []
@@ -104,10 +107,16 @@ async function main() {
   const session = agent.createSession()
 
   session.setSessionSystemPrompt('使用小红书风格回复')
-  setupEvents(session)
-
+  // setupEvents(session)
+  onWorkflowEvent('workflow-aborted', ({ threadId }) => {
+    console.log('workflow-aborted=>', threadId)
+  })
+  setTimeout(() => {
+    console.log('session.abort')
+    session.abort()
+  }, 1000)
   await session.send('大后天是多好号')
-
+  console.log('==============================')
   await session.send('那北京那天的天气怎么样')
 }
 

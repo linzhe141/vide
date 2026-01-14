@@ -12,10 +12,15 @@ import type { Thread } from './threads'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
 
-type ResolveType = { status: 'approved' } | { status: 'rejected'; rejectReason: string }
+type ResolveType =
+  | { status: 'approved' }
+  | { status: 'rejected'; rejectReason: string }
+  | { status: 'aborted' }
 
 export class Workflow {
   private state: WorkflowState = 'finished'
+  private abortController: AbortController | null = null
+  private isAborted: boolean = false
 
   constructor(
     private thread: Thread,
@@ -25,6 +30,10 @@ export class Workflow {
 
   // 每一次启动都是由 user-input 驱动
   async run(threadId: string, initialPayload: UserInputStepPayload) {
+    // 重置 abort 状态
+    this.isAborted = false
+    this.abortController = new AbortController()
+
     workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
 
     let payload: StepPayload = initialPayload
@@ -34,18 +43,37 @@ export class Workflow {
       throw new Error('An exception occurred while running workflow')
     }
 
-    while (true) {
-      const nextStepState = await this.runStep(payload)
+    try {
+      while (true) {
+        // 检查是否已被中止
+        if (this.isAborted) {
+          workflowEvent.emit('workflow-aborted', { threadId })
+          this.setState('finished')
+          return
+        }
 
-      if (nextStepState.state === 'finished') {
-        workflowEvent.emit('workflow-finished', { threadId })
+        const nextStepState = await this.runStep(payload)
 
+        if (nextStepState.state === 'finished') {
+          workflowEvent.emit('workflow-finished', { threadId })
+
+          this.setState('finished')
+          return
+        }
+
+        this.setState(nextStepState.state)
+        payload = nextStepState.payload as StepPayload
+      }
+    } catch (error) {
+      console.log('wrokflow-error', error)
+      if (this.isAborted) {
+        workflowEvent.emit('workflow-aborted', { threadId })
         this.setState('finished')
         return
       }
-
-      this.setState(nextStepState.state)
-      payload = nextStepState.payload as StepPayload
+      throw error
+    } finally {
+      this.abortController = null
     }
   }
 
@@ -80,7 +108,10 @@ export class Workflow {
   }
 
   async stateCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
-    const { content, toolCalls, finishReason } = await this.llmService.call(payload.messages)
+    const { content, toolCalls, finishReason } = await this.llmService.call(
+      payload.messages,
+      this.abortController!.signal
+    )
 
     if (finishReason === 'tool_calls') {
       this.thread.addMessage({ role: 'assistant', tool_calls: toolCalls, content })
@@ -113,7 +144,16 @@ export class Workflow {
   async stateCallTools(payload: CallToolsStepPayload): Promise<StepResult> {
     const toolCalls = payload.toolCalls
     for (const toolCall of toolCalls) {
-      await this.waitHumanApprove(toolCall)
+      const approveResult = await this.waitHumanApprove(toolCall)
+
+      if (approveResult.status === 'aborted') {
+        throw new Error('Workflow aborted by user')
+      }
+
+      if (approveResult.status === 'rejected') {
+        continue
+      }
+
       await this.handleCallTool({ toolCall })
     }
 
@@ -121,14 +161,16 @@ export class Workflow {
     return { state: 'call-llm', payload: { messages: callLLMMessages } }
   }
 
-  private _resolve: (data: ResolveType) => void = null!
+  private _resolve: ((data: ResolveType) => void) | null = null
 
   async humanApprove() {
-    this._resolve({ status: 'approved' })
+    this._resolve!({ status: 'approved' })
+    this._resolve = null
   }
 
   async humanReject(rejectReason: string) {
-    this._resolve({ status: 'rejected', rejectReason })
+    this._resolve!({ status: 'rejected', rejectReason })
+    this._resolve = null
   }
 
   async waitHumanApprove(data: any): Promise<ResolveType> {
@@ -136,5 +178,17 @@ export class Workflow {
       this._resolve = resolve
       workflowEvent.emit('workflow-wait-human-approve', data)
     })
+  }
+
+  async abort() {
+    this.isAborted = true
+    if (this.abortController) {
+      this.abortController.abort()
+    }
+
+    // 中止人工审批等待
+    if (this._resolve) {
+      this._resolve({ status: 'aborted' })
+    }
   }
 }

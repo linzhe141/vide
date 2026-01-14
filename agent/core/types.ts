@@ -66,4 +66,5 @@ export type StreamToolCallsChunk = {
 export type FnProcessLLMStream = (data: {
   messages: ChatMessage[]
   tools: Tool[]
+  signal: AbortSignal
 }) => AsyncGenerator<StreamContentChunk | StreamToolCallsChunk>

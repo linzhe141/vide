@@ -15,6 +15,7 @@ export type TheadEvents = {
 export type WorkflowEvents = {
   'workflow-start': (data: { threadId: string; input: string }) => void
   'workflow-finished': (data: { threadId: string }) => void
+  'workflow-aborted': (data: { threadId: string }) => void
   'workflow-wait-human-approve': (data: any) => void
 }
 

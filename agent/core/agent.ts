@@ -61,4 +61,8 @@ export class AgentSession {
   setSessionSystemPrompt(prompt: string) {
     this.agent.threadsManager.setThreadSystemPrompt(this.thread.id, prompt)
   }
+
+  abort() {
+    this.workflow.abort()
+  }
 }
