@@ -14,7 +14,8 @@ export function onAgentEvent<T extends keyof AgentLifecycleEvents>(
   return agentEvent.on(event, handle)
 }
 
-export function onSessionEvent<T extends keyof TheadEvents>(event: T, handle: TheadEvents[T]) {
+// TODO
+export function onTreadEvent<T extends keyof TheadEvents>(event: T, handle: TheadEvents[T]) {
   return theadEvent.on(event, handle)
 }
 

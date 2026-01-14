@@ -33,7 +33,7 @@ export class ThreadsManager {
   addThreadMessage(threadId: string, message: ChatMessage) {
     const target = this.ctx.threads.find((i) => i.id === threadId)
     if (!target) {
-      throw new Error(`cant find target thead:${threadId}`)
+      throw new Error(`cant find target thread:${threadId}`)
     }
     target.thread.addMessage(message)
   }
@@ -41,7 +41,7 @@ export class ThreadsManager {
   getThreadMessages(threadId: string) {
     const target = this.ctx.threads.find((i) => i.id === threadId)
     if (!target) {
-      throw new Error(`cant find target thead:${threadId}`)
+      throw new Error(`cant find target thread:${threadId}`)
     }
     target.thread.getMessages()
   }
@@ -49,7 +49,7 @@ export class ThreadsManager {
   setThreadSystemPrompt(threadId: string, newSystemPrompt: string) {
     const target = this.ctx.threads.find((i) => i.id === threadId)
     if (!target) {
-      throw new Error(`cant find target thead:${threadId}`)
+      throw new Error(`cant find target thread:${threadId}`)
     }
     target.thread.setSystemPrompt(newSystemPrompt)
   }

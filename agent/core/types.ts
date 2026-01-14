@@ -1,6 +1,5 @@
 import type {
   ChatCompletionMessageParam,
-  ChatCompletionChunk,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions.mjs'
 
@@ -11,7 +10,7 @@ export type Tool = ChatCompletionTool & {
   executor: (args: any) => Promise<any>
 }
 
-export type FinishReason = ChatCompletionChunk.Choice['finish_reason']
+export type FinishReason = 'stop' | 'tool_calls' | 'error'
 
 export type ToolCall = {
   function: { arguments: string; name: string }
@@ -56,7 +55,7 @@ export type StepResult = {
 export type StreamContentChunk = {
   content: string
   delta: string
-  finishReason?: 'stop' | 'tool_calls'
+  finishReason?: FinishReason
 }
 
 export type StreamToolCallsChunk = {

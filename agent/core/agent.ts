@@ -3,7 +3,7 @@ import { AgentContext } from './context'
 import { ToolService } from './services/tool'
 import { LLMService } from './services/llm'
 import { Workflow } from './workflow'
-import { Thread, ThreadsManager } from './thread'
+import { Thread, ThreadsManager } from './threads'
 import { agentEvent } from './event'
 
 export interface CreateAgentOptions {
@@ -16,7 +16,6 @@ export class Agent {
   threadsManager: ThreadsManager
   llmService: LLMService
   toolService: ToolService
-  event = agentEvent
   constructor(options: CreateAgentOptions) {
     this.ctx = new AgentContext(this)
 
@@ -28,7 +27,7 @@ export class Agent {
       threads: [],
     })
 
-    this.event.emit('agent:ready')
+    agentEvent.emit('agent-ready')
   }
 
   createSession() {

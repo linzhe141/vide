@@ -3,7 +3,7 @@ import { type Tool, type FinishReason, type ToolCall, type FnProcessLLMStream } 
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
 import { Agent, AgentSession } from './core/agent'
-import { onLLMEvent, onSessionEvent, onWorkflowEvent } from './core/apiEvent'
+import { onLLMEvent, onWorkflowEvent } from './core/apiEvent'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -47,7 +47,6 @@ const tools: Tool[] = [
 ]
 
 const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools }) {
-  // console.log(JSON.stringify(messages, null, 4))
   const stream = await client.chat.completions.create({
     messages,
     model: DevConfig.llm.model,
@@ -57,12 +56,12 @@ const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools 
 
   let content = ''
   const toolCalls: ToolCall[] = []
-  let finishReason: FinishReason = null
+  let finishReason: FinishReason = null!
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta
     const chunkFinishReason = chunk.choices[0].finish_reason
     if (chunkFinishReason) {
-      finishReason = chunkFinishReason
+      finishReason = chunkFinishReason as any
     }
     if (delta?.content) {
       content += delta.content
@@ -113,38 +112,34 @@ async function main() {
 }
 
 function setupEvents(session: AgentSession) {
-  onWorkflowEvent('workflow:start', ({ theadId }) => {
-    console.log('> workflow:start ' + theadId)
+  onWorkflowEvent('workflow-start', ({ threadId, input }) => {
+    console.log('> workflow-start ' + threadId)
+    console.log('> user input ' + input)
+  })
+  onWorkflowEvent('workflow-finished', ({ threadId }) => {
+    console.log('> workflow-finished ' + threadId)
     console.log()
   })
-  onWorkflowEvent('workflow:finished', ({ theadId }) => {
-    console.log('> workflow:finished ' + theadId)
-    console.log()
-  })
-  onWorkflowEvent('workflow:wait-human-approve', async () => {
-    console.log('> workflow:wait-human-approve')
+  onWorkflowEvent('workflow-wait-human-approve', async () => {
+    console.log('> workflow-wait-human-approve')
     await session.humanApprove()
     console.log('> humanApprove')
   })
 
-  onSessionEvent('thead:user-input', ({ theadId, input }) => {
-    console.log(`> user-input ${theadId}: 
-${input}`)
+  onLLMEvent('llm-start', () => {
+    console.log('> llm-start')
   })
-  onLLMEvent('llm:request:start', () => {
-    console.log('> llm:request:start')
-  })
-  onLLMEvent('llm:request:delta', ({ delta }) => {
+  onLLMEvent('llm-delta', ({ delta }) => {
     process.stdout.write(delta)
   })
-  onLLMEvent('llm:request:tool-calls', ({ toolCalls }) => {
+  onLLMEvent('llm-tool-calls', ({ toolCalls }) => {
     console.log()
     console.log(JSON.stringify(toolCalls, null, 4))
     console.log()
   })
-  onLLMEvent('llm:request:end', ({ finishReason }) => {
+  onLLMEvent('llm-end', ({ finishReason }) => {
     console.log()
-    console.log('> llm:request:end ' + finishReason)
+    console.log('> llm-end ' + finishReason)
     console.log()
   })
 }
