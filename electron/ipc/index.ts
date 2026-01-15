@@ -1,6 +1,7 @@
 import type { AppManager } from '../appManager'
 import { SettingsIpcMainService } from './services/settings'
 import { WindowIpcMainService } from './services/window'
+import { AgentIpcMainService } from './services/agent'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -15,5 +16,8 @@ export class IpcService {
 
     const settingsStoreIpcMainService = new SettingsIpcMainService(this.appManager)
     settingsStoreIpcMainService.registerIpcMainHandle()
+
+    const agentIpcMainService = new AgentIpcMainService(this.appManager)
+    agentIpcMainService.registerIpcMainHandle()
   }
 }

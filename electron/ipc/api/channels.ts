@@ -1,3 +1,4 @@
+import type { ToolCall } from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
 export interface RenderChannel {
   // electron store
@@ -8,6 +9,10 @@ export interface RenderChannel {
   'maxmize-window': () => void
   'minmize-window': () => void
   'close-window': () => void
+
+  // agent
+  'agent-create-session': () => void
+  'agent-session-send': (data: { input: string }) => void
 }
 
 export interface MainChannel {
@@ -18,4 +23,11 @@ export interface MainChannel {
 
   // window
   'changed-window-size': (isMaximized: boolean) => void
+
+  // agent
+  'agent-workflow-start': (data: { threadId: string; input: string }) => void
+  'agent-llm-delta': (content: string) => void
+  'agent-llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
+  'agent-tool-call-success': (data: { toolName: string; result: any }) => void
+  'agent-workflow-finished': (data: { threadId: string }) => void
 }

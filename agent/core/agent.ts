@@ -38,7 +38,7 @@ export class Agent {
 
 export class AgentSession {
   private workflow: Workflow = null!
-  private thread: Thread
+  thread: Thread
   constructor(private agent: Agent) {
     this.thread = this.agent.threadsManager.createNewThread()
 
