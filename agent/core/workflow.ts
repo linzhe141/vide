@@ -41,15 +41,11 @@ export class Workflow {
     }
 
     try {
-      console.log(1)
       while (true) {
-        // 检查是否已被中止
         if (this.isAborted) {
-          workflowEvent.emit('workflow-aborted', { threadId })
           this.setState('finished')
           return
         }
-
         const nextStepState = await this.runStep(payload)
 
         if (nextStepState.state === 'finished') {
@@ -62,14 +58,6 @@ export class Workflow {
         this.setState(nextStepState.state)
         payload = nextStepState.payload as StepPayload
       }
-    } catch (error) {
-      console.log('wrokflow-error', error)
-      if (this.isAborted) {
-        workflowEvent.emit('workflow-aborted', { threadId })
-        this.setState('finished')
-        return
-      }
-      throw error
     } finally {
       this.abortController = null
     }
@@ -110,7 +98,6 @@ export class Workflow {
       payload.messages,
       this.abortController!.signal
     )
-
     if (finishReason === 'tool_calls') {
       this.thread.addMessage({ role: 'assistant', tool_calls: toolCalls, content })
       return { state: 'call-tools', payload: { toolCalls } }
@@ -150,12 +137,12 @@ export class Workflow {
 
       await this.handleCallTool({ toolCall })
     }
-
     const callLLMMessages = this.thread.getMessages()
     return { state: 'call-llm', payload: { messages: callLLMMessages } }
   }
 
   private _resolve: ((data: ResolveType) => void) | null = null
+  private _reject: ((data: { status: 'human-abort' }) => void) | null = null
 
   async humanApprove() {
     this._resolve!({ status: 'approved' })
@@ -168,16 +155,23 @@ export class Workflow {
   }
 
   async waitHumanApprove(data: any): Promise<ResolveType> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, _reject) => {
       this._resolve = resolve
+      this._reject = _reject
       workflowEvent.emit('workflow-wait-human-approve', data)
     })
   }
 
   async abort() {
+    console.log('todo abort')
     this.isAborted = true
     if (this.abortController) {
       this.abortController.abort()
+      workflowEvent.emit('workflow-aborted', { threadId: this.thread.id })
+    }
+    if (this._reject) {
+      this._reject({ status: 'human-abort' })
+      this._reject = null
     }
   }
 }

@@ -14,11 +14,16 @@ export class LLMService {
     let toolCalls: ToolCall[] = []
     let finishReason: FinishReason = null!
 
+    const llmAbortController = new AbortController()
+    signal.addEventListener('abort', () => {
+      llmAbortController.abort()
+    })
+
     try {
       for await (const chunk of this.processLLMStream({
         messages,
         tools: this.tools,
-        signal,
+        signal: llmAbortController.signal,
       })) {
         if ('content' in chunk && chunk.content) {
           llmEvent.emit('llm-delta', { delta: chunk.delta, content: chunk.content })
@@ -43,7 +48,7 @@ export class LLMService {
 
       return { content, toolCalls, finishReason: finishReason ?? 'stop' }
     } catch (error: any) {
-      if (signal.aborted) {
+      if (llmAbortController.signal.aborted) {
         llmEvent.emit('llm-aborted')
         throw error
       }

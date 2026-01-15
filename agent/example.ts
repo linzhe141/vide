@@ -3,7 +3,7 @@ import { type Tool, type FinishReason, type ToolCall, type FnProcessLLMStream } 
 import { DevConfig } from '@/dev.config'
 import OpenAI from 'openai'
 import { Agent, AgentSession } from './core/agent'
-import { onLLMEvent, onWorkflowEvent } from './core/apiEvent'
+import { onLLMEvent, onToolEvent, onWorkflowEvent } from './core/apiEvent'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -107,20 +107,19 @@ async function main() {
   const session = agent.createSession()
 
   session.setSessionSystemPrompt('使用小红书风格回复')
-  // setupEvents(session)
-  onWorkflowEvent('workflow-aborted', ({ threadId }) => {
-    console.log('workflow-aborted=>', threadId)
-  })
-  onWorkflowEvent('workflow-wait-human-approve', () => {
-    session.abort()
-  })
-  // setTimeout(() => {
-  //   console.log('session.abort')
-  //   session.abort()
-  // }, 1000)
-  await session.send('大后天是多好号')
-  console.log('==============================')
-  await session.send('那北京那天的天气怎么样')
+  setupEvents(session)
+  // onWorkflowEvent('workflow-aborted', ({ threadId }) => {
+  //   console.log('workflow-aborted=>', threadId)
+  // })
+  // onWorkflowEvent('workflow-wait-human-approve', () => {
+  //   // session.abort()
+  // })
+  // onLLMEvent('llm-delta', ({ content, delta }) => {
+  //   process.stdout.write(delta)
+  // })
+  await session.send('hello 介绍下你自己')
+  console.log('\n==============================')
+  await session.send('那北京下个星期一的天气怎么样')
 }
 
 function setupEvents(session: AgentSession) {
@@ -153,6 +152,11 @@ function setupEvents(session: AgentSession) {
     console.log()
     console.log('> llm-end ' + finishReason)
     console.log()
+  })
+
+  onToolEvent('tool-call-success', ({ toolName, result }) => {
+    console.log(`> ${toolName} tool result`)
+    console.log(JSON.stringify(result, null, 4))
   })
 }
 main().then(() => {
