@@ -1,12 +1,15 @@
 import { app, BrowserWindow } from 'electron'
 import { initApp } from './initApp'
+import { logger } from './logger'
 
 export async function start() {
   await app.whenReady()
+  logger.info('App is alrady')
+
   initApp()
 
   app.on('before-quit', () => {
-    console.log('App is quitting, performing cleanup...')
+    logger.info('App is quitting, performing cleanup...')
   })
 
   app.on('window-all-closed', () => {

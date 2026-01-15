@@ -6,6 +6,7 @@ import { DevConfig } from '@/dev.config'
 import type { FinishReason, FnProcessLLMStream, Tool, ToolCall } from '@/agent/core/types'
 import { Agent, AgentSession } from '@/agent/core/agent'
 import { onLLMEvent, onToolEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
+import { logger } from '@/electron/logger'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -114,36 +115,100 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainHandle() {
     ipcMainApi.handle('agent-create-session', () => {
       this.session = this.agent.createSession()
+      logger.info('agent-create-session ', this.session.thread.id)
     })
 
     ipcMainApi.handle('agent-session-send', ({ input }) => {
+      logger.info('agent-session-send ', input)
+
       this.session?.send(input)
+    })
+
+    ipcMainApi.handle('agent-human-approved', () => {
+      logger.info('agent-human-approved ')
+
+      this.session!.humanApprove()
     })
   }
 
   registerIpcMainSenders() {
     onWorkflowEvent('workflow-start', (data) => {
+      logger.info('workflow-start')
       ipcMainApi.send('agent-workflow-start', data)
     })
 
-    onLLMEvent('llm-delta', ({ content }) => {
-      ipcMainApi.send('agent-llm-delta', content)
+    onLLMEvent('llm-start', () => {
+      logger.info('llm-start')
+
+      ipcMainApi.send('agent-llm-start')
+    })
+
+    onLLMEvent('llm-delta', ({ content, delta }) => {
+      logger.info('llm-delta', delta)
+
+      ipcMainApi.send('agent-llm-delta', { content, delta })
     })
 
     onLLMEvent('llm-tool-calls', (data) => {
+      logger.info('llm-tool-calls', JSON.stringify(data, null, 2))
+
       ipcMainApi.send('agent-llm-tool-calls', data)
     })
 
-    onWorkflowEvent('workflow-wait-human-approve', () => {
-      this.session?.humanApprove()
+    onLLMEvent('llm-end', ({ finishReason }) => {
+      logger.info('llm-end', finishReason)
+
+      ipcMainApi.send('agent-llm-end', finishReason)
+    })
+
+    onLLMEvent('llm-result', (message) => {
+      logger.info('llm-result')
+
+      ipcMainApi.send('agent-llm-result', message)
+    })
+
+    onLLMEvent('llm-error', (error) => {
+      logger.info('llm-error', error)
+
+      ipcMainApi.send('agent-llm-error', error)
+    })
+
+    onLLMEvent('llm-aborted', () => {
+      logger.info('llm-aborted')
+
+      ipcMainApi.send('agent-llm-aborted')
+    })
+
+    onToolEvent('tool-call-start', (data) => {
+      logger.info('tool-call-start')
+
+      ipcMainApi.send('agent-tool-call-start', data)
     })
 
     onToolEvent('tool-call-success', (data) => {
+      logger.info('tool-call-success')
+
       ipcMainApi.send('agent-tool-call-success', data)
     })
 
+    onToolEvent('tool-call-error', (data) => {
+      logger.info('tool-call-error')
+
+      ipcMainApi.send('agent-tool-call-error', data)
+    })
+
     onWorkflowEvent('workflow-finished', (data) => {
+      logger.info('workflow-finished')
+
       ipcMainApi.send('agent-workflow-finished', data)
+    })
+
+    onWorkflowEvent('workflow-wait-human-approve', () => {
+      logger.info('workflow-wait-human-approve')
+
+      ipcMainApi.send('agent-workflow-wait-human-approve', {
+        threadId: this.session!.thread.id,
+      })
     })
   }
 }

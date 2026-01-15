@@ -1,4 +1,4 @@
-import type { ToolCall } from '@/agent/core/types'
+import type { ChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
 export interface RenderChannel {
   // electron store
@@ -13,6 +13,8 @@ export interface RenderChannel {
   // agent
   'agent-create-session': () => void
   'agent-session-send': (data: { input: string }) => void
+  'agent-human-approved': () => void
+  'agent-workflow-abort': () => void
 }
 
 export interface MainChannel {
@@ -26,8 +28,16 @@ export interface MainChannel {
 
   // agent
   'agent-workflow-start': (data: { threadId: string; input: string }) => void
-  'agent-llm-delta': (content: string) => void
+  'agent-llm-start': () => void
+  'agent-llm-delta': (data: { content: string; delta: string }) => void
   'agent-llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
+  'agent-llm-end': (finishReason: FinishReason) => void
+  'agent-llm-result': (message: ChatMessage) => void
+  'agent-llm-error': (error: any) => void
+  'agent-llm-aborted': () => void
+  'agent-tool-call-start': (data: { toolName: string; args: any }) => void
   'agent-tool-call-success': (data: { toolName: string; result: any }) => void
+  'agent-tool-call-error': (data: { toolName: string; error: any }) => void
   'agent-workflow-finished': (data: { threadId: string }) => void
+  'agent-workflow-wait-human-approve': (data: { threadId: string }) => void
 }
