@@ -1,9 +1,21 @@
 import type {
-  ChatCompletionMessageParam,
+  ChatCompletionAssistantMessageParam,
+  ChatCompletionSystemMessageParam,
   ChatCompletionTool,
+  ChatCompletionToolMessageParam,
+  ChatCompletionUserMessageParam,
 } from 'openai/resources/chat/completions.mjs'
 
-export type ChatMessage = ChatCompletionMessageParam
+export type SystemChatMessage = ChatCompletionSystemMessageParam
+export type UserChatMessage = ChatCompletionUserMessageParam
+export type AssistantChatMessage = ChatCompletionAssistantMessageParam
+export type ToolChatMessage = ChatCompletionToolMessageParam
+
+export type ChatMessage =
+  | SystemChatMessage
+  | UserChatMessage
+  | AssistantChatMessage
+  | ToolChatMessage
 
 export type Tool = ChatCompletionTool & {
   name: string

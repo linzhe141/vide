@@ -1,21 +1,22 @@
 import { useRef, useState } from 'react'
-import type { ChatMessage } from '@/agent/core/types'
+import type { AssistantChatMessage, ChatMessage, ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
 
 type UseWorkflowStreamState = {
-  threadId?: string
+  threadId: string
   messages: ChatMessage[]
-  workflowState: WorkflowState['type'] | null
+  workflowState: WorkflowState['type']
+
   isRunning: boolean
   isFinished: boolean
   isAborted: boolean
 }
 
 const initialState: UseWorkflowStreamState = {
-  threadId: undefined,
+  threadId: undefined!,
   messages: [],
-  workflowState: null,
+  workflowState: 'workflow-finished',
   isRunning: false,
   isFinished: false,
   isAborted: false,
@@ -68,14 +69,7 @@ export function useWorkflowStream() {
     // 通知 main 开始 workflow
     await window.ipcRendererApi.invoke('agent-session-send', { input })
 
-    setState({
-      threadId: undefined,
-      messages: [],
-      workflowState: 'workflow-start',
-      isRunning: true,
-      isFinished: false,
-      isAborted: false,
-    })
+    setState((prev) => ({ ...prev, isRunning: true }))
 
     try {
       while (true) {
@@ -99,12 +93,18 @@ export function useWorkflowStream() {
   const handleWorkflowChunk = (chunk: WorkflowState) => {
     setState((prev) => {
       switch (chunk.type) {
-        case 'workflow-start':
+        case 'workflow-start': {
+          const userMessage: ChatMessage = {
+            role: 'user',
+            content: chunk.data.input,
+          }
           return {
             ...prev,
             threadId: chunk.data.threadId,
+            messages: [userMessage],
             workflowState: 'workflow-start',
           }
+        }
 
         case 'llm-start':
           return {
@@ -116,15 +116,47 @@ export function useWorkflowStream() {
           return {
             ...prev,
             workflowState: 'llm-delta',
-            messages: mergeDelta(prev.messages, chunk.data),
+            messages: updateLLMDelta(prev.messages, chunk.data),
           }
 
-        // case 'llm-result':
-        //   return {
-        //     ...prev,
-        //     workflowState: 'llm-result',
-        //     messages: appendMessage(prev.messages, chunk.data.message),
-        //   }
+        case 'llm-end':
+          return {
+            ...prev,
+            workflowState: 'llm-end',
+          }
+
+        case 'llm-result': {
+          const last = prev.messages[prev.messages.length - 1] as AssistantChatMessage
+          if (last.role === 'assistant') {
+            const finishedMessages = prev.messages.slice(0, prev.messages.length - 1)
+            let toolCalls: ToolCall[] = []
+            if ('tool_calls' in chunk.data.message) {
+              // @ts-expect-error todo
+              toolCalls = chunk.data.message.tool_calls!
+            }
+            const newLast = { ...last }
+            if (toolCalls.length) {
+              newLast.tool_calls = toolCalls
+            }
+            return {
+              ...prev,
+              workflowState: 'llm-result',
+              messages: [...finishedMessages, newLast],
+            }
+          } else {
+            return {
+              ...prev,
+              workflowState: 'llm-result',
+              messages: [...prev.messages, chunk.data.message],
+            }
+          }
+        }
+
+        case 'llm-error':
+          return {
+            ...prev,
+            workflowState: 'llm-error',
+          }
 
         case 'tool-call-start':
           return {
@@ -132,11 +164,39 @@ export function useWorkflowStream() {
             workflowState: 'tool-call-start',
           }
 
-        case 'tool-call-success':
+        case 'tool-call-success': {
+          const toolCallResult = chunk.data.result
+          const toolCallId = chunk.data.id
           return {
             ...prev,
             workflowState: 'tool-call-success',
+            messages: [
+              ...prev.messages,
+              {
+                role: 'tool',
+                tool_call_id: toolCallId,
+                content: JSON.stringify(toolCallResult, null, 2),
+              },
+            ],
           }
+        }
+
+        case 'tool-call-error': {
+          const toolCallError = chunk.data.error
+          const toolCallId = chunk.data.id
+          return {
+            ...prev,
+            workflowState: 'tool-call-success',
+            messages: [
+              ...prev.messages,
+              {
+                role: 'tool',
+                tool_call_id: toolCallId,
+                content: String(toolCallError),
+              },
+            ],
+          }
+        }
 
         case 'workflow-wait-human-approve':
           return {
@@ -152,14 +212,6 @@ export function useWorkflowStream() {
             isFinished: true,
           }
 
-        case 'llm-error':
-        case 'tool-call-error':
-          return {
-            ...prev,
-            workflowState: chunk.type,
-            isRunning: false,
-          }
-
         default:
           return prev
       }
@@ -169,7 +221,6 @@ export function useWorkflowStream() {
     send,
     abort,
 
-    threadId: state.threadId,
     messages: state.messages,
     workflowState: state.workflowState,
 
@@ -179,34 +230,22 @@ export function useWorkflowStream() {
   }
 }
 
-/**
- * 把 llm-delta 合并进最后一条 assistant message
- */
-function mergeDelta(
+function updateLLMDelta(
   messages: ChatMessage[],
   data: { delta: string; content: string }
 ): ChatMessage[] {
   const last = messages[messages.length - 1]
-
-  if (!last || last.role !== 'assistant') {
+  if (last.role !== 'assistant') {
+    return [...messages, { role: 'assistant', content: data.content }]
+  } else {
+    const prev = messages.slice(0, messages.length - 1)
+    const needUpdatedMessage = last as AssistantChatMessage
     return [
-      ...messages,
+      ...prev,
       {
-        role: 'assistant',
-        content: data.delta,
+        ...needUpdatedMessage,
+        content: data.content,
       },
     ]
   }
-
-  const next = [...messages]
-  next[next.length - 1] = {
-    ...last,
-    content: last.content + data.delta,
-  }
-
-  return next
 }
-
-// function appendMessage(messages: ChatMessage[], message: ChatMessage): ChatMessage[] {
-//   return [...messages, message]
-// }

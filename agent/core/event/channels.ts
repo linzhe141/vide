@@ -30,9 +30,9 @@ export type LLMEvents = {
 }
 
 export type ToolEvents = {
-  'tool-call-start': (data: { toolName: string; args: any }) => void
-  'tool-call-success': (data: { toolName: string; result: any }) => void
-  'tool-call-error': (data: { toolName: string; error: any }) => void
+  'tool-call-start': (data: { id: string; toolName: string; args: any }) => void
+  'tool-call-success': (data: { id: string; toolName: string; result: any }) => void
+  'tool-call-error': (data: { id: string; toolName: string; error: any }) => void
 }
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void

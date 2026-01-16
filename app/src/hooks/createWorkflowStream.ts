@@ -12,9 +12,9 @@ export type WorkflowState =
   | { type: 'llm-result'; data: { message: ChatMessage } }
   | { type: 'llm-error'; error: any }
   // | { type: 'llm-aborted' } // ui 不需要
-  | { type: 'tool-call-start'; data: { toolName: string; args: any } }
-  | { type: 'tool-call-success'; data: { toolName: string; result: any } }
-  | { type: 'tool-call-error'; data: { toolName: string; error: any } }
+  | { type: 'tool-call-start'; data: { id: string; toolName: string; args: any } }
+  | { type: 'tool-call-success'; data: { id: string; toolName: string; result: any } }
+  | { type: 'tool-call-error'; data: { id: string; toolName: string; error: any } }
 
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
@@ -32,7 +32,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       const enqueue = controller.enqueue.bind(controller)
 
       // 绑定所有事件监听器
-      eventListeners = [ 
+      eventListeners = [
         window.ipcRendererApi.on('agent-workflow-start', (data) => {
           const workflowChunk: WorkflowState = { type: 'workflow-start', data }
           enqueue(workflowChunk)
@@ -105,7 +105,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
     cancel() {
       // 清理所有监听器
-      eventListeners.forEach((remove) => remove?.())
+      eventListeners.forEach((remove) => remove())
       eventListeners = []
     },
   })

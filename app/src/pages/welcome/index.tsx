@@ -31,9 +31,9 @@ export function Welcome() {
             case 'user':
               return (
                 <div key={idx} className='text-right'>
-                  <div className='inline-block rounded bg-blue-500 px-3 py-2 text-white'>
+                  <pre className='inline-block rounded bg-blue-500 px-3 py-2 font-sans'>
                     {msg.content as string}
-                  </div>
+                  </pre>
                 </div>
               )
 
@@ -41,26 +41,43 @@ export function Welcome() {
               return (
                 <>
                   <div key={idx} className='text-left'>
-                    <div className='inline-block rounded bg-gray-200 px-3 py-2'>
+                    <pre className='inline-block rounded px-3 py-2 font-sans'>
                       {msg.content as string}
-                    </div>
+                    </pre>
                   </div>
-                  {}
+                  {msg.tool_calls &&
+                    msg.tool_calls.length > 0 &&
+                    msg.tool_calls.map((toolCall, index) => (
+                      <div>
+                        <pre>{JSON.stringify(toolCall, null, 2)}</pre>
+                        {/* workflow 等待人工确认 */}
+                        {index === msg.tool_calls!.length - 1 &&
+                          workflowState === 'workflow-wait-human-approve' && (
+                            <div className='gap-2'>
+                              <div className='text-xs'>存在工具调用 是否 approve？</div>
+
+                              <div className='mt-2 flex gap-2'>
+                                <Button onClick={handleApprove}>Approve</Button>
+                                <Button onClick={handleReject}>Reject</Button>
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    ))}
                 </>
               )
-
+            case 'tool':
+              return (
+                <div key={idx}>
+                  <pre className='inline-block rounded bg-blue-500 px-3 py-2 font-sans'>
+                    {JSON.stringify(msg, null, 2)}
+                  </pre>
+                </div>
+              )
             default:
               return null
           }
         })}
-
-        {/* workflow 等待人工确认 */}
-        {workflowState === 'workflow-wait-human-approve' && (
-          <div className='flex gap-2'>
-            <Button onClick={handleApprove}>Approve</Button>
-            <Button onClick={handleReject}>Reject</Button>
-          </div>
-        )}
 
         {isFinished && <div className='text-green-500'>✅ Workflow Finished</div>}
         {isAborted && <div className='text-red-500'>⛔ Workflow Aborted</div>}

@@ -35,9 +35,9 @@ export interface MainChannel {
   'agent-llm-result': (message: ChatMessage) => void
   'agent-llm-error': (error: any) => void
   'agent-llm-aborted': () => void
-  'agent-tool-call-start': (data: { toolName: string; args: any }) => void
-  'agent-tool-call-success': (data: { toolName: string; result: any }) => void
-  'agent-tool-call-error': (data: { toolName: string; error: any }) => void
+  'agent-tool-call-start': (data: { id: string; toolName: string; args: any }) => void
+  'agent-tool-call-success': (data: { id: string; toolName: string; result: any }) => void
+  'agent-tool-call-error': (data: { id: string; toolName: string; error: any }) => void
   'agent-workflow-finished': (data: { threadId: string }) => void
   'agent-workflow-wait-human-approve': (data: { threadId: string }) => void
 }
