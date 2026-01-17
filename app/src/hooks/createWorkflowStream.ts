@@ -19,6 +19,10 @@ export type WorkflowState =
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
 
+  function cleanUp() {
+    eventListeners.forEach((remove) => remove())
+    eventListeners = []
+  }
   const stream = new ReadableStream({
     start(controller) {
       // 监听 abort 信号
@@ -41,6 +45,8 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         window.ipcRendererApi.on('agent-workflow-finished', (data) => {
           const workflowChunk: WorkflowState = { type: 'workflow-finished', data }
           enqueue(workflowChunk)
+          controller.close()
+          cleanUp()
         }),
 
         window.ipcRendererApi.on('agent-workflow-wait-human-approve', (data) =>
@@ -102,13 +108,10 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         }),
       ]
     },
-
     cancel() {
       // 清理所有监听器
-      eventListeners.forEach((remove) => remove())
-      eventListeners = []
+      cleanUp()
     },
   })
-
   return stream
 }

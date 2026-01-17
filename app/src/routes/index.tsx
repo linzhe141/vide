@@ -8,6 +8,7 @@ import { Welcome } from '../pages/welcome'
 import { Layout as SettingsLayout } from '../pages/settings/layout'
 import { GeneralSettings } from '../pages/settings/general'
 import { LlmSettings } from '../pages/settings/llm'
+import { Chat } from '../pages/chat'
 
 export const router = createHashRouter([
   {
@@ -17,6 +18,10 @@ export const router = createHashRouter([
       {
         path: '/',
         Component: Welcome,
+      },
+      {
+        path: '/chat/:id',
+        Component: Chat
       },
       {
         path: '/settings',

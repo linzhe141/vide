@@ -11,7 +11,7 @@ export interface RenderChannel {
   'close-window': () => void
 
   // agent
-  'agent-create-session': () => void
+  'agent-create-session': () => string
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
   'agent-workflow-abort': () => void

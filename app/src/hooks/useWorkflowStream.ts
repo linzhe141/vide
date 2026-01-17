@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { AssistantChatMessage, ChatMessage, ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
@@ -22,8 +22,8 @@ const initialState: UseWorkflowStreamState = {
   isAborted: false,
 }
 
-export function useWorkflowStream() {
-  const [state, setState] = useState<UseWorkflowStreamState>(initialState)
+export function useWorkflowStream(threadId: string) {
+  const [state, setState] = useState<UseWorkflowStreamState>({ ...initialState, threadId })
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
@@ -49,12 +49,8 @@ export function useWorkflowStream() {
     cleanup()
   }
 
-  const send = async (input: string) => {
+  const send = useCallback(async (input: string) => {
     // 防止并发 send
-    if (state.isRunning) {
-      console.warn('[useWorkflowStream] workflow is already running')
-      return
-    }
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
@@ -63,9 +59,6 @@ export function useWorkflowStream() {
     const reader = stream.getReader()
     readerRef.current = reader
 
-    if (state.messages.length === 0) {
-      await window.ipcRendererApi.invoke('agent-create-session')
-    }
     // 通知 main 开始 workflow
     await window.ipcRendererApi.invoke('agent-session-send', { input })
 
@@ -87,11 +80,12 @@ export function useWorkflowStream() {
 
       console.error('[useWorkflowStream] stream error', err)
     } finally {
+      reader.releaseLock()
       cleanup()
     }
-  }
+  }, [])
   const handleWorkflowChunk = (chunk: WorkflowState) => {
-    setState((prev) => {
+    setState((prev: UseWorkflowStreamState): UseWorkflowStreamState => {
       switch (chunk.type) {
         case 'workflow-start': {
           const userMessage: ChatMessage = {
@@ -101,7 +95,7 @@ export function useWorkflowStream() {
           return {
             ...prev,
             threadId: chunk.data.threadId,
-            messages: [userMessage],
+            messages: [...prev.messages, userMessage],
             workflowState: 'workflow-start',
           }
         }
@@ -225,7 +219,7 @@ export function useWorkflowStream() {
     workflowState: state.workflowState,
 
     isRunning: state.isRunning,
-    isFinished: state.isFinished,
+    isFinished: state.workflowState === 'workflow-finished',
     isAborted: state.isAborted,
   }
 }

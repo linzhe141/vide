@@ -116,6 +116,7 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-create-session', () => {
       this.session = this.agent.createSession()
       logger.info('agent-create-session ', this.session.thread.id)
+      return this.session.thread.id
     })
 
     ipcMainApi.handle('agent-session-send', ({ input }) => {
