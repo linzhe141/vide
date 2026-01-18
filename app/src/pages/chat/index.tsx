@@ -44,7 +44,7 @@ function ToolCallItem({
   onReject: () => void
 }) {
   return (
-    <div className='mt-2 ml-4 max-w-3xl rounded-lg border p-3'>
+    <div className='mt-2 max-w-3xl rounded-lg border p-3'>
       <pre className='overflow-auto text-xs'>{JSON.stringify(toolCall, null, 2)}</pre>
 
       {!isApproved && needsApproval && (
@@ -171,7 +171,7 @@ export function Chat() {
               case 'assistant':
                 return (
                   <div key={idx} className='space-y-2'>
-                    <AssistantMessage content={msg.content as string} />
+                    {msg.content && <AssistantMessage content={msg.content as string} />}
                     {msg.tool_calls?.map((toolCall, index) => (
                       <ToolCallItem
                         key={`${idx}-${index}`}
@@ -202,7 +202,7 @@ export function Chat() {
       {showToBottomButton && <ScrollToBottomButton onClick={toBottom} />}
 
       {/* 输入区域 */}
-      <div className='border-t'>
+      <div>
         <div className='mx-auto max-w-4xl px-4 py-4'>
           <div className='flex gap-2'>
             <Input
