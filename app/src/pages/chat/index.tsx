@@ -10,9 +10,9 @@ import { ArrowDown } from 'lucide-react'
 // 用户消息组件
 function UserMessage({ content }: { content: string }) {
   return (
-    <div className='flex justify-end'>
-      <div className='bg-primary max-w-2xl rounded-lg px-4 py-2.5'>
-        <p className='font-sans text-sm'>{content}</p>
+    <div className='flex'>
+      <div className='bg-primary max-w-2xl rounded-2xl px-5 py-3 shadow-sm'>
+        <p className='text-sm leading-relaxed text-white'>{content}</p>
       </div>
     </div>
   )
@@ -22,8 +22,8 @@ function UserMessage({ content }: { content: string }) {
 function AssistantMessage({ content }: { content: string }) {
   return (
     <div className='flex justify-start'>
-      <div className='max-w-3xl rounded-lg border px-4 py-2.5'>
-        <pre className='font-sans text-sm whitespace-pre-line'>{content}</pre>
+      <div className='border-border max-w-3xl rounded-2xl border px-5 py-3 shadow-sm'>
+        <pre className='text-sm leading-relaxed whitespace-pre-line'>{content}</pre>
       </div>
     </div>
   )
@@ -44,18 +44,28 @@ function ToolCallItem({
   onReject: () => void
 }) {
   return (
-    <div className='mt-2 max-w-3xl rounded-lg border p-3'>
-      <pre className='overflow-auto text-xs'>{JSON.stringify(toolCall, null, 2)}</pre>
+    <div className='border-border mt-2 ml-0 max-w-3xl rounded-xl border p-4'>
+      <div className='mb-2 flex items-center gap-2'>
+        <div className='h-1.5 w-1.5 rounded-full bg-blue-500'></div>
+        <span className='text-xs font-medium text-gray-600'>工具调用</span>
+      </div>
+      <pre className='overflow-auto rounded-lg p-3 text-xs'>
+        {JSON.stringify(toolCall, null, 2)}
+      </pre>
 
       {!isApproved && needsApproval && (
         <div className='mt-3 border-t pt-3'>
-          <p className='mb-2 text-xs text-gray-600'>需要确认工具调用</p>
+          <p className='mb-3 text-xs font-medium text-gray-600'>需要确认工具调用</p>
           <div className='flex gap-2'>
-            <Button onClick={onApprove} className='text-sm'>
-              Approve
+            <Button onClick={onApprove} className='h-8 rounded-lg text-xs font-medium'>
+              批准
             </Button>
-            <Button onClick={onReject} className='text-sm'>
-              Reject
+            <Button
+              onClick={onReject}
+              variant='outline'
+              className='border-border h-8 rounded-lg border text-xs font-medium'
+            >
+              拒绝
             </Button>
           </div>
         </div>
@@ -68,8 +78,14 @@ function ToolCallItem({
 function ToolMessage({ content }: { content: any }) {
   return (
     <div className='flex justify-start'>
-      <div className='max-w-3xl rounded-lg border p-3'>
-        <pre className='overflow-auto text-xs'>{JSON.stringify(content, null, 2)}</pre>
+      <div className='border-border max-w-3xl rounded-xl border p-4'>
+        <div className='mb-2 flex items-center gap-2'>
+          <div className='h-1.5 w-1.5 rounded-full bg-green-500'></div>
+          <span className='text-xs font-medium text-gray-600'>工具结果</span>
+        </div>
+        <pre className='overflow-auto rounded-lg p-3 text-xs'>
+          {JSON.stringify(content, null, 2)}
+        </pre>
       </div>
     </div>
   )
@@ -80,10 +96,12 @@ function StatusIndicator({ isFinished, isAborted }: { isFinished: boolean; isAbo
   if (!isFinished && !isAborted) return null
 
   return (
-    <div className='flex justify-center'>
+    <div className='flex justify-center py-2'>
       <div
-        className={`rounded-full px-4 py-1.5 text-sm ${
-          isFinished ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+        className={`rounded-full px-4 py-1.5 text-xs font-medium shadow-sm ${
+          isFinished
+            ? 'bg-green-50 text-green-700 ring-1 ring-green-200'
+            : 'bg-red-50 text-red-700 ring-1 ring-red-200'
         }`}
       >
         {isFinished ? '✓ 完成' : '✕ 已中止'}
@@ -97,10 +115,10 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className='fixed bottom-24 left-1/2 -translate-x-1/2 rounded-full border p-2.5 shadow-lg transition-shadow hover:shadow-xl'
+      className='border-border fixed bottom-28 left-1/2 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
       aria-label='滚动到底部'
     >
-      <ArrowDown size={20} />
+      <ArrowDown size={18} className='text-gray-700' />
     </button>
   )
 }
@@ -147,8 +165,8 @@ export function Chat() {
     setInput('')
   }
 
-  const handleApprove = (toolCall: ToolCall) => {
-    setApprovedCalls((prev) => new Set(prev).add(toolCall.id))
+  const handleApprove = (id: string) => {
+    setApprovedCalls((prev) => new Set(prev).add(id))
     window.ipcRendererApi.invoke('agent-human-approved')
   }
 
@@ -170,7 +188,7 @@ export function Chat() {
 
               case 'assistant':
                 return (
-                  <div key={idx} className='space-y-2'>
+                  <div key={idx} className='space-y-3'>
                     {msg.content && <AssistantMessage content={msg.content as string} />}
                     {msg.tool_calls?.map((toolCall, index) => (
                       <ToolCallItem
@@ -178,7 +196,7 @@ export function Chat() {
                         toolCall={toolCall as ToolCall}
                         isApproved={approvedToolCalls.has(toolCall.id + idx + index)}
                         needsApproval={workflowState === 'workflow-wait-human-approve'}
-                        onApprove={() => handleApprove(toolCall as ToolCall)}
+                        onApprove={() => handleApprove(toolCall.id + idx + index)}
                         onReject={handleReject}
                       />
                     ))}
@@ -202,7 +220,7 @@ export function Chat() {
       {showToBottomButton && <ScrollToBottomButton onClick={toBottom} />}
 
       {/* 输入区域 */}
-      <div>
+      <div className='border-border border-t'>
         <div className='mx-auto max-w-4xl px-4 py-4'>
           <div className='flex gap-2'>
             <Input
@@ -215,12 +233,20 @@ export function Chat() {
                   handleSend()
                 }
               }}
-              className='flex-1'
+              className='focus:border-primary focus:ring-primary border-border flex-1 rounded-xl'
             />
-            <Button onClick={handleSend} disabled={isRunning}>
+            <Button
+              onClick={handleSend}
+              disabled={isRunning}
+              className='rounded-xl px-6 font-medium'
+            >
               发送
             </Button>
-            <Button onClick={abort} disabled={!isRunning}>
+            <Button
+              onClick={abort}
+              disabled={!isRunning}
+              className='border-border rounded-xl border px-6 font-medium text-gray-700 hover:bg-gray-50 disabled:bg-gray-100'
+            >
               中止
             </Button>
           </div>
