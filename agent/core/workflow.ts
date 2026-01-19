@@ -6,18 +6,19 @@ import type {
   StepResult,
   UserInputStepPayload,
   CallToolStepPayload,
+  ToolCall,
 } from './types'
 import { workflowEvent } from './event'
 import type { Thread } from './threads'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
 
-type ResolveType = { status: 'approved' } | { status: 'rejected'; rejectReason: string }
-
 export class Workflow {
   private state: WorkflowState = 'finished'
   private abortController: AbortController | null = null
   private isAborted: boolean = false
+  // for wait human approve to resume workflow
+  private nextStep: StepResult | null = null
 
   constructor(
     private thread: Thread,
@@ -26,20 +27,30 @@ export class Workflow {
   ) {}
 
   // 每一次启动都是由 user-input 驱动
-  async run(threadId: string, initialPayload: UserInputStepPayload) {
-    // 重置 abort 状态
-    this.isAborted = false
-    this.abortController = new AbortController()
-
-    workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
-
-    let payload: StepPayload = initialPayload
+  async start(threadId: string, initialPayload: UserInputStepPayload) {
     if (this.state === 'finished') {
       this.state = 'user-input'
     } else {
       throw new Error('An exception occurred while running workflow')
     }
 
+    // 重置 abort 状态
+    this.isAborted = false
+    this.abortController = new AbortController()
+    workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
+
+    this.run(threadId, initialPayload)
+  }
+
+  async humanApproveToolCall() {
+    if (this.nextStep) {
+      this.setState(this.nextStep.state)
+      this.run(this.thread.id, this.nextStep.payload)
+    } else {
+      throw new Error('An exception occurred while running workflow')
+    }
+  }
+  async run(threadId: string, payload: StepPayload) {
     try {
       while (true) {
         if (this.isAborted) {
@@ -47,6 +58,11 @@ export class Workflow {
           return
         }
         const nextStepState = await this.runStep(payload)
+
+        if (nextStepState.state === 'wait-human-approve') {
+          workflowEvent.emit('workflow-wait-human-approve', { threadId })
+          return
+        }
 
         if (nextStepState.state === 'finished') {
           workflowEvent.emit('workflow-finished', { threadId })
@@ -58,9 +74,10 @@ export class Workflow {
         this.setState(nextStepState.state)
         payload = nextStepState.payload as StepPayload
       }
-    } finally {
-      this.abortController = null
+    } catch (error) {
+      console.log('Workflow run error:', error)
     }
+    this.abortController = null
   }
 
   async runStep(payload: StepPayload): Promise<StepResult> {
@@ -73,6 +90,9 @@ export class Workflow {
 
       case 'call-tools':
         return this.stateCallTools(payload as CallToolsStepPayload)
+
+      case 'call-tool':
+        return this.stateCallTool(payload as CallToolStepPayload)
 
       default:
         throw new Error(`Unknown state: ${this.state}`)
@@ -107,59 +127,61 @@ export class Workflow {
     return { state: 'finished', payload: { content } }
   }
 
-  async handleCallTool(payload: CallToolStepPayload) {
-    const toolCallRes = await this.toolService.execute(payload.toolCall)
+  async handleCallTool(toolCall: ToolCall) {
+    const toolCallRes = await this.toolService.execute(toolCall)
 
     if (toolCallRes.success) {
       this.thread.addMessage({
         role: 'tool',
-        tool_call_id: payload.toolCall.id,
+        tool_call_id: toolCall.id,
         content: JSON.stringify(toolCallRes.result),
       })
     } else {
       const error = toolCallRes.error
       this.thread.addMessage({
         role: 'tool',
-        tool_call_id: payload.toolCall.id,
+        tool_call_id: toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(error),
       })
     }
   }
 
+  async stateCallTool(payload: CallToolStepPayload): Promise<StepResult> {
+    const toolCalls = payload.toolCalls
+    const index = payload.index
+    const toolCall = toolCalls[index]
+    const hasApproved = payload.approved
+
+    if (!hasApproved) {
+      // 等待用户批准
+      // 默认批准当前工具调用
+      this.nextStep = { state: 'call-tool', payload: { index, toolCalls, approved: true } }
+      return {
+        state: 'wait-human-approve',
+        payload: {
+          nextStep: this.nextStep,
+        },
+      }
+    }
+    await this.handleCallTool(toolCall)
+    if (index + 1 < toolCalls.length) {
+      return {
+        state: 'call-tool',
+        payload: { index: index + 1, toolCalls },
+      }
+    } else {
+      const callLLMMessages = this.thread.getMessages()
+      return { state: 'call-llm', payload: { messages: callLLMMessages } }
+    }
+  }
+
   async stateCallTools(payload: CallToolsStepPayload): Promise<StepResult> {
     const toolCalls = payload.toolCalls
-    for (const toolCall of toolCalls) {
-      const approveResult = await this.waitHumanApprove(toolCall)
 
-      if (approveResult.status === 'rejected') {
-        continue
-      }
-
-      await this.handleCallTool({ toolCall })
+    return {
+      state: 'call-tool',
+      payload: { index: 0, toolCalls, approved: false },
     }
-    const callLLMMessages = this.thread.getMessages()
-    return { state: 'call-llm', payload: { messages: callLLMMessages } }
-  }
-
-  private _resolve: ((data: ResolveType) => void) | null = null
-  private _reject: ((data: { status: 'human-abort' }) => void) | null = null
-
-  async humanApprove() {
-    this._resolve!({ status: 'approved' })
-    this._resolve = null
-  }
-
-  async humanReject(rejectReason: string) {
-    this._resolve!({ status: 'rejected', rejectReason })
-    this._resolve = null
-  }
-
-  async waitHumanApprove(data: any): Promise<ResolveType> {
-    return new Promise((resolve, _reject) => {
-      this._resolve = resolve
-      this._reject = _reject
-      workflowEvent.emit('workflow-wait-human-approve', data)
-    })
   }
 
   async abort() {
@@ -168,10 +190,6 @@ export class Workflow {
     if (this.abortController) {
       this.abortController.abort()
       workflowEvent.emit('workflow-aborted', { threadId: this.thread.id })
-    }
-    if (this._reject) {
-      this._reject({ status: 'human-abort' })
-      this._reject = null
     }
   }
 }

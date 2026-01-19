@@ -30,7 +30,13 @@ export type ToolCall = {
   type: 'function'
 }
 
-export type WorkflowState = 'user-input' | 'call-llm' | 'call-tools' | 'finished'
+export type WorkflowState =
+  | 'user-input'
+  | 'call-llm'
+  | 'call-tools'
+  | 'wait-human-approve'
+  | 'call-tool'
+  | 'finished'
 
 export type UserInputStepPayload = {
   input: string
@@ -44,8 +50,17 @@ export type CallToolsStepPayload = {
   toolCalls: ToolCall[]
 }
 
+export type WaitHumanApprovePayload = {
+  nextStep: {
+    state: WorkflowState
+    payload: StepPayload
+  }
+}
+
 export type CallToolStepPayload = {
-  toolCall: ToolCall
+  index: number
+  toolCalls: ToolCall[]
+  approved: boolean
 }
 
 export type FinishedStepPayload = {
@@ -56,6 +71,7 @@ export type StepPayload =
   | UserInputStepPayload
   | CallLLMStepPayload
   | CallToolsStepPayload
+  | WaitHumanApprovePayload
   | CallToolStepPayload
   | FinishedStepPayload
 

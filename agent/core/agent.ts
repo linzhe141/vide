@@ -47,11 +47,11 @@ export class AgentSession {
 
   async send(input: string) {
     const threadId = this.thread.id
-    await this.workflow.run(threadId, { input })
+    await this.workflow.start(threadId, { input })
   }
 
   async humanApprove() {
-    this.workflow.humanApprove()
+    this.workflow.humanApproveToolCall()
   }
 
   async humanReject(rejectReason: string) {
