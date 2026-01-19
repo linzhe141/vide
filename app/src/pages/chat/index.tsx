@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Input } from '../../ui/Input'
 import { Button } from '../../ui/Button'
-import { useParams } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import type { ToolCall } from '@/agent/core/types'
@@ -126,19 +125,13 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
 
 // 主聊天组件
 export function Chat() {
-  const params = useParams()
-  const threadId = params.id!
-  const { messages, setThreadId } = useThreadStore()
+  const { messages } = useThreadStore()
   const [input, setInput] = useState('')
   const { send, workflowState, isAborted, isFinished, abort, isRunning } = useWorkflowStream()
 
   const [approvedToolCalls, setApprovedCalls] = useState<Set<string>>(new Set())
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
-
-  useEffect(() => {
-    setThreadId(threadId)
-  }, [setThreadId, threadId])
 
   useEffect(() => {
     const firstInput = context.firstInput

@@ -21,7 +21,7 @@ export const router = createHashRouter([
       },
       {
         path: '/chat/:id',
-        Component: Chat
+        Component: Chat,
       },
       {
         path: '/settings',
