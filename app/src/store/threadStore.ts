@@ -62,7 +62,7 @@ export const useThreadStore = create<State & Actions>((set) => ({
         return { messages: [...prevMessages, newLastMessage] }
       } else {
         return {
-          messages: [...state.messages.slice(0, -1), message as AssistantChatMessage],
+          messages: [...state.messages, message as AssistantChatMessage],
         }
       }
     }),
