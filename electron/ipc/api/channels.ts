@@ -1,4 +1,4 @@
-import type { ChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
+import type { AssistantChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
 export interface RenderChannel {
   // electron store
@@ -32,7 +32,7 @@ export interface MainChannel {
   'agent-llm-delta': (data: { content: string; delta: string }) => void
   'agent-llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
   'agent-llm-end': (finishReason: FinishReason) => void
-  'agent-llm-result': (message: ChatMessage) => void
+  'agent-llm-result': (message: AssistantChatMessage) => void
   'agent-llm-error': (error: any) => void
   'agent-llm-aborted': () => void
   'agent-tool-call-start': (data: { id: string; toolName: string; args: any }) => void

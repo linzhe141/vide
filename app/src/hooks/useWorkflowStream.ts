@@ -1,11 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
-import type { AssistantChatMessage, ChatMessage, ToolCall } from '@/agent/core/types'
+import type { AssistantChatMessage } from '@/agent/core/types'
 import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
+import { useThreadStore } from '../store/threadStore'
 
-type UseWorkflowStreamState = {
-  threadId: string
-  messages: ChatMessage[]
+type WorkflowStreamState = {
   workflowState: WorkflowState['type']
 
   isRunning: boolean
@@ -13,17 +12,16 @@ type UseWorkflowStreamState = {
   isAborted: boolean
 }
 
-const initialState: UseWorkflowStreamState = {
-  threadId: undefined!,
-  messages: [],
+const initialState: WorkflowStreamState = {
   workflowState: 'workflow-finished',
   isRunning: false,
   isFinished: false,
   isAborted: false,
 }
 
-export function useWorkflowStream(threadId: string) {
-  const [state, setState] = useState<UseWorkflowStreamState>({ ...initialState, threadId })
+export function useWorkflowStream() {
+  const { pushMessage, updateLLMDeltaMessage, updateLLMResultMessage } = useThreadStore()
+  const [state, setState] = useState<WorkflowStreamState>(initialState)
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
@@ -49,197 +47,109 @@ export function useWorkflowStream(threadId: string) {
     cleanup()
   }
 
-  const send = useCallback(async (input: string) => {
-    // 防止并发 send
+  const handleWorkflowChunk = useCallback(
+    (chunk: WorkflowState) => {
+      setState((prev) => ({ ...prev, workflowState: chunk.type }))
 
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-
-    const stream = createWorkflowStream(abortController.signal)
-    const reader = stream.getReader()
-    readerRef.current = reader
-
-    // 通知 main 开始 workflow
-    await window.ipcRendererApi.invoke('agent-session-send', { input })
-
-    setState((prev) => ({ ...prev, isRunning: true }))
-
-    try {
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        if (!value) continue
-
-        handleWorkflowChunk(value)
-      }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        // 正常中断
-        return
-      }
-
-      console.error('[useWorkflowStream] stream error', err)
-    } finally {
-      reader.releaseLock()
-      cleanup()
-    }
-  }, [])
-  const handleWorkflowChunk = (chunk: WorkflowState) => {
-    setState((prev: UseWorkflowStreamState): UseWorkflowStreamState => {
       switch (chunk.type) {
         case 'workflow-start': {
-          const userMessage: ChatMessage = {
+          pushMessage({
             role: 'user',
             content: chunk.data.input,
-          }
-          return {
-            ...prev,
-            threadId: chunk.data.threadId,
-            messages: [...prev.messages, userMessage],
-            workflowState: 'workflow-start',
-          }
+          })
+          break
         }
-
-        case 'llm-start':
-          return {
-            ...prev,
-            workflowState: 'llm-start',
-          }
-
-        case 'llm-delta':
-          return {
-            ...prev,
-            workflowState: 'llm-delta',
-            messages: updateLLMDelta(prev.messages, chunk.data),
-          }
-
-        case 'llm-end':
-          return {
-            ...prev,
-            workflowState: 'llm-end',
-          }
+        case 'llm-delta': {
+          updateLLMDeltaMessage({
+            role: 'assistant',
+            content: chunk.data.content,
+          })
+          break
+        }
 
         case 'llm-result': {
-          const last = prev.messages[prev.messages.length - 1] as AssistantChatMessage
-          if (last.role === 'assistant') {
-            const finishedMessages = prev.messages.slice(0, prev.messages.length - 1)
-            let toolCalls: ToolCall[] = []
-            if ('tool_calls' in chunk.data.message) {
-              // @ts-expect-error todo
-              toolCalls = chunk.data.message.tool_calls!
-            }
-            const newLast = { ...last }
-            if (toolCalls.length) {
-              newLast.tool_calls = toolCalls
-            }
-            return {
-              ...prev,
-              workflowState: 'llm-result',
-              messages: [...finishedMessages, newLast],
-            }
-          } else {
-            return {
-              ...prev,
-              workflowState: 'llm-result',
-              messages: [...prev.messages, chunk.data.message],
-            }
-          }
+          updateLLMResultMessage(chunk.data.message as AssistantChatMessage)
+          break
         }
 
-        case 'llm-error':
-          return {
-            ...prev,
-            workflowState: 'llm-error',
-          }
-
-        case 'tool-call-start':
-          return {
-            ...prev,
-            workflowState: 'tool-call-start',
-          }
-
         case 'tool-call-success': {
-          const toolCallResult = chunk.data.result
-          const toolCallId = chunk.data.id
-          return {
-            ...prev,
-            workflowState: 'tool-call-success',
-            messages: [
-              ...prev.messages,
-              {
-                role: 'tool',
-                tool_call_id: toolCallId,
-                content: JSON.stringify(toolCallResult, null, 2),
-              },
-            ],
-          }
+          pushMessage({
+            role: 'tool',
+            tool_call_id: chunk.data.id,
+            content: JSON.stringify(chunk.data.result, null, 2),
+          })
+          break
         }
 
         case 'tool-call-error': {
-          const toolCallError = chunk.data.error
-          const toolCallId = chunk.data.id
-          return {
-            ...prev,
-            workflowState: 'tool-call-success',
-            messages: [
-              ...prev.messages,
-              {
-                role: 'tool',
-                tool_call_id: toolCallId,
-                content: String(toolCallError),
-              },
-            ],
-          }
+          pushMessage({
+            role: 'tool',
+            tool_call_id: chunk.data.id,
+            content: String(chunk.data.error),
+          })
+          break
         }
 
-        case 'workflow-wait-human-approve':
-          return {
+        case 'workflow-finished': {
+          setState((prev) => ({
             ...prev,
-            workflowState: 'workflow-wait-human-approve',
-          }
-
-        case 'workflow-finished':
-          return {
-            ...prev,
-            workflowState: 'workflow-finished',
             isRunning: false,
             isFinished: true,
-          }
-
-        default:
-          return prev
+          }))
+          break
+        }
       }
-    })
-  }
+    },
+    [pushMessage, updateLLMDeltaMessage, updateLLMResultMessage]
+  )
+
+  const send = useCallback(
+    async (input: string) => {
+      // 防止并发 send
+
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      const stream = createWorkflowStream(abortController.signal)
+      const reader = stream.getReader()
+      readerRef.current = reader
+
+      // 通知 main 开始 workflow
+      await window.ipcRendererApi.invoke('agent-session-send', { input })
+
+      setState((prev) => ({ ...prev, isRunning: true }))
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          if (!value) continue
+
+          handleWorkflowChunk(value)
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          // 正常中断
+          return
+        }
+
+        console.error('[useWorkflowStream] stream error', err)
+      } finally {
+        reader.releaseLock()
+        cleanup()
+      }
+    },
+    [handleWorkflowChunk]
+  )
+
   return {
     send,
     abort,
 
-    messages: state.messages,
     workflowState: state.workflowState,
 
     isRunning: state.isRunning,
     isFinished: state.workflowState === 'workflow-finished',
     isAborted: state.isAborted,
-  }
-}
-
-function updateLLMDelta(
-  messages: ChatMessage[],
-  data: { delta: string; content: string }
-): ChatMessage[] {
-  const last = messages[messages.length - 1]
-  if (last.role !== 'assistant') {
-    return [...messages, { role: 'assistant', content: data.content }]
-  } else {
-    const prev = messages.slice(0, messages.length - 1)
-    const needUpdatedMessage = last as AssistantChatMessage
-    return [
-      ...prev,
-      {
-        ...needUpdatedMessage,
-        content: data.content,
-      },
-    ]
   }
 }

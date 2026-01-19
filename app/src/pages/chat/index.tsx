@@ -6,6 +6,7 @@ import { context } from '../../hooks/chatContenxt'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import type { ToolCall } from '@/agent/core/types'
 import { ArrowDown } from 'lucide-react'
+import { useThreadStore } from '../../store/threadStore'
 
 // 用户消息组件
 function UserMessage({ content }: { content: string }) {
@@ -127,13 +128,17 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
 export function Chat() {
   const params = useParams()
   const threadId = params.id!
+  const { messages, setThreadId } = useThreadStore()
   const [input, setInput] = useState('')
-  const { send, messages, workflowState, isAborted, isFinished, abort, isRunning } =
-    useWorkflowStream(threadId)
+  const { send, workflowState, isAborted, isFinished, abort, isRunning } = useWorkflowStream()
 
   const [approvedToolCalls, setApprovedCalls] = useState<Set<string>>(new Set())
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
+
+  useEffect(() => {
+    setThreadId(threadId)
+  }, [setThreadId, threadId])
 
   useEffect(() => {
     const firstInput = context.firstInput

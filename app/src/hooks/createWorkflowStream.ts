@@ -1,4 +1,4 @@
-import type { ChatMessage, ToolCall } from '@/agent/core/types'
+import type { AssistantChatMessage, ToolCall } from '@/agent/core/types'
 
 export type WorkflowState =
   | { type: 'workflow-start'; data: { threadId: string; input: string } }
@@ -9,7 +9,7 @@ export type WorkflowState =
   | { type: 'llm-delta'; data: { delta: string; content: string } }
   | { type: 'llm-tool-calls'; data: { toolCalls: ToolCall[] } }
   | { type: 'llm-end'; data: { finishReason: string } }
-  | { type: 'llm-result'; data: { message: ChatMessage } }
+  | { type: 'llm-result'; data: { message: AssistantChatMessage } }
   | { type: 'llm-error'; error: any }
   // | { type: 'llm-aborted' } // ui 不需要
   | { type: 'tool-call-start'; data: { id: string; toolName: string; args: any } }

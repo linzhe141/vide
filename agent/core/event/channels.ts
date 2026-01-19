@@ -1,4 +1,4 @@
-import type { ChatMessage, FinishReason, ToolCall } from '../types'
+import type { AssistantChatMessage, ChatMessage, FinishReason, ToolCall } from '../types'
 
 export type AgentLifecycleEvents = {
   'agent-ready': () => void
@@ -24,7 +24,7 @@ export type LLMEvents = {
   'llm-delta': (data: { delta: string; content: string }) => void
   'llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
   'llm-end': (data: { finishReason: FinishReason }) => void
-  'llm-result': (data: ChatMessage) => void
+  'llm-result': (data: AssistantChatMessage) => void
   'llm-error': (data: { error: any }) => void
   'llm-aborted': () => void
 }
