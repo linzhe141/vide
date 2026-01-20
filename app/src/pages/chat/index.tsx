@@ -6,7 +6,7 @@ import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import type { ToolCall } from '@/agent/core/types'
 import { ArrowDown, Send, StopCircle, User, Bot, Wrench, CheckCircle2 } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
-
+import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 // 用户消息组件
 function UserMessage({ content }: { content: string }) {
   return (
@@ -29,9 +29,9 @@ function AssistantMessage({ content }: { content: string }) {
         <Bot className='text-primary h-4 w-4' />
       </div>
       <div className='border-border bg-background max-w-3xl rounded-2xl rounded-tl-sm border px-5 py-3 shadow-sm'>
-        <pre className='text-foreground font-sans text-sm leading-relaxed whitespace-pre-line'>
+        <MarkdownRenderer className='text-foreground font-sans text-sm leading-relaxed whitespace-pre-line'>
           {content}
-        </pre>
+        </MarkdownRenderer>
       </div>
     </div>
   )
@@ -86,9 +86,9 @@ function ToolCallItem({
         {/* 工具调用详情 */}
         {isExpanded && (
           <div className='border-border bg-primary/5 border-t px-4 py-3'>
-            <pre className='bg-background text-text-secondary overflow-auto rounded-lg p-3 font-mono text-xs'>
-              {JSON.stringify(toolCall, null, 2)}
-            </pre>
+            <MarkdownRenderer className='bg-background text-text-secondary overflow-auto rounded-lg p-3 font-mono text-xs'>
+              {'```json\n' + JSON.stringify(toolCall, null, 2) + '\n```'}
+            </MarkdownRenderer>
 
             {!isApproved && needsApproval && (
               <div className='border-border mt-3 border-t pt-3'>
@@ -165,9 +165,9 @@ function ToolMessage({ content }: { content: any }) {
           {/* 工具结果详情 */}
           {isExpanded && (
             <div className='border-border border-t bg-green-500/5 px-4 py-3'>
-              <pre className='bg-background text-text-secondary overflow-auto rounded-lg p-3 font-mono text-xs'>
-                {JSON.stringify(content, null, 2)}
-              </pre>
+              <MarkdownRenderer className='bg-background text-text-secondary overflow-auto rounded-lg p-3 font-mono text-xs'>
+                {'```json\n' + JSON.stringify(content, null, 2) + '\n```'}
+              </MarkdownRenderer>
             </div>
           )}
         </div>

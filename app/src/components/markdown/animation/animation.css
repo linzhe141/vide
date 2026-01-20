@@ -1,0 +1,20 @@
+.animation.article-wrapper .animate-fade-in,
+.animation.article-wrapper .katex-html span,
+/* .animation.article-wrapper span.line > span,
+.animation.article-wrapper code:not(:has(span.line)), */
+.animation.article-wrapper > * {
+  animation: fade-in 0.5s ease-in-out;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.hightligh-code-wrapper > pre {
+  margin: 0;
+}
