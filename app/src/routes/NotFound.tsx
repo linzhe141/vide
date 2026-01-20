@@ -3,7 +3,7 @@ import { Button } from '../ui/Button'
 
 export default function NotFound() {
   return (
-    <div className='bg-background flex h-screen w-full items-center justify-center px-6'>
+    <div className='bg-background drag-region flex h-screen w-full items-center justify-center px-6'>
       <div className='max-w-lg text-center'>
         {/* 404 插画 */}
         <div className='mb-8 flex justify-center'>
@@ -43,7 +43,7 @@ export default function NotFound() {
 
         {/* 操作按钮 */}
         <div className='flex flex-col items-center gap-3 sm:flex-row sm:justify-center'>
-          <Button className='group w-full sm:w-auto'>
+          <Button className='group no-drag-region w-full sm:w-auto'>
             <Link to='/' className='flex items-center gap-2'>
               <svg
                 className='h-4 w-4 transition-transform group-hover:-translate-x-1'
@@ -64,7 +64,7 @@ export default function NotFound() {
 
           <Button
             onClick={() => window.history.back()}
-            className='border-border bg-background text-foreground hover:bg-border/50 w-full border sm:w-auto'
+            className='border-border no-drag-region bg-background text-foreground hover:bg-border/50 w-full border sm:w-auto'
           >
             <span className='flex items-center gap-2'>
               <svg
