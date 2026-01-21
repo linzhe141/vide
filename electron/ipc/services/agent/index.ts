@@ -7,6 +7,7 @@ import type { FinishReason, FnProcessLLMStream, Tool, ToolCall } from '@/agent/c
 import { Agent, AgentSession } from '@/agent/core/agent'
 import { onLLMEvent, onToolEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
+import { getNormalizeTime } from './tools/getNormalizeTime'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -35,18 +36,7 @@ const tools: Tool[] = [
       return `city: ${city} date:${date} , 天气：冬雨，湿度高，注意保暖  温度：12°`
     },
   },
-  {
-    name: 'get_normalize_time',
-    type: 'function',
-    function: {
-      name: 'get_normalize_time',
-      description:
-        'Get normalized time power by dayjs, supporting semantic computation. DayJS knows the current time by default.',
-    },
-    async executor() {
-      return `2026-11-12`
-    },
-  },
+  getNormalizeTime,
 ]
 
 const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {

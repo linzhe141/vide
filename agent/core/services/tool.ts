@@ -8,7 +8,7 @@ export class ToolService {
     toolCall: ToolCall
   ): Promise<{ success: true; result: any } | { success: false; error: any }> {
     const toolName = toolCall.function.name
-    const args = toolCall.function.arguments
+    const args = JSON.parse(toolCall.function.arguments || '{}')
     const id = toolCall.id
 
     toolEvent.emit('tool-call-start', { id, toolName, args })

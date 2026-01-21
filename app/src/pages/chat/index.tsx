@@ -41,17 +41,15 @@ function AssistantMessage({ content }: { content: string }) {
 function ToolCallItem({
   toolCall,
   isApproved,
-  needsApproval,
   onApprove,
   onReject,
 }: {
   toolCall: ToolCall
   isApproved: boolean
-  needsApproval: boolean
   onApprove: () => void
   onReject: () => void
 }) {
-  const [isExpanded, setIsExpanded] = useState(needsApproval)
+  const [isExpanded, setIsExpanded] = useState(true)
 
   return (
     <div className='ml-11 max-w-3xl'>
@@ -90,7 +88,7 @@ function ToolCallItem({
               {'```json\n' + JSON.stringify(toolCall, null, 2) + '\n```'}
             </MarkdownRenderer>
 
-            {!isApproved && needsApproval && (
+            {!isApproved && (
               <div className='border-border mt-3 border-t pt-3'>
                 <div className='mb-3 flex items-center gap-2'>
                   <div className='h-2 w-2 animate-pulse rounded-full bg-amber-500'></div>
@@ -244,7 +242,7 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }) {
 export function Chat() {
   const { messages } = useThreadStore()
   const [input, setInput] = useState('')
-  const { send, workflowState, isAborted, isFinished, abort, isRunning } = useWorkflowStream()
+  const { send, isAborted, isFinished, abort, isRunning } = useWorkflowStream()
 
   const [approvedToolCalls, setApprovedCalls] = useState<Set<string>>(new Set())
   const placeholderRef = useRef<HTMLDivElement>(null)
@@ -322,7 +320,6 @@ export function Chat() {
                         key={`${idx}-${index}`}
                         toolCall={toolCall as ToolCall}
                         isApproved={approvedToolCalls.has(toolCall.id + idx + index)}
-                        needsApproval={workflowState === 'workflow-wait-human-approve'}
                         onApprove={() => handleApprove(toolCall.id + idx + index)}
                         onReject={handleReject}
                       />
