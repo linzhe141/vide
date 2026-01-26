@@ -64,9 +64,18 @@ const components = {
 export const MarkdownRenderer = memo(function ({
   children,
   className,
-}: ReactMarkdownOptions & { className?: string }) {
+  animation,
+}: ReactMarkdownOptions & { className?: string; animation?: boolean }) {
   return (
-    <article className={cn('article-wrapper prose dark:prose-invert prose-slate', className)}>
+    <article
+      className={cn(
+        'article-wrapper prose dark:prose-invert prose-slate max-w-none',
+        {
+          animation,
+        },
+        className
+      )}
+    >
       <Markdown components={components}>{children}</Markdown>
     </article>
   )

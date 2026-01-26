@@ -3,6 +3,7 @@
 
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: oklch(0.98 0 0);
