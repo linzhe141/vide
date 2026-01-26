@@ -22,7 +22,7 @@ export function ToolCallItem({
     <div className='ml-11 max-w-3xl'>
       <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
         {/* 工具调用头部 */}
-        <button
+        <div
           onClick={() => setIsExpanded(!isExpanded)}
           className='hover:bg-border/30 flex w-full items-center gap-4 px-4 py-3 transition-colors'
         >
@@ -76,7 +76,7 @@ export function ToolCallItem({
               isExpanded ? 'rotate-180' : ''
             }`}
           />
-        </button>
+        </div>
 
         {/* 工具调用详情 */}
         {isExpanded && (

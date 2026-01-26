@@ -1,6 +1,6 @@
 import { Minus, Square, X, Copy } from 'lucide-react'
 import Logo from '../logo.png'
-import { useLayoutEffect, useState, type PropsWithChildren } from 'react'
+import { useEffect, useState, type PropsWithChildren } from 'react'
 import { cn } from '@/app/src/lib/utils'
 
 const WindowState = {
@@ -11,12 +11,22 @@ const WindowState = {
 type WindowStateValue = (typeof WindowState)[keyof typeof WindowState]
 export function Titlebar() {
   const [windowState, setWindowState] = useState<WindowStateValue>(WindowState.NORMAL)
-  useLayoutEffect(() => {
-    const remove = window.ipcRendererApi.on('changed-window-size', (isMaximized) => {
-      console.log('xxxxxxxx', isMaximized)
-      setWindowState(isMaximized ? WindowState.MAXIMIZED : WindowState.NORMAL)
-    })
-    return remove
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    const handler = (isMaximized: boolean) => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        setWindowState(isMaximized ? WindowState.MAXIMIZED : WindowState.NORMAL)
+      }, 300)
+    }
+
+    const remove = window.ipcRendererApi.on('changed-window-size', handler)
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      remove()
+    }
   }, [])
 
   const isMaximized = windowState === WindowState.MAXIMIZED

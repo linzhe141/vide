@@ -1,4 +1,4 @@
-import { useLayoutEffect, type PropsWithChildren } from 'react'
+import { useEffect, type PropsWithChildren } from 'react'
 import { cn } from '@/app/src/lib/utils'
 import { useLinkMenu } from './provider'
 
@@ -13,7 +13,7 @@ export function LinkMenuContainer({
 }: PropsWithChildren<LinkMenuContainerProps>) {
   const { setActiveLink } = useLinkMenu()
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     setActiveLink(defaultLink)
   }, [setActiveLink, defaultLink])
 

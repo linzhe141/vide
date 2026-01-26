@@ -1,9 +1,9 @@
 import Markdown, { type Options as ReactMarkdownOptions } from 'react-markdown'
-import { AnimatedWrapper } from './animation'
-import { codeToHtml } from '../highlight/shiki'
+import { codeToTokens } from '../highlight/shiki'
 import { THEME } from '../highlight/codeTheme'
 import { memo } from 'react'
 import { cn } from '../../lib/utils'
+import { AnimatedWrapper } from './animation'
 
 const components = {
   a: ({ node, ...props }: any) => (
@@ -46,15 +46,31 @@ const components = {
     const code = children.props.children
     if (code) {
       const language = getCodeLanguage(children)
+      const tokens = codeToTokens(code, language)
       return (
-        <div
+        <pre
           data-language={language}
           className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818]')}
-          dangerouslySetInnerHTML={{
-            __html: codeToHtml(code),
-          }}
-          style={{ ...THEME.dark, fontSize: '15px' }}
-        ></div>
+          style={{ ...THEME.dark, fontSize: '14px' }}
+        >
+          {tokens.tokens.map((row, index) => (
+            <span key={index} className='block'>
+              {row.map((token, tokenIndex) => (
+                <span
+                  key={tokenIndex}
+                  style={{
+                    color: token.color,
+                    backgroundColor: token.bgColor,
+                    ...token.htmlStyle,
+                  }}
+                  {...token.htmlAttrs}
+                >
+                  {token.content}
+                </span>
+              ))}
+            </span>
+          ))}
+        </pre>
       )
     }
     return <pre>{children}</pre>

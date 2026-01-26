@@ -26,6 +26,9 @@ importers:
       electron-store:
         specifier: ^10.0.1
         version: 10.0.1
+      hast-util-to-jsx-runtime:
+        specifier: ^2.3.6
+        version: 2.3.6
       lucide-react:
         specifier: ^0.511.0
         version: 0.511.0(react@19.2.3)
