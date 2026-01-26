@@ -7,13 +7,13 @@ export type ThemeColor = 'blue' | 'green' | 'orange'
 type ThemeContextType = {
   theme: Theme
   setTheme: (theme: Theme) => void
-  // themeColor: ThemeColor
-  // setThemeColor: (color: ThemeColor) => void
+  themeColor: ThemeColor
+  setThemeColor: (color: ThemeColor) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-const themeColors = {
+export const themeColors = {
   blue: {
     light: 'oklch(0.55 0.22 250)',
     dark: 'oklch(0.6 0.22 250)',
@@ -29,7 +29,7 @@ const themeColors = {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const [_themeColor, _setThemeColorState] = useState<ThemeColor>('blue')
+  const [themeColor, setThemeColor] = useState<ThemeColor>('blue')
   const { theme, setTheme } = useElectronSettingStore()
   function setThemeHandler(newTheme: Theme) {
     setTheme(newTheme)
@@ -47,8 +47,14 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     root.style.setProperty('--primary', colorValue)
   }
 
+  function setThemeColorHandler(color: ThemeColor) {
+    setThemeColor(color)
+    _applyThemeColor(color, theme === 'dark')
+  }
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: setThemeHandler }}>
+    <ThemeContext.Provider
+      value={{ theme, setTheme: setThemeHandler, themeColor, setThemeColor: setThemeColorHandler }}
+    >
       {children}
     </ThemeContext.Provider>
   )
