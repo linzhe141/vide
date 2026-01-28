@@ -2,9 +2,12 @@ import { Send, StopCircle } from 'lucide-react'
 import { Input } from '../../ui/Input'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
+import { memo, useState } from 'react'
 
-export function ChatInput() {
-  const { input, setInput, handleSend, abort, isRunning } = useChatContext()
+export const ChatInput = memo(function ChatInput() {
+  const [input, setInput] = useState('')
+
+  const { handleSend, isRunning } = useChatContext()
 
   return (
     <div className='border-border bg-background/80 border-t backdrop-blur-sm'>
@@ -22,7 +25,8 @@ export function ChatInput() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    handleSend()
+                    handleSend(input)
+                    setInput('')
                   }
                 }}
                 disabled={isRunning}
@@ -32,7 +36,7 @@ export function ChatInput() {
 
             {isRunning ? (
               <Button
-                onClick={abort}
+                onClick={() => {}}
                 className='border-border bg-background text-foreground flex h-10 shrink-0 items-center gap-2 rounded-xl border px-4 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600'
               >
                 <StopCircle className='h-4 w-4' />
@@ -40,7 +44,10 @@ export function ChatInput() {
               </Button>
             ) : (
               <Button
-                onClick={handleSend}
+                onClick={() => {
+                  handleSend(input)
+                  setInput('')
+                }}
                 disabled={!input.trim()}
                 className='flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100'
               >
@@ -60,4 +67,4 @@ export function ChatInput() {
       </div>
     </div>
   )
-}
+})

@@ -1,19 +1,12 @@
-import {
-  type BundledLanguage,
-  type Highlighter,
-  type SpecialLanguage,
-  createHighlighterCore,
-  createOnigurumaEngine,
-} from 'shiki'
+import { type Highlighter, createHighlighterCore, createJavaScriptRegexEngine } from 'shiki'
 import { shikiTheme } from './codeTheme'
-let highlighter: Highlighter | null = null
+export let highlighter: Highlighter = null!
 
-export type Language = {
-  name: string
-  src: () => Promise<any>
+export function getHighlighter() {
+  return highlighter
 }
 
-const DEFAULT_LANG = 'ts'
+export const FALLBACK_LANG = 'tsx'
 
 export const defaultLangs = {
   json: import('@shikijs/langs/json'),
@@ -30,21 +23,11 @@ export const defaultLangs = {
 }
 
 export async function initShikiHighlighter() {
-  if (highlighter) return highlighter
+  if (highlighter) return
   const _highlighter = await createHighlighterCore({
     themes: [shikiTheme],
     langs: Object.values(defaultLangs),
-    engine: createOnigurumaEngine(() => import('shiki/wasm')),
+    engine: createJavaScriptRegexEngine(),
   })
   highlighter = _highlighter as Highlighter
-}
-
-export function codeToTokens(input: string, lang: string) {
-  // @ts-expect-error ignore
-  if (!defaultLangs[lang]) lang = DEFAULT_LANG
-  const tokens = highlighter!.codeToTokens(input, {
-    lang: lang as BundledLanguage | SpecialLanguage,
-    theme: 'css-variables',
-  })
-  return tokens
 }

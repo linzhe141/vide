@@ -18,11 +18,12 @@ const initialState: WorkflowStreamState = {
   isFinished: false,
   isAborted: false,
 }
-
+// 减少stream re-render 频次
+const BUFFER_SIZE = 10
 export function useWorkflowStream() {
   const { pushMessage, updateLLMDeltaMessage, updateLLMResultMessage } = useThreadStore()
   const [state, setState] = useState<WorkflowStreamState>(initialState)
-
+  const deltaBufferRef = useRef<string>('')
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
 
@@ -33,7 +34,7 @@ export function useWorkflowStream() {
     abortControllerRef.current = null
   }
 
-  const abort = () => {
+  const _abort = useCallback(() => {
     if (!abortControllerRef.current) return
 
     abortControllerRef.current.abort()
@@ -45,7 +46,7 @@ export function useWorkflowStream() {
     }))
 
     cleanup()
-  }
+  }, [])
 
   const handleWorkflowChunk = useCallback(
     (chunk: WorkflowState) => {
@@ -60,10 +61,16 @@ export function useWorkflowStream() {
           break
         }
         case 'llm-delta': {
-          updateLLMDeltaMessage({
-            role: 'assistant',
-            content: chunk.data.content,
-          })
+          deltaBufferRef.current += chunk.data.delta
+
+          if (deltaBufferRef.current.length >= BUFFER_SIZE) {
+            updateLLMDeltaMessage({
+              role: 'assistant',
+              content: chunk.data.content,
+            })
+
+            deltaBufferRef.current = ''
+          }
           break
         }
 
@@ -144,12 +151,10 @@ export function useWorkflowStream() {
 
   return {
     send,
-    abort,
 
     workflowState: state.workflowState,
 
     isRunning: state.isRunning,
     isFinished: state.workflowState === 'workflow-finished',
-    isAborted: state.isAborted,
   }
 }

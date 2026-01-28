@@ -9,9 +9,10 @@ function App() {
   const timer = useRef<number | null>(null)
   useEffect(() => {
     timer.current = window.setInterval(() => {
-      setSource(md.slice(0, index + 4))
-      index = index + 4
-    }, 30)
+      const size = 40
+      setSource(md.slice(0, index + size))
+      index = index + size
+    }, 50)
     return () => {
       clearInterval(timer.current!)
     }

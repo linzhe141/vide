@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 import { useChatContext } from './ChatProvider'
 
-export function ToolMessage({ content }: { content: any }) {
+export const ToolMessage = memo(function ToolMessage({ content }: { content: any }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const { isRunning } = useChatContext()
 
@@ -51,4 +51,4 @@ export function ToolMessage({ content }: { content: any }) {
       </div>
     </div>
   )
-}
+})

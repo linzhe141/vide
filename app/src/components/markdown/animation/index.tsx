@@ -38,7 +38,7 @@ const wrapWithAnimation = (node: React.ReactNode): React.ReactNode => {
   return node
 }
 
-export const AnimatedWrapper = ({ children }: { children: React.ReactNode }) => {
+export const AnimatedWrapper = memo(({ children }: { children: React.ReactNode }) => {
   const wrapped = React.Children.map(children, wrapWithAnimation)
   return <>{wrapped}</>
-}
+})
