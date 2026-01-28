@@ -32,26 +32,12 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       theme: 'css-variables',
     })
   )
-  const bufferRef = useRef<ThemedToken[]>([])
-  const rafIdRef = useRef<number | null>(null)
+
   const [copied, setCopied] = useState(false)
   function handleCopy() {
     navigator.clipboard.writeText(code)
     setCopied(true)
     setTimeout(() => setCopied(false), 1200)
-  }
-
-  function scheduleFlush() {
-    if (rafIdRef.current != null) return
-
-    rafIdRef.current = requestAnimationFrame(() => {
-      rafIdRef.current = null
-
-      if (bufferRef.current.length > 0) {
-        setTokens((prev) => [...prev, ...bufferRef.current])
-        bufferRef.current = []
-      }
-    })
   }
 
   useEffect(() => {
@@ -61,9 +47,18 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       if (formatCode.length > indexRef.current) {
         const incrementalText = formatCode.slice(indexRef.current)
         indexRef.current = formatCode.length
-        const { stable, unstable } = await tokenizerRef.current.enqueue(incrementalText)
-        bufferRef.current.push(...stable, ...unstable)
-        scheduleFlush()
+        const { stable, unstable, recall } = await tokenizerRef.current.enqueue(incrementalText)
+        const chunkTokens = [...stable, ...unstable]
+        if (recall > 0) {
+          setTokens((prev) => prev.slice(0, -recall))
+        }
+        for (const token of chunkTokens) {
+          setTokens((prev) => {
+            let result = [...prev]
+            result = [...prev, token]
+            return result
+          })
+        }
       }
     }
     updateStreamTokens()

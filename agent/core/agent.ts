@@ -54,8 +54,8 @@ export class AgentSession {
     this.workflow.humanApproveToolCall()
   }
 
-  async humanReject(rejectReason: string) {
-    this.workflow.humanReject(rejectReason)
+  async humanReject(_rejectReason?: string) {
+    // this.workflow.humanReject(rejectReason)
   }
 
   setSessionSystemPrompt(prompt: string) {

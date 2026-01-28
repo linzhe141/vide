@@ -1,4 +1,5 @@
 import { llmEvent } from '../event'
+import { AgentSystemPrompt } from '../prompt/system'
 import type { ChatMessage, FinishReason, FnProcessLLMStream, Tool, ToolCall } from '../types'
 
 export class LLMService {
@@ -21,7 +22,7 @@ export class LLMService {
 
     try {
       for await (const chunk of this.processLLMStream({
-        messages,
+        messages: [{ role: 'system', content: AgentSystemPrompt }, ...messages],
         tools: this.tools,
         signal: llmAbortController.signal,
       })) {
