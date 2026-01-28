@@ -5,7 +5,8 @@ import { useThreads } from '../../hooks/useThreads'
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import { useThreadStore } from '../../store/threadStore'
-import { MessageCircleMore, MoveRight } from 'lucide-react'
+import { MoveRight } from 'lucide-react'
+import LOGOIMG from './logo.png'
 
 export function Welcome() {
   const { createThread } = useThreads()
@@ -26,14 +27,9 @@ export function Welcome() {
   return (
     <div className='flex h-full w-full flex-col items-center justify-center gap-12 px-6'>
       {/* 标题和描述 */}
-      <div className='flex flex-col items-center gap-4 text-center'>
-        <div className='flex items-center gap-3'>
-          <div className='bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-2xl'>
-            <MessageCircleMore></MessageCircleMore>
-          </div>
-          <h1 className='text-4xl font-bold tracking-tight'>Welcome</h1>
-        </div>
-        <p className='text-text-secondary max-w-md text-lg'>
+      <div className='flex flex-col items-center text-center'>
+        <img className='size-80' src={LOGOIMG}></img>
+        <p className='text-text-secondary -mt-10 max-w-md text-lg'>
           Start a conversation with your AI assistant. Ask anything, explore ideas, or get help with
           your tasks.
         </p>

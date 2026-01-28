@@ -34,7 +34,7 @@ export const Titlebar = memo(function Titlebar() {
   return (
     <div className='border-border flex h-10 justify-between border-b'>
       <div className='drag-region flex flex-1 items-center px-2'>
-        <img className='size-6' src={Logo}></img>
+        <img className='size-5' src={Logo}></img>
       </div>
       <div className='flex h-full items-center'>
         <WindowOperationItem
