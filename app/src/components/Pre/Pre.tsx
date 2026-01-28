@@ -61,8 +61,8 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       if (formatCode.length > indexRef.current) {
         const incrementalText = formatCode.slice(indexRef.current)
         indexRef.current = formatCode.length
-        const { stable } = await tokenizerRef.current.enqueue(incrementalText)
-        bufferRef.current.push(...stable)
+        const { stable, unstable } = await tokenizerRef.current.enqueue(incrementalText)
+        bufferRef.current.push(...stable, ...unstable)
         scheduleFlush()
       }
     }

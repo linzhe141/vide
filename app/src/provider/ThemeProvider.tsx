@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type PropsWithChildren } from 'react'
+import { createContext, useContext, type PropsWithChildren } from 'react'
 import { useElectronSettingStore } from '../store/electronSettingStore'
 import type { Theme } from '@/types'
 
@@ -29,8 +29,7 @@ export const themeColors = {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const [themeColor, setThemeColor] = useState<ThemeColor>('blue')
-  const { theme, setTheme } = useElectronSettingStore()
+  const { theme, setTheme, themeColor, setThemeColor } = useElectronSettingStore()
   function setThemeHandler(newTheme: Theme) {
     setTheme(newTheme)
     if (newTheme === 'dark') {

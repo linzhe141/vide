@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <script crossorigin="anonymous" src="https://unpkg.com/react-scan/dist/auto.global.js" />
+    <script crossorigin="anonymous" src="https://unpkg.com/react-scan/dist/auto.global.js"></script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,6 +13,29 @@
       } else {
         document.documentElement.classList.remove('dark')
       }
+
+      const themeColors = {
+        blue: {
+          light: 'oklch(0.55 0.22 250)',
+          dark: 'oklch(0.6 0.22 250)',
+        },
+        green: {
+          light: 'oklch(0.6 0.18 150)',
+          dark: 'oklch(0.65 0.18 150)',
+        },
+        orange: {
+          light: 'oklch(0.65 0.2 50)',
+          dark: 'oklch(0.7 0.2 50)',
+        },
+      }
+      const themeColor = settingStore.themeColor
+      const applyThemeColor = (color, dark) => {
+        const colorValue = dark ? themeColors[color].dark : themeColors[color].light
+        const root = document.documentElement
+
+        root.style.setProperty('--primary', colorValue)
+      }
+      applyThemeColor(themeColor, theme === 'dark')
     </script>
   </head>
   <body>

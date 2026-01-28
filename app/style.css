@@ -3,29 +3,42 @@
 }
 
 /* 添加自定义滚动条样式 */
+/* 通用 */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px; /* 横向滚动条高度 */
 }
 
+/* 轨道 */
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
+/* 滑块 */
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.85 0 0);
+  background-color: oklch(0.85 0 0);
+  border-radius: 999px; /* 横向特别重要 */
 }
 
+/* hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.6 0 0);
+  background-color: oklch(0.65 0 0);
 }
 
+/* ====== 横向滚动条专项优化 ====== */
+::-webkit-scrollbar-thumb:horizontal {
+  min-width: 24px; /* 防止太短难拖 */
+}
+
+/* ====== 暗色模式 ====== */
 .dark ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0 0);
+  background-color: oklch(0.3 0 0);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.4 0 0);
+  background-color: oklch(0.42 0 0);
 }
+
 
 .drag-region {
   -webkit-app-region: drag;

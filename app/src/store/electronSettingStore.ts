@@ -1,15 +1,17 @@
 import { create } from 'zustand'
 import type { StoreApi, UseBoundStore } from 'zustand'
 import { forwardToElectronStore } from './forwardToElectronStore'
-import type { LLMConfig, Theme } from '@/types'
+import type { LLMConfig, Theme, ThemeColor } from '@/types'
 
 type State = {
   theme: Theme
+  themeColor: ThemeColor
   llmConfig: LLMConfig
 }
 
 type Actions = {
   setTheme: (theme: Theme) => void
+  setThemeColor: (themeColor: ThemeColor) => void
   setLLMConfig: (config: LLMConfig) => void
 }
 
@@ -22,6 +24,9 @@ export async function createElectronSettingStore() {
         ...initState,
         setTheme: (theme) => {
           set({ theme })
+        },
+        setThemeColor: (themeColor) => {
+          set({ themeColor })
         },
         setLLMConfig: (config) => {
           set({ llmConfig: config })

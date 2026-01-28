@@ -1,7 +1,7 @@
 import ElectronStore from 'electron-store'
 export type Settings = {
   theme: 'dark' | 'light'
-
+  themeColor: 'blue' | 'green' | 'orange'
   windowState: {
     height: number
     width: number
@@ -18,6 +18,8 @@ export type Settings = {
 export const settingsStore = new ElectronStore<Settings>({
   defaults: {
     theme: 'dark',
+    themeColor: 'blue',
+
     windowState: null,
     llmConfig: {
       apiKey: '',

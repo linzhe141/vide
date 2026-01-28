@@ -11,7 +11,7 @@ export const StatusIndicator = memo(function StatusIndicator() {
   return (
     <div className='flex justify-center py-4'>
       <div
-        className={`transition-allbg-green-50 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-green-700 shadow-sm ring-1 ring-green-200`}
+        className={`transition-allbg-green-50 text-primary ring-primary/50 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium shadow-sm ring-1`}
       >
         <CheckCircle2 className='h-3.5 w-3.5' />
         <span>Completed</span>
