@@ -36,14 +36,14 @@ export const Titlebar = memo(function Titlebar() {
       <div className='drag-region flex flex-1 items-center px-2'>
         <img className='size-5' src={Logo}></img>
       </div>
-      <div className='flex h-full items-center'>
+      <div className='flex h-full items-center text-black dark:text-white'>
         <WindowOperationItem
           onClick={() => {
             setWindowState(WindowState.MINIMIZED)
             window.ipcRendererApi.invoke('minmize-window')
           }}
         >
-          <Minus className='size-4 stroke-1' />
+          <Minus className='size-5 stroke-1' />
         </WindowOperationItem>
 
         <WindowOperationItem
@@ -57,9 +57,9 @@ export const Titlebar = memo(function Titlebar() {
           }}
         >
           {isMaximized ? (
-            <Copy className='size-4 rotate-90 stroke-1'></Copy>
+            <Copy className='size-5 rotate-90 stroke-1'></Copy>
           ) : (
-            <Square className='size-4 stroke-1'></Square>
+            <Square className='size-5 stroke-1'></Square>
           )}
         </WindowOperationItem>
 
@@ -67,7 +67,7 @@ export const Titlebar = memo(function Titlebar() {
           className='hover:!bg-red-600 hover:!text-white'
           onClick={() => window.ipcRendererApi.invoke('close-window')}
         >
-          <X className='size-4 stroke-1'></X>
+          <X className='size-5 stroke-1'></X>
         </WindowOperationItem>
       </div>
     </div>
