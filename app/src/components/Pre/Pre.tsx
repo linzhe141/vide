@@ -31,13 +31,6 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
     })
   )
 
-  const [copied, setCopied] = useState(false)
-  function handleCopy() {
-    navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
-  }
-
   useEffect(() => {
     async function updateStreamTokens() {
       let formatCode = code
@@ -63,6 +56,43 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
   }, [code])
 
   return (
+    <CodeBlockWrapper lang={lang} code={code}>
+      {tokens.map((t, i) => (
+        <span
+          key={i}
+          style={{
+            color: t.color,
+            backgroundColor: t.bgColor,
+            ...t.htmlStyle,
+          }}
+          {...t.htmlAttrs}
+        >
+          {t.content}
+        </span>
+      ))}
+    </CodeBlockWrapper>
+  )
+})
+
+function getCodeLanguage(codeElement: ReactElement<any>) {
+  if (!codeElement.props.className) return ''
+  // eslint-disable-next-line no-unsafe-optional-chaining
+  const [_, language] = codeElement.props.className?.split('language-')
+  return language as string
+}
+
+function CodeBlockWrapper({
+  lang,
+  code,
+  children,
+}: PropsWithChildren<{ lang: string; code: string }>) {
+  const [copied, setCopied] = useState(false)
+  function handleCopy() {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
+  return (
     <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
       <div className='text-muted-foreground flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
         <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
@@ -85,29 +115,8 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
         className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818]', '!my-0')}
         style={{ ...THEME.dark, fontSize: '14px' }}
       >
-        <code>
-          {tokens.map((t, i) => (
-            <span
-              key={i}
-              style={{
-                color: t.color,
-                backgroundColor: t.bgColor,
-                ...t.htmlStyle,
-              }}
-              {...t.htmlAttrs}
-            >
-              {t.content}
-            </span>
-          ))}
-        </code>
+        <code>{children}</code>
       </pre>
     </div>
   )
-})
-
-function getCodeLanguage(codeElement: ReactElement<any>) {
-  if (!codeElement.props.className) return ''
-  // eslint-disable-next-line no-unsafe-optional-chaining
-  const [_, language] = codeElement.props.className?.split('language-')
-  return language as string
 }
