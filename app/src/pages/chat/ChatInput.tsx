@@ -1,5 +1,5 @@
 import { Send, StopCircle } from 'lucide-react'
-import { Input } from '../../ui/Input'
+import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { memo, useState } from 'react'
@@ -13,12 +13,9 @@ export const ChatInput = memo(function ChatInput() {
     <div className='border-border bg-background/80 border-t backdrop-blur-sm'>
       <div className='mx-auto max-w-4xl px-4 py-4'>
         <div className='relative'>
-          {/* 渐变边框效果 */}
-          <div className='from-primary/20 via-primary/10 to-primary/20 absolute -inset-0.5 rounded-2xl bg-gradient-to-r opacity-20 blur'></div>
-
-          <div className='relative flex items-end gap-2'>
+          <div className='relative flex items-start gap-2'>
             <div className='relative flex-1'>
-              <Input
+              <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder='Type your message...'
@@ -30,7 +27,7 @@ export const ChatInput = memo(function ChatInput() {
                   }
                 }}
                 disabled={isRunning}
-                className='border-border focus:border-primary/50 resize-none rounded-xl pr-12 transition-all'
+                className='border-border min-h-30 resize-none rounded-xl border bg-transparent p-4 focus:ring-0 focus:outline-none'
               />
             </div>
 

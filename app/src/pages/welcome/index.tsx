@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Input } from '../../ui/Input'
+import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useThreads } from '../../hooks/useThreads'
 import { useNavigate } from 'react-router'
@@ -40,7 +40,7 @@ export function Welcome() {
         <div className='relative'>
           <div className='from-primary/20 via-primary/10 to-primary/20 absolute -inset-0.5 rounded-2xl bg-gradient-to-r opacity-30 blur'></div>
           <div className='border-border bg-background focus-within:border-primary/50 relative flex gap-3 rounded-2xl border p-4 shadow-sm transition-all focus-within:shadow-md'>
-            <Input
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder='Type your message here...'
