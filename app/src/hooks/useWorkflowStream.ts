@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import type { AssistantChatMessage } from '@/agent/core/types'
 import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
 import { useThreadStore } from '../store/threadStore'
+import type { AssistantChatMessage } from '@/agent/core/types'
 
 type WorkflowStreamState = {
   workflowState: WorkflowState['type']
@@ -10,6 +10,8 @@ type WorkflowStreamState = {
   isRunning: boolean
   isFinished: boolean
   isAborted: boolean
+  isError: boolean
+  errorInfo: any
 }
 
 const initialState: WorkflowStreamState = {
@@ -17,11 +19,14 @@ const initialState: WorkflowStreamState = {
   isRunning: false,
   isFinished: false,
   isAborted: false,
+  isError: false,
+  errorInfo: null,
 }
 // 减少stream re-render 频次
 const BUFFER_SIZE = 10
 export function useWorkflowStream() {
-  const { pushMessage, updateLLMDeltaMessage, updateLLMResultMessage } = useThreadStore()
+  const { pushMessage, updateLLMDeltaMessage, updateLLMResultMessage, updateToolResultMessage } =
+    useThreadStore()
   const [state, setState] = useState<WorkflowStreamState>(initialState)
   const deltaBufferRef = useRef<string>('')
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -80,7 +85,7 @@ export function useWorkflowStream() {
         }
 
         case 'tool-call-success': {
-          pushMessage({
+          updateToolResultMessage({
             role: 'tool',
             tool_call_id: chunk.data.id,
             content: JSON.stringify(chunk.data.result, null, 2),
@@ -89,7 +94,7 @@ export function useWorkflowStream() {
         }
 
         case 'tool-call-error': {
-          pushMessage({
+          updateToolResultMessage({
             role: 'tool',
             tool_call_id: chunk.data.id,
             content: String(chunk.data.error),
@@ -105,9 +110,25 @@ export function useWorkflowStream() {
           }))
           break
         }
+
+        case 'workflow-error': {
+          setState((prev) => ({
+            ...prev,
+            isRunning: false,
+            isFinished: false,
+            isError: true,
+            errorInfo: chunk.data.error,
+          }))
+
+          pushMessage({
+            role: 'error',
+            error: chunk.data.error,
+          })
+          break
+        }
       }
     },
-    [pushMessage, updateLLMDeltaMessage, updateLLMResultMessage]
+    [pushMessage, updateLLMDeltaMessage, updateLLMResultMessage, updateToolResultMessage]
   )
 
   const send = useCallback(
@@ -151,10 +172,6 @@ export function useWorkflowStream() {
 
   return {
     send,
-
-    workflowState: state.workflowState,
-
-    isRunning: state.isRunning,
-    isFinished: state.workflowState === 'workflow-finished',
+    ...state,
   }
 }

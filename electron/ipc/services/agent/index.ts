@@ -8,6 +8,7 @@ import { Agent, AgentSession } from '@/agent/core/agent'
 import { onLLMEvent, onToolEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 import { getNormalizeTime } from './tools/getNormalizeTime'
+import { fileSystem } from './tools/fileSystem'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -36,6 +37,7 @@ const tools: Tool[] = [
       return `city: ${city} date:${date} , 天气：冬雨，湿度高，注意保暖  温度：12°`
     },
   },
+  fileSystem,
   getNormalizeTime,
 ]
 
@@ -200,6 +202,12 @@ export class AgentIpcMainService implements IpcMainService {
       ipcMainApi.send('agent-workflow-wait-human-approve', {
         threadId: this.session!.thread.id,
       })
+    })
+
+    onWorkflowEvent('workflow-error', (data) => {
+      logger.info('workflow-error')
+
+      ipcMainApi.send('agent-workflow-error', data)
     })
   }
 }

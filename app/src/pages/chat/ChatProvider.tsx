@@ -17,6 +17,8 @@ interface ChatContextType {
   send: (message: string) => Promise<void>
   isFinished: boolean
   isRunning: boolean
+  isError: boolean
+  errorInfo: any
 
   // Actions
   handleSend: (input: string) => Promise<void>
@@ -27,7 +29,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
-  const { send, isFinished, isRunning } = useWorkflowStream()
+  const { send, isFinished, isRunning, isError, errorInfo } = useWorkflowStream()
   const [approvedToolCalls, setApprovedCalls] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -58,6 +60,8 @@ export function ChatProvider({ children }: PropsWithChildren) {
     send,
     isFinished,
     isRunning,
+    isError,
+    errorInfo,
     handleSend,
     handleApprove,
     handleReject,

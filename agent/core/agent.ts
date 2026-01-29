@@ -37,25 +37,25 @@ export class Agent {
 }
 
 export class AgentSession {
-  private workflow: Workflow = null!
+  private currentWorkflow: Workflow = null!
   thread: Thread
   constructor(private agent: Agent) {
     this.thread = this.agent.threadsManager.createNewThread()
-
-    this.workflow = new Workflow(this.thread, this.agent.llmService, this.agent.toolService)
   }
 
   async send(input: string) {
+    // 每一次user-input 都使用新的一个workflow
+    this.currentWorkflow = new Workflow(this.thread, this.agent.llmService, this.agent.toolService)
     const threadId = this.thread.id
-    await this.workflow.start(threadId, { input })
+    await this.currentWorkflow.start(threadId, { input })
   }
 
   async humanApprove() {
-    this.workflow.humanApproveToolCall()
+    this.currentWorkflow.humanApproveToolCall()
   }
 
   async humanReject(_rejectReason?: string) {
-    // this.workflow.humanReject(rejectReason)
+    // this.currentWorkflow.humanReject(rejectReason)
   }
 
   setSessionSystemPrompt(prompt: string) {
@@ -63,6 +63,6 @@ export class AgentSession {
   }
 
   abort() {
-    this.workflow.abort()
+    this.currentWorkflow.abort()
   }
 }

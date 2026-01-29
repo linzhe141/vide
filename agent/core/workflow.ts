@@ -15,7 +15,7 @@ import type { ToolService } from './services/tool'
 
 export class Workflow {
   private state: WorkflowState = 'finished'
-  private abortController: AbortController | null = null
+  private abortController: AbortController = new AbortController()
   private isAborted: boolean = false
   // for wait human approve to resume workflow
   private nextStep: StepResult | null = null
@@ -28,15 +28,7 @@ export class Workflow {
 
   // 每一次启动都是由 user-input 驱动
   async start(threadId: string, initialPayload: UserInputStepPayload) {
-    if (this.state === 'finished') {
-      this.state = 'user-input'
-    } else {
-      throw new Error('An exception occurred while running workflow')
-    }
-
-    // 重置 abort 状态
-    this.isAborted = false
-    this.abortController = new AbortController()
+    this.setState('user-input')
     workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
 
     this.run(threadId, initialPayload)
@@ -46,8 +38,6 @@ export class Workflow {
     if (this.nextStep) {
       this.setState(this.nextStep.state)
       this.run(this.thread.id, this.nextStep.payload)
-    } else {
-      throw new Error('An exception occurred while running workflow')
     }
   }
   async run(threadId: string, payload: StepPayload) {
@@ -76,8 +66,8 @@ export class Workflow {
       }
     } catch (error) {
       console.log('Workflow run error:', error)
+      workflowEvent.emit('workflow-error', { threadId, error })
     }
-    this.abortController = null
   }
 
   async runStep(payload: StepPayload): Promise<StepResult> {
@@ -153,6 +143,7 @@ export class Workflow {
     const hasApproved = payload.approved
 
     if (!hasApproved) {
+      // TODO USER reject
       // 等待用户批准
       // 默认批准当前工具调用
       this.nextStep = { state: 'call-tool', payload: { index, toolCalls, approved: true } }

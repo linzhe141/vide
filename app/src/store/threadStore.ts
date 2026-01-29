@@ -1,7 +1,32 @@
-import type { AssistantChatMessage, ChatMessage, ToolCall } from '@/agent/core/types'
+import type {
+  ToolCall,
+  ToolChatMessage,
+  UserChatMessage,
+  AssistantChatMessage,
+} from '@/agent/core/types'
 import { create } from 'zustand'
 
-type ThreadMessage = ChatMessage
+export type AssistantChatTextMessage = {
+  role: 'assistant'
+  content: string
+}
+
+export type ToolCallChatMessage = {
+  role: 'tool-call'
+  tool_calls: Array<ToolCall & { result?: ToolChatMessage }>
+}
+
+export type WorkflowErrorChatMessage = {
+  role: 'error'
+  error: any
+}
+
+type ThreadMessage =
+  | UserChatMessage
+  | AssistantChatTextMessage
+  | ToolCallChatMessage
+  | WorkflowErrorChatMessage
+
 type State = {
   threadId: string
   messages: ThreadMessage[]
@@ -11,8 +36,11 @@ type Actions = {
   setThreadId: (threadId: string) => void
   setMessages: (data: ThreadMessage[]) => void
   pushMessage: (message: ThreadMessage) => void
-  updateLLMDeltaMessage: (message: ThreadMessage) => void
+
+  updateLLMDeltaMessage: (message: AssistantChatTextMessage) => void
   updateLLMResultMessage: (message: AssistantChatMessage) => void
+
+  updateToolResultMessage: (message: ToolChatMessage) => void
 }
 
 export const useThreadStore = create<State & Actions>((set) => ({
@@ -21,18 +49,20 @@ export const useThreadStore = create<State & Actions>((set) => ({
 
   messages: [],
   setMessages: (data) => set({ messages: data }),
-  pushMessage: (message: ThreadMessage) =>
+  pushMessage: (message: ThreadMessage) => {
     set((state) => ({
       messages: [...state.messages, message],
-    })),
-  updateLLMDeltaMessage: (message: ThreadMessage) =>
+    }))
+  },
+
+  updateLLMDeltaMessage: (message: AssistantChatTextMessage) => {
     set((state) => {
       const lastMessage = state.messages[state.messages.length - 1]
       if (lastMessage.role !== 'assistant') {
         const prevMessages = state.messages
         return { messages: [...prevMessages, message] }
       } else {
-        const needUpdatedMessage = lastMessage as AssistantChatMessage
+        const needUpdatedMessage = lastMessage as AssistantChatTextMessage
         return {
           messages: [
             ...state.messages.slice(0, -1),
@@ -43,27 +73,57 @@ export const useThreadStore = create<State & Actions>((set) => ({
           ],
         }
       }
-    }),
-  updateLLMResultMessage: (message: AssistantChatMessage) =>
+    })
+  },
+
+  updateLLMResultMessage: (message: AssistantChatMessage) => {
     set((state) => {
+      const assistantChatTextMessage: AssistantChatTextMessage = {
+        role: 'assistant',
+        content: message.content as string,
+      }
+      let toolCalls: ToolCall[] = []
+      let toolCallMessage: ToolCallChatMessage | null = null
+      if ('tool_calls' in message) {
+        // @ts-expect-error ignore
+        toolCalls = message.tool_calls! || []
+        toolCallMessage = {
+          role: 'tool-call',
+          tool_calls: toolCalls,
+        }
+      }
+
       const lastMessage = state.messages[state.messages.length - 1]
       if (lastMessage.role === 'assistant') {
         const prevMessages = state.messages.slice(0, -1)
-        let toolCalls: ToolCall[] = []
-        if ('tool_calls' in message) {
-          // @ts-expect-error todo type
-          toolCalls = message.tool_calls! || []
+
+        return {
+          messages: [...prevMessages, assistantChatTextMessage, toolCallMessage].filter(
+            Boolean
+          ) as ThreadMessage[],
         }
-        const newLastMessage: AssistantChatMessage = { ...lastMessage }
-        newLastMessage.content = message.content
-        if (toolCalls.length > 0) {
-          newLastMessage.tool_calls = toolCalls
-        }
-        return { messages: [...prevMessages, newLastMessage] }
       } else {
         return {
-          messages: [...state.messages, message as AssistantChatMessage],
+          messages: [...state.messages, assistantChatTextMessage, toolCallMessage].filter(
+            Boolean
+          ) as ThreadMessage[],
         }
       }
-    }),
+    })
+  },
+
+  updateToolResultMessage: (message) => {
+    set((state) => ({
+      messages: state.messages.map((msg) => {
+        if (msg.role !== 'tool-call') return msg
+
+        return {
+          ...msg,
+          tool_calls: msg.tool_calls.map((tool) =>
+            tool.id === message.tool_call_id ? { ...tool, result: message } : tool
+          ),
+        }
+      }),
+    }))
+  },
 }))

@@ -3,7 +3,7 @@ import { Wrench, CheckCircle2, XCircle, ChevronDown } from 'lucide-react'
 import { Button } from '../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 import { cn } from '../../lib/utils'
-import type { ToolCall } from '@/agent/core/types'
+import type { ToolCall, ToolChatMessage } from '@/agent/core/types'
 import { useChatContext } from './ChatProvider'
 
 export const ToolCallItem = memo(function ToolCallItem({
@@ -11,7 +11,7 @@ export const ToolCallItem = memo(function ToolCallItem({
   isApproved,
   callId,
 }: {
-  toolCall: ToolCall
+  toolCall: ToolCall & { result?: ToolChatMessage }
   isApproved: boolean
   callId: string
 }) {
@@ -80,15 +80,42 @@ export const ToolCallItem = memo(function ToolCallItem({
 
         {/* 工具调用详情 */}
         {isExpanded && (
-          <div className='border-border bg-primary/5 border-t px-4 py-3'>
-            <MarkdownRenderer
-              className={cn(
-                'bg-background text-text-secondary overflow-auto rounded-lg p-3 font-mono text-xs'
+          <div>
+            <div className='border-border bg-primary/5 border-t px-4 py-3'>
+              <MarkdownRenderer
+                className={cn(
+                  'bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
+                )}
+                animation={isRunning}
+              >
+                {'```json\n' +
+                  JSON.stringify({ id: toolCall.id, function: toolCall.function }, null, 2) +
+                  '\n```'}
+              </MarkdownRenderer>
+
+              {toolCall.result && (
+                <div className='border-border bg-background/50 mt-4 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
+                  {/* 工具结果头部 */}
+                  <p className='hover:bg-border/30 flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors'>
+                    Tool Result
+                  </p>
+
+                  {/* 工具结果详情 */}
+                  {isExpanded && (
+                    <div className='border-border border-t p-2'>
+                      <MarkdownRenderer
+                        className='bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
+                        animation={isRunning}
+                      >
+                        {'```json\n' +
+                          JSON.stringify(JSON.parse(toolCall.result.content as string), null, 2) +
+                          '\n```'}
+                      </MarkdownRenderer>
+                    </div>
+                  )}
+                </div>
               )}
-              animation={isRunning}
-            >
-              {'```json\n' + JSON.stringify(toolCall, null, 2) + '\n```'}
-            </MarkdownRenderer>
+            </div>
           </div>
         )}
       </div>

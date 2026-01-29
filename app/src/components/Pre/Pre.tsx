@@ -10,25 +10,23 @@ export const Pre = memo(function Pre(props: PropsWithChildren) {
   const codeElement = props.children as ReactElement<PropsWithChildren>
   const code = codeElement.props.children
   const language = getCodeLanguage(codeElement)
-  const formatLang = language as keyof typeof defaultLangs
   if (code) {
-    return (
-      <StreamBlock
-        code={String(code)}
-        lang={defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG}
-      ></StreamBlock>
-    )
+    return <StreamBlock code={String(code)} lang={language}></StreamBlock>
   }
   return null
 })
 
 const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; lang: string }) {
+  const formatLang = lang as keyof typeof defaultLangs
+
+  const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
+
   const indexRef = useRef(0)
   const [tokens, setTokens] = useState<ThemedToken[]>([])
   const tokenizerRef = useRef<ShikiStreamTokenizer>(
     new ShikiStreamTokenizer({
       highlighter: highlighter!,
-      lang: lang,
+      lang: highlightLang,
       theme: 'css-variables',
     })
   )
@@ -65,11 +63,11 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
   }, [code])
 
   return (
-    <div className='group relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
+    <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
       <div className='text-muted-foreground flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
         <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
 
-        <div className='flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
+        <div className='flex items-center gap-1'>
           <button
             onClick={handleCopy}
             className='inline-flex h-7 w-7 items-center justify-center rounded-md'

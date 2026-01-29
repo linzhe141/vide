@@ -3,11 +3,11 @@ import { useChatContext } from './ChatProvider'
 import { UserMessage } from './UserMessage'
 import { AssistantMessage } from './AssistantMessage'
 import { ToolCallItem } from './ToolCallItem'
-import { ToolMessage } from './ToolMessage'
 import { StatusIndicator, TypingIndicator, EmptyState } from './ChatUIComponents'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
+import { WorkflowErrorMessage } from './WorkflowErrorMessage'
 
 export const MessageList = memo(function MessageList() {
   const messages = useThreadStore((data) => data.messages)
@@ -44,8 +44,13 @@ export const MessageList = memo(function MessageList() {
 
             case 'assistant':
               return (
-                <div key={idx} className='space-y-3'>
+                <div key={idx}>
                   {msg.content && <AssistantMessage content={msg.content as string} />}
+                </div>
+              )
+            case 'tool-call':
+              return (
+                <div key={idx}>
                   {msg.tool_calls?.map((toolCall, index) => (
                     <ToolCallItem
                       key={`${idx}-${index}`}
@@ -56,10 +61,12 @@ export const MessageList = memo(function MessageList() {
                   ))}
                 </div>
               )
-
-            case 'tool':
-              return <ToolMessage key={idx} content={msg} />
-
+            case 'error':
+              return (
+                <div key={idx}>
+                  <WorkflowErrorMessage error={msg.error}></WorkflowErrorMessage>
+                </div>
+              )
             default:
               return null
           }

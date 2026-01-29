@@ -3,6 +3,7 @@ import type { AssistantChatMessage, ToolCall } from '@/agent/core/types'
 export type WorkflowState =
   | { type: 'workflow-start'; data: { threadId: string; input: string } }
   | { type: 'workflow-finished'; data: { threadId: string } }
+  | { type: 'workflow-error'; data: { threadId: string; error: any } }
   // | { type: 'workflow-aborted'; data: { threadId: string } }
   | { type: 'workflow-wait-human-approve'; data: any }
   | { type: 'llm-start' }
@@ -33,7 +34,9 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         })
       }
 
-      const enqueue = controller.enqueue.bind(controller)
+      const enqueue = (data: WorkflowState) => {
+        controller.enqueue.call(controller, data)
+      }
 
       // 绑定所有事件监听器
       eventListeners = [
@@ -52,6 +55,12 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         window.ipcRendererApi.on('agent-workflow-wait-human-approve', (data) =>
           enqueue({ type: 'workflow-wait-human-approve', data })
         ),
+
+        window.ipcRendererApi.on('agent-workflow-error', (data) => {
+          enqueue({ type: 'workflow-error', data })
+          controller.close()
+          cleanUp()
+        }),
 
         window.ipcRendererApi.on('agent-llm-start', () => {
           const workflowChunk: WorkflowState = { type: 'llm-start' }

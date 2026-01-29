@@ -40,4 +40,5 @@ export interface MainChannel {
   'agent-tool-call-error': (data: { id: string; toolName: string; error: any }) => void
   'agent-workflow-finished': (data: { threadId: string }) => void
   'agent-workflow-wait-human-approve': (data: { threadId: string }) => void
+  'agent-workflow-error': (data: { threadId: string; error: any }) => void
 }

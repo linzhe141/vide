@@ -17,6 +17,7 @@ export type WorkflowEvents = {
   'workflow-finished': (data: { threadId: string }) => void
   'workflow-aborted': (data: { threadId: string }) => void
   'workflow-wait-human-approve': (data: any) => void
+  'workflow-error': (data: { threadId: string; error: any }) => void
 }
 
 export type LLMEvents = {
