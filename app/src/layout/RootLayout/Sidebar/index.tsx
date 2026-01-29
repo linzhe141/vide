@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router'
+import { Plus, ChevronLeft } from 'lucide-react'
 import { cn } from '@/app/src/lib/utils'
 import { SidebarFooter } from './SidebarFooter'
 import { ChatRecents } from './ChatRecents'
-import { Plus } from 'lucide-react'
 
 export function SideBar() {
+  const [collapsed, setCollapsed] = useState(false)
+
   const recentChats = [
     { id: '1', title: 'Streaming markdown design' },
     { id: '2', title: 'Agent message model' },
@@ -14,10 +17,14 @@ export function SideBar() {
 
   return (
     <aside
-      className={cn('bg-background', 'flex h-full w-[240px] flex-col', 'border-border/50 border-r')}
+      className={cn(
+        'bg-background border-border/50 flex h-full flex-col border-r',
+        'transition-[width] duration-200 ease-out',
+        collapsed ? 'w-[56px]' : 'w-[240px]'
+      )}
     >
-      {/* New Chat */}
-      <div className='p-3'>
+      {/* Header */}
+      <div className='relative p-3'>
         <NavLink
           to='/'
           className={cn(
@@ -25,18 +32,49 @@ export function SideBar() {
             'bg-foreground/5 text-foreground',
             'text-sm font-medium',
             'transition-colors',
-            'hover:bg-foreground/8'
+            'hover:bg-foreground/8',
+            collapsed && 'justify-center px-0'
           )}
         >
           <Plus className='size-4 opacity-70' />
-          New chat
+          {!collapsed && 'New chat'}
         </NavLink>
+
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className={cn(
+            'absolute top-1/2 -right-3 -translate-y-1/2',
+            'flex size-6 items-center justify-center rounded-full',
+            'border-border bg-background border',
+            'text-text-secondary',
+            'hover:text-foreground hover:bg-foreground/5',
+            'transition'
+          )}
+        >
+          <ChevronLeft className={cn('size-3 transition-transform', collapsed && 'rotate-180')} />
+        </button>
       </div>
 
-      {/* Flat chat switcher */}
-      <ChatRecents chats={recentChats} />
+      {/* Chat list */}
+      <div
+        className={cn(
+          'flex-1 transition-opacity duration-150',
+          collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+        )}
+      >
+        <ChatRecents chats={recentChats} />
+      </div>
 
-      <SidebarFooter />
+      {/* Footer */}
+      <div
+        className={cn(
+          'transition-opacity duration-150',
+          collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
+        )}
+      >
+        <SidebarFooter />
+      </div>
     </aside>
   )
 }
