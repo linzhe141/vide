@@ -6,41 +6,36 @@ import { Plus } from 'lucide-react'
 
 export function SideBar() {
   const recentChats = [
-    { id: '1', title: 'Chat 1', timestamp: new Date() },
-    { id: '2', title: 'Chat 2', timestamp: new Date() },
-    { id: '3', title: 'Chat 3', timestamp: new Date() },
+    { id: '1', title: 'Streaming markdown design' },
+    { id: '2', title: 'Agent message model' },
+    { id: '3', title: 'UI token refactor' },
+    { id: '4', title: 'React 18 scheduling notes' },
   ]
 
   return (
     <aside
-      className={cn(
-        'bg-background',
-        'flex w-[68px] flex-col items-center',
-        'border-border/60 border-r',
-        'py-3'
-      )}
+      className={cn('bg-background', 'flex h-full w-[240px] flex-col', 'border-border/50 border-r')}
     >
-      {/* Primary Action */}
-      <NavLink
-        to='/'
-        className={({ isActive }) =>
-          cn(
-            'mb-4 flex size-11 items-center justify-center rounded-xl',
-            'bg-primary/10 text-primary',
-            'transition-all duration-200',
-            'hover:bg-primary/15 hover:scale-[1.03]',
-            isActive && 'bg-primary/20'
-          )
-        }
-        title='New Chat'
-      >
-        <Plus className='size-5' />
-      </NavLink>
+      {/* New Chat */}
+      <div className='p-3'>
+        <NavLink
+          to='/'
+          className={cn(
+            'flex items-center gap-2 rounded-md px-3 py-2',
+            'bg-foreground/5 text-foreground',
+            'text-sm font-medium',
+            'transition-colors',
+            'hover:bg-foreground/8'
+          )}
+        >
+          <Plus className='size-4 opacity-70' />
+          New chat
+        </NavLink>
+      </div>
 
-      {/* Recents */}
+      {/* Flat chat switcher */}
       <ChatRecents chats={recentChats} />
 
-      {/* Footer */}
       <SidebarFooter />
     </aside>
   )

@@ -4,7 +4,7 @@ import { cn } from '@/app/src/lib/utils'
 
 export function SidebarFooter() {
   return (
-    <div className={cn('border-border w-full border-t pt-2', 'flex flex-col items-center gap-1')}>
+    <div className={cn('border-border w-full border-t py-2', 'flex flex-col items-center gap-1')}>
       <NavLink
         to='/settings'
         className={({ isActive }) =>
