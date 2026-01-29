@@ -14,35 +14,30 @@ interface ChatRecentProps {
 
 export function ChatRecents({ chats = [] }: ChatRecentProps) {
   return (
-    <div className='flex flex-1 flex-col gap-2 overflow-y-auto py-2'>
-      {/* Recent Chats */}
-      <div className='flex flex-col gap-1.5'>
-        {chats.map((chat) => (
-          <NavLink
-            key={chat.id}
-            to={`/chat/${chat.id}`}
-            className={({ isActive }) =>
-              cn(
-                'group relative flex size-10 items-center justify-center rounded-lg',
-                'border-border border',
-                'transition-all duration-200 ease-out',
-                'hover:bg-foreground/5',
-                'text-foreground/70 hover:text-foreground',
-                isActive && 'bg-foreground/5 border-primary text-foreground'
-              )
-            }
-            title={chat.title || 'Untitled Chat'}
-          >
-            <MessageSquare className='size-5' />
-          </NavLink>
-        ))}
-      </div>
+    <div className='flex w-full flex-1 flex-col items-center gap-1 overflow-y-auto py-1'>
+      {chats.map((chat) => (
+        <NavLink
+          key={chat.id}
+          to={`/chat/${chat.id}`}
+          title={chat.title || 'Untitled Chat'}
+          className={({ isActive }) =>
+            cn(
+              'group flex size-10 items-center justify-center rounded-xl',
+              'text-text-secondary',
+              'transition-all duration-150',
+              'hover:bg-foreground/5 hover:text-foreground',
+              isActive && 'bg-primary/15 text-primary shadow-[0_0_0_1px_var(--color-primary)]'
+            )
+          }
+        >
+          <MessageSquare className='size-4.5' />
+        </NavLink>
+      ))}
 
-      {/* Empty State */}
       {chats.length === 0 && (
-        <div className='text-foreground/40 flex flex-col items-center gap-2 py-4'>
-          <MessageSquare className='size-5' />
-          <span className='px-1 text-center text-[10px]'>No chats</span>
+        <div className='text-text-info mt-4 flex flex-col items-center gap-1'>
+          <MessageSquare className='size-4' />
+          <span className='text-[10px]'>No chats</span>
         </div>
       )}
     </div>
