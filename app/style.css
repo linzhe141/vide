@@ -39,11 +39,15 @@
   background-color: oklch(0.42 0 0);
 }
 
-
 .drag-region {
   -webkit-app-region: drag;
 }
 
 .no-drag-region {
   -webkit-app-region: no-drag;
+}
+
+a,
+img {
+  -webkit-user-drag: none;
 }

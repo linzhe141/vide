@@ -18,21 +18,16 @@ export function SideBar() {
           to='/'
           className={({ isActive }) =>
             cn(
-              'group flex size-10 items-center justify-center rounded-xl',
+              'group flex size-10 items-center justify-center rounded-lg',
               'border-border border',
               'transition-all duration-200 ease-out',
               'hover:bg-foreground/5 hover:scale-105',
-              isActive && 'bg-primary/20 border-primary/30'
+              'text-foreground',
+              isActive && 'border-primary'
             )
           }
         >
-          <Home
-            className={cn(
-              'size-5',
-              'text-text-secondary transition-colors duration-200',
-              'group-hover:text-foreground'
-            )}
-          />
+          <Home className={cn('size-5', 'transition-colors duration-200')} />
         </NavLink>
       </div>
 
