@@ -14,6 +14,7 @@ export const MessageList = memo(function MessageList() {
   const { approvedToolCalls, isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
+  console.log('xxx', showToBottomButton)
   const toBottom = useCallback(() => {
     placeholderRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
@@ -76,11 +77,10 @@ export const MessageList = memo(function MessageList() {
 
         {messages.length > 0 && <StatusIndicator />}
       </div>
-
       {showToBottomButton && (
         <button
           onClick={toBottom}
-          className='bg-background border-border hover:bg-primary/5 fixed bottom-32 left-1/2 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
+          className='bg-background border-border hover:bg-primary/5 fixed bottom-60 left-1/2 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
           aria-label='Scroll to bottom'
         >
           <ArrowDown size={18} className='text-foreground' />

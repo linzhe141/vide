@@ -19,7 +19,7 @@ export const ToolCallItem = memo(function ToolCallItem({
   const { handleApprove, handleReject, isRunning } = useChatContext()
 
   return (
-    <div className='ml-11 max-w-3xl'>
+    <div className=''>
       <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
         {/* 工具调用头部 */}
         <div

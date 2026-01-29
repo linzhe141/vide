@@ -10,7 +10,7 @@ export const ChatInput = memo(function ChatInput() {
   const { handleSend, isRunning } = useChatContext()
 
   return (
-    <div className='border-border bg-background/80 border-t backdrop-blur-sm'>
+    <div className='bg-background/80 backdrop-blur-sm'>
       <div className='mx-auto max-w-4xl px-4 py-4'>
         <div className='relative'>
           <div className='relative flex items-start gap-2'>
