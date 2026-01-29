@@ -17,7 +17,13 @@ export const ToolCallItem = memo(function ToolCallItem({
 }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const { handleApprove, handleReject, isRunning } = useChatContext()
-
+  function beautifyResult(content: string) {
+    try {
+      return JSON.parse(content as string)
+    } catch (_e) {
+      return content
+    }
+  }
   return (
     <div className=''>
       <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
@@ -108,7 +114,11 @@ export const ToolCallItem = memo(function ToolCallItem({
                         animation={isRunning}
                       >
                         {'```json\n' +
-                          JSON.stringify(JSON.parse(toolCall.result.content as string), null, 2) +
+                          JSON.stringify(
+                            beautifyResult(toolCall.result.content as string),
+                            null,
+                            2
+                          ) +
                           '\n```'}
                       </MarkdownRenderer>
                     </div>

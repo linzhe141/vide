@@ -8,13 +8,13 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
 import { WorkflowErrorMessage } from './WorkflowErrorMessage'
+import { MessageNavigator } from './MessageNavigator'
 
 export const MessageList = memo(function MessageList() {
   const messages = useThreadStore((data) => data.messages)
   const { approvedToolCalls, isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
-  console.log('xxx', showToBottomButton)
   const toBottom = useCallback(() => {
     placeholderRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
@@ -34,14 +34,14 @@ export const MessageList = memo(function MessageList() {
     return () => observer.disconnect()
   }, [])
   return (
-    <div className='flex-1 overflow-auto'>
+    <div className='flex-1 overflow-auto' id='chat-wrapper'>
       <div className='mx-auto max-w-4xl space-y-6 px-4 py-8'>
         {messages.length === 0 && <EmptyState />}
 
         {messages.map((msg, idx) => {
           switch (msg.role) {
             case 'user':
-              return <UserMessage key={idx} content={msg.content as string} />
+              return <UserMessage key={idx} content={msg.content as string} index={idx} />
 
             case 'assistant':
               return (
@@ -76,6 +76,16 @@ export const MessageList = memo(function MessageList() {
         {isRunning && messages.length > 0 && <TypingIndicator />}
 
         {messages.length > 0 && <StatusIndicator />}
+        <MessageNavigator
+          items={messages
+            .map((i, index) => ({
+              index: index,
+              id: `user-input-${index}`,
+              ...i,
+            }))
+            .filter((i) => i.role === 'user')
+            .map((i) => ({ id: i.id, index: i.index, label: i.content.slice(0, 50) + '…' }))}
+        />
       </div>
       {showToBottomButton && (
         <button
