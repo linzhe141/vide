@@ -64,7 +64,7 @@ export function MessageNavigator({ items }: MessageNavigatorProps) {
             <li
               key={item.id}
               className={cn(
-                'h-2 w-2 cursor-pointer rounded-full transition-all',
+                'h-1.5 w-5 cursor-pointer rounded-full transition-all',
                 active ? 'bg-primary scale-125' : 'bg-border hover:bg-primary/60'
               )}
               title={item.label}

@@ -79,9 +79,9 @@ export const MessageList = memo(function MessageList() {
         <MessageNavigator
           items={messages
             .map((i, index) => ({
+              ...i,
               index: index,
               id: `user-input-${index}`,
-              ...i,
             }))
             .filter((i) => i.role === 'user')
             .map((i) => ({ id: i.id, index: i.index, label: i.content.slice(0, 50) + '…' }))}

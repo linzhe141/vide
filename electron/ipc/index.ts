@@ -2,6 +2,7 @@ import type { AppManager } from '../appManager'
 import { SettingsIpcMainService } from './services/settings'
 import { WindowIpcMainService } from './services/window'
 import { AgentIpcMainService } from './services/agent'
+import { ThreadIpcMainService } from './services/threads'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -19,5 +20,8 @@ export class IpcService {
 
     const agentIpcMainService = new AgentIpcMainService(this.appManager)
     agentIpcMainService.registerIpcMainHandle()
+
+    const threadIpcMainService = new ThreadIpcMainService(this.appManager)
+    threadIpcMainService.registerIpcMainHandle()
   }
 }

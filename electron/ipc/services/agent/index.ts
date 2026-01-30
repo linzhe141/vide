@@ -3,12 +3,24 @@ import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import OpenAI from 'openai'
 import { DevConfig } from '@/dev.config'
-import type { FinishReason, FnProcessLLMStream, Tool, ToolCall } from '@/agent/core/types'
+import type {
+  AssistantChatMessage,
+  ChatMessage,
+  FinishReason,
+  FnProcessLLMStream,
+  Tool,
+  ToolCall,
+  ToolChatMessage,
+} from '@/agent/core/types'
 import { Agent, AgentSession } from '@/agent/core/agent'
 import { onLLMEvent, onToolEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 import { getNormalizeTime } from './tools/getNormalizeTime'
 import { fileSystem } from './tools/fileSystem'
+import { db } from '@/electron/databaseManager'
+import { threadMessages, threads } from '@/db/schema'
+import { v4 as uuid } from 'uuid'
+import { eq } from 'drizzle-orm'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -99,28 +111,100 @@ const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools,
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent = null!
   session: AgentSession | null = null
+  currentAssistantMessageId: string | null = null
+  currentToolcallsMessageId: string | null = null
+
   constructor(private appManager: AppManager) {
     this.agent = new Agent({ processLLMStream, tools })
     this.registerIpcMainSenders()
   }
 
   registerIpcMainHandle() {
-    ipcMainApi.handle('agent-create-session', () => {
+    ipcMainApi.handle('agent-create-session', async () => {
       this.session = this.agent.createSession()
       logger.info('agent-create-session ', this.session.thread.id)
-      return this.session.thread.id
+
+      const sessionId = this.session.thread.id
+
+      const time = new Date().toISOString()
+      await db.insert(threads).values({
+        id: sessionId,
+        title: '',
+        createdAt: time,
+        updatedAt: time,
+      })
+
+      return sessionId
     })
 
-    ipcMainApi.handle('agent-session-send', ({ input }) => {
+    ipcMainApi.handle('agent-session-send', async ({ input }) => {
       logger.info('agent-session-send ', input)
 
-      this.session?.send(input)
+      this.session!.send(input)
+      const sessionId = this.session!.thread.id
+      const time = new Date().toISOString()
+
+      await db.insert(threadMessages).values({
+        id: uuid(),
+        role: 'user',
+        threadId: sessionId,
+        content: input,
+        createdAt: time,
+        payload: '',
+      })
     })
 
     ipcMainApi.handle('agent-human-approved', () => {
       logger.info('agent-human-approved ')
 
       this.session!.humanApprove()
+    })
+
+    ipcMainApi.handle('agent-change-session', async ({ threadId }) => {
+      // TODO
+      // if no restore
+
+      const toLLMmessages: ChatMessage[] = []
+      const rows = await db
+        .select()
+        .from(threadMessages)
+        .where(eq(threadMessages.threadId, threadId))
+
+      let assistantMessage: AssistantChatMessage | null = null
+      for (const i of rows) {
+        switch (i.role) {
+          case 'user': {
+            toLLMmessages.push({
+              role: 'user',
+              content: i.content!,
+            })
+            break
+          }
+          case 'assistant': {
+            assistantMessage = {
+              role: 'assistant',
+              content: i.content!,
+            }
+            toLLMmessages.push(assistantMessage)
+            break
+          }
+
+          case 'tool-call': {
+            const toolCalls = JSON.parse(i.payload!).toolCalls
+            if (assistantMessage) {
+              assistantMessage.tool_calls = toolCalls.map((i: any) => ({
+                function: i.function,
+                name: i.name,
+                id: i.id,
+                type: i.type,
+              }))
+            }
+
+            break
+          }
+        }
+      }
+      this.agent.restoreSession(threadId, toLLMmessages)
     })
   }
 
@@ -130,22 +214,50 @@ export class AgentIpcMainService implements IpcMainService {
       ipcMainApi.send('agent-workflow-start', data)
     })
 
-    onLLMEvent('llm-start', () => {
+    onLLMEvent('llm-start', async () => {
       logger.info('llm-start')
 
       ipcMainApi.send('agent-llm-start')
+
+      this.currentAssistantMessageId = uuid()
+      await db.insert(threadMessages).values({
+        id: this.currentAssistantMessageId,
+        threadId: this.session!.thread.id,
+        role: 'assistant',
+        content: '',
+        payload: '',
+        createdAt: new Date().toISOString(),
+      })
     })
 
-    onLLMEvent('llm-delta', ({ content, delta }) => {
+    onLLMEvent('llm-delta', async ({ content, delta }) => {
       logger.info('llm-delta', delta)
 
       ipcMainApi.send('agent-llm-delta', { content, delta })
+
+      await db
+        .update(threadMessages)
+        .set({
+          content: content,
+        })
+        .where(eq(threadMessages.id, this.currentAssistantMessageId!))
     })
 
-    onLLMEvent('llm-tool-calls', (data) => {
+    onLLMEvent('llm-tool-calls', async (data) => {
       logger.info('llm-tool-calls', JSON.stringify(data, null, 2))
 
       ipcMainApi.send('agent-llm-tool-calls', data)
+
+      this.currentToolcallsMessageId = uuid()
+      await db.insert(threadMessages).values({
+        id: this.currentToolcallsMessageId!,
+        threadId: this.session!.thread.id,
+        role: 'tool-call',
+        content: '',
+        payload: JSON.stringify(data),
+        createdAt: new Date().toISOString(),
+      })
+      console.log('yyyyyyyy')
     })
 
     onLLMEvent('llm-end', ({ finishReason }) => {
@@ -178,16 +290,68 @@ export class AgentIpcMainService implements IpcMainService {
       ipcMainApi.send('agent-tool-call-start', data)
     })
 
-    onToolEvent('tool-call-success', (data) => {
+    onToolEvent('tool-call-success', async (data) => {
       logger.info('tool-call-success')
 
       ipcMainApi.send('agent-tool-call-success', data)
+
+      const toolCallId = data.id
+      const rows = await db
+        .select()
+        .from(threadMessages)
+        .where(eq(threadMessages.id, this.currentToolcallsMessageId!))
+
+      if (rows.length) {
+        const target = rows[0]
+        const toolCalls = JSON.parse(target.payload!).toolCalls as Array<
+          ToolCall & { result?: ToolChatMessage }
+        >
+        await db
+          .update(threadMessages)
+          .set({
+            payload: JSON.stringify({
+              toolCalls: toolCalls.map((i) => {
+                if (i.id === toolCallId) {
+                  return { ...i, result: data.result }
+                }
+                return i
+              }),
+            }),
+          })
+          .where(eq(threadMessages.id, this.currentToolcallsMessageId!))
+      }
     })
 
-    onToolEvent('tool-call-error', (data) => {
+    onToolEvent('tool-call-error', async (data) => {
       logger.info('tool-call-error')
 
       ipcMainApi.send('agent-tool-call-error', data)
+
+      const toolCallId = data.id
+      const rows = await db
+        .select()
+        .from(threadMessages)
+        .where(eq(threadMessages.id, this.currentToolcallsMessageId!))
+
+      if (rows.length) {
+        const target = rows[0]
+        const toolCalls = JSON.parse(target.payload!).toolCalls as Array<
+          ToolCall & { result?: ToolChatMessage }
+        >
+        await db
+          .update(threadMessages)
+          .set({
+            payload: JSON.stringify({
+              toolCalls: toolCalls.map((i) => {
+                if (i.id === toolCallId) {
+                  return { ...i, result: data.error }
+                }
+                return i
+              }),
+            }),
+          })
+          .where(eq(threadMessages.id, this.currentToolcallsMessageId!))
+      }
     })
 
     onWorkflowEvent('workflow-finished', (data) => {
@@ -204,10 +368,19 @@ export class AgentIpcMainService implements IpcMainService {
       })
     })
 
-    onWorkflowEvent('workflow-error', (data) => {
+    onWorkflowEvent('workflow-error', async (data) => {
       logger.info('workflow-error')
 
       ipcMainApi.send('agent-workflow-error', data)
+
+      await db.insert(threadMessages).values({
+        id: uuid(),
+        threadId: this.session!.thread.id,
+        role: 'error',
+        content: '',
+        payload: JSON.stringify(data.error),
+        createdAt: new Date().toISOString(),
+      })
     })
   }
 }

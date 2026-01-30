@@ -20,7 +20,7 @@ export class ThreadsManager {
       systemPrompt: '',
       messages: [],
     }
-    const threadId = String('_thread_' + crypto.randomUUID())
+    const threadId = String(crypto.randomUUID())
     const newThread = new Thread(newThreadCtx, threadId)
     this.ctx.threads.push({
       id: threadId,

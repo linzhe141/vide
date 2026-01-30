@@ -1,16 +1,23 @@
 import { NavLink } from 'react-router'
 import { cn } from '@/app/src/lib/utils'
+import { useEffect, useState } from 'react'
 
 interface Chat {
   id: string
   title?: string
 }
 
-interface ChatRecentProps {
-  chats?: Chat[]
-}
+export function ChatRecents() {
+  const [chats, setChats] = useState<Chat[]>([])
+  useEffect(() => {
+    async function fetchChats() {
+      const res = await window.ipcRendererApi.invoke('threads-list')
+      const result = res as Chat[]
+      setChats(result)
+    }
+    fetchChats()
+  }, [])
 
-export function ChatRecents({ chats = [] }: ChatRecentProps) {
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
       {chats.map((chat) => (
@@ -38,4 +45,3 @@ export function ChatRecents({ chats = [] }: ChatRecentProps) {
     </div>
   )
 }
-

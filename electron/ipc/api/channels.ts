@@ -11,10 +11,15 @@ export interface RenderChannel {
   'close-window': () => void
 
   // agent
-  'agent-create-session': () => string
+  'agent-create-session': () => Promise<string>
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
   'agent-workflow-abort': () => void
+  'agent-change-session': (data: { threadId: string }) => void
+
+  // thread message
+  'threads-list': () => any
+  'threads-item-messages': (data: { threadId: string }) => any
 }
 
 export interface MainChannel {

@@ -8,13 +8,6 @@ import { ChatRecents } from './ChatRecents'
 export function SideBar() {
   const [collapsed, setCollapsed] = useState(false)
 
-  const recentChats = [
-    { id: '1', title: 'Streaming markdown design' },
-    { id: '2', title: 'Agent message model' },
-    { id: '3', title: 'UI token refactor' },
-    { id: '4', title: 'React 18 scheduling notes' },
-  ]
-
   return (
     <aside
       className={cn(
@@ -63,7 +56,7 @@ export function SideBar() {
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
         )}
       >
-        <ChatRecents chats={recentChats} />
+        <ChatRecents />
       </div>
 
       {/* Footer */}
