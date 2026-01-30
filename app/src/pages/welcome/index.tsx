@@ -7,9 +7,12 @@ import { context } from '../../hooks/chatContenxt'
 import { useThreadStore } from '../../store/threadStore'
 import { MoveRight } from 'lucide-react'
 import LOGOIMG from './logo.png'
+import { useThreadsStore } from '../../store/threadsStore'
 
 export function Welcome() {
+  const { setThreads } = useThreadsStore()
   const { createThread } = useThreads()
+
   const [input, setInput] = useState('')
   const { setThreadId, setMessages } = useThreadStore()
   const navigate = useNavigate()
@@ -17,6 +20,10 @@ export function Welcome() {
     if (!input.trim()) return
     context.firstInput = input
     const threadId = await createThread()
+
+    window.ipcRendererApi.invoke('threads-list').then((res) => {
+      setThreads(res)
+    })
     setInput('')
     // reset current active thread store
     setThreadId(threadId)

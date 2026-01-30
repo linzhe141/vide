@@ -3,7 +3,7 @@ import { NavLink } from 'react-router'
 import { Plus, ChevronLeft } from 'lucide-react'
 import { cn } from '@/app/src/lib/utils'
 import { SidebarFooter } from './SidebarFooter'
-import { ChatRecents } from './ChatRecents'
+import { ThreadRecents } from './ThreadRecents'
 
 export function SideBar() {
   const [collapsed, setCollapsed] = useState(false)
@@ -56,7 +56,7 @@ export function SideBar() {
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
         )}
       >
-        <ChatRecents />
+        <ThreadRecents />
       </div>
 
       {/* Footer */}

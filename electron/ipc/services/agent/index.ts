@@ -126,7 +126,7 @@ export class AgentIpcMainService implements IpcMainService {
 
       const sessionId = this.session.thread.id
 
-      const time = new Date().toISOString()
+      const time = Date.now()
       await db.insert(threads).values({
         id: sessionId,
         title: '',
@@ -142,7 +142,7 @@ export class AgentIpcMainService implements IpcMainService {
 
       this.session!.send(input)
       const sessionId = this.session!.thread.id
-      const time = new Date().toISOString()
+      const time = Date.now()
 
       await db.insert(threadMessages).values({
         id: uuid(),
@@ -190,21 +190,31 @@ export class AgentIpcMainService implements IpcMainService {
           }
 
           case 'tool-call': {
-            const toolCalls = JSON.parse(i.payload!).toolCalls
+            const toolCalls = JSON.parse(i.payload!).toolCalls as Array<
+              ToolCall & { result?: ToolChatMessage }
+            >
             if (assistantMessage) {
-              assistantMessage.tool_calls = toolCalls.map((i: any) => ({
+              assistantMessage.tool_calls = toolCalls.map((i) => ({
                 function: i.function,
-                name: i.name,
                 id: i.id,
                 type: i.type,
               }))
+
+              for (const toolCall of toolCalls) {
+                const toolMessage: ToolChatMessage = {
+                  role: 'tool',
+                  content: JSON.stringify(toolCall.result),
+                  tool_call_id: toolCall.id,
+                }
+                toLLMmessages.push(toolMessage)
+              }
             }
 
             break
           }
         }
       }
-      this.agent.restoreSession(threadId, toLLMmessages)
+      this.session = this.agent.restoreSession(threadId, toLLMmessages)
     })
   }
 
@@ -226,7 +236,7 @@ export class AgentIpcMainService implements IpcMainService {
         role: 'assistant',
         content: '',
         payload: '',
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       })
     })
 
@@ -255,7 +265,7 @@ export class AgentIpcMainService implements IpcMainService {
         role: 'tool-call',
         content: '',
         payload: JSON.stringify(data),
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       })
       console.log('yyyyyyyy')
     })
@@ -379,7 +389,7 @@ export class AgentIpcMainService implements IpcMainService {
         role: 'error',
         content: '',
         payload: JSON.stringify(data.error),
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
       })
     })
   }

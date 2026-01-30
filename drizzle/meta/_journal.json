@@ -8,6 +8,13 @@
       "when": 1769753935047,
       "tag": "0000_demonic_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1769783518226,
+      "tag": "0001_tiresome_marauders",
+      "breakpoints": true
     }
   ]
 }

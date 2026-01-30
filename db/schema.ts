@@ -1,11 +1,11 @@
 import { relations } from 'drizzle-orm'
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
 export const threads = sqliteTable('threads', {
   id: text('id').primaryKey(),
   title: text('title'),
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
 })
 
 export const threadMessages = sqliteTable('thread_messages', {
@@ -30,7 +30,7 @@ export const threadMessages = sqliteTable('thread_messages', {
    */
   payload: text('payload'),
 
-  createdAt: text('created_at').notNull(),
+  createdAt: integer('created_at').notNull(),
 })
 
 export const threadsRelations = relations(threads, ({ many }) => ({

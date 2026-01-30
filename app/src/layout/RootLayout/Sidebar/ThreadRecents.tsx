@@ -1,29 +1,25 @@
 import { NavLink } from 'react-router'
 import { cn } from '@/app/src/lib/utils'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useThreadsStore } from '@/app/src/store/threadsStore'
 
-interface Chat {
-  id: string
-  title?: string
-}
-
-export function ChatRecents() {
-  const [chats, setChats] = useState<Chat[]>([])
+export function ThreadRecents() {
+  const { threads, setThreads } = useThreadsStore()
   useEffect(() => {
     async function fetchChats() {
       const res = await window.ipcRendererApi.invoke('threads-list')
-      const result = res as Chat[]
-      setChats(result)
+      const result = res
+      setThreads(result)
     }
     fetchChats()
-  }, [])
+  }, [setThreads])
 
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
-      {chats.map((chat) => (
+      {threads.map((thread) => (
         <NavLink
-          key={chat.id}
-          to={`/chat/${chat.id}`}
+          key={thread.id}
+          to={`/chat/${thread.id}`}
           className={({ isActive }) =>
             cn(
               'rounded-md px-3 py-1.5',
@@ -35,12 +31,12 @@ export function ChatRecents() {
             )
           }
         >
-          <span className='block truncate'>{chat.title || 'Untitled'}</span>
+          <span className='block truncate'>{thread.title || 'Untitled'}</span>
         </NavLink>
       ))}
 
-      {chats.length === 0 && (
-        <div className='text-text-info px-3 py-4 text-sm'>No active chats</div>
+      {threads.length === 0 && (
+        <div className='text-text-info px-3 py-4 text-sm'>No active threads</div>
       )}
     </div>
   )

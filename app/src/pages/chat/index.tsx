@@ -64,6 +64,10 @@ function ChatContent({ threadId }: { threadId: string }) {
     fetchThread()
   }, [threadId, setMessages])
 
+  useEffect(() => {
+    window.ipcRendererApi.invoke('agent-change-session', { threadId })
+  }, [threadId])
+
   return (
     <div className='bg-background flex h-full w-full flex-col'>
       <MessageList />
