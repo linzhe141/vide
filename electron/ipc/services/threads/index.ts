@@ -17,8 +17,4 @@ export class ThreadIpcMainService implements IpcMainService {
       return db.select().from(threadMessages).where(eq(threadMessages.threadId, threadId))
     })
   }
-
-  // TODO 迁移 AgentIpcMainService 的 持久化 thread 逻辑
-  // 丰富 channel 参数 至少每个channel 都存在 threadId
-  setupAgentEvents() {}
 }

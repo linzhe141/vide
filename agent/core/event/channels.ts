@@ -2,6 +2,7 @@ import type { AssistantChatMessage, ChatMessage, FinishReason, ToolCall } from '
 
 export type AgentLifecycleEvents = {
   'agent-ready': () => void
+  'agent-create-session': (data: { threadId: string }) => void
 }
 
 // TODO

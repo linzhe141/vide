@@ -32,6 +32,8 @@ export class Agent {
 
   createSession() {
     const agetnSession = new AgentSession(this)
+    agentEvent.emit('agent-create-session', { threadId: agetnSession.thread.id })
+
     return agetnSession
   }
 
