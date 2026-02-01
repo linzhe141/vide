@@ -1,7 +1,7 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { ChatProvider } from './ChatProvider'
 import {
   useThreadStore,
@@ -22,56 +22,59 @@ export function Chat() {
 }
 
 function ChatContent({ threadId }: { threadId: string }) {
+  const [loading, setLoading] = useState(true)
   const setMessages = useThreadStore((data) => data.setMessages)
 
   useEffect(() => {
     async function fetchThread() {
-      const res = await window.ipcRendererApi.invoke('threads-item-messages', { threadId })
+      setLoading(true)
+      setMessages([])
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        const res = await window.ipcRendererApi.invoke('threads-item-messages', { threadId })
 
-      if (res?.length) {
-        const result = res.map((i: any) => {
-          switch (i.role) {
-            case 'user': {
-              return { ...i, role: 'user', content: i.content } as UserChatMessage
-            }
-            case 'assistant': {
-              return {
-                ...i,
-                role: 'assistant',
-                content: i.content,
-              } as AssistantChatTextMessage
-            }
-            case 'tool-call': {
-              return {
-                ...i,
-                role: 'tool-call',
-                tool_calls: JSON.parse(i.payload).toolCalls,
-              } as ToolCallChatMessage
-            }
+        if (res?.length) {
+          const result = res.map((i: any) => {
+            switch (i.role) {
+              case 'user': {
+                return { ...i, role: 'user', content: i.content } as UserChatMessage
+              }
+              case 'assistant': {
+                return {
+                  ...i,
+                  role: 'assistant',
+                  content: i.content,
+                } as AssistantChatTextMessage
+              }
+              case 'tool-call': {
+                return {
+                  ...i,
+                  role: 'tool-call',
+                  tool_calls: JSON.parse(i.payload).toolCalls,
+                } as ToolCallChatMessage
+              }
 
-            case 'error': {
-              return { ...i, role: 'error', error: i.payload } as WorkflowErrorChatMessage
+              case 'error': {
+                return { ...i, role: 'error', error: i.payload } as WorkflowErrorChatMessage
+              }
+              default: {
+                return i
+              }
             }
-            default: {
-              return i
-            }
-          }
-        })
+          })
 
-        setMessages(result)
+          setMessages(result)
+        }
+      } finally {
+        setLoading(false)
       }
     }
     fetchThread()
   }, [threadId, setMessages])
 
-  useEffect(() => {
-    window.ipcRendererApi.invoke('agent-change-session', { threadId })
-  }, [threadId])
-
   return (
     <div className='bg-background flex h-full w-full flex-col'>
-      <MessageList />
-
+      <MessageList loading={loading} />
       <ChatInput />
     </div>
   )

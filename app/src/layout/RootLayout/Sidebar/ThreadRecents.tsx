@@ -20,6 +20,9 @@ export function ThreadRecents() {
         <NavLink
           key={thread.id}
           to={`/chat/${thread.id}`}
+          onClick={() => {
+            window.ipcRendererApi.invoke('agent-change-session', { threadId: thread.id })
+          }}
           className={({ isActive }) =>
             cn(
               'rounded-md px-3 py-1.5',
