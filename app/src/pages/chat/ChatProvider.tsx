@@ -1,18 +1,8 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type PropsWithChildren,
-  useCallback,
-} from 'react'
+import { createContext, useContext, useEffect, type PropsWithChildren, useCallback } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import { context } from '../../hooks/chatContenxt'
 
 interface ChatContextType {
-  // State
-  approvedToolCalls: Set<string>
-
   // From useWorkflowStream
   send: (message: string) => Promise<void>
   isFinished: boolean
@@ -30,7 +20,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
   const { send, isFinished, isRunning, isError, errorInfo } = useWorkflowStream()
-  const [approvedToolCalls, setApprovedCalls] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const firstInput = context.firstInput
@@ -48,15 +37,13 @@ export function ChatProvider({ children }: PropsWithChildren) {
     [send]
   )
 
-  const handleApprove = useCallback((id: string) => {
-    setApprovedCalls((prev) => new Set(prev).add(id))
+  const handleApprove = useCallback(() => {
     window.ipcRendererApi.invoke('agent-human-approved')
   }, [])
 
   const handleReject = useCallback(() => {}, [])
 
   const value: ChatContextType = {
-    approvedToolCalls,
     send,
     isFinished,
     isRunning,

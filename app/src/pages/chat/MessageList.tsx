@@ -12,7 +12,7 @@ import { MessageNavigator } from './MessageNavigator'
 
 export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
   const messages = useThreadStore((data) => data.messages)
-  const { approvedToolCalls, isRunning } = useChatContext()
+  const { isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
   const toBottom = useCallback(() => {
@@ -50,7 +50,12 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                 case 'assistant':
                   return (
                     <div key={idx}>
-                      {msg.content && <AssistantMessage content={msg.content as string} />}
+                      {msg.content && (
+                        <AssistantMessage
+                          content={msg.content as string}
+                          animation={idx === messages.length - 1 && isRunning}
+                        />
+                      )}
                     </div>
                   )
                 case 'tool-call':
@@ -60,8 +65,8 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                         <ToolCallItem
                           key={`${idx}-${index}`}
                           toolCall={toolCall as ToolCall}
-                          isApproved={approvedToolCalls.has(toolCall.id + idx + index)}
                           callId={toolCall.id + idx + index}
+                          animation={idx === messages.length - 1 && isRunning}
                         />
                       ))}
                     </div>

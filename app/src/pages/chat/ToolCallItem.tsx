@@ -8,15 +8,15 @@ import { useChatContext } from './ChatProvider'
 
 export const ToolCallItem = memo(function ToolCallItem({
   toolCall,
-  isApproved,
   callId,
+  animation,
 }: {
   toolCall: ToolCall & { result?: ToolChatMessage }
-  isApproved: boolean
   callId: string
+  animation: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(true)
-  const { handleApprove, handleReject, isRunning } = useChatContext()
+  const { handleApprove, handleReject } = useChatContext()
   function beautifyResult(content: string) {
     try {
       return JSON.parse(content as string)
@@ -24,9 +24,10 @@ export const ToolCallItem = memo(function ToolCallItem({
       return content
     }
   }
+  const isApproved = !!toolCall.result
   return (
     <div className=''>
-      <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
+      <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all'>
         {/* 工具调用头部 */}
         <div
           onClick={() => setIsExpanded(!isExpanded)}
@@ -92,7 +93,7 @@ export const ToolCallItem = memo(function ToolCallItem({
                 className={cn(
                   'bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
                 )}
-                animation={isRunning}
+                animation={animation}
               >
                 {'```json\n' +
                   JSON.stringify({ id: toolCall.id, function: toolCall.function }, null, 2) +
@@ -100,7 +101,7 @@ export const ToolCallItem = memo(function ToolCallItem({
               </MarkdownRenderer>
 
               {toolCall.result && (
-                <div className='border-border bg-background/50 mt-4 overflow-hidden rounded-xl border transition-all hover:shadow-md'>
+                <div className='border-border bg-background/50 mt-4 overflow-hidden rounded-xl border transition-all'>
                   {/* 工具结果头部 */}
                   <p className='hover:bg-border/30 flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors'>
                     Tool Result
@@ -111,7 +112,7 @@ export const ToolCallItem = memo(function ToolCallItem({
                     <div className='border-border border-t p-2'>
                       <MarkdownRenderer
                         className='bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
-                        animation={isRunning}
+                        animation={animation}
                       >
                         {'```json\n' +
                           JSON.stringify(

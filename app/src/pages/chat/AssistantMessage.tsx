@@ -1,13 +1,10 @@
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
-import { useChatContext } from './ChatProvider'
 
-export function AssistantMessage({ content }: { content: string }) {
-  const { isRunning } = useChatContext()
-
+export function AssistantMessage({ content, animation }: { content: string; animation: boolean }) {
   return (
     <div className='w-full items-start gap-3'>
       <div className='border-border bg-background w-full rounded-2xl rounded-tl-sm border px-5 py-3 shadow-sm'>
-        <MarkdownRenderer className='text-foreground font-sans text-sm' animation={isRunning}>
+        <MarkdownRenderer className='text-foreground font-sans text-sm' animation={animation}>
           {content}
         </MarkdownRenderer>
       </div>

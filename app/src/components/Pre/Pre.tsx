@@ -5,15 +5,58 @@ import type { ThemedToken } from 'shiki'
 import { highlighter, defaultLangs, FALLBACK_LANG } from '../highlight/shiki'
 import { ShikiStreamTokenizer } from 'shiki-stream'
 import { Copy, Check } from 'lucide-react'
+import { useMarkdown } from '../markdown/MarkdownProvider'
 
 export const Pre = memo(function Pre(props: PropsWithChildren) {
+  const { animation } = useMarkdown()
   const codeElement = props.children as ReactElement<PropsWithChildren>
   const code = codeElement.props.children
   const language = getCodeLanguage(codeElement)
-  if (code) {
-    return <StreamBlock code={String(code)} lang={language}></StreamBlock>
+  if (animation) {
+    if (code) {
+      return <StreamBlock code={String(code)} lang={language}></StreamBlock>
+    }
+    return null
   }
-  return null
+  return <CodeBlock code={String(code)} lang={language}></CodeBlock>
+})
+
+const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang: string }) {
+  const formatLang = lang as keyof typeof defaultLangs
+
+  const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
+
+  function getTokens(input: string) {
+    const result = highlighter!.codeToTokens(input, {
+      lang: highlightLang,
+      theme: 'css-variables',
+    })
+    return result.tokens
+  }
+
+  const tokens = getTokens(code)
+
+  return (
+    <CodeBlockWrapper lang={lang} code={code}>
+      {tokens.map((line, i) => (
+        <span key={i} className='block'>
+          {line.map((t, idx) => (
+            <span
+              key={idx}
+              style={{
+                color: t.color,
+                backgroundColor: t.bgColor,
+                ...t.htmlStyle,
+              }}
+              {...t.htmlAttrs}
+            >
+              {t.content}
+            </span>
+          ))}
+        </span>
+      ))}
+    </CodeBlockWrapper>
+  )
 })
 
 const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; lang: string }) {

@@ -3,6 +3,7 @@ import { memo, type PropsWithChildren } from 'react'
 import { cn } from '../../lib/utils'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../Pre/Pre'
+import { MarkdownProvider } from './MarkdownProvider'
 
 const components = {
   a: memo(({ ...props }: PropsWithChildren) => (
@@ -47,18 +48,20 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
   children,
   className,
   animation,
-}: ReactMarkdownOptions & { className?: string; animation?: boolean }) {
+}: ReactMarkdownOptions & { className?: string; animation: boolean }) {
   return (
-    <article
-      className={cn(
-        'article-wrapper prose dark:prose-invert prose-slate max-w-none',
-        {
-          animation,
-        },
-        className
-      )}
-    >
-      <MarkdownReact components={components}>{children}</MarkdownReact>
-    </article>
+    <MarkdownProvider value={{ animation }}>
+      <article
+        className={cn(
+          'article-wrapper prose dark:prose-invert prose-slate max-w-none',
+          {
+            animation,
+          },
+          className
+        )}
+      >
+        <MarkdownReact components={components}>{children}</MarkdownReact>
+      </article>
+    </MarkdownProvider>
   )
 })
