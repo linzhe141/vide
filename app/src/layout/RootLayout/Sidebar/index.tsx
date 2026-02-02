@@ -52,7 +52,7 @@ export function SideBar() {
       {/* Chat list */}
       <div
         className={cn(
-          'flex-1 transition-opacity duration-150',
+          'h-0 flex-1 overflow-auto transition-opacity duration-150',
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
         )}
       >

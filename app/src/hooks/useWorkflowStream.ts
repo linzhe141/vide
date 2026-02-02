@@ -24,9 +24,17 @@ const initialState: WorkflowStreamState = {
 }
 // 减少stream re-render 频次
 const BUFFER_SIZE = 10
+
 export function useWorkflowStream() {
-  const { pushMessage, updateLLMDeltaMessage, updateLLMResultMessage, updateToolResultMessage } =
-    useThreadStore()
+  const {
+    startNewBlock,
+    finishCurrentBlock,
+    pushMessageToCurrentBlock,
+    updateLLMDeltaMessage,
+    updateLLMResultMessage,
+    updateToolResultMessage,
+  } = useThreadStore()
+
   const [state, setState] = useState<WorkflowStreamState>(initialState)
   const deltaBufferRef = useRef<string>('')
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -59,7 +67,8 @@ export function useWorkflowStream() {
 
       switch (chunk.type) {
         case 'workflow-start': {
-          pushMessage({
+          // 开启新的 block
+          startNewBlock({
             role: 'user',
             content: chunk.data.input,
           })
@@ -103,6 +112,9 @@ export function useWorkflowStream() {
         }
 
         case 'workflow-finished': {
+          // 完成当前 block
+          finishCurrentBlock()
+
           setState((prev) => ({
             ...prev,
             isRunning: false,
@@ -120,15 +132,25 @@ export function useWorkflowStream() {
             errorInfo: chunk.data.error,
           }))
 
-          pushMessage({
+          pushMessageToCurrentBlock({
             role: 'error',
             error: chunk.data.error,
           })
+
+          // 即使出错也要结束当前 block
+          finishCurrentBlock()
           break
         }
       }
     },
-    [pushMessage, updateLLMDeltaMessage, updateLLMResultMessage, updateToolResultMessage]
+    [
+      startNewBlock,
+      finishCurrentBlock,
+      pushMessageToCurrentBlock,
+      updateLLMDeltaMessage,
+      updateLLMResultMessage,
+      updateToolResultMessage,
+    ]
   )
 
   const send = useCallback(

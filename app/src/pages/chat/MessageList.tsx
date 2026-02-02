@@ -11,7 +11,7 @@ import { WorkflowErrorMessage } from './WorkflowErrorMessage'
 import { MessageNavigator } from './MessageNavigator'
 
 export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
-  const messages = useThreadStore((data) => data.messages)
+  const blocks = useThreadStore((data) => data.blocks)
   const { isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
@@ -40,61 +40,75 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
           <ChatSkeleton />
         ) : (
           <>
-            {messages.length === 0 && <EmptyState />}
+            {blocks.length === 0 && <EmptyState />}
 
-            {messages.map((msg, idx) => {
-              switch (msg.role) {
-                case 'user':
-                  return <UserMessage key={idx} content={msg.content as string} index={idx} />
+            <div className='space-y-10'>
+              {blocks.map((block, idx) => {
+                const anchorId = `workflow-block-${idx}`
+                return (
+                  <div className='space-y-5'>
+                    {block.messages.map((msg, msgIndex) => {
+                      switch (msg.role) {
+                        case 'user':
+                          return (
+                            <UserMessage
+                              key={msgIndex}
+                              id={anchorId}
+                              content={msg.content as string}
+                            />
+                          )
 
-                case 'assistant':
-                  return (
-                    <div key={idx}>
-                      {msg.content && (
-                        <AssistantMessage
-                          content={msg.content as string}
-                          animation={idx === messages.length - 1 && isRunning}
-                        />
-                      )}
-                    </div>
-                  )
-                case 'tool-call':
-                  return (
-                    <div key={idx}>
-                      {msg.tool_calls?.map((toolCall, index) => (
-                        <ToolCallItem
-                          key={`${idx}-${index}`}
-                          toolCall={toolCall as ToolCall}
-                          callId={toolCall.id + idx + index}
-                          animation={idx === messages.length - 1 && isRunning}
-                        />
-                      ))}
-                    </div>
-                  )
-                case 'error':
-                  return (
-                    <div key={idx}>
-                      <WorkflowErrorMessage error={msg.error}></WorkflowErrorMessage>
-                    </div>
-                  )
-                default:
-                  return null
-              }
-            })}
+                        case 'assistant':
+                          return (
+                            <div key={msgIndex}>
+                              {msg.content && (
+                                <AssistantMessage
+                                  content={msg.content as string}
+                                  animation={idx === blocks.length - 1 && isRunning}
+                                />
+                              )}
+                            </div>
+                          )
+                        case 'tool-call':
+                          return (
+                            <div key={msgIndex}>
+                              {msg.tool_calls?.map((toolCall, index) => (
+                                <ToolCallItem
+                                  key={`${idx}-${index}`}
+                                  toolCall={toolCall as ToolCall}
+                                  callId={toolCall.id + idx + index}
+                                  animation={idx === blocks.length - 1 && isRunning}
+                                />
+                              ))}
+                            </div>
+                          )
+                        case 'error':
+                          return (
+                            <div key={msgIndex}>
+                              <WorkflowErrorMessage error={msg.error}></WorkflowErrorMessage>
+                            </div>
+                          )
+                        default:
+                          return null
+                      }
+                    })}
+                  </div>
+                )
+              })}
+            </div>
 
-            {isRunning && messages.length > 0 && <TypingIndicator />}
+            {isRunning && blocks.length > 0 && <TypingIndicator />}
 
-            {messages.length > 0 && <StatusIndicator />}
-            <MessageNavigator
-              items={messages
-                .map((i, index) => ({
-                  ...i,
+            {blocks.length > 0 && <StatusIndicator />}
+            {
+              <MessageNavigator
+                items={blocks.map((i, index) => ({
                   index: index,
-                  id: `user-input-${index}`,
-                }))
-                .filter((i) => i.role === 'user')
-                .map((i) => ({ id: i.id, index: i.index, label: i.content.slice(0, 50) + '…' }))}
-            />
+                  id: `workflow-block-${index}`,
+                  label: i.userMessage.content as string,
+                }))}
+              />
+            }
           </>
         )}
       </div>
