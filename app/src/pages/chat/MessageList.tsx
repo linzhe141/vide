@@ -9,6 +9,8 @@ import { ArrowDown } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
 import { WorkflowErrorMessage } from './WorkflowErrorMessage'
 import { MessageNavigator } from './MessageNavigator'
+import { cn } from '../../lib/utils'
+import { onWorkflowEvent } from '../../hooks/useWorkflowStream'
 
 export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((data) => data.blocks)
@@ -19,6 +21,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
     placeholderRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
+  const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -33,6 +36,18 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
     }
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    return onWorkflowEvent('workflow-start', () => {
+      // TODO
+      // 想做到chatgpt那种体验
+      setTimeout(() => {
+        const wrapper = document.getElementById('chat-wrapper')!
+        wrapper.scrollTop = wrapper.scrollHeight
+      }, 100)
+    })
+  }, [toBottom])
+
   return (
     <div className='flex-1 overflow-auto' id='chat-wrapper'>
       <div className='mx-auto max-w-4xl space-y-6 px-4 py-8'>
@@ -46,7 +61,17 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
               {blocks.map((block, idx) => {
                 const anchorId = `workflow-block-${idx}`
                 return (
-                  <div className='space-y-5'>
+                  <div
+                    className={cn('space-y-5', {
+                      // TODO
+                      // 想做到chatgpt那种体验
+                      // 40px titlebar height h-10
+                      // 150px chatinput height
+                      // 128px placeholder height h-32
+                      // 180px 其他各种 其他边距
+                      'min-h-[calc(100vh-40px-150px-128px-180px)]': isRunningLast(idx),
+                    })}
+                  >
                     {block.messages.map((msg, msgIndex) => {
                       switch (msg.role) {
                         case 'user':
@@ -64,7 +89,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                               {msg.content && (
                                 <AssistantMessage
                                   content={msg.content as string}
-                                  animation={idx === blocks.length - 1 && isRunning}
+                                  animation={isRunningLast(idx)}
                                 />
                               )}
                             </div>
@@ -77,7 +102,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                                   key={`${idx}-${index}`}
                                   toolCall={toolCall as ToolCall}
                                   callId={toolCall.id + idx + index}
-                                  animation={idx === blocks.length - 1 && isRunning}
+                                  animation={isRunningLast(idx)}
                                 />
                               ))}
                             </div>
@@ -92,12 +117,11 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                           return null
                       }
                     })}
+                    {isRunningLast(idx) && <TypingIndicator />}
                   </div>
                 )
               })}
             </div>
-
-            {isRunning && blocks.length > 0 && <TypingIndicator />}
 
             {blocks.length > 0 && <StatusIndicator />}
             {

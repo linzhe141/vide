@@ -1,10 +1,8 @@
-import { createContext, useContext, useEffect, type PropsWithChildren, useCallback } from 'react'
+import { createContext, useContext, type PropsWithChildren, useCallback } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
-import { context } from '../../hooks/chatContenxt'
 
 interface ChatContextType {
   // From useWorkflowStream
-  send: (message: string) => Promise<void>
   isFinished: boolean
   isRunning: boolean
   isError: boolean
@@ -21,15 +19,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined)
 export function ChatProvider({ children }: PropsWithChildren) {
   const { send, isFinished, isRunning, isError, errorInfo } = useWorkflowStream()
 
-  useEffect(() => {
-    const firstInput = context.firstInput
-    if (firstInput) {
-      console.log('firstInput', firstInput)
-      context.firstInput = ''
-      send(firstInput)
-    }
-  }, [send])
-
   const handleSend = useCallback(
     async (input: string) => {
       await send(input)
@@ -44,7 +33,6 @@ export function ChatProvider({ children }: PropsWithChildren) {
   const handleReject = useCallback(() => {}, [])
 
   const value: ChatContextType = {
-    send,
     isFinished,
     isRunning,
     isError,

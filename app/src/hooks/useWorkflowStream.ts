@@ -22,9 +22,27 @@ const initialState: WorkflowStreamState = {
   isError: false,
   errorInfo: null,
 }
+
+type WorkflowListenersType = { [k in WorkflowState['type']]: Array<(...args: any[]) => any> }
+const workflowListeners = {} as WorkflowListenersType
+export function onWorkflowEvent(event: WorkflowState['type'], fn: (...args: any[]) => any) {
+  if (!workflowListeners[event]) {
+    workflowListeners[event] = []
+  }
+  workflowListeners[event].push(fn)
+  return () => {
+    workflowListeners[event] = workflowListeners[event].filter((i) => i !== fn)
+  }
+}
+function emitWorkflowEvent(event: WorkflowState['type'], ...args: any[]) {
+  const listeners = workflowListeners[event]
+  if (listeners) {
+    listeners.forEach((fn) => fn(...args))
+  }
+}
+
 // 减少stream re-render 频次
 const BUFFER_SIZE = 10
-
 export function useWorkflowStream() {
   const {
     startNewBlock,
@@ -72,6 +90,7 @@ export function useWorkflowStream() {
             role: 'user',
             content: chunk.data.input,
           })
+          emitWorkflowEvent('workflow-start')
           break
         }
         case 'llm-delta': {
@@ -85,11 +104,13 @@ export function useWorkflowStream() {
 
             deltaBufferRef.current = ''
           }
+          emitWorkflowEvent('llm-delta')
           break
         }
 
         case 'llm-result': {
           updateLLMResultMessage(chunk.data.message as AssistantChatMessage)
+          emitWorkflowEvent('llm-result')
           break
         }
 
@@ -99,6 +120,7 @@ export function useWorkflowStream() {
             tool_call_id: chunk.data.id,
             content: JSON.stringify(chunk.data.result, null, 2),
           })
+          emitWorkflowEvent('tool-call-success')
           break
         }
 
@@ -108,6 +130,7 @@ export function useWorkflowStream() {
             tool_call_id: chunk.data.id,
             content: String(chunk.data.error),
           })
+          emitWorkflowEvent('tool-call-error')
           break
         }
 
@@ -120,6 +143,7 @@ export function useWorkflowStream() {
             isRunning: false,
             isFinished: true,
           }))
+          emitWorkflowEvent('workflow-finished')
           break
         }
 
@@ -139,6 +163,7 @@ export function useWorkflowStream() {
 
           // 即使出错也要结束当前 block
           finishCurrentBlock()
+          emitWorkflowEvent('workflow-error')
           break
         }
       }

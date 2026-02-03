@@ -2,7 +2,7 @@ import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
 import { memo, useEffect, useState } from 'react'
-import { ChatProvider } from './ChatProvider'
+import { ChatProvider, useChatContext } from './ChatProvider'
 import {
   useThreadStore,
   type AssistantChatTextMessage,
@@ -25,6 +25,7 @@ export function Chat() {
 
 function ChatContent({ threadId }: { threadId: string }) {
   const [loading, setLoading] = useState(false)
+  const { handleSend } = useChatContext()
   const setBlocks = useThreadStore((data) => data.setBlocks)
 
   useEffect(() => {
@@ -97,13 +98,16 @@ function ChatContent({ threadId }: { threadId: string }) {
         setLoading(false)
       }
     }
-    // TODO
-    // 如果是从 welecome 页面 user-input 发起的workflow，不需要获取thread messages
-    // 如何友好的判断 firstInut，现在这个context 已经在 ChatProvider 被 清空了
-    if (!context.firstInput) {
+
+    const firstInput = context.firstInput
+    if (firstInput) {
+      console.log('firstInput', firstInput)
+      context.firstInput = ''
+      handleSend(firstInput)
+    } else {
       fetchThread()
     }
-  }, [threadId, setBlocks])
+  }, [threadId, setBlocks, handleSend])
 
   return (
     <div className='bg-background flex h-full w-full flex-col'>

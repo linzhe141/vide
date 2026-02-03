@@ -23,7 +23,7 @@ export const StatusIndicator = memo(function StatusIndicator() {
 // 加载动画组件
 export const TypingIndicator = memo(function TypingIndicator() {
   return (
-    <div className='ml-12 flex items-start gap-3'>
+    <div className='flex items-start gap-3'>
       <div className='flex gap-1.5'>
         <div
           className='bg-text-secondary h-2 w-2 animate-bounce rounded-full'
