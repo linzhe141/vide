@@ -33,9 +33,10 @@ function ChatContent({ threadId }: { threadId: string }) {
       setLoading(true)
       setBlocks([])
       try {
-        await new Promise((resolve) => setTimeout(resolve, 250))
-        const res = await window.ipcRendererApi.invoke('threads-item-messages', { threadId })
-
+        const [res] = await Promise.all([
+          window.ipcRendererApi.invoke('threads-item-messages', { threadId }),
+          new Promise((resolve) => setTimeout(resolve, 250)),
+        ])
         if (res?.length) {
           const messages = res.map((i: any) => {
             switch (i.role) {
