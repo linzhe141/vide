@@ -23,18 +23,18 @@ export const StatusIndicator = memo(function StatusIndicator() {
 // 加载动画组件
 export const TypingIndicator = memo(function TypingIndicator() {
   return (
-    <div className='flex items-start gap-3'>
+    <div className='ml-2 flex items-start gap-3'>
       <div className='flex gap-1.5'>
         <div
-          className='bg-text-secondary h-2 w-2 animate-bounce rounded-full'
+          className='bg-primary/90 h-2 w-2 animate-bounce rounded-full'
           style={{ animationDelay: '0ms' }}
         ></div>
         <div
-          className='bg-text-secondary h-2 w-2 animate-bounce rounded-full'
+          className='bg-primary/80 h-2 w-2 animate-bounce rounded-full'
           style={{ animationDelay: '150ms' }}
         ></div>
         <div
-          className='bg-text-secondary h-2 w-2 animate-bounce rounded-full'
+          className='bg-primary/70 h-2 w-2 animate-bounce rounded-full'
           style={{ animationDelay: '300ms' }}
         ></div>
       </div>

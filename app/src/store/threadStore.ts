@@ -66,7 +66,9 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
 
   setThreadId: (threadId: string) => set({ threadId }),
 
-  setBlocks: (blocks: ConversationBlock[]) => set({ blocks }),
+  setBlocks: (blocks: ConversationBlock[]) => {
+    set({ blocks })
+  },
 
   startNewBlock: (userMessage: UserChatMessage) => {
     set((state) => {

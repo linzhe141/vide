@@ -15,7 +15,6 @@ export function MessageNavigator({ items }: MessageNavigatorProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const visibleIds = useRef<string[]>([])
-  console.log(visibleIds)
   useEffect(() => {
     const anchors = items
       .map((item) => document.getElementById(item.id))
@@ -25,7 +24,6 @@ export function MessageNavigator({ items }: MessageNavigatorProps) {
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        console.log(entries)
         for (const entry of entries) {
           if (entry.isIntersecting) {
             visibleIds.current.push(entry.target.id)

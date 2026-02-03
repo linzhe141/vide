@@ -17,8 +17,8 @@ export function Chat() {
   const params = useParams()
   const id = params.id!
   return (
-    <ChatProvider key={id}>
-      <ChatContentMemo key={id} threadId={id} />
+    <ChatProvider>
+      <ChatContentMemo threadId={id} />
     </ChatProvider>
   )
 }
