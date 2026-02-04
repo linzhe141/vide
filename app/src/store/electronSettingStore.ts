@@ -17,7 +17,7 @@ type Actions = {
 
 export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> = null!
 export async function createElectronSettingStore() {
-  const initState = await window.ipcRendererApi.invoke('get-store')
+  const initState = await window.ipcRendererApi.invoke('get-settings-store')
   useElectronSettingStore = create<State & Actions>(
     forwardToElectronStore(
       (set) => ({
@@ -32,7 +32,7 @@ export async function createElectronSettingStore() {
           set({ llmConfig: config })
         },
       }),
-      (data: any) => window.ipcRendererApi.invoke('dispatch-store', data)
+      (data: any) => window.ipcRendererApi.invoke('dispatch-settings-store', data)
     )
   )
 }

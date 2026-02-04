@@ -12,14 +12,13 @@ export function SidebarFooter() {
             'group flex size-10 items-center justify-center rounded-xl',
             'transition-all duration-200 ease-out',
             'hover:bg-foreground/5 hover:scale-105',
-            isActive && 'bg-primary/20'
+            isActive ? 'bg-primary/20 text-primary' : 'text-text-secondary'
           )
         }
       >
         <Settings
           className={cn(
             'size-5',
-            'text-text-secondary',
             'transition-transform duration-300 ease-out',
             'group-hover:text-primary group-hover:rotate-90'
           )}

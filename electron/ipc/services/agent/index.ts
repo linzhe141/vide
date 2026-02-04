@@ -1,8 +1,6 @@
 import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
-import OpenAI from 'openai'
-import { DevConfig } from '@/dev.config'
 import type {
   AssistantChatMessage,
   ChatMessage,
@@ -22,11 +20,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/electron/databaseManager'
 import type { ThreadMessageRowDto } from '../../api/channels'
 import { ThreadMessageRole } from '@/types'
-
-const client = new OpenAI({
-  apiKey: DevConfig.llm.apiKey,
-  baseURL: DevConfig.llm.baseURL,
-})
+import { settingsStore } from '@/electron/store/settingsStore'
 
 const tools: Tool[] = [
   {
@@ -54,68 +48,71 @@ const tools: Tool[] = [
   getNormalizeTime,
 ]
 
-const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
-  const stream = await client.chat.completions.create(
-    {
-      messages,
-      model: DevConfig.llm.model,
-      stream: true,
-      tools,
-    },
-    { signal }
-  )
-
-  let content = ''
-  const toolCalls: ToolCall[] = []
-  let finishReason: FinishReason = null!
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta
-    const chunkFinishReason = chunk.choices[0].finish_reason
-    if (chunkFinishReason) {
-      finishReason = chunkFinishReason as any
-    }
-    if (delta?.content) {
-      content += delta.content
-      yield {
-        content,
-        delta: delta.content,
-        finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
-      }
-    }
-
-    if (delta?.tool_calls) {
-      for (const toolCall of delta.tool_calls) {
-        if (!toolCalls[toolCall.index]) {
-          toolCalls[toolCall.index] = {
-            function: { arguments: '', name: '' },
-            id: toolCall.id ?? String(Date.now()),
-            type: 'function',
-          }
-        }
-        if (toolCall.function?.name) {
-          toolCalls[toolCall.index].function.name += toolCall.function.name
-        }
-        if (toolCall.function?.arguments) {
-          toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
-        }
-      }
-    }
-  }
-
-  if (toolCalls.length > 0) {
-    yield {
-      tool_calls: toolCalls.filter(Boolean),
-      finishReason: 'tool_calls' as const,
-    }
-  }
-}
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent = null!
   session: AgentSession | null = null
-  currentAssistantMessageId: string | null = null
-  currentToolcallsMessageId: string | null = null
 
   constructor(private appManager: AppManager) {
+    const getLLMClient = this.appManager.agentManager.getLLMClient.bind(
+      this.appManager.agentManager
+    )
+
+    const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
+      const stream = await getLLMClient().chat.completions.create(
+        {
+          messages,
+          model: settingsStore.get('llmConfig').model,
+          stream: true,
+          tools,
+        },
+        { signal }
+      )
+
+      let content = ''
+      const toolCalls: ToolCall[] = []
+      let finishReason: FinishReason = null!
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta
+        const chunkFinishReason = chunk.choices[0].finish_reason
+        if (chunkFinishReason) {
+          finishReason = chunkFinishReason as any
+        }
+        if (delta?.content) {
+          content += delta.content
+          yield {
+            content,
+            delta: delta.content,
+            finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
+          }
+        }
+
+        if (delta?.tool_calls) {
+          for (const toolCall of delta.tool_calls) {
+            if (!toolCalls[toolCall.index]) {
+              toolCalls[toolCall.index] = {
+                function: { arguments: '', name: '' },
+                id: toolCall.id ?? String(Date.now()),
+                type: 'function',
+              }
+            }
+            if (toolCall.function?.name) {
+              toolCalls[toolCall.index].function.name += toolCall.function.name
+            }
+            if (toolCall.function?.arguments) {
+              toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
+            }
+          }
+        }
+      }
+
+      if (toolCalls.length > 0) {
+        yield {
+          tool_calls: toolCalls.filter(Boolean),
+          finishReason: 'tool_calls' as const,
+        }
+      }
+    }
+
     this.agent = new Agent({ processLLMStream, tools })
     this.registerIpcMainSenders()
   }

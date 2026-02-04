@@ -84,10 +84,27 @@ export function LlmSettings() {
       setVerifying(false)
       return false
     }
-
-    // TODO: 这里可以接 IPC / API 真验证
-    setVerifying(false)
-    return true
+    try {
+      const result = await window.ipcRendererApi.invoke('verify-llm-settings-connection', {
+        apiKey,
+        baseUrl,
+        model,
+      })
+      if (result.success) {
+        showResult({
+          success: true,
+          message: 'connection test successful!',
+        })
+      } else {
+        showResult({
+          success: false,
+          message: 'connection test fail!' + result.error,
+        })
+      }
+      return result.success
+    } finally {
+      setVerifying(false)
+    }
   }
 
   // Save
@@ -101,6 +118,7 @@ export function LlmSettings() {
       success: true,
       message: 'Settings saved successfully',
     })
+    window.ipcRendererApi.invoke('submit-llm-seetings', data)
   }
 
   return (

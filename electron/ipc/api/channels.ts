@@ -1,6 +1,6 @@
 import type { AssistantChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
-import type { ThreadMessageRole } from '@/types'
+import type { LLMConfig, ThreadMessageRole } from '@/types'
 
 export type ThreadMessageRowDto = {
   id: string
@@ -20,8 +20,8 @@ export type ThreadRowDto = {
 
 export interface RenderChannel {
   // electron store
-  'get-store': () => Settings
-  'dispatch-store': (data: Record<string, unknown>) => void
+  'get-settings-store': () => Settings
+  'dispatch-settings-store': (data: Record<string, unknown>) => void
 
   // window
   'maxmize-window': () => void
@@ -38,6 +38,12 @@ export interface RenderChannel {
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>
   'get-threads-item-messages': (data: { threadId: string }) => Promise<ThreadMessageRowDto[]>
+
+  // submit llm settings
+  'submit-llm-seetings': (data: LLMConfig) => void
+  'verify-llm-settings-connection': (
+    data: LLMConfig
+  ) => Promise<{ success: true } | { success: false; error: any }>
 }
 
 export interface MainChannel {
