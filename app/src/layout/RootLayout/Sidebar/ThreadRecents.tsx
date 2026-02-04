@@ -7,7 +7,7 @@ export function ThreadRecents() {
   const { threads, setThreads } = useThreadsStore()
   useEffect(() => {
     async function fetchChats() {
-      const res = await window.ipcRendererApi.invoke('threads-list')
+      const res = await window.ipcRendererApi.invoke('get-threads-list')
       const result = res
       setThreads(result)
     }

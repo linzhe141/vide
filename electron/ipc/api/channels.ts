@@ -1,5 +1,23 @@
 import type { AssistantChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
+import type { ThreadMessageRole } from '@/types'
+
+export type ThreadMessageRowDto = {
+  id: string
+  threadId: string
+  role: ThreadMessageRole
+  content: string
+  payload: string
+  createdAt: number
+}
+
+export type ThreadRowDto = {
+  id: string
+  title: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface RenderChannel {
   // electron store
   'get-store': () => Settings
@@ -18,8 +36,8 @@ export interface RenderChannel {
   'agent-change-session': (data: { threadId: string }) => void
 
   // thread message
-  'threads-list': () => any
-  'threads-item-messages': (data: { threadId: string }) => any
+  'get-threads-list': () => Promise<ThreadRowDto[]>
+  'get-threads-item-messages': (data: { threadId: string }) => Promise<ThreadMessageRowDto[]>
 }
 
 export interface MainChannel {

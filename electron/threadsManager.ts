@@ -5,6 +5,7 @@ import { db } from './databaseManager'
 import { threadMessages, threads } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import type { ToolCall, ToolChatMessage } from '@/agent/core/types'
+import { ThreadMessageRole } from '@/types'
 
 export class ThreadsManager {
   currentThreadId: string | null = ''
@@ -15,7 +16,7 @@ export class ThreadsManager {
   init() {
     this.setupAgentEvents()
   }
-  
+
   setupAgentEvents() {
     onAgentEvent('agent-create-session', async (data) => {
       const time = Date.now()
@@ -32,7 +33,7 @@ export class ThreadsManager {
 
       await db.insert(threadMessages).values({
         id: uuid(),
-        role: 'user',
+        role: ThreadMessageRole.User,
         threadId: threadId,
         content: input,
         createdAt: Date.now(),
@@ -46,7 +47,7 @@ export class ThreadsManager {
       await db.insert(threadMessages).values({
         id: this.currentAssistantMessageId,
         threadId: this.currentThreadId!,
-        role: 'assistant',
+        role: ThreadMessageRole.AssistantText,
         content: '',
         payload: '',
         createdAt: Date.now(),
@@ -67,7 +68,7 @@ export class ThreadsManager {
       await db.insert(threadMessages).values({
         id: this.currentToolcallsMessageId!,
         threadId: this.currentThreadId!,
-        role: 'tool-call',
+        role: ThreadMessageRole.ToolCalls,
         content: '',
         payload: JSON.stringify(data),
         createdAt: Date.now(),
@@ -86,7 +87,7 @@ export class ThreadsManager {
       await db.insert(threadMessages).values({
         id: uuid(),
         threadId: this.currentThreadId!,
-        role: 'error',
+        role: ThreadMessageRole.Error,
         content: '',
         payload: JSON.stringify(data.error),
         createdAt: Date.now(),

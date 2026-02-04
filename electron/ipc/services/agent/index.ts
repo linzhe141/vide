@@ -20,6 +20,8 @@ import { fileSystem } from './tools/fileSystem'
 import { threadMessages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { db } from '@/electron/databaseManager'
+import type { ThreadMessageRowDto } from '../../api/channels'
+import { ThreadMessageRole } from '@/types'
 
 const client = new OpenAI({
   apiKey: DevConfig.llm.apiKey,
@@ -144,22 +146,22 @@ export class AgentIpcMainService implements IpcMainService {
       // if no restore
 
       const toLLMmessages: ChatMessage[] = []
-      const rows = await db
+      const rows = (await db
         .select()
         .from(threadMessages)
-        .where(eq(threadMessages.threadId, threadId))
+        .where(eq(threadMessages.threadId, threadId))) as ThreadMessageRowDto[]
 
       let assistantMessage: AssistantChatMessage | null = null
       for (const i of rows) {
         switch (i.role) {
-          case 'user': {
+          case ThreadMessageRole.User: {
             toLLMmessages.push({
               role: 'user',
               content: i.content!,
             })
             break
           }
-          case 'assistant': {
+          case ThreadMessageRole.AssistantText: {
             assistantMessage = {
               role: 'assistant',
               content: i.content!,
@@ -168,7 +170,7 @@ export class AgentIpcMainService implements IpcMainService {
             break
           }
 
-          case 'tool-call': {
+          case ThreadMessageRole.ToolCalls: {
             const toolCalls = JSON.parse(i.payload!).toolCalls as Array<
               ToolCall & { result?: ToolChatMessage }
             >
@@ -200,7 +202,7 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainSenders() {
     onWorkflowEvent('workflow-start', (data) => {
       logger.info('workflow-start')
-      
+
       ipcMainApi.send('agent-workflow-start', data)
     })
 

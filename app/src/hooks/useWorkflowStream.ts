@@ -3,6 +3,7 @@ import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
 import { useThreadStore } from '../store/threadStore'
 import type { AssistantChatMessage } from '@/agent/core/types'
+import { ThreadMessageRole } from '@/types'
 
 type WorkflowStreamState = {
   workflowState: WorkflowState['type']
@@ -87,7 +88,7 @@ export function useWorkflowStream() {
         case 'workflow-start': {
           // 开启新的 block
           startNewBlock({
-            role: 'user',
+            role: ThreadMessageRole.User,
             content: chunk.data.input,
           })
           emitWorkflowEvent('workflow-start')
@@ -98,7 +99,7 @@ export function useWorkflowStream() {
 
           if (deltaBufferRef.current.length >= BUFFER_SIZE) {
             updateLLMDeltaMessage({
-              role: 'assistant',
+              role: ThreadMessageRole.AssistantText,
               content: chunk.data.content,
             })
 
@@ -157,7 +158,7 @@ export function useWorkflowStream() {
           }))
 
           pushMessageToCurrentBlock({
-            role: 'error',
+            role: ThreadMessageRole.Error,
             error: chunk.data.error,
           })
 

@@ -1,30 +1,31 @@
-import type {
-  ToolCall,
-  ToolChatMessage,
-  UserChatMessage,
-  AssistantChatMessage,
-} from '@/agent/core/types'
+import type { ToolCall, ToolChatMessage, AssistantChatMessage } from '@/agent/core/types'
+import { ThreadMessageRole } from '@/types'
 import { create } from 'zustand'
 
-export type AssistantChatTextMessage = {
-  role: 'assistant'
+export type UserChatMessage = {
+  role: ThreadMessageRole.User
   content: string
 }
 
-export type ToolCallChatMessage = {
-  role: 'tool-call'
-  tool_calls: Array<ToolCall & { result?: ToolChatMessage }>
+export type AssistantChatTextMessage = {
+  role: ThreadMessageRole.AssistantText
+  content: string
+}
+
+export type ToolCallsChatMessage = {
+  role: ThreadMessageRole.ToolCalls
+  tool_calls: Array<ToolCall & { result?: string }>
 }
 
 export type WorkflowErrorChatMessage = {
-  role: 'error'
+  role: ThreadMessageRole.Error
   error: any
 }
 
 type ThreadMessage =
   | UserChatMessage
   | AssistantChatTextMessage
-  | ToolCallChatMessage
+  | ToolCallsChatMessage
   | WorkflowErrorChatMessage
 
 // Block 代表一个user-input 到 workflow finished 的对话轮次
@@ -124,7 +125,7 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
 
           const lastMessage = block.messages[block.messages.length - 1]
 
-          if (lastMessage?.role !== 'assistant') {
+          if (lastMessage?.role !== ThreadMessageRole.AssistantText) {
             // 添加新的 assistant 消息
             return {
               ...block,
@@ -160,14 +161,14 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
           if (block.id !== `block-${state.currentBlockIndex}`) return block
 
           const assistantChatTextMessage: AssistantChatTextMessage = {
-            role: 'assistant',
+            role: ThreadMessageRole.AssistantText,
             content: message.content as string,
           }
 
-          let toolCallMessage: ToolCallChatMessage | null = null
+          let toolCallMessage: ToolCallsChatMessage | null = null
           if ('tool_calls' in message && message.tool_calls) {
             toolCallMessage = {
-              role: 'tool-call',
+              role: ThreadMessageRole.ToolCalls,
               // @ts-expect-error ignore
               tool_calls: message.tool_calls,
             }
@@ -178,7 +179,7 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
             Boolean
           ) as ThreadMessage[]
 
-          if (lastMessage?.role === 'assistant') {
+          if (lastMessage?.role === ThreadMessageRole.AssistantText) {
             // 替换最后一条 assistant 消息
             return {
               ...block,
@@ -201,12 +202,14 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
       blocks: state.blocks.map((block) => ({
         ...block,
         messages: block.messages.map((msg) => {
-          if (msg.role !== 'tool-call') return msg
+          if (msg.role !== ThreadMessageRole.ToolCalls) return msg
 
           return {
             ...msg,
             tool_calls: msg.tool_calls.map((tool) =>
-              tool.id === message.tool_call_id ? { ...tool, result: message } : tool
+              tool.id === message.tool_call_id
+                ? { ...tool, result: message.content as string }
+                : tool
             ),
           }
         }),

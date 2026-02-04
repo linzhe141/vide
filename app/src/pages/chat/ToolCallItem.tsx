@@ -3,7 +3,7 @@ import { Wrench, CheckCircle2, XCircle, ChevronDown } from 'lucide-react'
 import { Button } from '../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 import { cn } from '../../lib/utils'
-import type { ToolCall, ToolChatMessage } from '@/agent/core/types'
+import type { ToolCall } from '@/agent/core/types'
 import { useChatContext } from './ChatProvider'
 
 export const ToolCallItem = memo(function ToolCallItem({
@@ -11,7 +11,7 @@ export const ToolCallItem = memo(function ToolCallItem({
   callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: ToolChatMessage }
+  toolCall: ToolCall & { result?: string }
   callId: string
   animation: boolean
 }) {
@@ -115,11 +115,7 @@ export const ToolCallItem = memo(function ToolCallItem({
                         animation={animation}
                       >
                         {'```json\n' +
-                          JSON.stringify(
-                            beautifyResult(toolCall.result.content as string),
-                            null,
-                            2
-                          ) +
+                          JSON.stringify(beautifyResult(toolCall.result), null, 2) +
                           '\n```'}
                       </MarkdownRenderer>
                     </div>

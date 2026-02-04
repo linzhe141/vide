@@ -15,7 +15,7 @@ export const threadMessages = sqliteTable('thread_messages', {
 
   /**
    * UI / workflow 语义角色
-   * system | user | assistant | tool-call | error
+   * ThreadMessageRole
    */
   role: text('role').notNull(),
 

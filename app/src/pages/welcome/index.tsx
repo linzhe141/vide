@@ -21,7 +21,7 @@ export function Welcome() {
     context.firstInput = input
     const threadId = await createThread()
 
-    window.ipcRendererApi.invoke('threads-list').then((res) => {
+    window.ipcRendererApi.invoke('get-threads-list').then((res) => {
       setThreads(res)
     })
     setInput('')

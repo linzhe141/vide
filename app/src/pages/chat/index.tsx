@@ -5,13 +5,14 @@ import { memo, useEffect, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
 import {
   useThreadStore,
-  type AssistantChatTextMessage,
   type ConversationBlock,
-  type ToolCallChatMessage,
+  type UserChatMessage,
+  type AssistantChatTextMessage,
+  type ToolCallsChatMessage,
   type WorkflowErrorChatMessage,
 } from '../../store/threadStore'
-import type { UserChatMessage } from '@/agent/core/types'
 import { context } from '../../hooks/chatContenxt'
+import { ThreadMessageRole } from '@/types'
 
 export function Chat() {
   const params = useParams()
@@ -34,45 +35,53 @@ function ChatContent({ threadId }: { threadId: string }) {
       setBlocks([])
       try {
         const [res] = await Promise.all([
-          window.ipcRendererApi.invoke('threads-item-messages', { threadId }),
+          window.ipcRendererApi.invoke('get-threads-item-messages', { threadId }),
           new Promise((resolve) => setTimeout(resolve, 250)),
         ])
         if (res?.length) {
-          const messages = res.map((i: any) => {
-            switch (i.role) {
-              case 'user': {
-                return { ...i, role: 'user', content: i.content } as UserChatMessage
+          const messages = res
+            .map((i) => {
+              switch (i.role) {
+                case ThreadMessageRole.User: {
+                  return {
+                    ...i,
+                    role: ThreadMessageRole.User,
+                    content: i.content,
+                  } as UserChatMessage
+                }
+                case ThreadMessageRole.AssistantText: {
+                  return {
+                    ...i,
+                    role: ThreadMessageRole.AssistantText,
+                    content: i.content,
+                  } as AssistantChatTextMessage
+                }
+                case ThreadMessageRole.ToolCalls: {
+                  return {
+                    ...i,
+                    role: ThreadMessageRole.ToolCalls,
+                    tool_calls: JSON.parse(i.payload).toolCalls,
+                  } as ToolCallsChatMessage
+                }
+                case ThreadMessageRole.Error: {
+                  return {
+                    ...i,
+                    role: ThreadMessageRole.Error,
+                    error: i.payload,
+                  } as WorkflowErrorChatMessage
+                }
               }
-              case 'assistant': {
-                return {
-                  ...i,
-                  role: 'assistant',
-                  content: i.content,
-                } as AssistantChatTextMessage
-              }
-              case 'tool-call': {
-                return {
-                  ...i,
-                  role: 'tool-call',
-                  tool_calls: JSON.parse(i.payload).toolCalls,
-                } as ToolCallChatMessage
-              }
-              case 'error': {
-                return { ...i, role: 'error', error: i.payload } as WorkflowErrorChatMessage
-              }
-              default: {
-                return i
-              }
-            }
-          })
+            })
+            .filter(Boolean)
 
           // 将消息列表转换为 blocks
           const blocks: ConversationBlock[] = []
           let currentBlock: ConversationBlock | null = null
           let blockIndex = 0
 
-          for (const message of messages) {
-            if (message.role === 'user') {
+          for (const msg of messages) {
+            const message = msg!
+            if (message.role === ThreadMessageRole.User) {
               // 完成上一个 block
               if (currentBlock) {
                 blocks.push(currentBlock)

@@ -10,6 +10,7 @@ import { useThreadStore } from '../../store/threadStore'
 import { WorkflowErrorMessage } from './WorkflowErrorMessage'
 import { MessageNavigator } from './MessageNavigator'
 import { cn } from '../../lib/utils'
+import { ThreadMessageRole } from '@/types'
 
 export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((data) => data.blocks)
@@ -71,7 +72,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                   >
                     {block.messages.map((msg, msgIndex) => {
                       switch (msg.role) {
-                        case 'user':
+                        case ThreadMessageRole.User:
                           return (
                             <UserMessage
                               key={msgIndex}
@@ -80,7 +81,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                             />
                           )
 
-                        case 'assistant':
+                        case ThreadMessageRole.AssistantText:
                           return (
                             <div key={msgIndex}>
                               {msg.content && (
@@ -91,7 +92,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                               )}
                             </div>
                           )
-                        case 'tool-call':
+                        case ThreadMessageRole.ToolCalls: {
                           return (
                             <div key={msgIndex}>
                               {msg.tool_calls?.map((toolCall, index) => (
@@ -104,7 +105,8 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                               ))}
                             </div>
                           )
-                        case 'error':
+                        }
+                        case ThreadMessageRole.Error:
                           return (
                             <div key={msgIndex}>
                               <WorkflowErrorMessage error={msg.error}></WorkflowErrorMessage>
