@@ -276,6 +276,899 @@ onClickOutside(root, () => (open.value = false))
 .select-item:hover {
   background: #f5f5f5;
 }
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
+</style><style scoped>
+.select { position: relative; width: 160px; }
+.select-trigger {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.select-menu {
+  position: absolute;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+.select-item {
+  padding: 6px 10px;
+}
+.select-item:hover {
+  background: #f5f5f5;
+}
 </style>
 \`\`\`
 

@@ -1,13 +1,13 @@
 import type { ToolCall } from '@/agent/core/types'
 import { useChatContext } from './ChatProvider'
-import { UserMessage } from './UserMessage'
-import { AssistantMessage } from './AssistantMessage'
-import { ToolCallItem } from './ToolCallItem'
+import { UserMessage } from '../../components/messages/UserMessage'
+import { AssistantMessage } from '../../components/messages/AssistantMessage'
+import { ToolCallItem } from '../../components/messages/ToolCallItem'
+import { WorkflowErrorMessage } from '../../components/messages/WorkflowErrorMessage'
 import { StatusIndicator, TypingIndicator, EmptyState } from './ChatUIComponents'
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
-import { WorkflowErrorMessage } from './WorkflowErrorMessage'
 import { MessageNavigator } from './MessageNavigator'
 import { cn } from '../../lib/utils'
 import { ThreadMessageRole } from '@/types'
@@ -22,18 +22,18 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
   }, [])
   const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setShowToBottomButton(!entry.isIntersecting)
-        })
-      },
-      { threshold: 0.5 }
-    )
-    if (placeholderRef.current) {
-      observer.observe(placeholderRef.current)
-    }
-    return () => observer.disconnect()
+    // const observer = new IntersectionObserver(
+    //   (entries) => {
+    //     entries.forEach((entry) => {
+    //       setShowToBottomButton(!entry.isIntersecting)
+    //     })
+    //   },
+    //   { threshold: 0.5 }
+    // )
+    // if (placeholderRef.current) {
+    //   observer.observe(placeholderRef.current)
+    // }
+    // return () => observer.disconnect()
   }, [])
 
   const prevLengthRef = useRef(blocks.length)
@@ -60,6 +60,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                 const anchorId = `workflow-block-${idx}`
                 return (
                   <div
+                    key={anchorId}
                     className={cn('space-y-5', {
                       // TODO
                       // 想做到chatgpt那种体验
@@ -123,7 +124,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
             </div>
 
             {blocks.length > 0 && <StatusIndicator />}
-            {
+            {/* {
               <MessageNavigator
                 items={blocks.map((i, index) => ({
                   index: index,
@@ -131,7 +132,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                   label: i.userMessage.content as string,
                 }))}
               />
-            }
+            } */}
           </>
         )}
       </div>

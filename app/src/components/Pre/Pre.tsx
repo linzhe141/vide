@@ -1,4 +1,12 @@
-import { memo, useEffect, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PropsWithChildren,
+  type ReactElement,
+} from 'react'
 import { cn } from '../../lib/utils'
 import { THEME } from '../highlight/codeTheme'
 import type { ThemedToken } from 'shiki'
@@ -59,6 +67,21 @@ const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang: 
   )
 })
 
+const TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
+  return (
+    <span
+      style={{
+        color: token.color,
+        backgroundColor: token.bgColor,
+        ...token.htmlStyle,
+      }}
+      {...token.htmlAttrs}
+    >
+      {token.content}
+    </span>
+  )
+})
+
 const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
 
@@ -66,13 +89,15 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
 
   const indexRef = useRef(0)
   const [tokens, setTokens] = useState<ThemedToken[]>([])
-  const tokenizerRef = useRef<ShikiStreamTokenizer>(
-    new ShikiStreamTokenizer({
+  const tokenizerRef = useRef<ShikiStreamTokenizer>(null!)
+
+  useEffect(() => {
+    tokenizerRef.current = new ShikiStreamTokenizer({
       highlighter: highlighter!,
       lang: highlightLang,
       theme: 'css-variables',
     })
-  )
+  }, [highlightLang])
 
   useEffect(() => {
     async function updateStreamTokens() {
@@ -81,38 +106,36 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       if (formatCode.length > indexRef.current) {
         const incrementalText = formatCode.slice(indexRef.current)
         indexRef.current = formatCode.length
+
+        const start = performance.now()
+
         const { stable, unstable, recall } = await tokenizerRef.current.enqueue(incrementalText)
+
+        const end = performance.now()
+        const ms = end - start
+        const seconds = ms / 1000
+        console.log(`enqueue 耗时: ${seconds.toFixed(3)} 秒`)
+
         const chunkTokens = [...stable, ...unstable]
-        if (recall > 0) {
-          setTokens((prev) => prev.slice(0, -recall))
-        }
-        for (const token of chunkTokens) {
-          setTokens((prev) => {
-            let result = [...prev]
-            result = [...prev, token]
-            return result
-          })
-        }
+        setTokens((prev) => {
+          // 处理recall
+          const baseTokens = recall > 0 ? prev.slice(0, -recall) : prev
+          // 一次性添加所有新tokens
+          return [...baseTokens, ...chunkTokens]
+        })
       }
     }
     updateStreamTokens()
   }, [code])
+  // 使用useMemo缓存渲染结果
+  const renderedTokens = useMemo(() => {
+    return tokens.map((t, i) => <TokenSpan key={i} token={t} />)
+  }, [tokens])
 
   return (
     <CodeBlockWrapper lang={lang} code={code}>
-      {tokens.map((t, i) => (
-        <span
-          key={i}
-          style={{
-            color: t.color,
-            backgroundColor: t.bgColor,
-            ...t.htmlStyle,
-          }}
-          {...t.htmlAttrs}
-        >
-          {t.content}
-        </span>
-      ))}
+      {renderedTokens}
+      {/* {code} */}
     </CodeBlockWrapper>
   )
 })

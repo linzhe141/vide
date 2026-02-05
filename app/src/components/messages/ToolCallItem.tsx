@@ -4,7 +4,7 @@ import { Button } from '../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 import { cn } from '../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
-import { useChatContext } from './ChatProvider'
+import { useChatContext } from '../../pages/chat/ChatProvider'
 
 export const ToolCallItem = memo(function ToolCallItem({
   toolCall,

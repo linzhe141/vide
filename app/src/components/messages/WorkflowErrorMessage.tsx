@@ -1,4 +1,4 @@
-import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
+import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 
 export function WorkflowErrorMessage({ error }: { error: any }) {
   return (
