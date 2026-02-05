@@ -22,18 +22,18 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
   }, [])
   const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
   useEffect(() => {
-    // const observer = new IntersectionObserver(
-    //   (entries) => {
-    //     entries.forEach((entry) => {
-    //       setShowToBottomButton(!entry.isIntersecting)
-    //     })
-    //   },
-    //   { threshold: 0.5 }
-    // )
-    // if (placeholderRef.current) {
-    //   observer.observe(placeholderRef.current)
-    // }
-    // return () => observer.disconnect()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setShowToBottomButton(!entry.isIntersecting)
+        })
+      },
+      { threshold: 0.5 }
+    )
+    if (placeholderRef.current) {
+      observer.observe(placeholderRef.current)
+    }
+    return () => observer.disconnect()
   }, [])
 
   const prevLengthRef = useRef(blocks.length)
@@ -124,7 +124,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
             </div>
 
             {blocks.length > 0 && <StatusIndicator />}
-            {/* {
+            {
               <MessageNavigator
                 items={blocks.map((i, index) => ({
                   index: index,
@@ -132,7 +132,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                   label: i.userMessage.content as string,
                 }))}
               />
-            } */}
+            }
           </>
         )}
       </div>

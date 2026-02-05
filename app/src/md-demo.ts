@@ -255,6 +255,2777 @@ onClickOutside(root, () => (open.value = false))
       </li>
     </ul>
   </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
+</template><template>
+  <div ref="root" class="select">
+    <div class="select-trigger" @click="open = !open">
+      {{ selectedLabel }}
+    </div>
+
+    <ul v-if="open" class="select-menu">
+      <li
+        v-for="opt in options"
+        :key="opt.value"
+        @click="select(opt)"
+        class="select-item"
+      >
+        {{ opt.label }}
+      </li>
+    </ul>
+  </div>
 </template>
 
 <style scoped>

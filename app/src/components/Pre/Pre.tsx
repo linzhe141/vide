@@ -1,12 +1,4 @@
-import {
-  memo,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PropsWithChildren,
-  type ReactElement,
-} from 'react'
+import { memo, useEffect, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
 import { cn } from '../../lib/utils'
 import { THEME } from '../highlight/codeTheme'
 import type { ThemedToken } from 'shiki'
@@ -46,28 +38,30 @@ const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang: 
 
   return (
     <CodeBlockWrapper lang={lang} code={code}>
-      {tokens.map((line, i) => (
-        <span key={i} className='block'>
-          {line.map((t, idx) => (
-            <span
-              key={idx}
-              style={{
-                color: t.color,
-                backgroundColor: t.bgColor,
-                ...t.htmlStyle,
-              }}
-              {...t.htmlAttrs}
-            >
-              {t.content}
-            </span>
-          ))}
-        </span>
-      ))}
+      <code>
+        {tokens.map((line, i) => (
+          <span key={i} className='block'>
+            {line.map((t, idx) => (
+              <span
+                key={idx}
+                style={{
+                  color: t.color,
+                  backgroundColor: t.bgColor,
+                  ...t.htmlStyle,
+                }}
+                {...t.htmlAttrs}
+              >
+                {t.content}
+              </span>
+            ))}
+          </span>
+        ))}
+      </code>
     </CodeBlockWrapper>
   )
 })
 
-const TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
+const _TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
   return (
     <span
       style={{
@@ -84,11 +78,10 @@ const TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
 
 const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
-
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
 
   const indexRef = useRef(0)
-  const [tokens, setTokens] = useState<ThemedToken[]>([])
+  const codeContainerRef = useRef<HTMLElement>(null)
   const tokenizerRef = useRef<ShikiStreamTokenizer>(null!)
 
   useEffect(() => {
@@ -97,45 +90,61 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       lang: highlightLang,
       theme: 'css-variables',
     })
-  }, [highlightLang])
+    // 重置容器
+    if (codeContainerRef.current) {
+      codeContainerRef.current.innerHTML = ''
+    }
+    indexRef.current = 0
+  }, [highlightLang, lang])
 
   useEffect(() => {
     async function updateStreamTokens() {
       let formatCode = code
       if (code.at(-1) === '\n') formatCode = code.slice(0, -1)
+
       if (formatCode.length > indexRef.current) {
         const incrementalText = formatCode.slice(indexRef.current)
         indexRef.current = formatCode.length
-
-        const start = performance.now()
-
+        await new Promise((resolve) => setTimeout(resolve, 100))
         const { stable, unstable, recall } = await tokenizerRef.current.enqueue(incrementalText)
-
-        const end = performance.now()
-        const ms = end - start
-        const seconds = ms / 1000
-        console.log(`enqueue 耗时: ${seconds.toFixed(3)} 秒`)
-
         const chunkTokens = [...stable, ...unstable]
-        setTokens((prev) => {
-          // 处理recall
-          const baseTokens = recall > 0 ? prev.slice(0, -recall) : prev
-          // 一次性添加所有新tokens
-          return [...baseTokens, ...chunkTokens]
-        })
+        // 直接操作 DOM，完全跳过 React
+        if (codeContainerRef.current) {
+          // 处理 recall（向后删除）
+          if (recall > 0) {
+            let count = 0
+            let node = codeContainerRef.current.lastChild
+            while (node && count < recall) {
+              const next = node.previousSibling
+              node.remove()
+              node = next
+              count++
+            }
+          }
+
+          // 增量添加新 token
+          chunkTokens.forEach((token) => {
+            const span = document.createElement('span')
+            if (token.color) span.style.color = token.color
+            if (token.bgColor) span.style.backgroundColor = token.bgColor
+            if (token.htmlStyle) {
+              Object.assign(span.style, token.htmlStyle)
+            }
+            if (token.htmlAttrs) {
+              Object.assign(span, token.htmlAttrs)
+            }
+            span.textContent = token.content
+            codeContainerRef.current!.appendChild(span)
+          })
+        }
       }
     }
     updateStreamTokens()
   }, [code])
-  // 使用useMemo缓存渲染结果
-  const renderedTokens = useMemo(() => {
-    return tokens.map((t, i) => <TokenSpan key={i} token={t} />)
-  }, [tokens])
 
   return (
     <CodeBlockWrapper lang={lang} code={code}>
-      {renderedTokens}
-      {/* {code} */}
+      <code ref={codeContainerRef} />
     </CodeBlockWrapper>
   )
 })
@@ -160,7 +169,7 @@ function CodeBlockWrapper({
   }
   return (
     <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
-      <div className='text-muted-foreground flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
+      <div className='text-muted-foreground sticky top-0 z-10 flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
         <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
 
         <div className='flex items-center gap-1'>
@@ -181,7 +190,7 @@ function CodeBlockWrapper({
         className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818]', '!my-0')}
         style={{ ...THEME.dark, fontSize: '14px' }}
       >
-        <code>{children}</code>
+        {children}
       </pre>
     </div>
   )
