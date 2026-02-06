@@ -13,6 +13,8 @@ import {
 } from '../../store/threadStore'
 import { context } from '../../hooks/chatContenxt'
 import { ThreadMessageRole } from '@/types'
+import { useThreadsStore } from '../../store/threadsStore'
+import { onWorkflowEvent } from '../../hooks/useWorkflowStream'
 
 export function Chat() {
   const params = useParams()
@@ -25,6 +27,8 @@ export function Chat() {
 }
 
 function ChatContent({ threadId }: { threadId: string }) {
+  const { setThreads } = useThreadsStore()
+
   const [loading, setLoading] = useState(false)
   const { handleSend } = useChatContext()
   const setBlocks = useThreadStore((data) => data.setBlocks)
@@ -117,7 +121,18 @@ function ChatContent({ threadId }: { threadId: string }) {
     } else {
       fetchThread()
     }
-  }, [threadId, setBlocks, handleSend])
+
+    let firstRunning = true
+    onWorkflowEvent('workflow-start', async () => {
+      if (firstRunning) {
+        firstRunning = false
+        console.log('xxxx')
+        window.ipcRendererApi.invoke('get-threads-list').then((res) => {
+          setThreads(res)
+        })
+      }
+    })
+  }, [threadId, setBlocks, handleSend, setThreads])
 
   return (
     <div className='bg-background flex h-full w-full flex-col'>

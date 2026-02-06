@@ -39,6 +39,16 @@ export class ThreadsManager {
         createdAt: Date.now(),
         payload: '',
       })
+
+      const rows = await db.select().from(threads).where(eq(threads.id, this.currentThreadId))
+      if (rows.length && !rows[0].title) {
+        await db
+          .update(threads)
+          .set({
+            title: input,
+          })
+          .where(eq(threads.id, this.currentThreadId))
+      }
     })
 
     onLLMEvent('llm-start', async () => {
