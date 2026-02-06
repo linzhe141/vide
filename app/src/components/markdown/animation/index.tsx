@@ -20,18 +20,16 @@ export const AnimatedText = memo(({ text }: { text: string }) => {
   )
 })
 
-const wrapWithAnimation = (node: React.ReactNode): React.ReactNode => {
+const wrapWithAnimation = (node: React.ReactNode, index: number): React.ReactNode => {
   if (typeof node === 'string') {
-    return <AnimatedText text={node}></AnimatedText>
+    return <AnimatedText text={node} key={index}></AnimatedText>
   }
   if (React.isValidElement(node)) {
     const props = node.props as PropsWithChildren
     // 递归处理 children
-    const children = props.children
-    const newChildren = Array.isArray(children)
-      ? children.map(wrapWithAnimation)
-      : wrapWithAnimation(children)
+    const children = Array.isArray(props.children) ? props.children : [props.children]
 
+    const newChildren = children.map(wrapWithAnimation)
     return React.cloneElement(node, { ...props, children: newChildren } as any)
   }
 

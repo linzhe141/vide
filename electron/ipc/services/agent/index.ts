@@ -14,7 +14,8 @@ import { Agent, AgentSession } from '@/agent/core/agent'
 import { onLLMEvent, onToolEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 import { getNormalizeTime } from './tools/getNormalizeTime'
-import { fileSystem } from './tools/fileSystem'
+import { fileSystem } from './tools/fileRead'
+import { fsCreateFile } from './tools/fileWrite'
 import { threadMessages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { db } from '@/electron/databaseManager'
@@ -45,6 +46,7 @@ const tools: Tool[] = [
     },
   },
   fileSystem,
+  fsCreateFile,
   getNormalizeTime,
 ]
 

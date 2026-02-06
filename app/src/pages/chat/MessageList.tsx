@@ -18,7 +18,8 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
   const toBottom = useCallback(() => {
-    placeholderRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const wrapper = document.getElementById('chat-wrapper')!
+    wrapper.scrollTop = wrapper.scrollHeight
   }, [])
   const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
   useEffect(() => {

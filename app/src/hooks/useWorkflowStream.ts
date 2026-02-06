@@ -56,6 +56,7 @@ export function useWorkflowStream() {
 
   const [state, setState] = useState<WorkflowStreamState>(initialState)
   const deltaBufferRef = useRef<string>('')
+  const contentBufferRef = useRef<string>('')
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
 
@@ -96,7 +97,7 @@ export function useWorkflowStream() {
         }
         case 'llm-delta': {
           deltaBufferRef.current += chunk.data.delta
-
+          contentBufferRef.current = chunk.data.content
           if (deltaBufferRef.current.length >= BUFFER_SIZE) {
             updateLLMDeltaMessage({
               role: ThreadMessageRole.AssistantText,
@@ -106,6 +107,21 @@ export function useWorkflowStream() {
             deltaBufferRef.current = ''
           }
           emitWorkflowEvent('llm-delta')
+          break
+        }
+
+        case 'llm-tool-calls': {
+          // 如果缓冲还有数据，就再更新一次
+          if (deltaBufferRef.current) {
+            updateLLMDeltaMessage({
+              role: ThreadMessageRole.AssistantText,
+              content: contentBufferRef.current,
+            })
+
+            deltaBufferRef.current = ''
+            contentBufferRef.current = ''
+          }
+          emitWorkflowEvent('llm-tool-calls')
           break
         }
 
