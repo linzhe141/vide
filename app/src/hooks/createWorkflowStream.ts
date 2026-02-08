@@ -8,6 +8,9 @@ export type WorkflowState =
   | { type: 'workflow-wait-human-approve'; data: any }
   | { type: 'llm-start' }
   | { type: 'llm-delta'; data: { delta: string; content: string } }
+  | { type: 'llm-tool-calls-start' }
+  | { type: 'llm-tool-call-name'; data: { name: string; id: string } }
+  | { type: 'llm-tool-call-arguments'; data: { arguments: string; id: string } }
   | { type: 'llm-tool-calls'; data: { toolCalls: ToolCall[] } }
   | { type: 'llm-end'; data: { finishReason: string } }
   | { type: 'llm-result'; data: { message: AssistantChatMessage } }
@@ -64,6 +67,23 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
         window.ipcRendererApi.on('agent-llm-start', () => {
           const workflowChunk: WorkflowState = { type: 'llm-start' }
+
+          enqueue(workflowChunk)
+        }),
+
+        window.ipcRendererApi.on('agent-llm-tool-calls-start', () => {
+          const workflowChunk: WorkflowState = { type: 'llm-tool-calls-start' }
+
+          enqueue(workflowChunk)
+        }),
+        window.ipcRendererApi.on('agent-llm-tool-call-name', (data) => {
+          const workflowChunk: WorkflowState = { type: 'llm-tool-call-name', data }
+
+          enqueue(workflowChunk)
+        }),
+
+        window.ipcRendererApi.on('agent-llm-tool-call-arguments', (data) => {
+          const workflowChunk: WorkflowState = { type: 'llm-tool-call-arguments', data }
 
           enqueue(workflowChunk)
         }),

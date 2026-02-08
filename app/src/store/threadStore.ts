@@ -54,6 +54,8 @@ type Actions = {
   updateLLMDeltaMessage: (message: AssistantChatTextMessage) => void
   updateLLMResultMessage: (message: AssistantChatMessage) => void
   updateToolResultMessage: (message: ToolChatMessage) => void
+  addToolcallName: (data: { toolCallName: string; toolCallId: string }) => void
+  addToolcallArguments: (data: { toolArguments: string; toolCallId: string }) => void
 
   // 辅助方法
   getCurrentBlock: () => ConversationBlock | undefined
@@ -225,5 +227,87 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
   getAllMessages: () => {
     const state = get()
     return state.blocks.flatMap((block) => [...block.messages])
+  },
+
+  addToolcallName: ({ toolCallName, toolCallId }) => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          const lastMessage = block.messages[block.messages.length - 1]
+          if (lastMessage?.role === ThreadMessageRole.AssistantText) {
+            // 第一个 toolCall
+            const toolCallMessage: ToolCallsChatMessage = {
+              role: ThreadMessageRole.ToolCalls,
+              tool_calls: [
+                {
+                  type: 'function',
+                  id: toolCallId,
+                  function: { arguments: '', name: toolCallName },
+                },
+              ],
+            }
+            return {
+              ...block,
+              messages: [...block.messages, toolCallMessage],
+            }
+          } else if (lastMessage?.role === ThreadMessageRole.ToolCalls) {
+            // 追加消息
+            lastMessage.tool_calls = [
+              ...lastMessage.tool_calls,
+              {
+                type: 'function',
+                id: toolCallId,
+                function: { arguments: '', name: toolCallName },
+              },
+            ]
+            return {
+              ...block,
+              messages: [...block.messages.slice(0, -1), lastMessage],
+            }
+          } else {
+            return block
+          }
+        }),
+      }
+    })
+  },
+
+  addToolcallArguments: ({ toolArguments, toolCallId }) => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          const lastMessage = block.messages[block.messages.length - 1]
+          if (lastMessage?.role === ThreadMessageRole.ToolCalls) {
+            // 追加消息
+            lastMessage.tool_calls = lastMessage.tool_calls.map((i) => {
+              if (i.id === toolCallId) {
+                i.function.arguments = toolArguments
+              }
+              return i
+            })
+            return {
+              ...block,
+              messages: [...block.messages.slice(0, -1), lastMessage],
+            }
+          } else {
+            return block
+          }
+        }),
+      }
+    })
   },
 }))

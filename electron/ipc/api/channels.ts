@@ -70,4 +70,8 @@ export interface MainChannel {
   'agent-workflow-finished': (data: { threadId: string }) => void
   'agent-workflow-wait-human-approve': (data: { threadId: string }) => void
   'agent-workflow-error': (data: { threadId: string; error: any }) => void
+  // just for ui
+  'agent-llm-tool-calls-start': () => void
+  'agent-llm-tool-call-name': (data: { name: string; id: string }) => void
+  'agent-llm-tool-call-arguments': (data: { arguments: string; id: string }) => void
 }

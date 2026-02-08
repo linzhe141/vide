@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 
 export const UserMessage = memo(function UserMessage({
   content,
@@ -10,7 +11,11 @@ export const UserMessage = memo(function UserMessage({
   return (
     <div id={id} data-anchor className='flex scroll-mt-24 items-start gap-3'>
       <div className='bg-primary max-w-2xl rounded-xl rounded-tl-sm px-5 py-3 shadow-sm'>
-        <p className='text-sm leading-relaxed text-white'>{content}</p>
+        <p className='leading-relaxed text-white'>
+          <MarkdownRenderer animation={false} className='text-sm'>
+            {content}
+          </MarkdownRenderer>
+        </p>
       </div>
     </div>
   )

@@ -73,6 +73,8 @@ export class AgentIpcMainService implements IpcMainService {
       let content = ''
       const toolCalls: ToolCall[] = []
       let finishReason: FinishReason = null!
+
+      const finishedToolCallName: string[] = []
       for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta
         const chunkFinishReason = chunk.choices[0].finish_reason
@@ -89,6 +91,9 @@ export class AgentIpcMainService implements IpcMainService {
         }
 
         if (delta?.tool_calls) {
+          // just for ui
+          ipcMainApi.send('agent-llm-tool-calls-start')
+
           for (const toolCall of delta.tool_calls) {
             if (!toolCalls[toolCall.index]) {
               toolCalls[toolCall.index] = {
@@ -101,7 +106,21 @@ export class AgentIpcMainService implements IpcMainService {
               toolCalls[toolCall.index].function.name += toolCall.function.name
             }
             if (toolCall.function?.arguments) {
+              const toolCallName = toolCalls[toolCall.index].function.name
+              const id = toolCalls[toolCall.index].id
+              if (!finishedToolCallName.find((i) => i === toolCallName)) {
+                finishedToolCallName.push(toolCallName)
+
+                // just for ui
+                ipcMainApi.send('agent-llm-tool-call-name', { id, name: toolCallName })
+              }
               toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
+
+              // just for ui
+              ipcMainApi.send('agent-llm-tool-call-arguments', {
+                id,
+                arguments: toolCalls[toolCall.index].function.arguments,
+              })
             }
           }
         }

@@ -1,12 +1,12 @@
 import { memo, useState } from 'react'
 import { Wrench, CheckCircle2, XCircle, ChevronDown } from 'lucide-react'
-import { Button } from '../../ui/Button'
+import { Button } from '../../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
-import { cn } from '../../lib/utils'
+import { cn } from '../../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
-import { useChatContext } from '../../pages/chat/ChatProvider'
+import { useChatContext } from '../../../pages/chat/ChatProvider'
 
-export const ToolCallItem = memo(function ToolCallItem({
+export const NormalToolCall = memo(function NormalToolCall({
   toolCall,
   callId,
   animation,

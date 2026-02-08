@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from 'react'
 import type { WorkflowState } from './createWorkflowStream'
 import { createWorkflowStream } from './createWorkflowStream'
 import { useThreadStore } from '../store/threadStore'
-import type { AssistantChatMessage } from '@/agent/core/types'
 import { ThreadMessageRole } from '@/types'
 
 type WorkflowStreamState = {
@@ -50,7 +49,8 @@ export function useWorkflowStream() {
     finishCurrentBlock,
     pushMessageToCurrentBlock,
     updateLLMDeltaMessage,
-    updateLLMResultMessage,
+    addToolcallArguments,
+    addToolcallName,
     updateToolResultMessage,
   } = useThreadStore()
 
@@ -110,7 +110,7 @@ export function useWorkflowStream() {
           break
         }
 
-        case 'llm-tool-calls': {
+        case 'llm-tool-calls-start': {
           // 如果缓冲还有数据，就再更新一次
           if (deltaBufferRef.current) {
             updateLLMDeltaMessage({
@@ -121,12 +121,39 @@ export function useWorkflowStream() {
             deltaBufferRef.current = ''
             contentBufferRef.current = ''
           }
-          emitWorkflowEvent('llm-tool-calls')
+          emitWorkflowEvent('llm-tool-calls-start')
+          break
+        }
+
+        case 'llm-tool-call-name': {
+          addToolcallName({
+            toolCallId: chunk.data.id,
+            toolCallName: chunk.data.name,
+          })
+          emitWorkflowEvent('llm-tool-call-name')
+          break
+        }
+        case 'llm-tool-call-arguments': {
+          addToolcallArguments({
+            toolCallId: chunk.data.id,
+            toolArguments: chunk.data.arguments,
+          })
+          emitWorkflowEvent('llm-tool-call-arguments')
           break
         }
 
         case 'llm-result': {
-          updateLLMResultMessage(chunk.data.message as AssistantChatMessage)
+          // updateLLMResultMessage(chunk.data.message as AssistantChatMessage)
+
+          if (deltaBufferRef.current) {
+            updateLLMDeltaMessage({
+              role: ThreadMessageRole.AssistantText,
+              content: contentBufferRef.current,
+            })
+
+            deltaBufferRef.current = ''
+            contentBufferRef.current = ''
+          }
           emitWorkflowEvent('llm-result')
           break
         }
@@ -190,7 +217,6 @@ export function useWorkflowStream() {
       finishCurrentBlock,
       pushMessageToCurrentBlock,
       updateLLMDeltaMessage,
-      updateLLMResultMessage,
       updateToolResultMessage,
     ]
   )
