@@ -1,4 +1,9 @@
-import type { AssistantChatMessage, FinishReason, ToolCall } from '@/agent/core/types'
+import type {
+  AssistantChatMessage,
+  CallToolStepPayload,
+  FinishReason,
+  ToolCall,
+} from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
 import type { LLMConfig, ThreadMessageRole } from '@/types'
 
@@ -32,6 +37,7 @@ export interface RenderChannel {
   'agent-create-session': () => Promise<string>
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
+  'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
   'agent-change-session': (data: { threadId: string }) => void
 
@@ -68,7 +74,10 @@ export interface MainChannel {
   'agent-tool-call-success': (data: { id: string; toolName: string; result: any }) => void
   'agent-tool-call-error': (data: { id: string; toolName: string; error: any }) => void
   'agent-workflow-finished': (data: { threadId: string }) => void
-  'agent-workflow-wait-human-approve': (data: { threadId: string }) => void
+  'agent-workflow-wait-human-approve': (data: {
+    threadId: string
+    payload: CallToolStepPayload
+  }) => void
   'agent-workflow-error': (data: { threadId: string; error: any }) => void
   // just for ui
   'agent-llm-tool-calls-start': () => void

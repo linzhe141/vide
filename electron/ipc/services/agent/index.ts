@@ -185,10 +185,16 @@ export class AgentIpcMainService implements IpcMainService {
       this.session!.humanApprove()
     })
 
+    ipcMainApi.handle('agent-human-rejected', () => {
+      logger.info('agent-human-rejected ')
+
+      this.session!.humanReject()
+    })
+
     ipcMainApi.handle('agent-workflow-abort', () => {
       logger.info('agent-workflow-abort')
 
-      this.session!.humanReject()
+      this.session!.abort()
     })
 
     ipcMainApi.handle('agent-change-session', async ({ threadId }) => {
@@ -322,12 +328,10 @@ export class AgentIpcMainService implements IpcMainService {
       ipcMainApi.send('agent-workflow-finished', data)
     })
 
-    onWorkflowEvent('workflow-wait-human-approve', () => {
+    onWorkflowEvent('workflow-wait-human-approve', (data) => {
       logger.info('workflow-wait-human-approve')
 
-      ipcMainApi.send('agent-workflow-wait-human-approve', {
-        threadId: this.session!.thread.id,
-      })
+      ipcMainApi.send('agent-workflow-wait-human-approve', data)
     })
 
     onWorkflowEvent('workflow-error', async (data) => {

@@ -8,7 +8,7 @@ import type {
   CallToolStepPayload,
   ToolCall,
 } from './types'
-import { workflowEvent } from './event'
+import { toolEvent, workflowEvent } from './event'
 import type { Thread } from './threads'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
@@ -36,10 +36,27 @@ export class Workflow {
 
   async humanApproveToolCall() {
     if (this.nextStep) {
+      workflowEvent.emit('workflow-tool-call-approved')
       this.setState(this.nextStep.state)
       this.run(this.thread.id, this.nextStep.payload)
     }
   }
+
+  async humanRejectToolCall() {
+    if (this.nextStep) {
+      const payload = this.nextStep.payload as CallToolStepPayload
+      const toolCall = payload.toolCalls[payload.index]
+      workflowEvent.emit('workflow-tool-call-rejected')
+      toolEvent.emit('tool-call-reject', {
+        id: toolCall.id,
+        toolName: toolCall.function.name,
+        reject: 'human reject this tool call',
+      })
+
+      this.setState('finished')
+    }
+  }
+
   async run(threadId: string, payload: StepPayload) {
     try {
       while (true) {
@@ -50,7 +67,11 @@ export class Workflow {
         const nextStepState = await this.runStep(payload)
 
         if (nextStepState.state === 'wait-human-approve') {
-          workflowEvent.emit('workflow-wait-human-approve', { threadId })
+          const callToolStepPayload = payload as CallToolStepPayload
+          workflowEvent.emit('workflow-wait-human-approve', {
+            threadId,
+            payload: callToolStepPayload,
+          })
           return
         }
 

@@ -10,7 +10,7 @@ interface ChatContextType {
 
   // Actions
   handleSend: (input: string) => Promise<void>
-  handleApprove: (id: string) => void
+  handleApprove: () => void
   handleReject: () => void
   abort: () => void
 }
@@ -32,8 +32,8 @@ export function ChatProvider({ children }: PropsWithChildren) {
   }, [])
 
   const handleReject = useCallback(() => {
-    abort()
-  }, [abort])
+    window.ipcRendererApi.invoke('agent-human-rejected')
+  }, [])
 
   const value: ChatContextType = {
     isFinished,

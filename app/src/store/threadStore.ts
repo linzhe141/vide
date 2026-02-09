@@ -20,7 +20,7 @@ export type AssistantChatTextMessage = {
 
 export type ToolCallsChatMessage = {
   role: ThreadMessageRole.ToolCalls
-  tool_calls: Array<ToolCall & { result?: string; status?: 'approve' | 'reject' }>
+  tool_calls: Array<ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }>
 }
 
 export type WorkflowErrorChatMessage = {
@@ -264,6 +264,7 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
                   type: 'function',
                   id: toolCallId,
                   function: { arguments: '', name: toolCallName },
+                  status: 'pending',
                 },
               ],
             }
@@ -279,6 +280,7 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
                 type: 'function',
                 id: toolCallId,
                 function: { arguments: '', name: toolCallName },
+                status: 'pending',
               },
             ]
             return {

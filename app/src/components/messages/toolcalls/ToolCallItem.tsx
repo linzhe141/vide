@@ -5,21 +5,13 @@ import { memo } from 'react'
 
 export const ToolCallItem = memo(function ToolCallItem({
   toolCall,
-  callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
-  callId: string
+  toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
   animation: boolean
 }) {
   if (toolCall.function.name === 'fs_create_file')
-    return (
-      <FsCreateFileToolCall
-        toolCall={toolCall}
-        callId={callId}
-        animation={animation}
-      ></FsCreateFileToolCall>
-    )
+    return <FsCreateFileToolCall toolCall={toolCall} animation={animation}></FsCreateFileToolCall>
 
-  return <NormalToolCall toolCall={toolCall} callId={callId} animation={animation}></NormalToolCall>
+  return <NormalToolCall toolCall={toolCall} animation={animation}></NormalToolCall>
 })

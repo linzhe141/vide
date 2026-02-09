@@ -111,8 +111,12 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                               {msg.tool_calls?.map((toolCall, index) => (
                                 <ToolCallItem
                                   key={`${idx}-${index}`}
-                                  toolCall={toolCall as ToolCall}
-                                  callId={toolCall.id + idx + index}
+                                  toolCall={
+                                    toolCall as ToolCall & {
+                                      result?: string
+                                      status: 'pending' | 'approve' | 'reject'
+                                    }
+                                  }
                                   animation={isRunningLast(idx)}
                                 />
                               ))}

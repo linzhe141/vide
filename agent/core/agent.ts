@@ -66,7 +66,7 @@ export class AgentSession {
   }
 
   async humanReject(_rejectReason?: string) {
-    this.currentWorkflow.abort()
+    this.currentWorkflow.humanRejectToolCall()
   }
 
   setSessionSystemPrompt(prompt: string) {

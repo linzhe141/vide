@@ -39,11 +39,9 @@ export function extractPreview(argStr: string) {
 
 export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   toolCall,
-  callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
-  callId: string
+  toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
   animation: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -101,7 +99,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
               </div>
 
               <Button
-                onClick={() => handleApprove(callId)}
+                onClick={() => handleApprove()}
                 size='sm'
                 className='flex items-center gap-1.5 text-xs'
               >

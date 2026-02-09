@@ -8,11 +8,9 @@ import { useChatContext } from '../../../pages/chat/ChatProvider'
 
 export const NormalToolCall = memo(function NormalToolCall({
   toolCall,
-  callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
-  callId: string
+  toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
   animation: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -58,7 +56,7 @@ export const NormalToolCall = memo(function NormalToolCall({
               </div>
 
               <Button
-                onClick={() => handleApprove(callId)}
+                onClick={() => handleApprove()}
                 size='sm'
                 className='flex items-center gap-1.5 text-xs'
               >

@@ -1,4 +1,10 @@
-import type { AssistantChatMessage, ChatMessage, FinishReason, ToolCall } from '../types'
+import type {
+  AssistantChatMessage,
+  CallToolStepPayload,
+  ChatMessage,
+  FinishReason,
+  ToolCall,
+} from '../types'
 
 export type AgentLifecycleEvents = {
   'agent-ready': () => void
@@ -17,8 +23,10 @@ export type WorkflowEvents = {
   'workflow-start': (data: { threadId: string; input: string }) => void
   'workflow-finished': (data: { threadId: string }) => void
   'workflow-aborted': (data: { threadId: string }) => void
-  'workflow-wait-human-approve': (data: any) => void
+  'workflow-wait-human-approve': (data: { threadId: string; payload: CallToolStepPayload }) => void
   'workflow-error': (data: { threadId: string; error: any }) => void
+  'workflow-tool-call-approved': () => void
+  'workflow-tool-call-rejected': () => void
 }
 
 export type LLMEvents = {
@@ -37,6 +45,7 @@ export type ToolEvents = {
   'tool-call-start': (data: { id: string; toolName: string; args: any }) => void
   'tool-call-success': (data: { id: string; toolName: string; result: any }) => void
   'tool-call-error': (data: { id: string; toolName: string; error: any }) => void
+  'tool-call-reject': (data: { id: string; toolName: string; reject: any }) => void
 }
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
