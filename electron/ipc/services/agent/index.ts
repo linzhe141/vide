@@ -185,6 +185,12 @@ export class AgentIpcMainService implements IpcMainService {
       this.session!.humanApprove()
     })
 
+    ipcMainApi.handle('agent-workflow-abort', () => {
+      logger.info('agent-workflow-abort')
+
+      this.session!.humanReject()
+    })
+
     ipcMainApi.handle('agent-change-session', async ({ threadId }) => {
       // TODO
       // if no restore

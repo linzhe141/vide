@@ -12,12 +12,13 @@ interface ChatContextType {
   handleSend: (input: string) => Promise<void>
   handleApprove: (id: string) => void
   handleReject: () => void
+  abort: () => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
-  const { send, isFinished, isRunning, isError, errorInfo } = useWorkflowStream()
+  const { send, isFinished, isRunning, isError, errorInfo, abort } = useWorkflowStream()
 
   const handleSend = useCallback(
     async (input: string) => {
@@ -30,7 +31,9 @@ export function ChatProvider({ children }: PropsWithChildren) {
     window.ipcRendererApi.invoke('agent-human-approved')
   }, [])
 
-  const handleReject = useCallback(() => {}, [])
+  const handleReject = useCallback(() => {
+    abort()
+  }, [abort])
 
   const value: ChatContextType = {
     isFinished,
@@ -40,6 +43,7 @@ export function ChatProvider({ children }: PropsWithChildren) {
     handleSend,
     handleApprove,
     handleReject,
+    abort,
   }
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

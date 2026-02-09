@@ -37,6 +37,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         abortSignal.addEventListener('abort', () => {
           window.ipcRendererApi.invoke('agent-workflow-abort')
           controller.close()
+          cleanUp()
         })
       }
 

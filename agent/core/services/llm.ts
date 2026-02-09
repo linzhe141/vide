@@ -44,7 +44,10 @@ export class LLMService {
           finishReason = chunk.finishReason
         }
       }
-
+      if (llmAbortController.signal.aborted) {
+        llmEvent.emit('llm-aborted')
+        throw new Error('llm-aborted')
+      }
       finishReason = finishReason ?? 'stop'
 
       llmEvent.emit('llm-end', { finishReason })

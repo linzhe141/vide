@@ -70,7 +70,7 @@ export function useWorkflowStream() {
     abortControllerRef.current = null
   }
 
-  const _abort = useCallback(() => {
+  const abort = useCallback(() => {
     if (!abortControllerRef.current) return
 
     abortControllerRef.current.abort()
@@ -290,6 +290,7 @@ export function useWorkflowStream() {
 
   return {
     send,
+    abort,
     ...state,
   }
 }

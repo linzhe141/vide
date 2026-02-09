@@ -8,7 +8,7 @@ export const ChatInput = memo(function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { handleSend, isRunning } = useChatContext()
+  const { handleSend, isRunning, abort } = useChatContext()
 
   // 自动调整 textarea 高度
   useEffect(() => {
@@ -50,7 +50,7 @@ export const ChatInput = memo(function ChatInput() {
           <div className='absolute right-3 bottom-3 flex items-center gap-2'>
             {isRunning ? (
               <Button
-                onClick={() => {}}
+                onClick={abort}
                 className='border-border bg-background text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-700 dark:hover:bg-red-950/30'
               >
                 <StopCircle className='h-4 w-4' />
