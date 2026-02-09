@@ -11,11 +11,9 @@ export const UserMessage = memo(function UserMessage({
   return (
     <div id={id} data-anchor className='flex scroll-mt-24 items-start gap-3'>
       <div className='bg-primary max-w-2xl rounded-xl rounded-tl-sm px-5 py-3 shadow-sm'>
-        <p className='leading-relaxed text-white'>
-          <MarkdownRenderer animation={false} className='text-sm'>
-            {content}
-          </MarkdownRenderer>
-        </p>
+        <MarkdownRenderer animation={false} className='text-sm text-white'>
+          {content}
+        </MarkdownRenderer>
       </div>
     </div>
   )

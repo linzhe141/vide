@@ -6,6 +6,37 @@ import { cn } from '../../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
 import { useChatContext } from '../../../pages/chat/ChatProvider'
 
+export function extractPreview(argStr: string) {
+  const result: {
+    filepath?: string
+    content?: string
+  } = {}
+
+  // filepath
+  const filepathMatch = argStr.match(/"filepath"\s*:\s*"([^"]+)"/)
+  if (filepathMatch) {
+    result.filepath = filepathMatch[1]
+  }
+
+  // content
+  const key = '"content": "'
+  const start = argStr.indexOf(key)
+
+  if (start !== -1) {
+    const content = argStr.slice(start + key.length)
+
+    const fileContent = content.match(/^(.+?)", "mode": "/)
+    if (fileContent) {
+      const matched = fileContent[1]
+      result.content = matched.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    } else {
+      result.content = content.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    }
+  }
+
+  return result
+}
+
 export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   toolCall,
   callId,
@@ -18,6 +49,8 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   const [isExpanded, setIsExpanded] = useState(true)
   const { handleApprove, handleReject } = useChatContext()
 
+  const fileInfo = extractPreview(toolCall.function.arguments)
+  const fileType = fileInfo.filepath?.split('.').at(-1) || 'text'
   function beautifyResult(content: string) {
     try {
       return JSON.parse(content)
@@ -40,11 +73,11 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
 
   return (
     <div>
-      <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all'>
+      <div className='border-border bg-background/50 relative rounded-xl border transition-all'>
         {/* Header */}
         <div
-          onClick={() => !updating && setIsExpanded(!isExpanded)}
-          className='hover:bg-border/30 flex w-full items-center gap-4 px-4 py-3 transition-colors'
+          onClick={() => setIsExpanded(!isExpanded)}
+          className='bg-background sticky top-0 z-10 flex w-full items-center gap-4 rounded-xl px-4 py-3 transition-colors'
         >
           {/* Icon */}
           <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10'>
@@ -52,19 +85,12 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
           </div>
 
           {/* Title */}
-          {updating ? (
-            <div className='flex flex-1 gap-4 text-left'>
-              <span className='text-foreground text-sm font-medium'>{toolCall.function?.name}</span>
-              <Loader2 className='h-4 w-4 animate-spin text-gray-500' />
-            </div>
-          ) : (
-            <div className='flex flex-1 flex-col text-left'>
-              <span className='text-foreground text-sm font-medium'>{toolCall.function?.name}</span>
-              <span className='text-text-secondary text-xs'>
-                Click to {isExpanded ? 'collapse' : 'expand'} details
-              </span>
-            </div>
-          )}
+          <div className='flex flex-1 flex-col text-left'>
+            <span className='text-foreground text-sm font-medium'>{toolCall.function?.name}</span>
+            <span className='text-text-secondary text-xs'>
+              Click to {isExpanded ? 'collapse' : 'expand'} details
+            </span>
+          </div>
 
           {/* Approve */}
           {!updating && !isApproved && (
@@ -106,16 +132,24 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
         </div>
 
         {/* Detail */}
-        {!updating && isExpanded && (
+        {isExpanded && (
           <div className='border-border bg-primary/5 border-t px-4 py-3'>
-            <MarkdownRenderer
-              className='bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
-              animation={animation}
-            >
-              {'```json\n' +
-                JSON.stringify({ id: toolCall.id, function: toolCall.function }, null, 2) +
-                '\n```'}
-            </MarkdownRenderer>
+            <div>
+              <div className='text-text-secondary my-2 flex items-center gap-2 space-y-1 text-sm'>
+                {!toolCall.result && (
+                  <>
+                    <Loader2 className='h-4 w-4 animate-spin text-gray-500' />
+                    <span>正在写入：{fileInfo.filepath}</span>
+                  </>
+                )}
+              </div>
+              <MarkdownRenderer
+                className='bg-background text-text-secondary max-h-[500px] overflow-auto rounded-lg font-mono text-xs'
+                animation={animation}
+              >
+                {'```' + fileType + '\n' + fileInfo.content + '\n```'}
+              </MarkdownRenderer>
+            </div>
 
             {toolCall.result && (
               <div className='text-text-secondary my-2 space-y-1 text-sm'>

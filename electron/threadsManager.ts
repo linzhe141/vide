@@ -10,6 +10,7 @@ import { settingsStore } from './store/settingsStore'
 
 export class ThreadsManager {
   currentThreadId: string | null = ''
+  currentAssistantReasonMessageId: string | null = null
   currentAssistantMessageId: string | null = null
   currentToolcallsMessageId: string | null = null
   constructor(private app: AppManager) {}
@@ -91,7 +92,7 @@ Generate the conversation title.
       }
     })
 
-    onLLMEvent('llm-start', async () => {
+    onLLMEvent('llm-text-start', async () => {
       this.currentAssistantMessageId = uuid()
 
       await db.insert(threadMessages).values({
@@ -104,7 +105,7 @@ Generate the conversation title.
       })
     })
 
-    onLLMEvent('llm-delta', async ({ content }) => {
+    onLLMEvent('llm-text-delta', async ({ content }) => {
       await db
         .update(threadMessages)
         .set({
@@ -176,5 +177,23 @@ Generate the conversation title.
         })
         .where(eq(threadMessages.id, this.currentToolcallsMessageId!))
     }
+  }
+
+  async addReasonMessage() {
+    this.currentAssistantReasonMessageId = uuid()
+    await db.insert(threadMessages).values({
+      id: this.currentAssistantReasonMessageId,
+      role: ThreadMessageRole.AssistantReason,
+      threadId: this.currentThreadId!,
+      content: '',
+      payload: '',
+      createdAt: Date.now(),
+    })
+  }
+  async updateReasonMessage({ reasonContent }: { reasonContent: string }) {
+    await db
+      .update(threadMessages)
+      .set({ content: reasonContent })
+      .where(eq(threadMessages.id, this.currentAssistantReasonMessageId!))
   }
 }

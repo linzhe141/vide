@@ -7,7 +7,7 @@ export type LLMConfig = Settings['llmConfig']
 export const enum ThreadMessageRole {
   System = 'system',
   User = 'user',
-  AssistantThinking = 'assistant-thinking',
+  AssistantReason = 'assistant-reason',
   AssistantText = 'assistant-text',
   ToolCalls = 'tool-calls',
   Error = 'error',

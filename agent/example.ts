@@ -140,7 +140,7 @@ function setupEvents(session: AgentSession) {
   onLLMEvent('llm-start', () => {
     console.log('> llm-start')
   })
-  onLLMEvent('llm-delta', ({ delta }) => {
+  onLLMEvent('llm-text-delta', ({ delta }) => {
     process.stdout.write(delta)
   })
   onLLMEvent('llm-tool-calls', ({ toolCalls }) => {

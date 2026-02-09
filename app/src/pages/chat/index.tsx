@@ -10,6 +10,7 @@ import {
   type AssistantChatTextMessage,
   type ToolCallsChatMessage,
   type WorkflowErrorChatMessage,
+  type AssistantChatReasonMessage,
 } from '../../store/threadStore'
 import { context } from '../../hooks/chatContenxt'
 import { ThreadMessageRole } from '@/types'
@@ -53,6 +54,16 @@ function ChatContent({ threadId }: { threadId: string }) {
                     content: i.content,
                   } as UserChatMessage
                 }
+
+                case ThreadMessageRole.AssistantReason: {
+                  return {
+                    ...i,
+                    role: ThreadMessageRole.AssistantReason,
+                    content: i.content,
+                    reasoning: false,
+                  } as AssistantChatReasonMessage
+                }
+
                 case ThreadMessageRole.AssistantText: {
                   return {
                     ...i,
@@ -77,7 +88,6 @@ function ChatContent({ threadId }: { threadId: string }) {
               }
             })
             .filter(Boolean)
-
           // 将消息列表转换为 blocks
           const blocks: ConversationBlock[] = []
           let currentBlock: ConversationBlock | null = null

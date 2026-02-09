@@ -11,6 +11,7 @@ import { useThreadStore } from '../../store/threadStore'
 import { MessageNavigator } from './MessageNavigator'
 import { cn } from '../../lib/utils'
 import { ThreadMessageRole } from '@/types'
+import { AssistantReasonMessage } from '../../components/messages/AssistantReasonMessage'
 
 export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((data) => data.blocks)
@@ -82,7 +83,17 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                               content={msg.content as string}
                             />
                           )
-
+                        case ThreadMessageRole.AssistantReason:
+                          return (
+                            <div key={msgIndex}>
+                              {msg.content && (
+                                <AssistantReasonMessage
+                                  content={msg.content as string}
+                                  reasoning={msg.reasoning}
+                                />
+                              )}
+                            </div>
+                          )
                         case ThreadMessageRole.AssistantText:
                           return (
                             <div key={msgIndex}>
@@ -96,7 +107,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                           )
                         case ThreadMessageRole.ToolCalls: {
                           return (
-                            <div key={msgIndex}>
+                            <div key={msgIndex} className='space-y-2'>
                               {msg.tool_calls?.map((toolCall, index) => (
                                 <ToolCallItem
                                   key={`${idx}-${index}`}

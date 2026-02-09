@@ -58,7 +58,7 @@ export interface MainChannel {
   // agent
   'agent-workflow-start': (data: { threadId: string; input: string }) => void
   'agent-llm-start': () => void
-  'agent-llm-delta': (data: { content: string; delta: string }) => void
+  'agent-llm-text-delta': (data: { content: string; delta: string }) => void
   'agent-llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
   'agent-llm-end': (finishReason: FinishReason) => void
   'agent-llm-result': (message: AssistantChatMessage) => void
@@ -74,4 +74,7 @@ export interface MainChannel {
   'agent-llm-tool-calls-start': () => void
   'agent-llm-tool-call-name': (data: { name: string; id: string }) => void
   'agent-llm-tool-call-arguments': (data: { arguments: string; id: string }) => void
+  'agent-llm-reasoning-start': () => void
+  'agent-llm-reasoning-delta': (data: { reasonContent: string }) => void
+  'agent-llm-reasoning-end': () => void
 }

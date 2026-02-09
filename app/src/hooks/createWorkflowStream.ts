@@ -7,7 +7,10 @@ export type WorkflowState =
   // | { type: 'workflow-aborted'; data: { threadId: string } }
   | { type: 'workflow-wait-human-approve'; data: any }
   | { type: 'llm-start' }
-  | { type: 'llm-delta'; data: { delta: string; content: string } }
+  | { type: 'llm-reasoning-start' }
+  | { type: 'llm-reasoning-delta'; data: { reasonContent: string } }
+  | { type: 'llm-reasoning-end' }
+  | { type: 'llm-text-delta'; data: { delta: string; content: string } }
   | { type: 'llm-tool-calls-start' }
   | { type: 'llm-tool-call-name'; data: { name: string; id: string } }
   | { type: 'llm-tool-call-arguments'; data: { arguments: string; id: string } }
@@ -71,6 +74,22 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
           enqueue(workflowChunk)
         }),
 
+        window.ipcRendererApi.on('agent-llm-reasoning-start', () => {
+          const workflowChunk: WorkflowState = { type: 'llm-reasoning-start' }
+
+          enqueue(workflowChunk)
+        }),
+        window.ipcRendererApi.on('agent-llm-reasoning-delta', (data) => {
+          const workflowChunk: WorkflowState = { type: 'llm-reasoning-delta', data }
+
+          enqueue(workflowChunk)
+        }),
+        window.ipcRendererApi.on('agent-llm-reasoning-end', () => {
+          const workflowChunk: WorkflowState = { type: 'llm-reasoning-end' }
+
+          enqueue(workflowChunk)
+        }),
+
         window.ipcRendererApi.on('agent-llm-tool-calls-start', () => {
           const workflowChunk: WorkflowState = { type: 'llm-tool-calls-start' }
 
@@ -88,8 +107,8 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
           enqueue(workflowChunk)
         }),
 
-        window.ipcRendererApi.on('agent-llm-delta', (data) => {
-          const workflowChunk: WorkflowState = { type: 'llm-delta', data }
+        window.ipcRendererApi.on('agent-llm-text-delta', (data) => {
+          const workflowChunk: WorkflowState = { type: 'llm-text-delta', data }
 
           enqueue(workflowChunk)
         }),

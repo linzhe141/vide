@@ -52,6 +52,9 @@ export function useWorkflowStream() {
     addToolcallArguments,
     addToolcallName,
     updateToolResultMessage,
+    addStartReasonMessage,
+    addDeltaReasonMessage,
+    addEndReasonMessage,
   } = useThreadStore()
 
   const [state, setState] = useState<WorkflowStreamState>(initialState)
@@ -95,7 +98,26 @@ export function useWorkflowStream() {
           emitWorkflowEvent('workflow-start')
           break
         }
-        case 'llm-delta': {
+
+        case 'llm-reasoning-start': {
+          addStartReasonMessage()
+          emitWorkflowEvent('llm-reasoning-start')
+          break
+        }
+
+        case 'llm-reasoning-delta': {
+          addDeltaReasonMessage({ reasonContent: chunk.data.reasonContent })
+          emitWorkflowEvent('llm-reasoning-delta')
+          break
+        }
+
+        case 'llm-reasoning-end': {
+          addEndReasonMessage()
+          emitWorkflowEvent('llm-reasoning-end')
+          break
+        }
+
+        case 'llm-text-delta': {
           deltaBufferRef.current += chunk.data.delta
           contentBufferRef.current = chunk.data.content
           if (deltaBufferRef.current.length >= BUFFER_SIZE) {
@@ -106,7 +128,7 @@ export function useWorkflowStream() {
 
             deltaBufferRef.current = ''
           }
-          emitWorkflowEvent('llm-delta')
+          emitWorkflowEvent('llm-text-delta')
           break
         }
 
@@ -126,6 +148,7 @@ export function useWorkflowStream() {
         }
 
         case 'llm-tool-call-name': {
+          console.log(chunk.data.name)
           addToolcallName({
             toolCallId: chunk.data.id,
             toolCallName: chunk.data.name,
@@ -214,10 +237,15 @@ export function useWorkflowStream() {
     },
     [
       startNewBlock,
+      addStartReasonMessage,
+      addDeltaReasonMessage,
+      addEndReasonMessage,
+      updateLLMDeltaMessage,
+      addToolcallName,
+      addToolcallArguments,
+      updateToolResultMessage,
       finishCurrentBlock,
       pushMessageToCurrentBlock,
-      updateLLMDeltaMessage,
-      updateToolResultMessage,
     ]
   )
 

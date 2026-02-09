@@ -7,6 +7,12 @@ export type UserChatMessage = {
   content: string
 }
 
+export type AssistantChatReasonMessage = {
+  reasoning: boolean
+  role: ThreadMessageRole.AssistantReason
+  content: string
+}
+
 export type AssistantChatTextMessage = {
   role: ThreadMessageRole.AssistantText
   content: string
@@ -24,6 +30,7 @@ export type WorkflowErrorChatMessage = {
 
 type ThreadMessage =
   | UserChatMessage
+  | AssistantChatReasonMessage
   | AssistantChatTextMessage
   | ToolCallsChatMessage
   | WorkflowErrorChatMessage
@@ -56,6 +63,9 @@ type Actions = {
   updateToolResultMessage: (message: ToolChatMessage) => void
   addToolcallName: (data: { toolCallName: string; toolCallId: string }) => void
   addToolcallArguments: (data: { toolArguments: string; toolCallId: string }) => void
+  addStartReasonMessage: () => void
+  addDeltaReasonMessage: (data: { reasonContent: string }) => void
+  addEndReasonMessage: () => void
 
   // 辅助方法
   getCurrentBlock: () => ConversationBlock | undefined
@@ -241,7 +251,11 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
           if (block.id !== `block-${state.currentBlockIndex}`) return block
 
           const lastMessage = block.messages[block.messages.length - 1]
-          if (lastMessage?.role === ThreadMessageRole.AssistantText) {
+          if (
+            lastMessage?.role === ThreadMessageRole.User ||
+            lastMessage?.role === ThreadMessageRole.AssistantText ||
+            lastMessage?.role === ThreadMessageRole.AssistantReason
+          ) {
             // 第一个 toolCall
             const toolCallMessage: ToolCallsChatMessage = {
               role: ThreadMessageRole.ToolCalls,
@@ -302,6 +316,96 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
             return {
               ...block,
               messages: [...block.messages.slice(0, -1), lastMessage],
+            }
+          } else {
+            return block
+          }
+        }),
+      }
+    })
+  },
+  addStartReasonMessage: () => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          return {
+            ...block,
+            messages: [
+              ...block.messages,
+              {
+                role: ThreadMessageRole.AssistantReason,
+                reasoning: true,
+                content: '',
+              },
+            ],
+          }
+        }),
+      }
+    })
+  },
+  addDeltaReasonMessage: ({ reasonContent }) => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          const lastMessage = block.messages[block.messages.length - 1]
+
+          if (lastMessage?.role === ThreadMessageRole.AssistantReason) {
+            // 添加新的 assistant 消息
+            return {
+              ...block,
+              messages: [
+                ...block.messages.slice(0, -1),
+                {
+                  ...lastMessage,
+                  content: reasonContent,
+                },
+              ],
+            }
+          } else {
+            return block
+          }
+        }),
+      }
+    })
+  },
+  addEndReasonMessage: () => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          const lastMessage = block.messages[block.messages.length - 1]
+
+          if (lastMessage?.role === ThreadMessageRole.AssistantReason) {
+            // 添加新的 assistant 消息
+            return {
+              ...block,
+              messages: [
+                ...block.messages.slice(0, -1),
+                {
+                  ...lastMessage,
+                  reasoning: false,
+                },
+              ],
             }
           } else {
             return block

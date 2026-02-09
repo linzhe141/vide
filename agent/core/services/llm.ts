@@ -27,7 +27,10 @@ export class LLMService {
         signal: llmAbortController.signal,
       })) {
         if ('content' in chunk && chunk.content) {
-          llmEvent.emit('llm-delta', { delta: chunk.delta, content: chunk.content })
+          if (content === '') {
+            llmEvent.emit('llm-text-start')
+          }
+          llmEvent.emit('llm-text-delta', { delta: chunk.delta, content: chunk.content })
 
           content = chunk.content
         }

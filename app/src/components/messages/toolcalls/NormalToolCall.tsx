@@ -24,14 +24,15 @@ export const NormalToolCall = memo(function NormalToolCall({
       return content
     }
   }
+  const toolCallResult = toolCall.result ? beautifyResult(toolCall.result) : {}
   const isApproved = !!toolCall.result
   return (
     <div className=''>
-      <div className='border-border bg-background/50 overflow-hidden rounded-xl border transition-all'>
+      <div className='border-border bg-background/50 rounded-xl border transition-all'>
         {/* 工具调用头部 */}
         <div
           onClick={() => setIsExpanded(!isExpanded)}
-          className='hover:bg-border/30 flex w-full items-center gap-4 px-4 py-3 transition-colors'
+          className='bg-background sticky top-0 z-10 flex w-full items-center gap-4 rounded-xl px-4 py-3 transition-colors'
         >
           {/* 左侧 Icon */}
           <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10'>
@@ -114,9 +115,7 @@ export const NormalToolCall = memo(function NormalToolCall({
                         className='bg-background text-text-secondary overflow-auto rounded-lg font-mono text-xs'
                         animation={animation}
                       >
-                        {'```json\n' +
-                          JSON.stringify(beautifyResult(toolCall.result), null, 2) +
-                          '\n```'}
+                        {'```json\n' + JSON.stringify(toolCallResult, null, 2) + '\n```'}
                       </MarkdownRenderer>
                     </div>
                   )}

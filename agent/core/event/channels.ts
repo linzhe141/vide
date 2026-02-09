@@ -23,7 +23,9 @@ export type WorkflowEvents = {
 
 export type LLMEvents = {
   'llm-start': (data: { messages: ChatMessage[] }) => void
-  'llm-delta': (data: { delta: string; content: string }) => void
+  'llm-text-start': () => void
+  'llm-text-delta': (data: { delta: string; content: string }) => void
+  'llm-text-end': () => void
   'llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
   'llm-end': (data: { finishReason: FinishReason }) => void
   'llm-result': (data: AssistantChatMessage) => void

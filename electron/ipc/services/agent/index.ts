@@ -59,6 +59,8 @@ export class AgentIpcMainService implements IpcMainService {
       this.appManager.agentManager
     )
 
+    const threadsManager = this.appManager.threadsManager
+
     const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
       const stream = await getLLMClient().chat.completions.create(
         {
@@ -70,18 +72,38 @@ export class AgentIpcMainService implements IpcMainService {
         { signal }
       )
 
+      let reasonContent = ''
       let content = ''
       const toolCalls: ToolCall[] = []
       let finishReason: FinishReason = null!
 
-      const finishedToolCallName: string[] = []
+      const finishedToolCallName: { name: string; id: string }[] = []
       for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta
         const chunkFinishReason = chunk.choices[0].finish_reason
         if (chunkFinishReason) {
           finishReason = chunkFinishReason as any
         }
+        // @ts-expect-error support reason_content
+        if (delta.reasoning_content) {
+          if (reasonContent === '') {
+            // just for ui
+            ipcMainApi.send('agent-llm-reasoning-start')
+            threadsManager.addReasonMessage()
+          }
+          // @ts-expect-error support reason_content
+          reasonContent += delta.reasoning_content
+          // just for ui
+          ipcMainApi.send('agent-llm-reasoning-delta', { reasonContent })
+          threadsManager.updateReasonMessage({ reasonContent })
+        }
+
         if (delta?.content) {
+          if (reasonContent) {
+            ipcMainApi.send('agent-llm-reasoning-end')
+            reasonContent = ''
+          }
+
           content += delta.content
           yield {
             content,
@@ -92,6 +114,10 @@ export class AgentIpcMainService implements IpcMainService {
 
         if (delta?.tool_calls) {
           // just for ui
+          if (reasonContent) {
+            ipcMainApi.send('agent-llm-reasoning-end')
+            reasonContent = ''
+          }
           ipcMainApi.send('agent-llm-tool-calls-start')
 
           for (const toolCall of delta.tool_calls) {
@@ -108,8 +134,8 @@ export class AgentIpcMainService implements IpcMainService {
             if (toolCall.function?.arguments) {
               const toolCallName = toolCalls[toolCall.index].function.name
               const id = toolCalls[toolCall.index].id
-              if (!finishedToolCallName.find((i) => i === toolCallName)) {
-                finishedToolCallName.push(toolCallName)
+              if (!finishedToolCallName.find((i) => i.id === id)) {
+                finishedToolCallName.push({ name: toolCallName, id })
 
                 // just for ui
                 ipcMainApi.send('agent-llm-tool-call-name', { id, name: toolCallName })
@@ -230,10 +256,10 @@ export class AgentIpcMainService implements IpcMainService {
       ipcMainApi.send('agent-llm-start')
     })
 
-    onLLMEvent('llm-delta', async ({ content, delta }) => {
-      logger.info('llm-delta', delta)
+    onLLMEvent('llm-text-delta', async ({ content, delta }) => {
+      logger.info('llm-text-delta', delta)
 
-      ipcMainApi.send('agent-llm-delta', { content, delta })
+      ipcMainApi.send('agent-llm-text-delta', { content, delta })
     })
 
     onLLMEvent('llm-tool-calls', async (data) => {
