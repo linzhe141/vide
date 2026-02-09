@@ -20,7 +20,7 @@ export type AssistantChatTextMessage = {
 
 export type ToolCallsChatMessage = {
   role: ThreadMessageRole.ToolCalls
-  tool_calls: Array<ToolCall & { result?: string }>
+  tool_calls: Array<ToolCall & { result?: string; status?: 'approve' | 'reject' }>
 }
 
 export type WorkflowErrorChatMessage = {

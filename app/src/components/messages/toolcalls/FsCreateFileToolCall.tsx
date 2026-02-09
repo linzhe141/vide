@@ -42,7 +42,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string }
+  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
   callId: string
   animation: boolean
 }) {

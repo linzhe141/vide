@@ -11,7 +11,7 @@ export const NormalToolCall = memo(function NormalToolCall({
   callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string }
+  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
   callId: string
   animation: boolean
 }) {

@@ -8,7 +8,7 @@ export const ToolCallItem = memo(function ToolCallItem({
   callId,
   animation,
 }: {
-  toolCall: ToolCall & { result?: string }
+  toolCall: ToolCall & { result?: string; status?: 'approve' | 'reject' }
   callId: string
   animation: boolean
 }) {
