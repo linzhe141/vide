@@ -1,4 +1,7 @@
-# 🚀 Vite + React 19 + Tailwind CSS v4 + Electron
+# vide
 
-A sleek starter template powered by **React 19**, **Tailwind CSS v4**, and **electron-vite**.  
-Perfect for building modern desktop apps with style and speed! ⚡️🖥️
+This is an Electron-based LLM agent application.
+
+<p align="center">
+  <img src='./image.png'>
+</p>
