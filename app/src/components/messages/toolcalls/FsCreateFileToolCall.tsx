@@ -40,11 +40,13 @@ export function extractPreview(argStr: string) {
 export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   toolCall,
   animation,
+  showApproveOperate,
 }: {
   toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
   animation: boolean
+  showApproveOperate: boolean
 }) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const { handleApprove, handleReject } = useChatContext()
 
   const fileInfo = extractPreview(toolCall.function.arguments)
@@ -56,8 +58,6 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
       return content
     }
   }
-
-  const isApproved = !!toolCall.result
 
   // ⭐ 只有 fs_create_file 才有 streaming loading
   let updating = true
@@ -91,7 +91,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
           </div>
 
           {/* Approve */}
-          {!updating && !isApproved && (
+          {!updating && showApproveOperate && (
             <div className='flex items-center gap-2' onClick={(e) => e.stopPropagation()}>
               <div className='flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-1'>
                 <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500' />
@@ -99,7 +99,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
               </div>
 
               <Button
-                onClick={() => handleApprove()}
+                onClick={() => handleApprove(toolCall.id)}
                 size='sm'
                 className='flex items-center gap-1.5 text-xs'
               >
@@ -108,7 +108,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
               </Button>
 
               <Button
-                onClick={handleReject}
+                onClick={() => handleReject(toolCall.id)}
                 size='sm'
                 variant='outline'
                 className='flex items-center gap-1.5 text-xs'

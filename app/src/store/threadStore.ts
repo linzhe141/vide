@@ -67,6 +67,8 @@ type Actions = {
   addDeltaReasonMessage: (data: { reasonContent: string }) => void
   addEndReasonMessage: () => void
 
+  setToolCallStatus: (data: { status: 'approve' | 'reject'; toolCallId: string }) => void
+
   // 辅助方法
   getCurrentBlock: () => ConversationBlock | undefined
   getAllMessages: () => ThreadMessage[] // 获取所有 block 的所有消息（扁平化）
@@ -326,6 +328,7 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
       }
     })
   },
+
   addStartReasonMessage: () => {
     set((state) => {
       if (!state.currentBlockIndex) {
@@ -406,6 +409,43 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
                 {
                   ...lastMessage,
                   reasoning: false,
+                },
+              ],
+            }
+          } else {
+            return block
+          }
+        }),
+      }
+    })
+  },
+
+  setToolCallStatus: (data) => {
+    set((state) => {
+      if (!state.currentBlockIndex) {
+        console.warn('No current block to update')
+        return state
+      }
+
+      return {
+        blocks: state.blocks.map((block) => {
+          if (block.id !== `block-${state.currentBlockIndex}`) return block
+
+          const lastMessage = block.messages[block.messages.length - 1]
+
+          if (lastMessage?.role === ThreadMessageRole.ToolCalls) {
+            return {
+              ...block,
+              messages: [
+                ...block.messages.slice(0, -1),
+                {
+                  ...lastMessage,
+                  tool_calls: lastMessage.tool_calls.map((i) => {
+                    if (i.id === data.toolCallId) {
+                      return { ...i, status: data.status }
+                    }
+                    return i
+                  }),
                 },
               ],
             }

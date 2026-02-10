@@ -26,10 +26,10 @@ export function AssistantReasonMessage({
           'relative w-full rounded-2xl border px-4 py-3 shadow-sm',
           'bg-background border-border'
         )}
+        onClick={() => setIsExpanded((v) => !v)}
       >
         {/* Header (Clickable) */}
         <button
-          onClick={() => setIsExpanded((v) => !v)}
           className={cn(
             'text-text-info mb-2 flex w-full items-center justify-between',
             'hover:text-foreground text-[11px] transition-colors'
@@ -58,6 +58,9 @@ export function AssistantReasonMessage({
 
         {/* Collapsible Content */}
         <div
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
           className={cn(
             'grid transition-all duration-300 ease-out',
             isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'

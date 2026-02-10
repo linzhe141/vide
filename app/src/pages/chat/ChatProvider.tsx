@@ -1,5 +1,6 @@
 import { createContext, useContext, type PropsWithChildren, useCallback } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
+import { useThreadStore } from '../../store/threadStore'
 
 interface ChatContextType {
   // From useWorkflowStream
@@ -10,14 +11,15 @@ interface ChatContextType {
 
   // Actions
   handleSend: (input: string) => Promise<void>
-  handleApprove: () => void
-  handleReject: () => void
+  handleApprove: (toolCallId: string) => void
+  handleReject: (toolCallId: string) => void
   abort: () => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
+  const { setToolCallStatus } = useThreadStore()
   const { send, isFinished, isRunning, isError, errorInfo, abort } = useWorkflowStream()
 
   const handleSend = useCallback(
@@ -27,13 +29,21 @@ export function ChatProvider({ children }: PropsWithChildren) {
     [send]
   )
 
-  const handleApprove = useCallback(() => {
-    window.ipcRendererApi.invoke('agent-human-approved')
-  }, [])
+  const handleApprove = useCallback(
+    (toolCallId: string) => {
+      window.ipcRendererApi.invoke('agent-human-approved')
+      setToolCallStatus({ status: 'approve', toolCallId })
+    },
+    [setToolCallStatus]
+  )
 
-  const handleReject = useCallback(() => {
-    window.ipcRendererApi.invoke('agent-human-rejected')
-  }, [])
+  const handleReject = useCallback(
+    (toolCallId: string) => {
+      window.ipcRendererApi.invoke('agent-human-rejected')
+      setToolCallStatus({ status: 'reject', toolCallId })
+    },
+    [setToolCallStatus]
+  )
 
   const value: ChatContextType = {
     isFinished,

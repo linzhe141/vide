@@ -108,18 +108,32 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
                         case ThreadMessageRole.ToolCalls: {
                           return (
                             <div key={msgIndex} className='space-y-2'>
-                              {msg.tool_calls?.map((toolCall, index) => (
-                                <ToolCallItem
-                                  key={`${idx}-${index}`}
-                                  toolCall={
-                                    toolCall as ToolCall & {
-                                      result?: string
-                                      status: 'pending' | 'approve' | 'reject'
-                                    }
+                              {msg.tool_calls?.map((t, index) => {
+                                const toolCall = t as ToolCall & {
+                                  result?: string
+                                  status: 'pending' | 'approve' | 'reject'
+                                }
+                                // 只有第一个 为 pending 才显示 approve
+                                let showApproveOperate = false
+                                if (index === 0 && toolCall.status === 'pending') {
+                                  showApproveOperate = true
+                                }
+                                // 只有当前 为 pending 才显示，并且前一个已经 approve
+                                if (index > 0) {
+                                  const prev = msg.tool_calls[index - 1]
+                                  if (prev.status === 'approve' && toolCall.status === 'pending') {
+                                    showApproveOperate = true
                                   }
-                                  animation={isRunningLast(idx)}
-                                />
-                              ))}
+                                }
+                                return (
+                                  <ToolCallItem
+                                    key={`${idx}-${index}`}
+                                    toolCall={toolCall}
+                                    animation={isRunningLast(idx)}
+                                    showApproveOperate={showApproveOperate}
+                                  />
+                                )
+                              })}
                             </div>
                           )
                         }

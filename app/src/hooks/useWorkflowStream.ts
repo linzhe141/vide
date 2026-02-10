@@ -95,6 +95,15 @@ export function useWorkflowStream() {
             role: ThreadMessageRole.User,
             content: chunk.data.input,
           })
+          // reset
+          setState((prev) => ({
+            ...prev,
+            isRunning: true,
+            isFinished: false,
+            isAborted: false,
+            isError: false,
+            errorInfo: '',
+          }))
           emitWorkflowEvent('workflow-start')
           break
         }

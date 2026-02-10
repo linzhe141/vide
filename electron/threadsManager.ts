@@ -122,12 +122,14 @@ Generate the conversation title.
 
     onLLMEvent('llm-tool-calls', async (data) => {
       this.currentToolcallsMessageId = uuid()
-      const payload = data.toolCalls.map((i) => {
-        return { ...i, status: 'pending' } as ToolCall & {
-          result?: string
-          status: 'pending' | 'approve' | 'reject'
-        }
-      })
+      const payload = {
+        toolCalls: data.toolCalls.map((i) => {
+          return { ...i, status: 'pending' } as ToolCall & {
+            result?: string
+            status: 'pending' | 'approve' | 'reject'
+          }
+        }),
+      }
       await db.insert(threadMessages).values({
         id: this.currentToolcallsMessageId!,
         threadId: this.currentThreadId!,

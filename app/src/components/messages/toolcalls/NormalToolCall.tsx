@@ -9,11 +9,13 @@ import { useChatContext } from '../../../pages/chat/ChatProvider'
 export const NormalToolCall = memo(function NormalToolCall({
   toolCall,
   animation,
+  showApproveOperate,
 }: {
   toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
   animation: boolean
+  showApproveOperate: boolean
 }) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const { handleApprove, handleReject } = useChatContext()
   function beautifyResult(content: string) {
     try {
@@ -23,7 +25,6 @@ export const NormalToolCall = memo(function NormalToolCall({
     }
   }
   const toolCallResult = toolCall.result ? beautifyResult(toolCall.result) : {}
-  const isApproved = !!toolCall.result
   return (
     <div className=''>
       <div className='border-border bg-background/50 rounded-xl border transition-all'>
@@ -48,7 +49,7 @@ export const NormalToolCall = memo(function NormalToolCall({
           </div>
 
           {/* 右侧：审批状态 / 操作 */}
-          {!isApproved && (
+          {showApproveOperate && (
             <div className='flex items-center gap-2' onClick={(e) => e.stopPropagation()}>
               <div className='flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-1'>
                 <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500' />
@@ -56,7 +57,7 @@ export const NormalToolCall = memo(function NormalToolCall({
               </div>
 
               <Button
-                onClick={() => handleApprove()}
+                onClick={() => handleApprove(toolCall.id)}
                 size='sm'
                 className='flex items-center gap-1.5 text-xs'
               >
@@ -65,7 +66,7 @@ export const NormalToolCall = memo(function NormalToolCall({
               </Button>
 
               <Button
-                onClick={handleReject}
+                onClick={() => handleReject(toolCall.id)}
                 size='sm'
                 variant='outline'
                 className='flex items-center gap-1.5 text-xs'

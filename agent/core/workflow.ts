@@ -47,13 +47,23 @@ export class Workflow {
       const payload = this.nextStep.payload as CallToolStepPayload
       const toolCall = payload.toolCalls[payload.index]
       workflowEvent.emit('workflow-tool-call-rejected')
+      const rejectReason = 'human reject this tool call, stop workflow'
       toolEvent.emit('tool-call-reject', {
         id: toolCall.id,
         toolName: toolCall.function.name,
-        reject: 'human reject this tool call',
+        reject: rejectReason,
       })
 
-      this.setState('finished')
+      // let llm summary
+      this.setState('call-llm')
+      this.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: rejectReason,
+      })
+      this.run(this.thread.id, {
+        messages: this.thread.getMessages(),
+      } satisfies CallLLMStepPayload)
     }
   }
 
