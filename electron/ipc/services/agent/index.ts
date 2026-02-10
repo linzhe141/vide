@@ -129,9 +129,12 @@ export class AgentIpcMainService implements IpcMainService {
               }
             }
             if (toolCall.function?.name) {
+              logger.info('toolcall delta name', toolCall.function.name)
+
               toolCalls[toolCall.index].function.name += toolCall.function.name
             }
             if (toolCall.function?.arguments) {
+              logger.info('toolcall delta arguments', toolCall.function.arguments)
               const toolCallName = toolCalls[toolCall.index].function.name
               const id = toolCalls[toolCall.index].id
               if (!finishedToolCallName.find((i) => i.id === id)) {

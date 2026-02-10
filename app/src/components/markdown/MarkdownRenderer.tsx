@@ -2,7 +2,7 @@ import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markd
 import { memo, type PropsWithChildren } from 'react'
 import { cn } from '../../lib/utils'
 import { AnimatedWrapper } from './animation'
-// import { Pre } from '../Pre/Pre'
+import { Pre } from '../Pre/Pre'
 import { MarkdownProvider } from './MarkdownProvider'
 
 const components = {
@@ -41,7 +41,7 @@ const components = {
       <AnimatedWrapper>{children}</AnimatedWrapper>
     </strong>
   )),
-  // pre: Pre,
+  pre: Pre,
 }
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({

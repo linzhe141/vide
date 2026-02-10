@@ -8,9 +8,9 @@ import { useChatContext } from '../../../pages/chat/ChatProvider'
 
 export function extractPreview(argStr: string) {
   const result: {
-    filepath?: string
-    content?: string
-  } = {}
+    filepath: string
+    content: string
+  } = { filepath: '--', content: '--' }
 
   // filepath
   const filepathMatch = argStr.match(/"filepath"\s*:\s*"([^"]+)"/)
@@ -21,7 +21,6 @@ export function extractPreview(argStr: string) {
   // content
   const key = '"content": "'
   const start = argStr.indexOf(key)
-
   if (start !== -1) {
     const content = argStr.slice(start + key.length)
 
