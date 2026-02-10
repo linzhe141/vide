@@ -22,35 +22,7 @@ const CONFIG = {
   MAX_LIST_ENTRIES: 500,
 
   // 需要忽略的目录和文件
-  IGNORE_PATTERNS: [
-    'node_modules',
-    '.git',
-    '.svn',
-    '.hg',
-    'dist',
-    'build',
-    'coverage',
-    '.next',
-    '.nuxt',
-    '.vscode',
-    '.idea',
-    'bower_components',
-    '__pycache__',
-    '.pytest_cache',
-    '.mypy_cache',
-    'venv',
-    'env',
-    '.env',
-    'target', // Rust/Java
-    'bin',
-    'obj',
-    '.DS_Store',
-    'Thumbs.db',
-    '*.log',
-    '.cache',
-    'tmp',
-    'temp',
-  ],
+  IGNORE_PATTERNS: ['node_modules', '.git', '.DS_Store'],
 
   // 需要忽略的文件扩展名
   IGNORE_EXTENSIONS: [

@@ -10,7 +10,7 @@ export function extractPreview(argStr: string) {
   const result: {
     filepath: string
     content: string
-  } = { filepath: '--', content: '--' }
+  } = { filepath: '', content: '' }
 
   // filepath
   const filepathMatch = argStr.match(/"filepath"\s*:\s*"([^"]+)"/)
@@ -140,12 +140,20 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
                   </>
                 )}
               </div>
-              <MarkdownRenderer
-                className='bg-background text-text-secondary max-h-[500px] overflow-auto rounded-lg font-mono text-xs'
-                animation={animation}
-              >
-                {'```' + fileType + '\n' + fileInfo.content + '\n```'}
-              </MarkdownRenderer>
+              {fileInfo.content && (
+                <MarkdownRenderer
+                  className='bg-background text-text-secondary max-h-[500px] overflow-auto rounded-lg font-mono text-xs'
+                  animation={animation}
+                >
+                  {'```' +
+                    fileType +
+                    '\n' +
+                    (updating
+                      ? fileInfo.content
+                      : JSON.parse(toolCall.function.arguments).content) +
+                    '\n```'}
+                </MarkdownRenderer>
+              )}
             </div>
 
             {toolCall.result && (

@@ -169,7 +169,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
       {showToBottomButton && (
         <button
           onClick={toBottom}
-          className='bg-background border-border hover:bg-primary/5 fixed bottom-60 left-1/2 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
+          className='bg-background border-border hover:bg-primary/5 fixed bottom-60 left-1/2 z-50 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
           aria-label='Scroll to bottom'
         >
           <ArrowDown size={18} className='text-foreground' />

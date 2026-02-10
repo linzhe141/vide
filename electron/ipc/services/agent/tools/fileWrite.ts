@@ -11,7 +11,9 @@ export const fsCreateFile: Tool = {
   function: {
     name: 'fs_create_file',
     description:
-      'Create, update, or append to files within the allowed directory. Supports creating new files, overwriting existing content, or appending to files. this is your root dir path',
+      'Create, update, or append to files within the allowed directory. Supports creating new files, overwriting existing content, or appending to files. this is your root dir path' +
+      'this is root dir' +
+      ROOT_DIR,
     parameters: {
       type: 'object',
       properties: {
