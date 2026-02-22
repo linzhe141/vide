@@ -313,7 +313,13 @@ export const useThreadStore = create<State & Actions>((set, get) => ({
             // 追加消息
             lastMessage.tool_calls = lastMessage.tool_calls.map((i) => {
               if (i.id === toolCallId) {
-                i.function.arguments = toolArguments
+                return {
+                  ...i,
+                  function: {
+                    ...i.function,
+                    arguments: toolArguments,
+                  },
+                }
               }
               return i
             })

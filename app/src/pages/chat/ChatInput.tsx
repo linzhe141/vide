@@ -2,9 +2,9 @@ import { Send, StopCircle } from 'lucide-react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
-import { memo, useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
-export const ChatInput = memo(function ChatInput() {
+export function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -80,4 +80,4 @@ export const ChatInput = memo(function ChatInput() {
       </div>
     </div>
   )
-})
+}

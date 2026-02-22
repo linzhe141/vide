@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { useState } from 'react'
 import { Wrench, CheckCircle2, XCircle, ChevronDown, Loader2 } from 'lucide-react'
 import { Button } from '../../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
@@ -6,7 +6,7 @@ import { cn } from '../../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
 import { useChatContext } from '../../../pages/chat/ChatProvider'
 
-export function extractPreview(argStr: string) {
+function extractPreview(argStr: string) {
   const result: {
     filepath: string
     content: string
@@ -36,7 +36,7 @@ export function extractPreview(argStr: string) {
   return result
 }
 
-export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
+export function FsCreateFileToolCall({
   toolCall,
   animation,
   showApproveOperate,
@@ -49,6 +49,7 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
   const { handleApprove, handleReject } = useChatContext()
 
   const fileInfo = extractPreview(toolCall.function.arguments)
+  console.log('xxxxxxxxx', fileInfo)
   const fileType = fileInfo.filepath?.split('.').at(-1) || 'text'
   function beautifyResult(content: string) {
     try {
@@ -167,4 +168,4 @@ export const FsCreateFileToolCall = memo(function FsCreateFileToolCall({
       </div>
     </div>
   )
-})
+}

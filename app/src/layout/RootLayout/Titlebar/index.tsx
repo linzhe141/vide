@@ -1,6 +1,6 @@
 import { Minus, Square, X, Copy } from 'lucide-react'
 import Logo from '../logo.png'
-import { memo, useEffect, useState, type PropsWithChildren } from 'react'
+import { useEffect, useState, type PropsWithChildren } from 'react'
 import { cn } from '@/app/src/lib/utils'
 
 const WindowState = {
@@ -10,7 +10,7 @@ const WindowState = {
 } as const
 type WindowStateValue = (typeof WindowState)[keyof typeof WindowState]
 
-export const Titlebar = memo(function Titlebar() {
+export function Titlebar() {
   const [windowState, setWindowState] = useState<WindowStateValue>(WindowState.NORMAL)
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
@@ -72,7 +72,7 @@ export const Titlebar = memo(function Titlebar() {
       </div>
     </div>
   )
-})
+}
 
 function WindowOperationItem({
   onClick,

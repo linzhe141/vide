@@ -1,9 +1,8 @@
 import type { ToolCall } from '@/agent/core/types'
 import { NormalToolCall } from './NormalToolCall'
 import { FsCreateFileToolCall } from './FsCreateFileToolCall'
-import { memo } from 'react'
 
-export const ToolCallItem = memo(function ToolCallItem({
+export function ToolCallItem({
   toolCall,
   animation,
   showApproveOperate,
@@ -28,4 +27,4 @@ export const ToolCallItem = memo(function ToolCallItem({
       showApproveOperate={showApproveOperate}
     ></NormalToolCall>
   )
-})
+}

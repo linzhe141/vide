@@ -1,9 +1,9 @@
-import React, { memo, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import type { PropsWithChildren } from 'react'
 import './animation.css'
 const segmenter = new (Intl as any).Segmenter('zh', { granularity: 'word' })
 
-export const AnimatedText = memo(({ text }: { text: string }) => {
+export function AnimatedText({ text }: { text: string }) {
   const segments = useMemo(() => {
     return [...segmenter.segment(text)].map((s) => s.segment)
   }, [text])
@@ -18,7 +18,7 @@ export const AnimatedText = memo(({ text }: { text: string }) => {
       ))}
     </>
   )
-})
+}
 
 const wrapWithAnimation = (node: React.ReactNode, index: number): React.ReactNode => {
   if (typeof node === 'string') {
@@ -36,7 +36,7 @@ const wrapWithAnimation = (node: React.ReactNode, index: number): React.ReactNod
   return node
 }
 
-export const AnimatedWrapper = memo(({ children }: { children: React.ReactNode }) => {
+export function AnimatedWrapper({ children }: { children: React.ReactNode }) {
   const wrapped = React.Children.map(children, wrapWithAnimation)
   return <>{wrapped}</>
-})
+}

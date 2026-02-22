@@ -1,9 +1,8 @@
 import { CheckCircle2, Bot } from 'lucide-react'
 import { useChatContext } from './ChatProvider'
-import { memo } from 'react'
 
 // 状态提示组件
-export const StatusIndicator = memo(function StatusIndicator() {
+export function StatusIndicator() {
   const { isFinished } = useChatContext()
 
   if (!isFinished) return null
@@ -18,10 +17,10 @@ export const StatusIndicator = memo(function StatusIndicator() {
       </div>
     </div>
   )
-})
+}
 
 // 加载动画组件
-export const TypingIndicator = memo(function TypingIndicator() {
+export function TypingIndicator() {
   return (
     <div className='ml-2 flex items-start gap-3'>
       <div className='flex gap-1.5'>
@@ -40,10 +39,10 @@ export const TypingIndicator = memo(function TypingIndicator() {
       </div>
     </div>
   )
-})
+}
 
 // 空状态组件
-export const EmptyState = memo(function EmptyState() {
+export function EmptyState() {
   return (
     <div className='flex flex-col items-center justify-center gap-4 py-20 text-center'>
       <div className='bg-primary/10 flex h-16 w-16 items-center justify-center rounded-2xl'>
@@ -55,4 +54,4 @@ export const EmptyState = memo(function EmptyState() {
       </div>
     </div>
   )
-})
+}

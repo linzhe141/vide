@@ -57,7 +57,14 @@ export default defineConfig({
         '@': path.resolve(__dirname, '.'),
       },
     },
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react({
+        babel: {
+          plugins: ['babel-plugin-react-compiler'],
+        },
+      }),
+      tailwindcss(),
+    ],
     server: {
       port: 1412,
     },

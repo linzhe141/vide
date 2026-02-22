@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { useState } from 'react'
 import { Wrench, CheckCircle2, XCircle, ChevronDown } from 'lucide-react'
 import { Button } from '../../../ui/Button'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
@@ -6,7 +6,7 @@ import { cn } from '../../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
 import { useChatContext } from '../../../pages/chat/ChatProvider'
 
-export const NormalToolCall = memo(function NormalToolCall({
+export function NormalToolCall({
   toolCall,
   animation,
   showApproveOperate,
@@ -126,4 +126,4 @@ export const NormalToolCall = memo(function NormalToolCall({
       </div>
     </div>
   )
-})
+}

@@ -1,7 +1,7 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { memo, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
 import {
   useThreadStore,
@@ -22,7 +22,7 @@ export function Chat() {
   const id = params.id!
   return (
     <ChatProvider>
-      <ChatContentMemo threadId={id} />
+      <ChatContent threadId={id} />
     </ChatProvider>
   )
 }
@@ -151,5 +151,3 @@ function ChatContent({ threadId }: { threadId: string }) {
     </div>
   )
 }
-
-const ChatContentMemo = memo(ChatContent)

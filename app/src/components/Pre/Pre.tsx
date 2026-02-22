@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
 import { cn } from '../../lib/utils'
 import { THEME } from '../highlight/codeTheme'
 import type { ThemedToken } from 'shiki'
@@ -7,7 +7,7 @@ import { ShikiStreamTokenizer } from 'shiki-stream'
 import { Copy, Check } from 'lucide-react'
 import { useMarkdown } from '../markdown/MarkdownProvider'
 
-export const Pre = memo(function Pre(props: PropsWithChildren) {
+export function Pre(props: PropsWithChildren) {
   const { animation } = useMarkdown()
   const codeElement = props.children as ReactElement<PropsWithChildren>
   const code = codeElement.props.children
@@ -19,9 +19,9 @@ export const Pre = memo(function Pre(props: PropsWithChildren) {
     return null
   }
   return <CodeBlock code={String(code)} lang={language}></CodeBlock>
-})
+}
 
-const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang: string }) {
+function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
 
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
@@ -59,9 +59,10 @@ const CodeBlock = memo(function CodeBlock({ code, lang }: { code: string; lang: 
       </code>
     </CodeBlockWrapper>
   )
-})
+}
 
-const _TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function TokenSpan({ token }: { token: ThemedToken }) {
   return (
     <span
       style={{
@@ -74,9 +75,9 @@ const _TokenSpan = memo(function TokenSpan({ token }: { token: ThemedToken }) {
       {token.content}
     </span>
   )
-})
+}
 
-const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; lang: string }) {
+function StreamBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
 
@@ -147,7 +148,7 @@ const StreamBlock = memo(function StreamBlock({ code, lang }: { code: string; la
       <code ref={codeContainerRef} />
     </CodeBlockWrapper>
   )
-})
+}
 
 function getCodeLanguage(codeElement: ReactElement<any>) {
   if (!codeElement.props.className) return ''

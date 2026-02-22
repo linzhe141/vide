@@ -1,50 +1,78 @@
 import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
-import { memo, type PropsWithChildren } from 'react'
+import { type PropsWithChildren } from 'react'
 import { cn } from '../../lib/utils'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../Pre/Pre'
 import { MarkdownProvider } from './MarkdownProvider'
 
-const components = {
-  a: memo(({ ...props }: PropsWithChildren) => (
+function A({ ...props }: PropsWithChildren) {
+  return (
     <a {...props} target='_blank'>
       {props.children}
     </a>
-  )),
-  p: memo(({ children }: PropsWithChildren) => (
-    <p className='break-words'>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function P({ ...props }: PropsWithChildren) {
+  return (
+    <p className='break-words' {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </p>
-  )),
-  h1: memo(({ children }: PropsWithChildren) => (
-    <h1>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function H1({ ...props }: PropsWithChildren) {
+  return (
+    <h1 {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </h1>
-  )),
-  h2: memo(({ children }: PropsWithChildren) => (
-    <h2>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function H2({ ...props }: PropsWithChildren) {
+  return (
+    <h2 {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </h2>
-  )),
-  h3: memo(({ children }: PropsWithChildren) => (
-    <h3>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function H3({ ...props }: PropsWithChildren) {
+  return (
+    <h3 {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </h3>
-  )),
-  li: memo(({ children }: PropsWithChildren) => (
-    <li>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function Li({ ...props }: PropsWithChildren) {
+  return (
+    <li {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </li>
-  )),
-  strong: memo(({ children }: PropsWithChildren) => (
-    <strong>
-      <AnimatedWrapper>{children}</AnimatedWrapper>
+  )
+}
+
+function Strong({ ...props }: PropsWithChildren) {
+  return (
+    <strong {...props}>
+      <AnimatedWrapper>{props.children}</AnimatedWrapper>
     </strong>
-  )),
+  )
+}
+
+const components = {
+  a: A,
+  p: P,
+  h1: H1,
+  h2: H2,
+  h3: H3,
+  li: Li,
+  strong: Strong,
   pre: Pre,
 }
 
-export const MarkdownRenderer = memo(function MarkdownRenderer({
+export function MarkdownRenderer({
   children,
   className,
   animation,
@@ -64,4 +92,4 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
       </article>
     </MarkdownProvider>
   )
-})
+}

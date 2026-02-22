@@ -5,7 +5,7 @@ import { AssistantMessage } from '../../components/messages/AssistantMessage'
 import { ToolCallItem } from '../../components/messages/toolcalls/ToolCallItem'
 import { WorkflowErrorMessage } from '../../components/messages/WorkflowErrorMessage'
 import { StatusIndicator, TypingIndicator, EmptyState } from './ChatUIComponents'
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
 import { useThreadStore } from '../../store/threadStore'
 import { MessageNavigator } from './MessageNavigator'
@@ -13,7 +13,7 @@ import { cn } from '../../lib/utils'
 import { ThreadMessageRole } from '@/types'
 import { AssistantReasonMessage } from '../../components/messages/AssistantReasonMessage'
 
-export const MessageList = memo(function MessageList({ loading }: { loading: boolean }) {
+export function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((data) => data.blocks)
   const { isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
@@ -178,7 +178,7 @@ export const MessageList = memo(function MessageList({ loading }: { loading: boo
       <div ref={placeholderRef} className='h-32' />
     </div>
   )
-})
+}
 
 const ChatSkeleton = () => {
   return (
