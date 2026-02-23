@@ -1,4 +1,4 @@
-import { createContext, useContext, type PropsWithChildren } from 'react'
+import { createContext, useContext, useMemo, type PropsWithChildren } from 'react'
 
 interface MarkdownContextValue {
   animation: boolean
@@ -16,7 +16,8 @@ export const useMarkdown = () => {
 
 export const MarkdownProvider = ({
   children,
-  value,
-}: PropsWithChildren<{ value: MarkdownContextValue }>) => {
-  return <MarkdownContext.Provider value={value}>{children}</MarkdownContext.Provider>
+  animation,
+}: PropsWithChildren<{ animation: boolean }>) => {
+  const providerValue = useMemo(() => ({ animation }), [animation])
+  return <MarkdownContext.Provider value={providerValue}>{children}</MarkdownContext.Provider>
 }

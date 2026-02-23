@@ -9,7 +9,7 @@ function App() {
   const timer = useRef<number | null>(null)
   useEffect(() => {
     timer.current = window.setInterval(() => {
-      const size = 40
+      const size = 400
       setSource(md.slice(0, index + size))
       index = index + size
     }, 50)

@@ -1,4 +1,4 @@
-import { createContext, useContext, type PropsWithChildren } from 'react'
+import { createContext, useContext, useMemo, type PropsWithChildren } from 'react'
 import { useElectronSettingStore } from '../store/electronSettingStore'
 import type { Theme } from '@/types'
 
@@ -30,33 +30,32 @@ export const themeColors = {
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const { theme, setTheme, themeColor, setThemeColor } = useElectronSettingStore()
-  function setThemeHandler(newTheme: Theme) {
-    setTheme(newTheme)
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+
+  const value = useMemo(() => {
+    function setThemeHandler(newTheme: Theme) {
+      setTheme(newTheme)
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
     }
-  }
 
-  const _applyThemeColor = (color: ThemeColor, dark: boolean) => {
-    const colorValue = dark ? themeColors[color].dark : themeColors[color].light
-    const root = document.documentElement
+    const applyThemeColor = (color: ThemeColor, dark: boolean) => {
+      const colorValue = dark ? themeColors[color].dark : themeColors[color].light
+      const root = document.documentElement
 
-    root.style.setProperty('--primary', colorValue)
-  }
+      root.style.setProperty('--primary', colorValue)
+    }
 
-  function setThemeColorHandler(color: ThemeColor) {
-    setThemeColor(color)
-    _applyThemeColor(color, theme === 'dark')
-  }
-  return (
-    <ThemeContext.Provider
-      value={{ theme, setTheme: setThemeHandler, themeColor, setThemeColor: setThemeColorHandler }}
-    >
-      {children}
-    </ThemeContext.Provider>
-  )
+    function setThemeColorHandler(color: ThemeColor) {
+      setThemeColor(color)
+      applyThemeColor(color, theme === 'dark')
+    }
+    return { theme, setTheme: setThemeHandler, themeColor, setThemeColor: setThemeColorHandler }
+  }, [setTheme, setThemeColor, theme, themeColor])
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

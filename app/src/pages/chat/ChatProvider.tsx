@@ -1,4 +1,4 @@
-import { createContext, useContext, type PropsWithChildren, useCallback } from 'react'
+import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import { useThreadStore } from '../../store/threadStore'
 
@@ -45,16 +45,19 @@ export function ChatProvider({ children }: PropsWithChildren) {
     [setToolCallStatus]
   )
 
-  const value: ChatContextType = {
-    isFinished,
-    isRunning,
-    isError,
-    errorInfo,
-    handleSend,
-    handleApprove,
-    handleReject,
-    abort,
-  }
+  const value: ChatContextType = useMemo(
+    () => ({
+      isFinished,
+      isRunning,
+      isError,
+      errorInfo,
+      handleSend,
+      handleApprove,
+      handleReject,
+      abort,
+    }),
+    [isFinished, isRunning, isError, errorInfo, handleSend, handleApprove, handleReject, abort]
+  )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
 }

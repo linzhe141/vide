@@ -1,9 +1,10 @@
 import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
-import { type PropsWithChildren } from 'react'
+import { useMemo, type PropsWithChildren } from 'react'
 import { cn } from '../../lib/utils'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../Pre/Pre'
 import { MarkdownProvider } from './MarkdownProvider'
+import { rehypeStreamAnimated } from './animation/rehypeStreamAnimated'
 
 function A({ ...props }: PropsWithChildren) {
   return (
@@ -62,13 +63,13 @@ function Strong({ ...props }: PropsWithChildren) {
 }
 
 const components = {
-  a: A,
-  p: P,
-  h1: H1,
-  h2: H2,
-  h3: H3,
-  li: Li,
-  strong: Strong,
+  // a: A,
+  // p: P,
+  // h1: H1,
+  // h2: H2,
+  // h3: H3,
+  // li: Li,
+  // strong: Strong,
   pre: Pre,
 }
 
@@ -77,8 +78,15 @@ export function MarkdownRenderer({
   className,
   animation,
 }: ReactMarkdownOptions & { className?: string; animation: boolean }) {
+  const rehypePlugins = useMemo(() => {
+    if (animation) {
+      return [rehypeStreamAnimated]
+    }
+    return []
+  }, [animation])
+
   return (
-    <MarkdownProvider value={{ animation }}>
+    <MarkdownProvider animation={animation}>
       <article
         className={cn(
           'article-wrapper prose dark:prose-invert prose-slate max-w-none',
@@ -88,7 +96,9 @@ export function MarkdownRenderer({
           className
         )}
       >
-        <MarkdownReact components={components}>{children}</MarkdownReact>
+        <MarkdownReact components={components} rehypePlugins={rehypePlugins}>
+          {children}
+        </MarkdownReact>
       </article>
     </MarkdownProvider>
   )
