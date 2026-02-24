@@ -1,6 +1,7 @@
 import { defineConfig } from 'electron-vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
@@ -63,6 +64,7 @@ export default defineConfig({
           plugins: ['babel-plugin-react-compiler'],
         },
       }),
+      vue(),
       tailwindcss(),
     ],
     server: {

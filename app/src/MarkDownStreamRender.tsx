@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { md } from './md-demo'
 import { MarkdownRenderer } from './components/markdown/MarkdownRenderer'
 import { Titlebar } from './layout/RootLayout/Titlebar'
+import { Markdown } from '@lobehub/ui'
 
 let index = 0
 function App() {
@@ -12,7 +13,7 @@ function App() {
       const size = 400
       setSource(md.slice(0, index + size))
       index = index + size
-    }, 50)
+    }, 500)
     return () => {
       clearInterval(timer.current!)
     }
@@ -23,7 +24,7 @@ function App() {
         <Titlebar></Titlebar>
       </div>
       <div className='p-10'>
-        <MarkdownRenderer animation>{source}</MarkdownRenderer>
+        <Markdown animated>{source}</Markdown>
       </div>
     </div>
   )

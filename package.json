@@ -22,8 +22,10 @@
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
+    "@lobehub/ui": "^4.38.4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
+    "@vitejs/plugin-vue": "^6.0.4",
     "better-sqlite3": "^12.6.2",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
@@ -47,6 +49,8 @@
     "tailwind-merge": "^3.4.0",
     "unist-util-visit": "^5.1.0",
     "uuid": "^13.0.0",
+    "vue": "^3.5.28",
+    "vue-mdr": "0.1.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
