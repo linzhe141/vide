@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 // SPDX-License-Identifier: MIT
-// import { type Element, type ElementContent, type Root } from 'hast'
-type Element = any
-type ElementContent = any
-type Root = any
+import { type Element, type ElementContent, type Root } from '@/node_modules/@types/hast/index.d'
 import { type BuildVisitor } from 'unist-util-visit'
 import { visit } from 'unist-util-visit'
+
+// @ts-expect-error ignore missing types
+const segmenter = new Intl.Segmenter('zh', { granularity: 'word' })
 
 export const rehypeStreamAnimated = () => {
   return (tree: Root) => {
@@ -17,7 +17,6 @@ export const rehypeStreamAnimated = () => {
         const newChildren: Array<ElementContent> = []
         for (const child of node.children) {
           if (child.type === 'text') {
-            const segmenter = new Intl.Segmenter('zh', { granularity: 'word' })
             const segments = segmenter.segment(child.value)
             const words = [...segments].map((segment) => segment.segment).filter(Boolean)
             words.forEach((word: string) => {

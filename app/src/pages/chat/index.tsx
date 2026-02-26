@@ -22,7 +22,7 @@ export function Chat() {
   const id = params.id!
   return (
     <ChatProvider>
-      <ChatContent threadId={id} />
+      <ChatContent key={id} threadId={id} />
     </ChatProvider>
   )
 }
@@ -132,6 +132,9 @@ function ChatContent({ threadId }: { threadId: string }) {
       fetchThread()
     }
 
+    if (context.isRuning) {
+      // restore()
+    }
     let firstRunning = true
     onWorkflowEvent('workflow-start', async () => {
       if (firstRunning) {

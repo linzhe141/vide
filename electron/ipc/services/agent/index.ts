@@ -22,6 +22,7 @@ import { db } from '@/electron/databaseManager'
 import type { ThreadMessageRowDto } from '../../api/channels'
 import { ThreadMessageRole } from '@/types'
 import { settingsStore } from '@/electron/store/settingsStore'
+import { activeLatestThreadWorkflowMap } from '@/agent/core/workflow'
 
 const tools: Tool[] = [
   {
@@ -230,10 +231,10 @@ export class AgentIpcMainService implements IpcMainService {
           }
 
           case ThreadMessageRole.ToolCalls: {
-            const toolCalls = JSON.parse(i.payload!).toolCalls as Array<
-              ToolCall & { result?: ToolChatMessage }
-            >
-            if (assistantMessage) {
+            const toolCalls = JSON.parse(i.payload!).toolCalls.filter(
+              (i: any) => i.result
+            ) as Array<ToolCall & { result: ToolChatMessage }>
+            if (assistantMessage && toolCalls.length) {
               assistantMessage.tool_calls = toolCalls.map((i) => ({
                 function: i.function,
                 id: i.id,
@@ -255,6 +256,8 @@ export class AgentIpcMainService implements IpcMainService {
         }
       }
       this.session = this.agent.restoreSession(threadId, toLLMmessages)
+      const maybeActiveWorkflow = activeLatestThreadWorkflowMap.get(threadId)
+      return !!maybeActiveWorkflow
     })
   }
 

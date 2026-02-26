@@ -34,6 +34,7 @@
     "hast-util-to-jsx-runtime": "^2.3.6",
     "immer": "^11.1.4",
     "lucide-react": "^0.511.0",
+    "marked": "^17.0.3",
     "openai": "^6.16.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

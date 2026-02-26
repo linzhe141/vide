@@ -297,9 +297,43 @@ export function useWorkflowStream() {
     [handleWorkflowChunk]
   )
 
+  const restore = useCallback(async () => {
+    // 防止并发 send
+
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    const stream = createWorkflowStream(abortController.signal)
+    const reader = stream.getReader()
+    readerRef.current = reader
+
+    setState((prev) => ({ ...prev, isRunning: true }))
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        if (!value) continue
+
+        handleWorkflowChunk(value)
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        // 正常中断
+        return
+      }
+
+      console.error('[useWorkflowStream] stream error', err)
+    } finally {
+      reader.releaseLock()
+      cleanup()
+    }
+  }, [handleWorkflowChunk])
+
   return {
     send,
     abort,
+    restore,
     ...state,
   }
 }

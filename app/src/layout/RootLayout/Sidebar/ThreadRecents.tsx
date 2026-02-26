@@ -2,6 +2,7 @@ import { NavLink } from 'react-router'
 import { cn } from '@/app/src/lib/utils'
 import { useEffect } from 'react'
 import { useThreadsStore } from '@/app/src/store/threadsStore'
+import { context } from '@/app/src/hooks/chatContenxt'
 
 export function ThreadRecents() {
   const { threads, setThreads } = useThreadsStore()
@@ -20,8 +21,11 @@ export function ThreadRecents() {
         <NavLink
           key={thread.id}
           to={`/chat/${thread.id}`}
-          onClick={() => {
-            window.ipcRendererApi.invoke('agent-change-session', { threadId: thread.id })
+          onClick={async () => {
+            const running = await window.ipcRendererApi.invoke('agent-change-session', {
+              threadId: thread.id,
+            })
+            context.isRuning = running
           }}
           className={({ isActive }) =>
             cn(

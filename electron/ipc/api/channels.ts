@@ -39,7 +39,7 @@ export interface RenderChannel {
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
-  'agent-change-session': (data: { threadId: string }) => void
+  'agent-change-session': (data: { threadId: string }) => Promise<boolean>
 
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>

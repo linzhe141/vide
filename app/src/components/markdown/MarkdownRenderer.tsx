@@ -1,89 +1,32 @@
-import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
-import { useMemo, type PropsWithChildren } from 'react'
 import { cn } from '../../lib/utils'
-import { AnimatedWrapper } from './animation'
-import { Pre } from '../Pre/Pre'
+import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
+import { memo, useMemo, type FC, type PropsWithChildren } from 'react'
 import { MarkdownProvider } from './MarkdownProvider'
 import { rehypeStreamAnimated } from './animation/rehypeStreamAnimated'
+import { marked } from 'marked'
+import { components } from './components'
 
-function A({ ...props }: PropsWithChildren) {
-  return (
-    <a {...props} target='_blank'>
-      {props.children}
-    </a>
-  )
+const streamRehypePlugins = [rehypeStreamAnimated]
+const markdownRehypePlugins: ReactMarkdownOptions['rehypePlugins'] = []
+
+const parseMarkdownIntoBlocks = (markdown: string) => {
+  return marked.lexer(markdown).map((token) => token.raw)
 }
 
-function P({ ...props }: PropsWithChildren) {
-  return (
-    <p className='break-words' {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </p>
-  )
-}
-
-function H1({ ...props }: PropsWithChildren) {
-  return (
-    <h1 {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </h1>
-  )
-}
-
-function H2({ ...props }: PropsWithChildren) {
-  return (
-    <h2 {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </h2>
-  )
-}
-
-function H3({ ...props }: PropsWithChildren) {
-  return (
-    <h3 {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </h3>
-  )
-}
-
-function Li({ ...props }: PropsWithChildren) {
-  return (
-    <li {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </li>
-  )
-}
-
-function Strong({ ...props }: PropsWithChildren) {
-  return (
-    <strong {...props}>
-      <AnimatedWrapper>{props.children}</AnimatedWrapper>
-    </strong>
-  )
-}
-
-const components = {
-  // a: A,
-  // p: P,
-  // h1: H1,
-  // h2: H2,
-  // h3: H3,
-  // li: Li,
-  // strong: Strong,
-  pre: Pre,
-}
+const MemoMarkdowndown: FC<PropsWithChildren<ReactMarkdownOptions>> = memo(
+  ({ children, ...rest }) => {
+    return <MarkdownReact {...rest}>{children}</MarkdownReact>
+  },
+  (prevProps, nextProps) => prevProps.children === nextProps.children
+)
 
 export function MarkdownRenderer({
   children,
   className,
   animation,
 }: ReactMarkdownOptions & { className?: string; animation: boolean }) {
-  const rehypePlugins = useMemo(() => {
-    if (animation) {
-      return [rehypeStreamAnimated]
-    }
-    return []
-  }, [animation])
+  const blocks = useMemo(() => parseMarkdownIntoBlocks(children ?? ''), [children])
+  console.log('blocks', blocks)
 
   return (
     <MarkdownProvider animation={animation}>
@@ -96,9 +39,21 @@ export function MarkdownRenderer({
           className
         )}
       >
-        <MarkdownReact components={components} rehypePlugins={rehypePlugins}>
-          {children}
-        </MarkdownReact>
+        {animation ? (
+          blocks.map((block, index) => (
+            <MemoMarkdowndown
+              key={index}
+              rehypePlugins={streamRehypePlugins}
+              components={components}
+            >
+              {block}
+            </MemoMarkdowndown>
+          ))
+        ) : (
+          <MemoMarkdowndown rehypePlugins={markdownRehypePlugins} components={components}>
+            {children}
+          </MemoMarkdowndown>
+        )}
       </article>
     </MarkdownProvider>
   )

@@ -13,6 +13,7 @@ import type { Thread } from './threads'
 import type { LLMService } from './services/llm'
 import type { ToolService } from './services/tool'
 
+export const activeLatestThreadWorkflowMap = new Map<string, Workflow>()
 export class Workflow {
   private state: WorkflowState = 'finished'
   private abortController: AbortController = new AbortController()
@@ -31,7 +32,7 @@ export class Workflow {
     this.setState('user-input')
     workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
 
-    this.run(threadId, initialPayload)
+    await this.run(threadId, initialPayload)
   }
 
   async humanApproveToolCall() {
@@ -68,6 +69,7 @@ export class Workflow {
   }
 
   async run(threadId: string, payload: StepPayload) {
+    activeLatestThreadWorkflowMap.set(threadId, this)
     try {
       while (true) {
         if (this.isAborted) {
@@ -95,9 +97,14 @@ export class Workflow {
         this.setState(nextStepState.state)
         payload = nextStepState.payload as StepPayload
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log('Workflow run error:', error)
+      if (error.message === 'llm-aborted') {
+        return
+      }
       workflowEvent.emit('workflow-error', { threadId, error })
+    } finally {
+      activeLatestThreadWorkflowMap.delete(threadId)
     }
   }
 
