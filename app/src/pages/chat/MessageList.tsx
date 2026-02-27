@@ -5,16 +5,17 @@ import { AssistantMessage } from '../../components/messages/AssistantMessage'
 import { ToolCallItem } from '../../components/messages/toolcalls/ToolCallItem'
 import { WorkflowErrorMessage } from '../../components/messages/WorkflowErrorMessage'
 import { StatusIndicator, TypingIndicator, EmptyState } from './ChatUIComponents'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown } from 'lucide-react'
-import { useThreadStore } from '../../store/threadStore'
+import { useThreadStore, selectBlocks } from '../../store/threadStore'
 import { MessageNavigator } from './MessageNavigator'
 import { cn } from '../../lib/utils'
 import { ThreadMessageRole } from '@/types'
 import { AssistantReasonMessage } from '../../components/messages/AssistantReasonMessage'
+import { shallow } from 'zustand/shallow'
 
 export function MessageList({ loading }: { loading: boolean }) {
-  const blocks = useThreadStore((data) => data.blocks)
+  const blocks = useThreadStore(selectBlocks, shallow)
   const { isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
@@ -22,7 +23,10 @@ export function MessageList({ loading }: { loading: boolean }) {
     const wrapper = document.getElementById('chat-wrapper')!
     wrapper.scrollTop = wrapper.scrollHeight
   }, [])
-  const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
+  const isRunningLast = useCallback(
+    (idx: number) => idx === blocks.length - 1 && isRunning,
+    [blocks.length, isRunning]
+  )
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -47,6 +51,17 @@ export function MessageList({ loading }: { loading: boolean }) {
     }
     prevLengthRef.current = blocks.length
   }, [blocks])
+
+  // 使用 useMemo 缓存 MessageNavigator items
+  const navigatorItems = useMemo(
+    () =>
+      blocks.map((i, index) => ({
+        index: index,
+        id: `workflow-block-${index}`,
+        label: i.userMessage.content as string,
+      })),
+    [blocks]
+  )
 
   return (
     <div className='flex-1 overflow-auto' id='chat-wrapper'>
@@ -154,15 +169,7 @@ export function MessageList({ loading }: { loading: boolean }) {
             </div>
 
             {blocks.length > 0 && <StatusIndicator />}
-            {
-              <MessageNavigator
-                items={blocks.map((i, index) => ({
-                  index: index,
-                  id: `workflow-block-${index}`,
-                  label: i.userMessage.content as string,
-                }))}
-              />
-            }
+            {<MessageNavigator items={navigatorItems} />}
           </>
         )}
       </div>

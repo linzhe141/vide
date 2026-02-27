@@ -125,7 +125,6 @@ function ChatContent({ threadId }: { threadId: string }) {
 
     const firstInput = context.firstInput
     if (firstInput) {
-      console.log('firstInput', firstInput)
       context.firstInput = ''
       handleSend(firstInput)
     } else {
@@ -136,15 +135,18 @@ function ChatContent({ threadId }: { threadId: string }) {
       // restore()
     }
     let firstRunning = true
-    onWorkflowEvent('workflow-start', async () => {
+    const unsubscribe = onWorkflowEvent('workflow-start', async () => {
       if (firstRunning) {
         firstRunning = false
-        console.log('xxxx')
         window.ipcRendererApi.invoke('get-threads-list').then((res) => {
           setThreads(res)
         })
       }
     })
+
+    return () => {
+      unsubscribe()
+    }
   }, [threadId, setBlocks, handleSend, setThreads])
 
   return (

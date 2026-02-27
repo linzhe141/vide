@@ -1,10 +1,8 @@
-import { useState } from 'react'
-import { Wrench, CheckCircle2, XCircle, ChevronDown, Loader2 } from 'lucide-react'
-import { Button } from '../../../ui/Button'
+import { memo, useMemo, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
-import { cn } from '../../../lib/utils'
 import type { ToolCall } from '@/agent/core/types'
-import { useChatContext } from '../../../pages/chat/ChatProvider'
+import { BaseToolCallLayout } from './BaseToolCallLayout'
 
 function extractPreview(argStr: string) {
   const result: {
@@ -36,136 +34,87 @@ function extractPreview(argStr: string) {
   return result
 }
 
-export function FsCreateFileToolCall({
-  toolCall,
-  animation,
-  showApproveOperate,
-}: {
-  toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
-  animation: boolean
-  showApproveOperate: boolean
-}) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const { handleApprove, handleReject } = useChatContext()
+export const FsCreateFileToolCall = memo(
+  ({
+    toolCall,
+    animation,
+    showApproveOperate,
+  }: {
+    toolCall: ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }
+    animation: boolean
+    showApproveOperate: boolean
+  }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
 
-  const fileInfo = extractPreview(toolCall.function.arguments)
-  console.log('xxxxxxxxx', fileInfo)
-  const fileType = fileInfo.filepath?.split('.').at(-1) || 'text'
-  function beautifyResult(content: string) {
-    try {
-      return JSON.parse(content)
-    } catch {
-      return content
-    }
-  }
+    const fileInfo = useMemo(
+      () => extractPreview(toolCall.function.arguments),
+      [toolCall.function.arguments]
+    )
 
-  // ⭐ 只有 fs_create_file 才有 streaming loading
-  let updating = true
-  try {
-    if (JSON.parse(toolCall.function.arguments)) {
-      updating = false
-    }
-  } catch {
-    updating = true
-  }
+    const fileType = useMemo(
+      () => fileInfo.filepath?.split('.').at(-1) || 'text',
+      [fileInfo.filepath]
+    )
 
-  return (
-    <div>
-      <div className='border-border bg-background/50 relative rounded-xl border transition-all'>
-        {/* Header */}
-        <div
-          onClick={() => setIsExpanded(!isExpanded)}
-          className='bg-background sticky top-0 z-10 flex w-full items-center gap-4 rounded-xl px-4 py-3 transition-colors'
-        >
-          {/* Icon */}
-          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10'>
-            <Wrench className='h-4 w-4 text-blue-600' />
-          </div>
+    const isUpdating = useMemo(() => {
+      try {
+        JSON.parse(toolCall.function.arguments)
+        return false
+      } catch {
+        return true
+      }
+    }, [toolCall.function.arguments])
 
-          {/* Title */}
-          <div className='flex flex-1 flex-col text-left'>
-            <span className='text-foreground text-sm font-medium'>{toolCall.function?.name}</span>
-            <span className='text-text-secondary text-xs'>
-              Click to {isExpanded ? 'collapse' : 'expand'} details
-            </span>
-          </div>
+    const toolCallResult = useMemo(() => {
+      if (!toolCall.result) return null
+      try {
+        return JSON.parse(toolCall.result)
+      } catch {
+        return toolCall.result
+      }
+    }, [toolCall.result])
 
-          {/* Approve */}
-          {!updating && showApproveOperate && (
-            <div className='flex items-center gap-2' onClick={(e) => e.stopPropagation()}>
-              <div className='flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-1'>
-                <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500' />
-                <span className='text-text-secondary text-xs font-medium'>Approval Required</span>
-              </div>
-
-              <Button
-                onClick={() => handleApprove(toolCall.id)}
-                size='sm'
-                className='flex items-center gap-1.5 text-xs'
-              >
-                <CheckCircle2 className='h-3.5 w-3.5' />
-                Approve
-              </Button>
-
-              <Button
-                onClick={() => handleReject(toolCall.id)}
-                size='sm'
-                variant='outline'
-                className='flex items-center gap-1.5 text-xs'
-              >
-                <XCircle className='h-3.5 w-3.5' />
-                Reject
-              </Button>
-            </div>
-          )}
-
-          {!updating && (
-            <ChevronDown
-              className={cn(
-                'text-text-secondary h-4 w-4 transition-transform',
-                isExpanded && 'rotate-180'
-              )}
-            />
+    return (
+      <BaseToolCallLayout
+        toolCall={toolCall}
+        animation={animation}
+        showApproveOperate={showApproveOperate}
+        isExpanded={isExpanded}
+        onToggle={() => setIsExpanded(!isExpanded)}
+        showChevron={!isUpdating}
+        isUpdating={isUpdating}
+      >
+        <div className='text-text-secondary my-2 flex items-center gap-2 space-y-1 text-sm'>
+          {!toolCall.result && (
+            <>
+              <Loader2 className='h-4 w-4 animate-spin text-gray-500' />
+              <span>正在写入：{fileInfo.filepath}</span>
+            </>
           )}
         </div>
+        {fileInfo.content && (
+          <MarkdownRenderer
+            className='bg-background text-text-secondary max-h-[500px] overflow-auto rounded-lg font-mono text-xs'
+            animation={animation}
+          >
+            {'```' +
+              fileType +
+              '\n' +
+              (isUpdating ? fileInfo.content : JSON.parse(toolCall.function.arguments).content) +
+              '\n```'}
+          </MarkdownRenderer>
+        )}
 
-        {/* Detail */}
-        {isExpanded && (
-          <div className='border-border bg-primary/5 border-t px-4 py-3'>
-            <div>
-              <div className='text-text-secondary my-2 flex items-center gap-2 space-y-1 text-sm'>
-                {!toolCall.result && (
-                  <>
-                    <Loader2 className='h-4 w-4 animate-spin text-gray-500' />
-                    <span>正在写入：{fileInfo.filepath}</span>
-                  </>
-                )}
-              </div>
-              {fileInfo.content && (
-                <MarkdownRenderer
-                  className='bg-background text-text-secondary max-h-[500px] overflow-auto rounded-lg font-mono text-xs'
-                  animation={animation}
-                >
-                  {'```' +
-                    fileType +
-                    '\n' +
-                    (updating
-                      ? fileInfo.content
-                      : JSON.parse(toolCall.function.arguments).content) +
-                    '\n```'}
-                </MarkdownRenderer>
-              )}
-            </div>
-
-            {toolCall.result && (
-              <div className='text-text-secondary my-2 space-y-1 text-sm'>
-                <div>{beautifyResult(toolCall.result).message}</div>
-                <div>{beautifyResult(toolCall.result).fullPath}</div>
-              </div>
-            )}
+        {toolCallResult && (
+          <div className='text-text-secondary my-2 space-y-1 text-sm'>
+            <div>{toolCallResult.message}</div>
+            <div>{toolCallResult.fullPath}</div>
           </div>
         )}
-      </div>
-    </div>
-  )
-}
+      </BaseToolCallLayout>
+    )
+  }
+)
+
+FsCreateFileToolCall.displayName = 'FsCreateFileToolCall'
+

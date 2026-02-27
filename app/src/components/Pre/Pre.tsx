@@ -81,8 +81,8 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
 
+  const [tokens, setTokens] = useState<ThemedToken[]>([])
   const indexRef = useRef(0)
-  const codeContainerRef = useRef<HTMLElement>(null)
   const tokenizerRef = useRef<ShikiStreamTokenizer>(null!)
 
   useEffect(() => {
@@ -91,10 +91,8 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
       lang: highlightLang,
       theme: 'css-variables',
     })
-    // 重置容器
-    if (codeContainerRef.current) {
-      codeContainerRef.current.innerHTML = ''
-    }
+    // 重置 tokens
+    setTokens([])
     indexRef.current = 0
   }, [highlightLang, lang])
 
@@ -109,35 +107,14 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
         await new Promise((resolve) => setTimeout(resolve, 100))
         const { stable, unstable, recall } = await tokenizerRef.current.enqueue(incrementalText)
         const chunkTokens = [...stable, ...unstable]
-        // 直接操作 DOM，完全跳过 React
-        if (codeContainerRef.current) {
-          // 处理 recall（向后删除）
-          if (recall > 0) {
-            let count = 0
-            let node = codeContainerRef.current.lastChild
-            while (node && count < recall) {
-              const next = node.previousSibling
-              node.remove()
-              node = next
-              count++
-            }
-          }
 
-          // 增量添加新 token
-          chunkTokens.forEach((token) => {
-            const span = document.createElement('span')
-            if (token.color) span.style.color = token.color
-            if (token.bgColor) span.style.backgroundColor = token.bgColor
-            if (token.htmlStyle) {
-              Object.assign(span.style, token.htmlStyle)
-            }
-            if (token.htmlAttrs) {
-              Object.assign(span, token.htmlAttrs)
-            }
-            span.textContent = token.content
-            codeContainerRef.current!.appendChild(span)
-          })
-        }
+        // 使用 React 状态管理，而非直接操作 DOM
+        setTokens((prevTokens) => {
+          // 处理 recall（向后删除）
+          const newTokens = recall > 0 ? prevTokens.slice(0, -recall) : prevTokens
+          // 添加新 tokens
+          return [...newTokens, ...chunkTokens]
+        })
       }
     }
     updateStreamTokens()
@@ -145,7 +122,21 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
 
   return (
     <CodeBlockWrapper lang={lang} code={code}>
-      <code ref={codeContainerRef} />
+      <code>
+        {tokens.map((token, idx) => (
+          <span
+            key={idx}
+            style={{
+              color: token.color,
+              backgroundColor: token.bgColor,
+              ...token.htmlStyle,
+            }}
+            {...token.htmlAttrs}
+          >
+            {token.content}
+          </span>
+        ))}
+      </code>
     </CodeBlockWrapper>
   )
 }

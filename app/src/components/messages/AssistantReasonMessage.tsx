@@ -1,16 +1,11 @@
 import { BrainCircuit, Loader2, ChevronDown } from 'lucide-react'
 import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
 import { cn } from '../../lib/utils'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 
-export function AssistantReasonMessage({
-  content,
-  reasoning,
-}: {
-  content: string
-  reasoning: boolean
-}) {
-  const [isExpanded, setIsExpanded] = useState(reasoning)
+export const AssistantReasonMessage = memo(
+  ({ content, reasoning }: { content: string; reasoning: boolean }) => {
+    const [isExpanded, setIsExpanded] = useState(reasoning)
 
   // 当 reasoning 状态变化时自动控制展开
   useEffect(() => {
@@ -87,4 +82,6 @@ export function AssistantReasonMessage({
       </div>
     </div>
   )
-}
+},
+  (prev, next) => prev.content === next.content && prev.reasoning === next.reasoning
+)

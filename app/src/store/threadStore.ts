@@ -74,6 +74,12 @@ type Actions = {
   // 获取所有 block 的所有消息（扁平化）
 }
 
+// 细粒度选择器
+export const selectBlocks = (state: State & Actions) => state.blocks
+export const selectBlocksLength = (state: State & Actions) => state.blocks.length
+export const selectCurrentBlock = (state: State & Actions) =>
+  state.blocks.find((b) => b.id === `block-${state.currentBlockIndex}`)
+
 export const useThreadStore = create<State & Actions>()(
   immer((set, get) => ({
     threadId: '',
@@ -189,14 +195,21 @@ export const useThreadStore = create<State & Actions>()(
 
     updateToolResultMessage: (message: ToolChatMessage) => {
       set((state: State) => {
-        for (const block of state.blocks) {
-          for (const msg of block.messages) {
-            if (msg.role === ThreadMessageRole.ToolCalls) {
-              for (const tool of msg.tool_calls) {
-                if (tool.id === message.tool_call_id) {
-                  tool.result = message.content as string
-                }
-              }
+        if (!state.currentBlockIndex) {
+          console.warn('No current block to update')
+          return
+        }
+        // 优化：仅遍历当前 block，而非所有 blocks
+        const block = state.blocks.find((b) => b.id === `block-${state.currentBlockIndex}`)
+        if (!block) return
+
+        // 仅遍历当前 block 的消息
+        for (const msg of block.messages) {
+          if (msg.role === ThreadMessageRole.ToolCalls) {
+            const tool = msg.tool_calls.find((t) => t.id === message.tool_call_id)
+            if (tool) {
+              tool.result = message.content as string
+              return // 找到后立即返回
             }
           }
         }

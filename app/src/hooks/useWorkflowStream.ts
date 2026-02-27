@@ -157,7 +157,6 @@ export function useWorkflowStream() {
         }
 
         case 'llm-tool-call-name': {
-          console.log(chunk.data.name)
           addToolcallName({
             toolCallId: chunk.data.id,
             toolCallName: chunk.data.name,
