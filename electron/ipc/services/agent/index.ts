@@ -22,7 +22,7 @@ import { db } from '@/electron/databaseManager'
 import type { ThreadMessageRowDto } from '../../api/channels'
 import { ThreadMessageRole } from '@/types'
 import { settingsStore } from '@/electron/store/settingsStore'
-import { activeLatestThreadWorkflowMap } from '@/agent/core/workflow'
+import { activeLatestThreadWorkflowMap } from '@/agent/core/workflow.old'
 
 const tools: Tool[] = [
   {

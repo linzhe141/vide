@@ -1,0 +1,224 @@
+import type {
+  WorkflowState,
+  CallLLMStepPayload,
+  CallToolsStepPayload,
+  StepPayload,
+  StepResult,
+  UserInputStepPayload,
+  CallToolStepPayload,
+  ToolCall,
+} from './types'
+import { toolEvent, workflowEvent } from './event'
+import type { Thread } from './threads'
+import type { LLMService } from './services/llm'
+import type { ToolService } from './services/tool'
+
+export const activeLatestThreadWorkflowMap = new Map<string, Workflow>()
+export class Workflow {
+  private state: WorkflowState = 'finished'
+  private abortController: AbortController = new AbortController()
+  private isAborted: boolean = false
+  // for wait human approve to resume workflow
+  private nextStep: StepResult | null = null
+
+  constructor(
+    private thread: Thread,
+    private llmService: LLMService,
+    private toolService: ToolService
+  ) {}
+
+  // 每一次启动都是由 user-input 驱动
+  async start(threadId: string, initialPayload: UserInputStepPayload) {
+    this.setState('user-input')
+    workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
+
+    await this.run(threadId, initialPayload)
+  }
+
+  async humanApproveToolCall() {
+    if (this.nextStep) {
+      workflowEvent.emit('workflow-tool-call-approved')
+      this.setState(this.nextStep.state)
+      this.run(this.thread.id, this.nextStep.payload)
+    }
+  }
+
+  async humanRejectToolCall() {
+    if (this.nextStep) {
+      const payload = this.nextStep.payload as CallToolStepPayload
+      const toolCall = payload.toolCalls[payload.index]
+      workflowEvent.emit('workflow-tool-call-rejected')
+      const rejectReason = 'human reject this tool call, stop workflow'
+      toolEvent.emit('tool-call-reject', {
+        id: toolCall.id,
+        toolName: toolCall.function.name,
+        reject: rejectReason,
+      })
+
+      // let llm summary
+      this.setState('call-llm')
+      this.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: rejectReason,
+      })
+      this.run(this.thread.id, {
+        messages: this.thread.getMessages(),
+      } satisfies CallLLMStepPayload)
+    }
+  }
+
+  async run(threadId: string, payload: StepPayload) {
+    activeLatestThreadWorkflowMap.set(threadId, this)
+    try {
+      while (true) {
+        if (this.isAborted) {
+          this.setState('finished')
+          return
+        }
+        const nextStepState = await this.runStep(payload)
+
+        if (nextStepState.state === 'wait-human-approve') {
+          const callToolStepPayload = payload as CallToolStepPayload
+          workflowEvent.emit('workflow-wait-human-approve', {
+            threadId,
+            payload: callToolStepPayload,
+          })
+          return
+        }
+
+        if (nextStepState.state === 'finished') {
+          workflowEvent.emit('workflow-finished', { threadId })
+
+          this.setState('finished')
+          return
+        }
+
+        this.setState(nextStepState.state)
+        payload = nextStepState.payload as StepPayload
+      }
+    } catch (error: any) {
+      console.log('Workflow run error:', error)
+      if (error.message === 'llm-aborted') {
+        return
+      }
+      workflowEvent.emit('workflow-error', { threadId, error })
+    } finally {
+      activeLatestThreadWorkflowMap.delete(threadId)
+    }
+  }
+
+  async runStep(payload: StepPayload): Promise<StepResult> {
+    switch (this.state) {
+      case 'user-input':
+        return this.stateUserInput(payload as UserInputStepPayload)
+
+      case 'call-llm':
+        return this.stateCallLLM(payload as CallLLMStepPayload)
+
+      case 'call-tools':
+        return this.stateCallTools(payload as CallToolsStepPayload)
+
+      case 'call-tool':
+        return this.stateCallTool(payload as CallToolStepPayload)
+
+      default:
+        throw new Error(`Unknown state: ${this.state}`)
+    }
+  }
+
+  setState(next: WorkflowState) {
+    this.state = next
+  }
+
+  async stateUserInput(payload: UserInputStepPayload): Promise<StepResult> {
+    this.thread.addMessage({
+      role: 'user',
+      content: payload.input,
+    })
+
+    const callLLMMessages = this.thread.getMessages()
+    return { state: 'call-llm', payload: { messages: callLLMMessages } }
+  }
+
+  async stateCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
+    const { content, toolCalls, finishReason } = await this.llmService.call(
+      payload.messages,
+      this.abortController!.signal
+    )
+    if (finishReason === 'tool_calls') {
+      this.thread.addMessage({ role: 'assistant', tool_calls: toolCalls, content })
+      return { state: 'call-tools', payload: { toolCalls } }
+    }
+
+    this.thread.addMessage({ role: 'assistant', content })
+    return { state: 'finished', payload: { content } }
+  }
+
+  async handleCallTool(toolCall: ToolCall) {
+    const toolCallRes = await this.toolService.execute(toolCall)
+
+    if (toolCallRes.success) {
+      this.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(toolCallRes.result),
+      })
+    } else {
+      const error = toolCallRes.error
+      this.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: 'An exception occurred while executing toolCall: ' + String(error),
+      })
+    }
+  }
+
+  async stateCallTool(payload: CallToolStepPayload): Promise<StepResult> {
+    const toolCalls = payload.toolCalls
+    const index = payload.index
+    const toolCall = toolCalls[index]
+    const hasApproved = payload.approved
+
+    if (!hasApproved) {
+      // TODO USER reject
+      // 等待用户批准
+      // 默认批准当前工具调用
+      this.nextStep = { state: 'call-tool', payload: { index, toolCalls, approved: true } }
+      return {
+        state: 'wait-human-approve',
+        payload: {
+          nextStep: this.nextStep,
+        },
+      }
+    }
+    await this.handleCallTool(toolCall)
+    if (index + 1 < toolCalls.length) {
+      return {
+        state: 'call-tool',
+        payload: { index: index + 1, toolCalls },
+      }
+    } else {
+      const callLLMMessages = this.thread.getMessages()
+      return { state: 'call-llm', payload: { messages: callLLMMessages } }
+    }
+  }
+
+  async stateCallTools(payload: CallToolsStepPayload): Promise<StepResult> {
+    const toolCalls = payload.toolCalls
+
+    return {
+      state: 'call-tool',
+      payload: { index: 0, toolCalls, approved: false },
+    }
+  }
+
+  async abort() {
+    console.log('todo abort')
+    this.isAborted = true
+    if (this.abortController) {
+      this.abortController.abort()
+      workflowEvent.emit('workflow-aborted', { threadId: this.thread.id })
+    }
+  }
+}
