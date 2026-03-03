@@ -22,7 +22,7 @@ async function main() {
 
   setupEvents()
 
-  await session.run('明天是什么日期是多少,ps :使用小红书风格回复')
+  await session.run('hello! who are you ?, 明天是什么日期是多少,ps :使用小红书风格回复')
 }
 
 function setupEvents() {
