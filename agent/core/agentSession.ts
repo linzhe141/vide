@@ -4,6 +4,7 @@ import { Workflow } from './workflow'
 import { generateJSON } from './llm'
 import { Thread } from './thread'
 import { withRetry } from './utils'
+import { agentEvent } from './event'
 
 export type PlanStep = {
   id: string
@@ -13,6 +14,7 @@ export type PlanStep = {
 
 export type PlanSessionBlock = {
   type: 'plan'
+  planId: string
   plans: PlanStep[]
   thread: Thread
 }
@@ -41,10 +43,11 @@ export class AgentSession {
         const workflowBlock: PlanSessionBlock = {
           type: 'plan',
           plans: [],
+          planId: null!,
           thread: new Thread({ messages: [] }),
         }
+        const planner = new Planner({ session: this }, userInput, workflowBlock)
         this.workflowBlocks.push(workflowBlock)
-        const planner = new Planner(userInput, workflowBlock)
 
         const plans = await planner.generatePlan()
         workflowBlock.plans = plans
@@ -55,7 +58,7 @@ export class AgentSession {
           thread: new Thread({ messages: [] }),
         }
         this.workflowBlocks.push(workflowBlock)
-        const workflow = new Workflow(workflowBlock)
+        const workflow = new Workflow({ session: this, sessionBlock: workflowBlock })
         await workflow.run(userInput)
       }
     } finally {
@@ -65,6 +68,7 @@ export class AgentSession {
   }
 
   private async analyze(userInput: string) {
+    agentEvent.emit('agent-session-start-analyze-input', { sessionId: this.sessionId, userInput })
     const withRetryGenerateJSON = await withRetry(generateJSON)
 
     const result = (await withRetryGenerateJSON([
@@ -74,6 +78,13 @@ export class AgentSession {
 Return JSON { "mode": "normal" | "plan" }`,
       },
     ])) as { mode: 'normal' | 'plan' }
+
+    agentEvent.emit('agent-session-end-analyze-input', {
+      sessionId: this.sessionId,
+      userInput,
+      mode: result.mode,
+    })
+
     return result.mode
   }
 

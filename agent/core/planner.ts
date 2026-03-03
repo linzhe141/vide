@@ -1,19 +1,32 @@
-import { type PlanSessionBlock, type PlanStep } from './agentSession'
+import { type AgentSession, type PlanSessionBlock, type PlanStep } from './agentSession'
 import { v4 as uuid } from 'uuid'
 import { Workflow } from './workflow'
 import { generateJSON } from './llm'
 import { withRetry } from './utils'
+import { plannerEvent } from './event'
 
 export class Planner {
   userInput: string = ''
   planSteps: PlanStep[] = []
   workflowBlock: PlanSessionBlock = null!
-  constructor(userInput: string, workflowBlock: PlanSessionBlock) {
+  id: string
+  constructor(
+    public ctx: { session: AgentSession },
+    userInput: string,
+    workflowBlock: PlanSessionBlock
+  ) {
+    this.id = uuid()
     this.userInput = userInput
     this.workflowBlock = workflowBlock
+    this.workflowBlock.planId = this.id
   }
 
   async generatePlan(): Promise<PlanStep[]> {
+    plannerEvent.emit('planner-start-generate', {
+      sessionId: this.ctx.session.sessionId,
+      plannerId: this.id,
+    })
+
     const withRetryGenerateJSON = await withRetry(generateJSON)
     const result = (await withRetryGenerateJSON([
       {
@@ -62,6 +75,12 @@ Output format example:
       description: step.description,
     }))
 
+    plannerEvent.emit('planner-end-generate', {
+      sessionId: this.ctx.session.sessionId,
+      plannerId: this.id,
+      plans,
+    })
+
     this.planSteps = plans
     return plans
   }
@@ -70,15 +89,35 @@ Output format example:
     for (const plan of this.planSteps) {
       plan.status = 'running'
 
+      plannerEvent.emit('planner-execute-item-start', {
+        sessionId: this.ctx.session.sessionId,
+        plannerId: this.id,
+        plan,
+      })
+
       try {
-        const workflow = new Workflow(this.workflowBlock)
+        const workflow = new Workflow({
+          session: this.ctx.session,
+          sessionBlock: this.workflowBlock,
+        })
         await workflow.run(plan.description)
         plan.status = 'completed'
+
+        plannerEvent.emit('planner-execute-item-success', {
+          sessionId: this.ctx.session.sessionId,
+          plannerId: this.id,
+          plan,
+        })
       } catch (error) {
         console.error(`Error executing plan: ${plan.description}`, error)
         plan.status = 'failed'
+
+        plannerEvent.emit('planner-execute-item-error', {
+          sessionId: this.ctx.session.sessionId,
+          plannerId: this.id,
+          plan,
+        })
       }
-      console.log(`Completed plan: ${plan.description}`)
     }
   }
 }

@@ -95,4 +95,9 @@ export type FnProcessLLMStream = (data: {
   messages: ChatMessage[]
   tools: Tool[]
   signal: AbortSignal
+  onTextStart?: () => void
+  onTextDelta?: (chunk: { delta: string; content: string }) => void
+  onTextEnd?: () => void
+  onToolCalls?: (toolCalls: ToolCall[]) => void
+  onError?: (error: any) => void
 }) => AsyncGenerator<StreamContentChunk | StreamToolCallsChunk>

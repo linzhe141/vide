@@ -8,7 +8,15 @@ export const llmClient: OpenAI = new OpenAI({
   baseURL: DevConfig.llm.baseURL,
 })
 
-export const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
+export const processLLMStream: FnProcessLLMStream = async function* ({
+  messages,
+  tools,
+  signal,
+  onTextStart,
+  onTextDelta,
+  onTextEnd,
+  onToolCalls,
+}) {
   const stream = await llmClient.chat.completions.create(
     {
       messages,
@@ -48,8 +56,11 @@ export const processLLMStream: FnProcessLLMStream = async function* ({ messages,
         // ipcMainApi.send('agent-llm-reasoning-end')
         // reasonContent = ''
       }
-
+      if (content === '') {
+        onTextStart?.()
+      }
       content += delta.content
+      onTextDelta?.({ content, delta: delta.content })
       yield {
         content,
         delta: delta.content,
@@ -63,8 +74,11 @@ export const processLLMStream: FnProcessLLMStream = async function* ({ messages,
         // ipcMainApi.send('agent-llm-reasoning-end')
         reasonContent = ''
       }
+      if (content) {
+        content = ''
+        onTextEnd?.()
+      }
       // ipcMainApi.send('agent-llm-tool-calls-start')
-
       for (const toolCall of delta.tool_calls) {
         if (!toolCalls[toolCall.index]) {
           toolCalls[toolCall.index] = {
@@ -101,6 +115,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({ messages,
   }
 
   if (toolCalls.length > 0) {
+    onToolCalls?.(toolCalls.filter(Boolean))
     yield {
       tool_calls: toolCalls.filter(Boolean),
       finishReason: 'tool_calls' as const,

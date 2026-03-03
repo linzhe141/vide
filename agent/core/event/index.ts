@@ -1,11 +1,4 @@
-import type {
-  Events,
-  AgentLifecycleEvents,
-  TheadEvents,
-  WorkflowEvents,
-  LLMEvents,
-  ToolEvents,
-} from './channels'
+import type { Events, AgentLifecycleEvents, WorkflowEvents, PlannerEvents } from './channels'
 
 export class EventEmitter<T extends Events> {
   private listeners: { [K in keyof T]?: Array<T[K]> } = {}
@@ -31,8 +24,6 @@ export class EventEmitter<T extends Events> {
   }
 }
 
-export const llmEvent = new EventEmitter<LLMEvents>()
-export const toolEvent = new EventEmitter<ToolEvents>()
-export const theadEvent = new EventEmitter<TheadEvents>()
 export const workflowEvent = new EventEmitter<WorkflowEvents>()
 export const agentEvent = new EventEmitter<AgentLifecycleEvents>()
+export const plannerEvent = new EventEmitter<PlannerEvents>()
