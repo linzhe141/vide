@@ -4,26 +4,32 @@ import { Workflow } from './workflow'
 import { generateJSON } from './llm'
 import { withRetry } from './utils'
 import { plannerEvent } from './event'
+import { WorkflowRuntimeContext } from './workflowRuntimeContext'
 
 export class Planner {
-  userInput: string = ''
-  planSteps: PlanStep[] = []
-  workflowBlock: PlanSessionBlock = null!
+  userInput: string
   id: string
+  planSteps: PlanStep[] = []
+  runtime: WorkflowRuntimeContext
   constructor(
-    public ctx: { session: AgentSession },
+    public session: AgentSession,
     userInput: string,
     workflowBlock: PlanSessionBlock
   ) {
     this.id = uuid()
     this.userInput = userInput
-    this.workflowBlock = workflowBlock
-    this.workflowBlock.planId = this.id
+    workflowBlock.planId = this.id
+
+    this.runtime = new WorkflowRuntimeContext({
+      session,
+      sessionBlock: workflowBlock,
+      plannerId: this.id,
+    })
   }
 
   async generatePlan(): Promise<PlanStep[]> {
     plannerEvent.emit('planner-start-generate', {
-      sessionId: this.ctx.session.sessionId,
+      sessionId: this.session.sessionId,
       plannerId: this.id,
     })
 
@@ -76,7 +82,7 @@ Output format example:
     }))
 
     plannerEvent.emit('planner-end-generate', {
-      sessionId: this.ctx.session.sessionId,
+      sessionId: this.session.sessionId,
       plannerId: this.id,
       plans,
     })
@@ -90,30 +96,29 @@ Output format example:
       plan.status = 'running'
 
       plannerEvent.emit('planner-execute-item-start', {
-        sessionId: this.ctx.session.sessionId,
+        sessionId: this.session.sessionId,
         plannerId: this.id,
         plan,
       })
 
       try {
-        const workflow = new Workflow({
-          session: this.ctx.session,
-          sessionBlock: this.workflowBlock,
-        })
+        const workflow = new Workflow(this.runtime)
+
         await workflow.run(plan.description)
+
         plan.status = 'completed'
 
         plannerEvent.emit('planner-execute-item-success', {
-          sessionId: this.ctx.session.sessionId,
+          sessionId: this.session.sessionId,
           plannerId: this.id,
           plan,
         })
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error executing plan: ${plan.description}`, error)
         plan.status = 'failed'
 
         plannerEvent.emit('planner-execute-item-error', {
-          sessionId: this.ctx.session.sessionId,
+          sessionId: this.session.sessionId,
           plannerId: this.id,
           plan,
         })

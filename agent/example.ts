@@ -9,20 +9,12 @@ const title = (text: string) => console.log('\n' + chalk.cyan.bold(`▶ ${text}`
 
 async function main() {
   console.clear()
-  console.log(
-    chalk.magenta.bold(`
-╔══════════════════════════════════════╗
-║         🤖 Adaptive Agent CLI        ║
-╚══════════════════════════════════════╝
-`)
-  )
-
+  setupEvents()
   const agent = new Agent()
   const session = agent.createSession()
-
-  setupEvents()
-
-  await session.run('hello! who are you ?, 明天是什么日期是多少,ps :使用小红书风格回复')
+  await session.run(
+    'hello! who are you ?, 明天是什么日期是多少,ps :使用小红书风格回复 output japanese'
+  )
 }
 
 function setupEvents() {
@@ -35,8 +27,8 @@ function setupEvents() {
     console.log(chalk.green(`✔ Session: ${data.sessionId}`))
   })
 
-  onAgentEvent('agent-session-start-analyze-input', () => {
-    title('ANALYZE INPUT')
+  onAgentEvent('agent-session-start-analyze-input', ({ userInput }) => {
+    title('ANALYZE INPUT:' + userInput)
     spinner = ora('Analyzing input...').start()
   })
 
@@ -105,8 +97,9 @@ function setupEvents() {
     console.log(chalk.cyan(`\n→ Tool: ${toolCall.toolName}`))
   })
 
-  onWorkflowEvent('workflow-tool-call-success', () => {
+  onWorkflowEvent('workflow-tool-call-success', (data) => {
     console.log(chalk.green('  ✔ Tool success'))
+    console.log(chalk.green(JSON.stringify(data.toolCallResult, null, 2)))
   })
 
   onWorkflowEvent('workflow-tool-call-error', () => {

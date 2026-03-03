@@ -5,6 +5,7 @@ import { generateJSON } from './llm'
 import { Thread } from './thread'
 import { withRetry } from './utils'
 import { agentEvent } from './event'
+import { WorkflowRuntimeContext } from './workflowRuntimeContext'
 
 export type PlanStep = {
   id: string
@@ -46,19 +47,30 @@ export class AgentSession {
           planId: null!,
           thread: new Thread({ messages: [] }),
         }
-        const planner = new Planner({ session: this }, userInput, workflowBlock)
+
         this.workflowBlocks.push(workflowBlock)
+
+        const planner = new Planner(this, userInput, workflowBlock)
 
         const plans = await planner.generatePlan()
         workflowBlock.plans = plans
+
         await planner.executePlan()
       } else {
         const workflowBlock: NormalSessionBlock = {
           type: 'normal',
           thread: new Thread({ messages: [] }),
         }
+
         this.workflowBlocks.push(workflowBlock)
-        const workflow = new Workflow({ session: this, sessionBlock: workflowBlock })
+
+        const runtime = new WorkflowRuntimeContext({
+          session: this,
+          sessionBlock: workflowBlock,
+        })
+
+        const workflow = new Workflow(runtime)
+
         await workflow.run(userInput)
       }
     } finally {
