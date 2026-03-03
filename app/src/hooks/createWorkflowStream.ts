@@ -47,7 +47,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       // 绑定所有事件监听器
       eventListeners = [
-        window.ipcRendererApi.on('agent-workflow-start', (data) => {
+        window.ipcRendererApi.on('planner-start-generate', (data) => {
           const workflowChunk: WorkflowState = { type: 'workflow-start', data }
           enqueue(workflowChunk)
         }),

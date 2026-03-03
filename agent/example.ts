@@ -2,6 +2,8 @@ import { Agent } from './core/agent'
 import { onAgentEvent, onPalnnervent, onWorkflowEvent } from './core/apiEvent'
 import chalk from 'chalk'
 import ora from 'ora'
+import { DevConfig } from '@/dev.config'
+import { createLLMClient } from './core/llm'
 
 const divider = () => console.log(chalk.gray('─'.repeat(process.stdout.columns || 50)))
 
@@ -9,6 +11,7 @@ const title = (text: string) => console.log('\n' + chalk.cyan.bold(`▶ ${text}`
 
 async function main() {
   console.clear()
+  createLLMClient(DevConfig.llm)
   setupEvents()
   const agent = new Agent()
   const session = agent.createSession()

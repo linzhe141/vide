@@ -1,26 +1,37 @@
 import OpenAI from 'openai'
 import type { ChatMessage, FinishReason, FnProcessLLMStream, ToolCall } from './types'
-import { DevConfig } from '@/dev.config'
 import { v4 as uuid } from 'uuid'
 
-export const llmClient: OpenAI = new OpenAI({
-  apiKey: DevConfig.llm.apiKey,
-  baseURL: DevConfig.llm.baseURL,
-})
+let model: string = null!
+export let llmClient: OpenAI = null!
+
+export function createLLMClient(options: { apiKey: string; baseURL: string; model: string }) {
+  llmClient = new OpenAI({
+    apiKey: options.apiKey,
+    baseURL: options.baseURL,
+  })
+  model = options.model
+}
 
 export const processLLMStream: FnProcessLLMStream = async function* ({
   messages,
   tools,
   signal,
+  onReasoningStart,
+  onReasoningDelta,
+  onReasoningEnd,
   onTextStart,
   onTextDelta,
   onTextEnd,
-  onToolCalls,
+  onToolCallsStart,
+  onToolCallName,
+  onToolCallArguments,
+  onToolCallsEnd,
 }) {
   const stream = await llmClient.chat.completions.create(
     {
       messages,
-      model: DevConfig.llm.model,
+      model,
       stream: true,
       tools,
     },
@@ -43,18 +54,18 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
     if (delta.reasoning_content) {
       if (reasonContent === '') {
         // just for ui
-        // ipcMainApi.send('agent-llm-reasoning-start')
+        onReasoningStart?.()
       }
       // @ts-expect-error support reason_content
       reasonContent += delta.reasoning_content
-      // just for ui
-      // ipcMainApi.send('agent-llm-reasoning-delta', { reasonContent })
+      // @ts-expect-error support reason_content just for ui
+      onReasoningDelta?.({ content: reasonContent, delta: delta.reasoning_content })
     }
 
     if (delta?.content) {
       if (reasonContent) {
-        // ipcMainApi.send('agent-llm-reasoning-end')
-        // reasonContent = ''
+        onReasoningEnd?.()
+        reasonContent = ''
       }
       if (content === '') {
         onTextStart?.()
@@ -71,14 +82,17 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
     if (delta?.tool_calls) {
       // just for ui
       if (reasonContent) {
-        // ipcMainApi.send('agent-llm-reasoning-end')
+        onReasoningEnd?.()
         reasonContent = ''
       }
       if (content) {
         content = ''
         onTextEnd?.()
       }
-      // ipcMainApi.send('agent-llm-tool-calls-start')
+
+      if (toolCalls.length === 0) {
+        onToolCallsStart?.()
+      }
       for (const toolCall of delta.tool_calls) {
         if (!toolCalls[toolCall.index]) {
           toolCalls[toolCall.index] = {
@@ -88,34 +102,27 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
           }
         }
         if (toolCall.function?.name) {
-          // logger.info('toolcall delta name', toolCall.function.name)
-
           toolCalls[toolCall.index].function.name += toolCall.function.name
         }
         if (toolCall.function?.arguments) {
-          // logger.info('toolcall delta arguments', toolCall.function.arguments)
           const toolCallName = toolCalls[toolCall.index].function.name
           const id = toolCalls[toolCall.index].id
           if (!finishedToolCallName.find((i) => i.id === id)) {
             finishedToolCallName.push({ name: toolCallName, id })
-
             // just for ui
-            // ipcMainApi.send('agent-llm-tool-call-name', { id, name: toolCallName })
+            onToolCallName?.({ id, name: toolCallName })
           }
           toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
 
           // just for ui
-          // ipcMainApi.send('agent-llm-tool-call-arguments', {
-          //   id,
-          //   arguments: toolCalls[toolCall.index].function.arguments,
-          // })
+          onToolCallArguments?.({ id, arguments: toolCalls[toolCall.index].function.arguments })
         }
       }
     }
   }
 
   if (toolCalls.length > 0) {
-    onToolCalls?.(toolCalls.filter(Boolean))
+    onToolCallsEnd?.(toolCalls.filter(Boolean))
     yield {
       tool_calls: toolCalls.filter(Boolean),
       finishReason: 'tool_calls' as const,
@@ -125,7 +132,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 
 export const generateJSON = async (messages: ChatMessage[]) => {
   const completion = await llmClient.chat.completions.create({
-    model: DevConfig.llm.model,
+    model,
     messages,
     response_format: { type: 'json_object' },
   })

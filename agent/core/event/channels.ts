@@ -40,7 +40,6 @@ export type WorkflowEventCtx = { sessionId: string; workflowId: string; planId?:
 export type WorkflowEvents = {
   'workflow-start': (data: { input: string; ctx: WorkflowEventCtx }) => void
   'workflow-finished': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-aborted': (data: { ctx: WorkflowEventCtx }) => void
   'workflow-wait-human-approve': (data: {
     payload: CallToolStepPayload
     ctx: WorkflowEventCtx
@@ -49,13 +48,32 @@ export type WorkflowEvents = {
 
   // call llm
   'workflow-llm-start': (data: { ctx: WorkflowEventCtx; messages: ChatMessage[] }) => void
+
+  'workflow-llm-reasoning-start': (data: { ctx: WorkflowEventCtx }) => void
+  'workflow-llm-reasoning-delta': (data: {
+    ctx: WorkflowEventCtx
+    chunk: { delta: string; content: string }
+  }) => void
+  'workflow-llm-reasoning-end': (data: { ctx: WorkflowEventCtx }) => void
+
   'workflow-llm-text-start': (data: { ctx: WorkflowEventCtx }) => void
   'workflow-llm-text-delta': (data: {
     ctx: WorkflowEventCtx
     chunk: { delta: string; content: string }
   }) => void
   'workflow-llm-text-end': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-llm-tool-calls': (data: { ctx: WorkflowEventCtx; toolCalls: ToolCall[] }) => void
+
+  'workflow-llm-tool-calls-start': (data: { ctx: WorkflowEventCtx }) => void
+  'workflow-llm-tool-call-name': (data: {
+    ctx: WorkflowEventCtx
+    data: { id: string; name: string }
+  }) => void
+  'workflow-llm-tool-call-arguments': (data: {
+    ctx: WorkflowEventCtx
+    data: { id: string; arguments: string }
+  }) => void
+  'workflow-llm-tool-calls-end': (data: { ctx: WorkflowEventCtx; toolCalls: ToolCall[] }) => void
+
   'workflow-llm-end': (data: { ctx: WorkflowEventCtx }) => void
   'workflow-llm-result': (data: {
     ctx: WorkflowEventCtx
@@ -77,7 +95,7 @@ export type WorkflowEvents = {
     toolCallResult: { id: string; toolName: string; error: any }
   }) => void
   'workflow-tool-call-reject': (data: {
-    ctx: WorkflowEventCtx
+    ctx: WorkflowEventCtx 
     toolCallResult: { id: string; toolName: string; reject: any }
   }) => void
 }

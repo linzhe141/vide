@@ -15,7 +15,7 @@ export class ThreadIpcMainService implements IpcMainService {
       return rows as ThreadRowDto[]
     })
 
-    ipcMainApi.handle('get-threads-item-messages', async ({ threadId }) => {
+    ipcMainApi.handle('get-threads-item-messages', async ({ sessionId }) => {
       const rows = await db
         .select()
         .from(threadMessages)
