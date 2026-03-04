@@ -88,7 +88,7 @@ function setupEvents() {
     console.log('\n')
   })
 
-  onWorkflowEvent('workflow-llm-tool-calls', ({ toolCalls }) => {
+  onWorkflowEvent('workflow-llm-tool-calls-end', ({ toolCalls }) => {
     console.log(chalk.blue('\n🔧 Tool Calls:\n' + JSON.stringify(toolCalls, null, 2)))
   })
 

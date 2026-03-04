@@ -1,109 +1,118 @@
 import type { PlanStep } from '../agentSession'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
-export type AgentLifecycleEvents = {
-  'agent-create-session': (data: { sessionId: string }) => void
-  'agent-session-start-analyze-input': (data: { sessionId: string; userInput: string }) => void
-  'agent-session-end-analyze-input': (data: {
+const AgentLifecycleEventChannels = {
+  'agent-create-session': null as unknown as { sessionId: string },
+  'agent-session-start-analyze-input': null as unknown as { sessionId: string; userInput: string },
+  'agent-session-end-analyze-input': null as unknown as {
     sessionId: string
     userInput: string
     mode: 'plan' | 'normal'
-  }) => void
+  },
+}
+export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
+export type AgentLifecycleEvents = {
+  [K in AgentLifecycleEventKey]: (data: (typeof AgentLifecycleEventChannels)[K]) => void
 }
 
-export type PlannerEvents = {
-  'planner-start-generate': (data: { sessionId: string; plannerId: string }) => void
-  'planner-end-generate': (data: {
+const PlannerEventChannels = {
+  'planner-start-generate': null as unknown as { sessionId: string; plannerId: string },
+  'planner-end-generate': null as unknown as {
     sessionId: string
     plannerId: string
     plans: PlanStep[]
-  }) => void
-  'planner-execute-item-start': (data: {
+  },
+  'planner-execute-item-start': null as unknown as {
     sessionId: string
     plannerId: string
     plan: PlanStep
-  }) => void
-  'planner-execute-item-success': (data: {
+  },
+  'planner-execute-item-success': null as unknown as {
     sessionId: string
     plannerId: string
     plan: PlanStep
-  }) => void
-
-  'planner-execute-item-error': (data: {
+  },
+  'planner-execute-item-error': null as unknown as {
     sessionId: string
     plannerId: string
     plan: PlanStep
-  }) => void
+  },
+}
+export type PlannerEventKey = keyof typeof PlannerEventChannels
+export type PlannerEvents = {
+  [K in PlannerEventKey]: (data: (typeof PlannerEventChannels)[K]) => void
 }
 
 export type WorkflowEventCtx = { sessionId: string; workflowId: string; planId?: string }
-export type WorkflowEvents = {
-  'workflow-start': (data: { input: string; ctx: WorkflowEventCtx }) => void
-  'workflow-finished': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-wait-human-approve': (data: {
+const WorkflowEventChannels = {
+  'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
+  'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-wait-human-approve': null as unknown as {
     payload: CallToolStepPayload
     ctx: WorkflowEventCtx
-  }) => void
-  'workflow-error': (data: { ctx: WorkflowEventCtx; error: any }) => void
+  },
+  'workflow-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
 
-  // call llm
-  'workflow-llm-start': (data: { ctx: WorkflowEventCtx; messages: ChatMessage[] }) => void
+  'workflow-llm-start': null as unknown as { ctx: WorkflowEventCtx; messages: ChatMessage[] },
 
-  'workflow-llm-reasoning-start': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-llm-reasoning-delta': (data: {
+  'workflow-llm-reasoning-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-reasoning-delta': null as unknown as {
     ctx: WorkflowEventCtx
     chunk: { delta: string; content: string }
-  }) => void
-  'workflow-llm-reasoning-end': (data: { ctx: WorkflowEventCtx }) => void
+  },
+  'workflow-llm-reasoning-end': null as unknown as { ctx: WorkflowEventCtx },
 
-  'workflow-llm-text-start': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-llm-text-delta': (data: {
+  'workflow-llm-text-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-text-delta': null as unknown as {
     ctx: WorkflowEventCtx
     chunk: { delta: string; content: string }
-  }) => void
-  'workflow-llm-text-end': (data: { ctx: WorkflowEventCtx }) => void
+  },
+  'workflow-llm-text-end': null as unknown as { ctx: WorkflowEventCtx },
 
-  'workflow-llm-tool-calls-start': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-llm-tool-call-name': (data: {
+  'workflow-llm-tool-calls-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-tool-call-name': null as unknown as {
     ctx: WorkflowEventCtx
     data: { id: string; name: string }
-  }) => void
-  'workflow-llm-tool-call-arguments': (data: {
+  },
+  'workflow-llm-tool-call-arguments': null as unknown as {
     ctx: WorkflowEventCtx
     data: { id: string; arguments: string }
-  }) => void
-  'workflow-llm-tool-calls-end': (data: { ctx: WorkflowEventCtx; toolCalls: ToolCall[] }) => void
+  },
+  'workflow-llm-tool-calls-end': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCalls: ToolCall[]
+  },
 
-  'workflow-llm-end': (data: { ctx: WorkflowEventCtx }) => void
-  'workflow-llm-result': (data: {
+  'workflow-llm-end': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-result': null as unknown as {
     ctx: WorkflowEventCtx
     assistantChatMessage: AssistantChatMessage
-  }) => void
-  'workflow-llm-error': (data: { ctx: WorkflowEventCtx; error: any }) => void
+  },
+  'workflow-llm-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
 
-  // calltool
-  'workflow-tool-call-start': (data: {
+  'workflow-tool-call-start': null as unknown as {
     ctx: WorkflowEventCtx
     toolCall: { id: string; toolName: string; args: any }
-  }) => void
-  'workflow-tool-call-success': (data: {
+  },
+  'workflow-tool-call-success': null as unknown as {
     ctx: WorkflowEventCtx
     toolCallResult: { id: string; toolName: string; result: any }
-  }) => void
-  'workflow-tool-call-error': (data: {
+  },
+  'workflow-tool-call-error': null as unknown as {
     ctx: WorkflowEventCtx
     toolCallResult: { id: string; toolName: string; error: any }
-  }) => void
-  'workflow-tool-call-reject': (data: {
-    ctx: WorkflowEventCtx 
+  },
+  'workflow-tool-call-reject': null as unknown as {
+    ctx: WorkflowEventCtx
     toolCallResult: { id: string; toolName: string; reject: any }
-  }) => void
+  },
+} as const
+export type WorkflowEventKey = keyof typeof WorkflowEventChannels
+export type WorkflowEvents = {
+  [K in WorkflowEventKey]: (data: (typeof WorkflowEventChannels)[K]) => void
 }
-
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
-  ? I
-  : never
-
 export type Events = AgentLifecycleEvents | WorkflowEvents | PlannerEvents
 
-export type AgentEvents = UnionToIntersection<Events>
+export const agentEventNames = Object.keys(AgentLifecycleEventChannels) as AgentLifecycleEventKey[]
+export const plannerEventNames = Object.keys(PlannerEventChannels) as PlannerEventKey[]
+export const workflowEventNames = Object.keys(WorkflowEventChannels) as WorkflowEventKey[]

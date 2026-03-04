@@ -97,14 +97,11 @@ export class Workflow {
       onTextEnd: () => {
         workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx })
       },
-      onToolCalls: (toolCalls) => {
-        workflowEvent.emit('workflow-llm-tool-calls', {
+      onToolCallsEnd: (toolCalls) => {
+        workflowEvent.emit('workflow-llm-tool-calls-end', {
           ctx: this.runtime.workflowEventCtx,
           toolCalls,
         })
-      },
-      onError: (error) => {
-        workflowEvent.emit('workflow-llm-error', { ctx: this.runtime.workflowEventCtx, error })
       },
     })) {
       if ('content' in chunk && chunk.content) {
