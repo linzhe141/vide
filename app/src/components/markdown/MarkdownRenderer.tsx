@@ -26,7 +26,6 @@ export function MarkdownRenderer({
   animation,
 }: ReactMarkdownOptions & { className?: string; animation: boolean }) {
   const blocks = useMemo(() => parseMarkdownIntoBlocks(children ?? ''), [children])
-  console.log('blocks', blocks)
 
   return (
     <MarkdownProvider animation={animation}>

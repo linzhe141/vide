@@ -73,6 +73,8 @@ export class AgentSession {
 
         await workflow.run(userInput)
       }
+
+      agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
     } finally {
       const index = activeSessions.findIndex((i) => i === this)
       if (index !== -1) activeSessions.splice(index, 1)

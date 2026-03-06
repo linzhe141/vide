@@ -1,5 +1,4 @@
 import type { ToolCall } from '@/agent/core/types'
-import { useChatContext } from './ChatProvider'
 import { UserMessage } from '../../components/messages/UserMessage'
 import { AssistantMessage } from '../../components/messages/AssistantMessage'
 import { ToolCallItem } from '../../components/messages/toolcalls/ToolCallItem'
@@ -15,14 +14,12 @@ import { AssistantReasonMessage } from '../../components/messages/AssistantReaso
 
 export function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((data) => data.blocks)
-  const { isRunning } = useChatContext()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
   const toBottom = useCallback(() => {
     const wrapper = document.getElementById('chat-wrapper')!
     wrapper.scrollTop = wrapper.scrollHeight
   }, [])
-  const isRunningLast = (idx: number) => idx === blocks.length - 1 && isRunning
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -89,7 +86,7 @@ export function MessageList({ loading }: { loading: boolean }) {
                               {msg.content && (
                                 <AssistantReasonMessage
                                   content={msg.content as string}
-                                  reasoning={msg.reasoning}
+                                  reasoning={true}
                                 />
                               )}
                             </div>
@@ -100,37 +97,26 @@ export function MessageList({ loading }: { loading: boolean }) {
                               {msg.content && (
                                 <AssistantMessage
                                   content={msg.content as string}
-                                  animation={isRunningLast(idx)}
+                                  animation={true}
                                 />
                               )}
                             </div>
                           )
-                        case ThreadMessageRole.ToolCalls: {
+                        case 'tool-call': {
                           return (
                             <div key={msgIndex} className='space-y-2'>
-                              {msg.tool_calls?.map((t, index) => {
+                              {msg.toolCalls?.map((t, index) => {
                                 const toolCall = t as ToolCall & {
                                   result?: string
                                   status: 'pending' | 'approve' | 'reject'
                                 }
-                                // 只有第一个 为 pending 才显示 approve
-                                let showApproveOperate = false
-                                if (index === 0 && toolCall.status === 'pending') {
-                                  showApproveOperate = true
-                                }
-                                // 只有当前 为 pending 才显示，并且前一个已经 approve
-                                if (index > 0) {
-                                  const prev = msg.tool_calls[index - 1]
-                                  if (prev.status === 'approve' && toolCall.status === 'pending') {
-                                    showApproveOperate = true
-                                  }
-                                }
+
                                 return (
                                   <ToolCallItem
                                     key={`${idx}-${index}`}
                                     toolCall={toolCall}
-                                    animation={isRunningLast(idx)}
-                                    showApproveOperate={showApproveOperate}
+                                    animation={true}
+                                    showApproveOperate={false}
                                   />
                                 )
                               })}
@@ -147,7 +133,7 @@ export function MessageList({ loading }: { loading: boolean }) {
                           return null
                       }
                     })}
-                    {isRunningLast(idx) && <TypingIndicator />}
+                    <TypingIndicator />
                   </div>
                 )
               })}
@@ -156,10 +142,10 @@ export function MessageList({ loading }: { loading: boolean }) {
             {blocks.length > 0 && <StatusIndicator />}
             {
               <MessageNavigator
-                items={blocks.map((i, index) => ({
+                items={blocks.map((_i, index) => ({
                   index: index,
                   id: `workflow-block-${index}`,
-                  label: i.userMessage.content as string,
+                  label: 'xxxxxxxx',
                 }))}
               />
             }

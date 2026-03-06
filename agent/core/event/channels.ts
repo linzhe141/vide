@@ -9,6 +9,10 @@ const AgentLifecycleEventChannels = {
     userInput: string
     mode: 'plan' | 'normal'
   },
+  'agent-session-finished': null as unknown as {
+    sessionId: string
+    userInput: string
+  },
 }
 export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
 export type AgentLifecycleEvents = {

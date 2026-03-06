@@ -3,12 +3,15 @@ import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { useState, useRef, useEffect } from 'react'
+import { useThreadStore } from '../../store/threadStore'
+import { PlanSteps } from './PlanSteps'
 
 export function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  const { handleSend, isRunning, abort } = useChatContext()
+  const blocks = useThreadStore((s) => s.blocks)
+  const plans = blocks.at(-1)?.planner?.plans ?? []
+  const { handleSend } = useChatContext()
 
   // 自动调整 textarea 高度
   useEffect(() => {
@@ -20,7 +23,7 @@ export function ChatInput() {
   }, [input])
 
   const handleSubmit = () => {
-    if (input.trim() && !isRunning) {
+    if (input.trim()) {
       handleSend(input)
       setInput('')
     }
@@ -28,6 +31,7 @@ export function ChatInput() {
 
   return (
     <div>
+      <PlanSteps plans={plans}></PlanSteps>
       <div className='mx-auto max-w-5xl px-4 py-4'>
         <div className='border-border bg-background focus-within:border-primary focus-within:ring-primary/10 relative rounded-2xl border shadow-sm transition-all focus-within:ring-2'>
           <Textarea
@@ -40,7 +44,7 @@ export function ChatInput() {
                 handleSubmit()
               }
             }}
-            disabled={isRunning}
+            disabled={false}
             className='text-foreground placeholder:text-text-info w-full resize-none rounded-2xl border-0 bg-transparent px-4 pt-4 pb-12 focus:ring-0 focus:outline-none disabled:opacity-50'
             rows={1}
             style={{ minHeight: '52px', maxHeight: '200px' }}
@@ -48,9 +52,9 @@ export function ChatInput() {
 
           {/* 按钮区域 - 绝对定位在右下角 */}
           <div className='absolute right-3 bottom-3 flex items-center gap-2'>
-            {isRunning ? (
+            {(window.x = 1) ? (
               <Button
-                onClick={abort}
+                onClick={() => {}}
                 className='border-border bg-background text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-700 dark:hover:bg-red-950/30'
               >
                 <StopCircle className='h-4 w-4' />

@@ -36,6 +36,11 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       agentEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
           controller.enqueue({ type: eventName, data })
+
+          if (eventName === 'agent-session-finished') {
+            controller.close()
+            cleanUp()
+          }
         })
         eventListeners.push(remove)
       })
