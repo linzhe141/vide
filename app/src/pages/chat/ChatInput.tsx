@@ -3,14 +3,10 @@ import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { useState, useRef, useEffect } from 'react'
-import { useThreadStore } from '../../store/threadStore'
-import { PlanSteps } from './PlanSteps'
 
 export function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const blocks = useThreadStore((s) => s.blocks)
-  const plans = blocks.at(-1)?.planner?.plans ?? []
   const { handleSend } = useChatContext()
 
   // 自动调整 textarea 高度
@@ -51,7 +47,7 @@ export function ChatInput() {
 
           {/* 按钮区域 - 绝对定位在右下角 */}
           <div className='absolute right-3 bottom-3 flex items-center gap-2'>
-            {(window.x = 1) ? (
+            {/* {(window.x = 1) ? (
               <Button
                 onClick={() => {}}
                 className='border-border bg-background text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-700 dark:hover:bg-red-950/30'
@@ -68,7 +64,15 @@ export function ChatInput() {
                 <Send className='h-4 w-4' />
                 <span>Send</span>
               </Button>
-            )}
+            )} */}
+            <Button
+              onClick={handleSubmit}
+              disabled={!input.trim()}
+              className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
+            >
+              <Send className='h-4 w-4' />
+              <span>Send</span>
+            </Button> 
           </div>
         </div>
 
