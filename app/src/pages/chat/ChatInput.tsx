@@ -32,7 +32,6 @@ export function ChatInput() {
   return (
     <div>
       <div className='mx-auto max-w-5xl space-y-4 px-4 py-4'>
-        <PlanSteps plans={plans}></PlanSteps>
         <div className='border-border bg-background focus-within:border-primary focus-within:ring-primary/10 relative rounded-2xl border shadow-sm transition-all focus-within:ring-2'>
           <Textarea
             ref={textareaRef}
