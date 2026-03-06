@@ -3,7 +3,7 @@ import clsx from 'clsx'
 
 export function PlanSteps({ plans }: { plans: PlanStep[] }) {
   return (
-    <div className='border-border bg-surface max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3'>
+    <div className='border-border bg-surface max-h-40 space-y-2 overflow-y-auto rounded-xl border p-3 px-2'>
       {plans.map((step, index) => (
         <div
           key={step.id}
