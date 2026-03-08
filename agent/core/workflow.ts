@@ -88,6 +88,18 @@ export class Workflow {
       messages,
       tools: this.tools,
       signal: llmAbortController.signal,
+      onReasoningStart: () => {
+        workflowEvent.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+      },
+      onReasoningDelta: (chunk) => {
+        workflowEvent.emit('workflow-llm-reasoning-delta', {
+          ctx: this.runtime.workflowEventCtx,
+          chunk,
+        })
+      },
+      onReasoningEnd: () => {
+        workflowEvent.emit('workflow-llm-reasoning-end', { ctx: this.runtime.workflowEventCtx })
+      },
       onTextStart: () => {
         workflowEvent.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
       },

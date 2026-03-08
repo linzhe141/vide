@@ -6,39 +6,7 @@ import type { PlanStep } from '@/agent/core/agentSession'
 import type { ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from '../hooks/createWorkflowStream'
 
-// TODO
-// export type UserChatMessage = {
-//   role: ThreadMessageRole.User
-//   content: string
-// }
-
-// export type AssistantChatReasonMessage = {
-//   reasoning: boolean
-//   role: ThreadMessageRole.AssistantReason
-//   content: string
-// }
-
-// export type AssistantChatTextMessage = {
-//   role: ThreadMessageRole.AssistantText
-//   content: string
-// }
-
-// export type ToolCallsChatMessage = {
-//   role: ThreadMessageRole.ToolCalls
-//   tool_calls: Array<ToolCall & { result?: string; status: 'pending' | 'approve' | 'reject' }>
-// }
-
-// export type WorkflowErrorChatMessage = {
-//   role: ThreadMessageRole.Error
-//   error: any
-// }
-
-// type ThreadMessage =
-//   | UserChatMessage
-//   | AssistantChatReasonMessage
-//   | AssistantChatTextMessage
-//   | ToolCallsChatMessage
-//   | WorkflowErrorChatMessage
+/* ---------------- message ---------------- */
 
 export type ThreadMessage =
   | { role: 'user'; content: string }
@@ -48,46 +16,79 @@ export type ThreadMessage =
   | { role: 'tool-result'; id: string; result: any }
   | { role: 'error'; error: any }
 
-export type PlannerState = {
-  plannerId: string
-  status: 'generating' | 'ready' | 'running' | 'finished'
-  plans: PlanStep[]
-}
+/* ---------------- workflow ---------------- */
 
-export type WorkflowStateStore = {
-  workflowId: string
-  status: 'running' | 'finished' | 'error'
-}
-
-export type ConversationBlock = {
+export type WorkflowBlock = {
   id: string
-
-  input: string
-
-  status: 'analyzing' | 'running' | 'finished' | 'error'
-
-  mode?: 'plan' | 'normal'
-
+  type: 'workflow'
+  status: 'running' | 'finished' | 'error'
   messages: ThreadMessage[]
-
-  planner?: PlannerState
-
-  workflows: WorkflowStateStore[]
 }
+
+/* ---------------- plan step ---------------- */
+
+export type PlanStepBlock = {
+  id: string
+  title: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  workflow?: WorkflowBlock
+}
+
+/* ---------------- blocks ---------------- */
+
+export type NormalBlock = {
+  id: string
+  type: 'normal'
+  input: string
+  status: 'running' | 'finished' | 'error'
+  messages: ThreadMessage[]
+}
+
+export type PlanBlock = {
+  id: string
+  type: 'plan'
+  input: string
+  plannerId: string
+  status: 'generating' | 'ready' | 'running' | 'finished' | 'error'
+  steps: PlanStepBlock[]
+}
+
+export type ConversationBlock = NormalBlock | PlanBlock
+
+/* ---------------- thread state ---------------- */
 
 type ThreadState = {
   sessionId?: string
-
   blocks: ConversationBlock[]
-
   currentBlockId?: string
 }
 
+/* ---------------- actions ---------------- */
+
 type ThreadActions = {
   handleEvent: (event: WorkflowState) => void
-
   reset: () => void
 }
+
+/* ---------------- helpers ---------------- */
+
+function getCurrentBlock(state: ThreadState) {
+  return state.blocks.find((b) => b.id === state.currentBlockId)
+}
+
+function getRunningStep(block: PlanBlock) {
+  return block.steps.find((s) => s.status === 'running')
+}
+
+function getWorkflowMessages(block: ConversationBlock): ThreadMessage[] | undefined {
+  if (block.type === 'normal') return block.messages
+
+  const step = getRunningStep(block)
+
+  return step?.workflow?.messages
+}
+
+/* ---------------- store ---------------- */
 
 export const useThreadStore = create<ThreadState & ThreadActions>()(
   immer((set) => ({
@@ -95,10 +96,9 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
     reset() {
       set((state) => {
-        state.currentBlockId = ''
-        state.sessionId = ''
         state.blocks = []
-        return
+        state.sessionId = undefined
+        state.currentBlockId = undefined
       })
     },
 
@@ -106,152 +106,172 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       const { type, data } = event
 
       set((state) => {
-        const getBlock = () => state.blocks.find((b) => b.id === state.currentBlockId)
+        const block = getCurrentBlock(state)
 
         switch (type) {
+          /* ---------------- session ---------------- */
+
           case 'agent-create-session': {
             state.sessionId = data.sessionId
             return
           }
+
           case 'agent-session-start-analyze-input': {
-            console.log('xxxxxxxxxxxxx', data)
-            const block: ConversationBlock = {
+            const newBlock: NormalBlock = {
               id: nanoid(),
+              type: 'normal',
               input: data.userInput,
-              status: 'analyzing',
+              status: 'running',
               messages: [
                 {
                   role: 'user',
                   content: data.userInput,
                 },
               ],
-              workflows: [],
             }
 
-            state.blocks.push(block)
-            state.currentBlockId = block.id
+            state.blocks.push(newBlock)
+            state.currentBlockId = newBlock.id
             return
           }
+
           case 'agent-session-end-analyze-input': {
-            const block = getBlock()
             if (!block) return
 
-            block.mode = data.mode
-            block.status = 'running'
+            if (data.mode === 'plan') {
+              const planBlock: PlanBlock = {
+                id: block.id,
+                type: 'plan',
+                input: block.input,
+                plannerId: '',
+                status: 'generating',
+                steps: [],
+              }
+
+              state.blocks[state.blocks.length - 1] = planBlock
+            }
+
             return
           }
 
-          case 'agent-session-finished': {
-            // TODO
-            return
-          }
+          /* ---------------- planner ---------------- */
 
           case 'planner-start-generate': {
-            const block = getBlock()
-            if (!block) return
+            if (!block || block.type !== 'plan') return
 
-            block.planner = {
-              plannerId: data.plannerId,
-              status: 'generating',
-              plans: [],
-            }
-
+            block.plannerId = data.plannerId
+            block.status = 'generating'
             return
           }
 
           case 'planner-end-generate': {
-            const block = getBlock()
+            if (!block || block.type !== 'plan') return
+
+            block.plannerId = data.plannerId
+            block.status = 'ready'
+
+            block.steps = data.plans.map((p: PlanStep) => ({
+              id: p.id,
+              title: p.description,
+              status: 'pending',
+            }))
+
+            return
+          }
+
+          case 'planner-execute-item-start': {
+            if (!block || block.type !== 'plan') return
+
+            const step = block.steps.find((s) => s.id === data.plan.id)
+
+            if (!step) return
+
+            step.status = 'running'
+
+            step.workflow = {
+              id: nanoid(),
+              type: 'workflow',
+              status: 'running',
+              messages: [],
+            }
+
+            block.status = 'running'
+
+            return
+          }
+
+          case 'planner-execute-item-success': {
+            if (!block || block.type !== 'plan') return
+
+            const step = block.steps.find((s) => s.id === data.plan.id)
+
+            if (step) step.status = 'completed'
+
+            return
+          }
+
+          case 'planner-execute-item-error': {
+            if (!block || block.type !== 'plan') return
+
+            const step = block.steps.find((s) => s.id === data.plan.id)
+
+            if (step) step.status = 'failed'
+
+            block.status = 'error'
+
+            return
+          }
+
+          /* ---------------- workflow lifecycle ---------------- */
+
+          case 'workflow-finished': {
             if (!block) return
 
-            block.planner = {
-              plannerId: data.plannerId,
-              status: 'ready',
-              plans: data.plans,
+            if (block.type === 'normal') block.status = 'finished'
+
+            if (block.type === 'plan') {
+              const step = getRunningStep(block)
+              if (step?.workflow) step.workflow.status = 'finished'
             }
 
             return
           }
-          case 'planner-execute-item-start': {
-            const block = getBlock()
-            if (!block?.planner) return
 
-            block.planner.status = 'running'
-            return
-          }
-          case 'planner-execute-item-success': {
-            const block = getBlock()
-            if (!block?.planner) return
-
-            return
-          }
-          case 'planner-execute-item-error': {
-            const block = getBlock()
-            if (!block?.planner) return
-
-            block.status = 'error'
-            return
-          }
-
-          case 'workflow-start': {
-            const block = getBlock()
-            if (!block) return
-
-            block.workflows.push({
-              workflowId: data.ctx.workflowId,
-              status: 'running',
-            })
-
-            return
-          }
-          case 'workflow-finished': {
-            const block = getBlock()
-            if (!block) return
-
-            const wf = block.workflows.find((w) => w.workflowId === data.ctx.workflowId)
-
-            if (wf) wf.status = 'finished'
-
-            block.status = 'finished'
-
-            return
-          }
-          case 'workflow-wait-human-approve': {
-            // TODO
-            return
-          }
           case 'workflow-error': {
-            const block = getBlock()
             if (!block) return
 
-            block.messages.push({
+            const messages = getWorkflowMessages(block)
+
+            messages?.push({
               role: 'error',
               error: data.error,
             })
 
-            block.status = 'error'
+            if (block.type === 'normal') block.status = 'error'
 
             return
           }
-          case 'workflow-llm-start': {
-            // TODO
-            return
-          }
+
+          /* ---------------- reasoning ---------------- */
+
           case 'workflow-llm-reasoning-start': {
-            const block = getBlock()
             if (!block) return
 
-            block.messages.push({
+            const messages = getWorkflowMessages(block)
+
+            messages?.push({
               role: 'assistant-reason',
               content: '',
             })
 
             return
           }
+
           case 'workflow-llm-reasoning-delta': {
-            const block = getBlock()
             if (!block) return
 
-            const last = block.messages.at(-1)
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
 
             if (last?.role === 'assistant-reason') {
               last.content += data.chunk.delta
@@ -259,27 +279,27 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             return
           }
-          case 'workflow-llm-reasoning-end': {
-            // TODO
-            return
-          }
+
+          /* ---------------- text ---------------- */
 
           case 'workflow-llm-text-start': {
-            const block = getBlock()
             if (!block) return
 
-            block.messages.push({
+            const messages = getWorkflowMessages(block)
+
+            messages?.push({
               role: 'assistant-text',
               content: '',
             })
 
             return
           }
+
           case 'workflow-llm-text-delta': {
-            const block = getBlock()
             if (!block) return
 
-            const last = block.messages.at(-1)
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
 
             if (last?.role === 'assistant-text') {
               last.content += data.chunk.delta
@@ -287,16 +307,15 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             return
           }
-          case 'workflow-llm-text-end': {
-            // TODO
-            return
-          }
+
+          /* ---------------- tool calls ---------------- */
 
           case 'workflow-llm-tool-calls-start': {
-            const block = getBlock()
             if (!block) return
 
-            block.messages.push({
+            const messages = getWorkflowMessages(block)
+
+            messages?.push({
               role: 'tool-call',
               toolCalls: [],
             })
@@ -305,10 +324,10 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           }
 
           case 'workflow-llm-tool-call-name': {
-            const block = getBlock()
             if (!block) return
 
-            const last = block.messages.at(-1)
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
 
             if (last?.role !== 'tool-call') return
 
@@ -323,11 +342,12 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             return
           }
+
           case 'workflow-llm-tool-call-arguments': {
-            const block = getBlock()
             if (!block) return
 
-            const last = block.messages.at(-1)
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
 
             if (last?.role !== 'tool-call') return
 
@@ -337,29 +357,15 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             return
           }
-          case 'workflow-llm-tool-calls-end': {
-            // TODO
-            return
-          }
 
-          case 'workflow-llm-end': {
-            // TODO
-            return
-          }
-          case 'workflow-llm-result': {
-            // TODO
-            return
-          }
-          case 'workflow-llm-error': {
-            // TODO
-            return
-          }
+          /* ---------------- tool result ---------------- */
 
           case 'workflow-tool-call-start': {
-            const block = getBlock()
             if (!block) return
 
-            block.messages.push({
+            const messages = getWorkflowMessages(block)
+
+            messages?.push({
               role: 'tool-result',
               id: data.toolCall.id,
               result: '',
@@ -367,33 +373,28 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             return
           }
+
           case 'workflow-tool-call-success': {
-            const block = getBlock()
             if (!block) return
-            const last = block.messages.at(-1)
+
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
+
             if (last?.role === 'tool-result') {
               last.result = data.toolCallResult.result
             }
 
             return
           }
+
           case 'workflow-tool-call-error': {
-            const block = getBlock()
             if (!block) return
-            const last = block.messages.at(-1)
+
+            const messages = getWorkflowMessages(block)
+            const last = messages?.at(-1)
+
             if (last?.role === 'tool-result') {
               last.result = data.toolCallResult.error
-            }
-
-            return
-          }
-
-          case 'workflow-tool-call-reject': {
-            const block = getBlock()
-            if (!block) return
-            const last = block.messages.at(-1)
-            if (last?.role === 'tool-result') {
-              last.result = data.toolCallResult.reject
             }
 
             return

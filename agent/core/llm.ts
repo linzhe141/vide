@@ -4,7 +4,9 @@ import { v4 as uuid } from 'uuid'
 
 let model: string = null!
 export let llmClient: OpenAI = null!
-
+export function getModel() {
+  return model
+}
 export function createLLMClient(options: { apiKey: string; baseURL: string; model: string }) {
   llmClient = new OpenAI({
     apiKey: options.apiKey,
@@ -34,6 +36,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
       model,
       stream: true,
       tools,
+      reasoning_effort: 'minimal',
     },
     { signal }
   )
@@ -46,6 +49,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   const finishedToolCallName: { name: string; id: string }[] = []
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta
+    console.log(JSON.stringify(delta, null, 2))
     const chunkFinishReason = chunk.choices[0].finish_reason
     if (chunkFinishReason) {
       finishReason = chunkFinishReason as any
@@ -135,6 +139,7 @@ export const generateJSON = async (messages: ChatMessage[]) => {
     model,
     messages,
     response_format: { type: 'json_object' },
+    reasoning_effort: 'minimal',
   })
 
   const result = JSON.parse(completion.choices[0].message.content || '{}')
