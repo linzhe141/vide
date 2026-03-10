@@ -36,7 +36,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       agentEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
           if (eventName === 'agent-session-start-analyze-input' && currentSessionId === null) {
-            console.log('abs')
             currentSessionId = data.sessionId
           }
           if (currentSessionId === data.sessionId) {
@@ -54,7 +53,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       plannerEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
           if (currentSessionId === data.sessionId) {
-            console.log('xxxaa')
             controller.enqueue({ type: eventName, data })
           }
         })
@@ -63,8 +61,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       workflowEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (currentSessionId === data.sessionId) {
-            console.log('abcd')
+          if (currentSessionId === data.ctx.sessionId) {
             controller.enqueue({ type: eventName, data })
           }
         })
