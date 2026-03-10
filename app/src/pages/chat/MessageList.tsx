@@ -1,5 +1,9 @@
-import { useThreadStore, type ConversationBlock } from '../../store/threadStore'
-
+import {
+  useThreadStore,
+  type ConversationBlock,
+  type PlanBlock,
+  type PlanStepBlock,
+} from '../../store/threadStore'
 export function MessageList({ loading }: { loading: boolean }) {
   const blocks = useThreadStore((s) => s.blocks)
 
@@ -15,11 +19,14 @@ export function MessageList({ loading }: { loading: boolean }) {
 /* -------------------------------- block -------------------------------- */
 
 function BlockView({ block }: { block: ConversationBlock }) {
-  const Taget = block.type === 'normal' ? NormalBlockView : PlanBlockView
   const status = block.status
   return (
     <div>
-      <Taget block={block} />
+      {block.type === 'normal' ? (
+        <NormalBlockView block={block} />
+      ) : (
+        <PlanBlockView block={block} />
+      )}
       {status === 'in_analyzeing' && (
         <div className='text-text-secondary animate-pulse text-sm'>analyzeing user input...</div>
       )}
@@ -41,7 +48,7 @@ function NormalBlockView({ block }: any) {
 
 /* -------------------------------- plan -------------------------------- */
 
-function PlanBlockView({ block }: any) {
+function PlanBlockView({ block }: { block: PlanBlock }) {
   return (
     <div className='space-y-8'>
       {/* user input */}
@@ -51,26 +58,58 @@ function PlanBlockView({ block }: any) {
 
       {/* plan steps */}
       <div className='border-border space-y-8 border-l pl-6'>
-        {block.steps.map((step: any) => (
+        {block.steps.map((step) => (
           <StepView key={step.id} step={step} />
         ))}
       </div>
+      {block.status === 'plan_generating' && (
+        <div className='text-text-secondary animate-pulse text-sm'>generating plan...</div>
+      )}
     </div>
   )
 }
 
 /* -------------------------------- step -------------------------------- */
 
-function StepView({ step }: any) {
-  return (
-    <div className='relative space-y-3'>
-      {/* timeline dot */}
-      <div className='bg-primary absolute top-1 -left-[11px] h-2 w-2 rounded-full'></div>
+function StepStatusIcon({ status }: { status: PlanStepBlock['status'] }) {
+  if (status === 'pending') {
+    return (
+      <div className='border-border bg-background absolute top-1 -left-[11px] h-3 w-3 rounded-full border' />
+    )
+  }
 
-      {/* step title */}
+  if (status === 'running') {
+    return (
+      <div className='absolute top-1 -left-[11px] flex h-3 w-3 items-center justify-center'>
+        <div className='bg-primary absolute h-3 w-3 animate-ping rounded-full opacity-50' />
+        <div className='bg-primary relative h-2 w-2 rounded-full' />
+      </div>
+    )
+  }
+
+  if (status === 'completed') {
+    return <div className='bg-primary absolute top-1 -left-[11px] h-3 w-3 rounded-full' />
+  }
+
+  if (status === 'failed') {
+    return (
+      <div className='absolute top-1 -left-[11px] flex h-3 w-3 items-center justify-center rounded-full border border-red-500'>
+        <div className='h-[6px] w-[6px] rounded-full bg-red-500' />
+      </div>
+    )
+  }
+
+  return null
+}
+function StepView({ step }: { step: PlanStepBlock }) {
+  return (
+    <div className='relative space-y-3 pl-4'>
+      <StepStatusIcon status={step.status} />
+
+      {/* title */}
       <div className='text-text-secondary text-sm font-medium'>{step.title}</div>
 
-      {/* workflow messages */}
+      {/* workflow */}
       {step.workflow && (
         <div className='space-y-4'>
           {step.workflow.messages.map((m: any, i: number) => (
@@ -96,7 +135,11 @@ function MessageView({ message }: any) {
       )
 
     case 'assistant-text':
-      return <pre className='prose prose-sm dark:prose-invert max-w-none'>{message.content}</pre>
+      return (
+        <pre className='prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap'>
+          {message.content}
+        </pre>
+      )
 
     case 'assistant-reason':
       return (
