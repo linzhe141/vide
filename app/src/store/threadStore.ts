@@ -40,7 +40,7 @@ export type NormalBlock = {
   id: string
   type: 'normal'
   input: string
-  status: 'running' | 'finished' | 'error'
+  status: 'in_analyzeing' | 'running' | 'finished' | 'error'
   messages: ThreadMessage[]
 }
 
@@ -49,7 +49,13 @@ export type PlanBlock = {
   type: 'plan'
   input: string
   plannerId: string
-  status: 'generating' | 'ready' | 'running' | 'finished' | 'error'
+  status:
+    | 'in_analyzeing'
+    | 'plan_generating'
+    | 'plan_ready_execute'
+    | 'running'
+    | 'finished'
+    | 'error'
   steps: PlanStepBlock[]
 }
 
@@ -121,7 +127,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
               id: nanoid(),
               type: 'normal',
               input: data.userInput,
-              status: 'running',
+              status: 'in_analyzeing',
               messages: [
                 {
                   role: 'user',
@@ -144,13 +150,14 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
                 type: 'plan',
                 input: block.input,
                 plannerId: '',
-                status: 'generating',
+                status: 'plan_generating',
                 steps: [],
               }
 
               state.blocks[state.blocks.length - 1] = planBlock
+            } else {
+              state.blocks[state.blocks.length - 1].status = 'running'
             }
-
             return
           }
 
@@ -160,7 +167,20 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             if (!block || block.type !== 'plan') return
 
             block.plannerId = data.plannerId
-            block.status = 'generating'
+            block.status = 'plan_generating'
+            return
+          }
+
+          case 'planner-step-generate': {
+            if (!block || block.type !== 'plan') return
+
+            block.plannerId = data.plannerId
+            block.status = 'plan_generating'
+            block.steps.push({
+              id: data.plan.id,
+              title: data.plan.description,
+              status: 'pending',
+            })
             return
           }
 
@@ -168,7 +188,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             if (!block || block.type !== 'plan') return
 
             block.plannerId = data.plannerId
-            block.status = 'ready'
+            block.status = 'plan_ready_execute'
 
             block.steps = data.plans.map((p: PlanStep) => ({
               id: p.id,

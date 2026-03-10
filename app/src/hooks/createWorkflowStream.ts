@@ -17,7 +17,7 @@ export type WorkflowState =
 
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
-
+  let currentSessionId: string | null = null
   function cleanUp() {
     eventListeners.forEach((remove) => remove())
     eventListeners = []
@@ -35,7 +35,13 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       agentEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          controller.enqueue({ type: eventName, data })
+          if (eventName === 'agent-session-start-analyze-input' && currentSessionId === null) {
+            console.log('abs')
+            currentSessionId = data.sessionId
+          }
+          if (currentSessionId === data.sessionId) {
+            controller.enqueue({ type: eventName, data })
+          }
 
           if (eventName === 'agent-session-finished') {
             controller.close()
@@ -47,14 +53,20 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       plannerEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          controller.enqueue({ type: eventName, data })
+          if (currentSessionId === data.sessionId) {
+            console.log('xxxaa')
+            controller.enqueue({ type: eventName, data })
+          }
         })
         eventListeners.push(remove)
       })
 
       workflowEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          controller.enqueue({ type: eventName, data })
+          if (currentSessionId === data.sessionId) {
+            console.log('abcd')
+            controller.enqueue({ type: eventName, data })
+          }
         })
         eventListeners.push(remove)
       })

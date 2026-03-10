@@ -8,8 +8,6 @@ export function MessageList({ loading }: { loading: boolean }) {
       {blocks.map((block) => (
         <BlockView key={block.id} block={block} />
       ))}
-
-      {loading && <div className='text-text-secondary animate-pulse text-sm'>Thinking...</div>}
     </div>
   )
 }
@@ -17,11 +15,16 @@ export function MessageList({ loading }: { loading: boolean }) {
 /* -------------------------------- block -------------------------------- */
 
 function BlockView({ block }: { block: ConversationBlock }) {
-  if (block.type === 'normal') {
-    return <NormalBlockView block={block} />
-  }
-
-  return <PlanBlockView block={block} />
+  const Taget = block.type === 'normal' ? NormalBlockView : PlanBlockView
+  const status = block.status
+  return (
+    <div>
+      <Taget block={block} />
+      {status === 'in_analyzeing' && (
+        <div className='text-text-secondary animate-pulse text-sm'>analyzeing user input...</div>
+      )}
+    </div>
+  )
 }
 
 /* -------------------------------- normal -------------------------------- */
@@ -93,7 +96,7 @@ function MessageView({ message }: any) {
       )
 
     case 'assistant-text':
-      return <div className='prose prose-sm dark:prose-invert max-w-none'>{message.content}</div>
+      return <pre className='prose prose-sm dark:prose-invert max-w-none'>{message.content}</pre>
 
     case 'assistant-reason':
       return (
