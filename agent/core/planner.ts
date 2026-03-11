@@ -24,6 +24,7 @@ export class Planner {
       session,
       sessionBlock: workflowBlock,
       plannerId: this.id,
+      planner: this,
     })
   }
 
@@ -42,11 +43,13 @@ export class Planner {
     })
 
     this.planSteps = plans
+
     return plans
   }
 
   async executePlan() {
-    for (const plan of this.planSteps) {
+    for (let i = 0; i < this.planSteps.length; i++) {
+      const plan = this.planSteps[i]
       plan.status = 'running'
 
       plannerEvent.emit('planner-execute-item-start', {
@@ -58,7 +61,12 @@ export class Planner {
       try {
         const workflow = new Workflow(this.runtime)
 
-        await workflow.run(plan.description)
+        await workflow.run(
+          'The following plan has been created:\n' +
+            JSON.stringify(this.planSteps) +
+            `starting execute plan ${i + 1}:` +
+            plan.description
+        )
 
         plan.status = 'completed'
 
@@ -136,6 +144,39 @@ export class Planner {
         done = true
         return {
           content: 'completed full plan generate',
+        }
+      },
+    }
+
+    const changePlanStepStatus: Tool = {
+      name: 'change_plan_step_status',
+      type: 'function',
+      function: {
+        name: 'change_plan_step_status',
+        description: 'change plan step status',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              id: 'plan step id',
+            },
+            status: {
+              type: 'string',
+              id: 'plan step status',
+            },
+          },
+        },
+      },
+      executor: async (args) => {
+        const id = args.id
+        const status = args.status
+        const target = plan.find((i) => i.id === id)
+        if (target) {
+          target.status = status
+        }
+        return {
+          content: 'change status successfully',
         }
       },
     }
