@@ -53,7 +53,7 @@ export function useWorkflowStream() {
 
           if (done) break
           if (!value) continue
-
+          console.log('xxxxxxxxxxxxx', value)
           handleEvent(value)
         }
         console.log('abcd 1')

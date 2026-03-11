@@ -35,7 +35,8 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       agentEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (eventName === 'agent-session-start-analyze-input' && currentSessionId === null) {
+          console.log('xxxx', eventName, data)
+          if (eventName === 'agent-create-session' && currentSessionId === null) {
             currentSessionId = data.sessionId
           }
           if (currentSessionId === data.sessionId) {

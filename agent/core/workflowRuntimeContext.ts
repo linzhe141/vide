@@ -2,31 +2,16 @@ import { v4 as uuid } from 'uuid'
 import type { AgentSession, SessionBlock } from './agentSession'
 import type { WorkflowEventCtx } from './event/channels'
 import { Thread } from './thread'
-import type { Planner } from './planner'
 
 export class WorkflowRuntimeContext {
   readonly session: AgentSession
   readonly workflowId: string
-  readonly plannerId?: string
-  readonly planId?: string
-
-  readonly sessionBlock: SessionBlock
   readonly thread: Thread
+  planner: any = null
 
-  constructor(options: {
-    session: AgentSession
-    sessionBlock: SessionBlock
-    plannerId?: string
-    planner: Planner
-  }) {
+  constructor(options: { session: AgentSession; sessionBlock: SessionBlock }) {
     this.session = options.session
-    this.sessionBlock = options.sessionBlock
-    this.plannerId = options.plannerId
     this.workflowId = uuid()
-
-    if (options.sessionBlock.type === 'plan') {
-      this.planId = options.sessionBlock.planId
-    }
 
     this.thread = options.sessionBlock.thread
   }
@@ -39,7 +24,6 @@ export class WorkflowRuntimeContext {
     return {
       sessionId: this.sessionId,
       workflowId: this.workflowId,
-      planId: this.planId,
     }
   }
 }

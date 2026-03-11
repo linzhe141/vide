@@ -1,4 +1,4 @@
-import type { PlanStep } from '../agentSession'
+import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
 const AgentLifecycleEventChannels = {
@@ -20,30 +20,30 @@ export type AgentLifecycleEvents = {
 }
 
 const PlannerEventChannels = {
-  'planner-start-generate': null as unknown as { sessionId: string; plannerId: string },
+  'planner-start-generate': null as unknown as { sessionId: string; plannerId?: string },
   'planner-step-generate': null as unknown as {
     sessionId: string
-    plannerId: string
+    plannerId?: string
     plan: PlanStep
   },
   'planner-end-generate': null as unknown as {
     sessionId: string
-    plannerId: string
+    plannerId?: string
     plans: PlanStep[]
   },
   'planner-execute-item-start': null as unknown as {
     sessionId: string
-    plannerId: string
+    plannerId?: string
     plan: PlanStep
   },
   'planner-execute-item-success': null as unknown as {
     sessionId: string
-    plannerId: string
+    plannerId?: string
     plan: PlanStep
   },
   'planner-execute-item-error': null as unknown as {
     sessionId: string
-    plannerId: string
+    plannerId?: string
     plan: PlanStep
   },
 }

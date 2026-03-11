@@ -19,8 +19,8 @@ export class AgentIpcMainService implements IpcMainService {
   agent: Agent = null!
   session: AgentSession = null!
   constructor(private appManager: AppManager) {
-    this.agent = new Agent()
     this.registerIpcMainSenders()
+    this.agent = new Agent()
   }
 
   registerIpcMainHandle() {
@@ -43,6 +43,7 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainSenders() {
     agentEventNames.forEach((eventName) => {
       onAgentEvent(eventName, (data: any) => {
+        console.log('abc', eventName, data)
         ipcMainApi.send(eventName, data)
       })
     })

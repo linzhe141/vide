@@ -49,7 +49,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   const finishedToolCallName: { name: string; id: string }[] = []
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta
-    console.log(JSON.stringify(delta, null, 2))
+    // console.log(JSON.stringify(delta, null, 2))
     const chunkFinishReason = chunk.choices[0].finish_reason
     if (chunkFinishReason) {
       finishReason = chunkFinishReason as any

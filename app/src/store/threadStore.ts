@@ -2,9 +2,9 @@
 import { immer } from 'zustand/middleware/immer'
 import { nanoid } from 'nanoid'
 
-import type { PlanStep } from '@/agent/core/agentSession'
 import type { ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from '../hooks/createWorkflowStream'
+import type { PlanStep } from '@/agent/core/tools/planner'
 
 /* ---------------- message ---------------- */
 
@@ -110,7 +110,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
     handleEvent(event) {
       const { type, data } = event
-
+      console.log(event)
       set((state) => {
         const block = getCurrentBlock(state)
 
@@ -119,19 +119,16 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
           case 'agent-create-session': {
             state.sessionId = data.sessionId
-            return
-          }
 
-          case 'agent-session-start-analyze-input': {
             const newBlock: NormalBlock = {
               id: nanoid(),
               type: 'normal',
-              input: data.userInput,
+              input: 'data.userInput',
               status: 'in_analyzeing',
               messages: [
                 {
                   role: 'user',
-                  content: data.userInput,
+                  content: 'data.userInput',
                 },
               ],
             }
@@ -141,106 +138,122 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             return
           }
 
-          case 'agent-session-end-analyze-input': {
-            if (!block) return
+          // case 'agent-session-start-analyze-input': {
+          //   const newBlock: NormalBlock = {
+          //     id: nanoid(),
+          //     type: 'normal',
+          //     input: data.userInput,
+          //     status: 'in_analyzeing',
+          //     messages: [
+          //       {
+          //         role: 'user',
+          //         content: data.userInput,
+          //       },
+          //     ],
+          //   }
 
-            if (data.mode === 'plan') {
-              const planBlock: PlanBlock = {
-                id: block.id,
-                type: 'plan',
-                input: block.input,
-                plannerId: '',
-                status: 'plan_generating',
-                steps: [],
-              }
+          //   state.blocks.push(newBlock)
+          //   state.currentBlockId = newBlock.id
+          //   return
+          // }
 
-              state.blocks[state.blocks.length - 1] = planBlock
-            } else {
-              state.blocks[state.blocks.length - 1].status = 'running'
-            }
-            return
-          }
+          // case 'agent-session-end-analyze-input': {
+          //   if (!block) return
 
-          /* ---------------- planner ---------------- */
+          //   if (data.mode === 'plan') {
+          //     const planBlock: PlanBlock = {
+          //       id: block.id,
+          //       type: 'plan',
+          //       input: block.input,
+          //       plannerId: '',
+          //       status: 'plan_generating',
+          //       steps: [],
+          //     }
 
-          case 'planner-start-generate': {
-            if (!block || block.type !== 'plan') return
+          //     state.blocks[state.blocks.length - 1] = planBlock
+          //   } else {
+          //     state.blocks[state.blocks.length - 1].status = 'running'
+          //   }
+          //   return
+          // }
 
-            block.plannerId = data.plannerId
-            block.status = 'plan_generating'
-            return
-          }
+          // /* ---------------- planner ---------------- */
 
-          case 'planner-step-generate': {
-            if (!block || block.type !== 'plan') return
+          // case 'planner-start-generate': {
+          //   if (!block || block.type !== 'plan') return
 
-            block.plannerId = data.plannerId
-            block.status = 'plan_generating'
-            block.steps.push({
-              id: data.plan.id,
-              title: data.plan.description,
-              status: 'pending',
-            })
-            return
-          }
+          //   block.status = 'plan_generating'
+          //   return
+          // }
 
-          case 'planner-end-generate': {
-            if (!block || block.type !== 'plan') return
+          // case 'planner-step-generate': {
+          //   if (!block || block.type !== 'plan') return
 
-            block.plannerId = data.plannerId
-            block.status = 'plan_ready_execute'
+          //   block.status = 'plan_generating'
+          //   block.steps.push({
+          //     id: data.plan.id,
+          //     title: data.plan.description,
+          //     status: 'pending',
+          //   })
+          //   return
+          // }
 
-            block.steps = data.plans.map((p: PlanStep) => ({
-              id: p.id,
-              title: p.description,
-              status: 'pending',
-            }))
+          // case 'planner-end-generate': {
+          //   if (!block || block.type !== 'plan') return
 
-            return
-          }
+          //   block.status = 'plan_ready_execute'
 
-          case 'planner-execute-item-start': {
-            if (!block || block.type !== 'plan') return
+          //   block.steps = data.plans.map((p: PlanStep) => ({
+          //     id: p.id,
+          //     title: p.description,
+          //     status: 'pending',
+          //   }))
 
-            const step = block.steps.find((s) => s.id === data.plan.id)
+          //   return
+          // }
 
-            if (!step) return
+          // case 'planner-execute-item-start': {
+          //   if (!block || block.type !== 'plan') return
 
-            step.status = 'running'
+          //   const step = block.steps.find((s) => s.id === data.plan.id)
 
-            step.workflow = {
-              id: nanoid(),
-              type: 'workflow',
-              status: 'running',
-              messages: [],
-            }
+          //   if (!step) return
 
-            block.status = 'running'
+          //   step.status = 'running'
 
-            return
-          }
+          //   step.workflow = {
+          //     id: nanoid(),
+          //     type: 'workflow',
+          //     status: 'running',
+          //     messages: [],
+          //   }
 
-          case 'planner-execute-item-success': {
-            if (!block || block.type !== 'plan') return
+          //   block.status = 'running'
 
-            const step = block.steps.find((s) => s.id === data.plan.id)
+          //   return
+          // }
 
-            if (step) step.status = 'completed'
+          // case 'planner-execute-item-success': {
+          //   if (!block || block.type !== 'plan') return
 
-            return
-          }
+          //   const step = block.steps.find((s) => s.id === data.plan.id)
 
-          case 'planner-execute-item-error': {
-            if (!block || block.type !== 'plan') return
+          //   if (step) step.status = 'completed'
 
-            const step = block.steps.find((s) => s.id === data.plan.id)
+          //   return
+          // }
 
-            if (step) step.status = 'failed'
+          // case 'planner-execute-item-error': {
+          //   if (!block || block.type !== 'plan') return
 
-            block.status = 'error'
+          //   const step = block.steps.find((s) => s.id === data.plan.id)
 
-            return
-          }
+          //   if (step) step.status = 'failed'
+
+          //   block.status = 'error'
+
+          //   return
+          // }
 
           /* ---------------- workflow lifecycle ---------------- */
 

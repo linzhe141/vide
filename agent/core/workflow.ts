@@ -14,6 +14,7 @@ import type {
 } from './types'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
+import { Planner } from './tools/planner'
 
 type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -23,8 +24,11 @@ type NextStep = {
 
 export class Workflow {
   state: WorkflowState = 'INPUT'
-  tools: Tool[] = [getNormalizeTime]
-  constructor(public runtime: WorkflowRuntimeContext) {}
+  tools: Tool[] = []
+  constructor(public runtime: WorkflowRuntimeContext) {
+    const planner = new Planner(runtime)
+    this.tools = [getNormalizeTime, ...planner.getTools()]
+  }
 
   async run(input: string) {
     try {
