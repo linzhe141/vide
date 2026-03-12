@@ -112,7 +112,8 @@ After the user selects options, the workflow will continue with the user's selec
       })
 
       return {
-        content: 'Waiting for user selection before continuing workflow.',
+        content:
+          'Waiting for user selection before continuing workflow. now need to break current workflow',
         question: question,
       }
     },

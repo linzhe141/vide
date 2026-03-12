@@ -79,7 +79,10 @@ export class Workflow {
 
   stateInput(payload: UserInputStepPayload): NextStep {
     this.runtime.thread.addMessage({ role: 'user', content: payload.input })
-    const callLLMMessages = this.runtime.thread.getMessages()
+    const callLLMMessages: ChatMessage[] = []
+    for (const block of this.runtime.session.workflowBlocks) {
+      callLLMMessages.push(...block.thread.getMessages())
+    }
     return {
       state: 'CALL_LLM',
       payload: {
@@ -222,8 +225,10 @@ export class Workflow {
     if (index + 1 < toolCalls.length) {
       return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {
-      const callLLMMessages = this.runtime.thread.getMessages()
-
+      const callLLMMessages: ChatMessage[] = []
+      for (const block of this.runtime.session.workflowBlocks) {
+        callLLMMessages.push(...block.thread.getMessages())
+      }
       return { state: 'CALL_LLM', payload: { messages: callLLMMessages } }
     }
   }
