@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid'
 import { Workflow } from './workflow'
-import { Thread } from './thread'
+import { WorkflowThread } from './workflowThread'
 import { agentEvent } from './event'
 import { WorkflowRuntimeContext } from './workflowRuntimeContext'
 
 export type SessionBlock = {
-  thread: Thread
+  thread: WorkflowThread
 }
 
 export const activeSessions: AgentSession[] = []
@@ -21,7 +21,7 @@ export class AgentSession {
     try {
       activeSessions.push(this)
       const workflowBlock: SessionBlock = {
-        thread: new Thread({ messages: [] }),
+        thread: new WorkflowThread({ messages: [] }),
       }
 
       this.workflowBlocks.push(workflowBlock)

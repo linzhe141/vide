@@ -1,12 +1,12 @@
 import { v4 as uuid } from 'uuid'
 import type { AgentSession, SessionBlock } from './agentSession'
 import type { WorkflowEventCtx } from './event/channels'
-import { Thread } from './thread'
+import { WorkflowThread } from './workflowThread'
 
 export class WorkflowRuntimeContext {
   readonly session: AgentSession
   readonly workflowId: string
-  readonly thread: Thread
+  readonly thread: WorkflowThread
   planner: any = null
 
   constructor(options: { session: AgentSession; sessionBlock: SessionBlock }) {

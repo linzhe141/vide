@@ -1,11 +1,11 @@
 import type { ChatMessage } from './types'
 
-export interface ThreadContext {
+export interface WorkflowThreadContext {
   messages: ChatMessage[]
 }
 
-export class Thread {
-  constructor(public ctx: ThreadContext) {}
+export class WorkflowThread {
+  constructor(public ctx: WorkflowThreadContext) {}
 
   addMessage(message: ChatMessage) {
     this.ctx.messages.push(message)
