@@ -1,6 +1,3 @@
-import { processLLMStream } from './llm'
-import { getNormalizeTime } from './tools/getNormalizeTime'
-
 import type {
   AssistantChatMessage,
   CallLLMStepPayload,
@@ -12,6 +9,9 @@ import type {
   ToolCall,
   UserInputStepPayload,
 } from './types'
+import { processLLMStream } from './llm'
+import { getNormalizeTime } from './tools/getNormalizeTime'
+import { fileRead } from './tools/fileRead'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { Planner } from './tools/planner'
@@ -27,7 +27,7 @@ export class Workflow {
   tools: Tool[] = []
   constructor(public runtime: WorkflowRuntimeContext) {
     const planner = new Planner(runtime)
-    this.tools = [getNormalizeTime, ...planner.getTools()]
+    this.tools = [getNormalizeTime, fileRead, ...planner.getTools()]
   }
 
   async run(input: string) {

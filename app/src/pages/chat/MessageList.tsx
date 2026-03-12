@@ -36,8 +36,6 @@ function MessageView({ message }: { message: ThreadMessage }) {
 
 /* ---------------- planner ---------------- */
 
-
-
 type ToolCallViewProps = {
   message: Extract<ThreadMessage, { role: 'tool-call' }>
   results: Map<string, unknown>
@@ -116,7 +114,7 @@ export function ToolCallButton({ tool, result }: ToolCallButtonProps) {
       </button>
 
       {open && (
-        <div className='border-border bg-background mt-2 rounded-md border p-3'>
+        <div className='border-border bg-background mt-2 max-w-[720px] rounded-md border p-3'>
           <div className='space-y-4'>
             <div>
               <div className='text-text-secondary mb-1 text-xs'>Arguments</div>
