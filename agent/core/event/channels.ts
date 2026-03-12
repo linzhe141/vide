@@ -1,3 +1,4 @@
+import type { AskUserQuestionConfig } from '../tools/askUserQuestion'
 import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
@@ -44,6 +45,14 @@ const PlannerEventChannels = {
 export type PlannerEventKey = keyof typeof PlannerEventChannels
 export type PlannerEvents = {
   [K in PlannerEventKey]: (data: (typeof PlannerEventChannels)[K]) => void
+}
+
+const AskUserQuestionEventChannels = {
+  'ask-user-question': null as unknown as { sessionId: string; question: AskUserQuestionConfig },
+}
+export type AskUserQuestionEventKey = keyof typeof AskUserQuestionEventChannels
+export type AskUserQuestionEvents = {
+  [K in AskUserQuestionEventKey]: (data: (typeof AskUserQuestionEventChannels)[K]) => void
 }
 
 export type WorkflowEventCtx = { sessionId: string; workflowId: string; planId?: string }
@@ -114,8 +123,11 @@ export type WorkflowEventKey = keyof typeof WorkflowEventChannels
 export type WorkflowEvents = {
   [K in WorkflowEventKey]: (data: (typeof WorkflowEventChannels)[K]) => void
 }
-export type Events = AgentLifecycleEvents | WorkflowEvents | PlannerEvents
+export type Events = AgentLifecycleEvents | WorkflowEvents | PlannerEvents | AskUserQuestionEvents
 
 export const agentEventNames = Object.keys(AgentLifecycleEventChannels) as AgentLifecycleEventKey[]
 export const plannerEventNames = Object.keys(PlannerEventChannels) as PlannerEventKey[]
 export const workflowEventNames = Object.keys(WorkflowEventChannels) as WorkflowEventKey[]
+export const askUserQuestionEventNames = Object.keys(
+  AskUserQuestionEventChannels
+) as AskUserQuestionEventKey[]

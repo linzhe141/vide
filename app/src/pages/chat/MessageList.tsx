@@ -42,13 +42,21 @@ type ToolCallViewProps = {
 }
 
 export function ToolCallView({ message, results }: ToolCallViewProps) {
+  const { handleSend } = useChatContext()
+  console.log(message.toolCalls)
   return (
     <div className='flex flex-wrap'>
       {message.toolCalls
         // .filter((i) => !i.function.name.startsWith(PLANNER_NAMESPACE))
-        .map((tool) => (
-          <ToolCallButton key={tool.id} tool={tool} result={results.get(tool.id)} />
-        ))}
+        .map((tool) => {
+          if (!tool.function.name.startsWith(ASK_USER_NAMESPACE)) {
+            return <ToolCallButton key={tool.id} tool={tool} result={results.get(tool.id)} />
+          } else {
+            const args = JSON.parse(tool.function.arguments)
+
+            return <AskUserQuestionView key={tool.id} args={args} />
+          }
+        })}
     </div>
   )
 }
@@ -94,6 +102,9 @@ export function MessageList() {
 import { useState } from 'react'
 import type { ToolCall } from '@/agent/core/types'
 import { PLANNER_NAMESPACE } from '@/agent/core/tools/planner'
+import { ASK_USER_NAMESPACE, ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
+import { useChatContext } from './ChatProvider'
+import { AskUserQuestionView } from './AskUserQuestionView'
 
 type ToolCallButtonProps = {
   tool: ToolCall

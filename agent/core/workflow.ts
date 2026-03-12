@@ -15,6 +15,7 @@ import { fileRead } from './tools/fileRead'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { Planner } from './tools/planner'
+import { AskUserQuestionTool } from './tools/askUserQuestion'
 
 type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -27,7 +28,13 @@ export class Workflow {
   tools: Tool[] = []
   constructor(public runtime: WorkflowRuntimeContext) {
     const planner = new Planner(runtime)
-    this.tools = [getNormalizeTime, fileRead, ...planner.getTools()]
+    const askUserQuestionTool = new AskUserQuestionTool(runtime)
+    this.tools = [
+      getNormalizeTime,
+      fileRead,
+      ...planner.getTools(),
+      ...askUserQuestionTool.getTools(),
+    ]
   }
 
   async run(input: string) {
