@@ -4,68 +4,60 @@ import { nanoid } from 'nanoid'
 
 import type { ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from '../hooks/createWorkflowStream'
-import type { PlanStep } from '@/agent/core/tools/planner'
 
-/* ---------------- message ---------------- */
+/* ---------------- planner ---------------- */
+
+export type PlanStep = {
+  id: string
+  description: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+}
+
+/* ---------------- messages ---------------- */
 
 export type ThreadMessage =
-  | { role: 'user'; content: string }
-  | { role: 'assistant-text'; content: string }
-  | { role: 'assistant-reason'; content: string }
-  | { role: 'tool-call'; toolCalls: ToolCall[] }
-  | { role: 'tool-result'; id: string; result: any }
-  | { role: 'error'; error: any }
+  | { id: string; role: 'user'; content: string }
+  | { id: string; role: 'assistant-reason'; content: string }
+  | { id: string; role: 'assistant-text'; content: string }
+  | { id: string; role: 'tool-call'; toolCalls: ToolCall[] }
+  | { id: string; role: 'tool-result'; toolCallId: string; result: any }
+  | { id: string; role: 'error'; error: any }
 
-/* ---------------- workflow ---------------- */
+/* ---------------- block ---------------- */
 
-export type WorkflowBlock = {
+export type ConversationBlock = {
   id: string
-  type: 'workflow'
+
   status: 'running' | 'finished' | 'error'
-  messages: ThreadMessage[]
-}
 
-/* ---------------- plan step ---------------- */
-
-export type PlanStepBlock = {
-  id: string
-  title: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  workflow?: WorkflowBlock
-}
-
-/* ---------------- blocks ---------------- */
-
-export type NormalBlock = {
-  id: string
-  type: 'normal'
   input: string
-  status: 'in_analyzeing' | 'running' | 'finished' | 'error'
+
   messages: ThreadMessage[]
+
+  planner?: {
+    plannerId?: string
+    steps: PlanStep[]
+  }
+
+  runtime: {
+    isStreaming: boolean
+    streamingReason: boolean
+    streamingText: boolean
+    runningToolId?: string
+    waitingHuman: boolean
+  }
+
+  createdAt: number
+  finishedAt?: number
 }
 
-export type PlanBlock = {
-  id: string
-  type: 'plan'
-  input: string
-  plannerId: string
-  status:
-    | 'in_analyzeing'
-    | 'plan_generating'
-    | 'plan_ready_execute'
-    | 'running'
-    | 'finished'
-    | 'error'
-  steps: PlanStepBlock[]
-}
-
-export type ConversationBlock = NormalBlock | PlanBlock
-
-/* ---------------- thread state ---------------- */
+/* ---------------- state ---------------- */
 
 type ThreadState = {
   sessionId?: string
+
   blocks: ConversationBlock[]
+
   currentBlockId?: string
 }
 
@@ -82,16 +74,26 @@ function getCurrentBlock(state: ThreadState) {
   return state.blocks.find((b) => b.id === state.currentBlockId)
 }
 
-function getRunningStep(block: PlanBlock) {
-  return block.steps.find((s) => s.status === 'running')
+function pushMessage(block: ConversationBlock, message: ThreadMessage) {
+  block.messages.push(message)
 }
 
-function getWorkflowMessages(block: ConversationBlock): ThreadMessage[] | undefined {
-  if (block.type === 'normal') return block.messages
+function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']) {
+  const last = block.messages.at(-1)
 
-  const step = getRunningStep(block)
+  if (!last || last.role !== role) {
+    const msg = {
+      id: nanoid(),
+      role,
+      content: '',
+    } as any
 
-  return step?.workflow?.messages
+    block.messages.push(msg)
+
+    return msg
+  }
+
+  return last
 }
 
 /* ---------------- store ---------------- */
@@ -110,162 +112,51 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
     handleEvent(event) {
       const { type, data } = event
-      console.log(event)
+
       set((state) => {
-        const block = getCurrentBlock(state)
+        let block = getCurrentBlock(state)
 
         switch (type) {
-          /* ---------------- session ---------------- */
+          /* ---------------- workflow lifecycle ---------------- */
 
-          case 'agent-create-session': {
-            state.sessionId = data.sessionId
+          case 'workflow-start': {
+            const id = nanoid()
 
-            const newBlock: NormalBlock = {
-              id: nanoid(),
-              type: 'normal',
-              input: 'data.userInput',
-              status: 'in_analyzeing',
+            block = {
+              id,
+              input: data.input,
+              status: 'running',
+
               messages: [
                 {
+                  id: nanoid(),
                   role: 'user',
-                  content: 'data.userInput',
+                  content: data.input,
                 },
               ],
+
+              runtime: {
+                isStreaming: false,
+                streamingReason: false,
+                streamingText: false,
+                waitingHuman: false,
+              },
+
+              createdAt: Date.now(),
             }
 
-            state.blocks.push(newBlock)
-            state.currentBlockId = newBlock.id
+            state.blocks.push(block)
+            state.currentBlockId = id
+
             return
           }
-
-          // case 'agent-session-start-analyze-input': {
-          //   const newBlock: NormalBlock = {
-          //     id: nanoid(),
-          //     type: 'normal',
-          //     input: data.userInput,
-          //     status: 'in_analyzeing',
-          //     messages: [
-          //       {
-          //         role: 'user',
-          //         content: data.userInput,
-          //       },
-          //     ],
-          //   }
-
-          //   state.blocks.push(newBlock)
-          //   state.currentBlockId = newBlock.id
-          //   return
-          // }
-
-          // case 'agent-session-end-analyze-input': {
-          //   if (!block) return
-
-          //   if (data.mode === 'plan') {
-          //     const planBlock: PlanBlock = {
-          //       id: block.id,
-          //       type: 'plan',
-          //       input: block.input,
-          //       plannerId: '',
-          //       status: 'plan_generating',
-          //       steps: [],
-          //     }
-
-          //     state.blocks[state.blocks.length - 1] = planBlock
-          //   } else {
-          //     state.blocks[state.blocks.length - 1].status = 'running'
-          //   }
-          //   return
-          // }
-
-          // /* ---------------- planner ---------------- */
-
-          // case 'planner-start-generate': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   block.status = 'plan_generating'
-          //   return
-          // }
-
-          // case 'planner-step-generate': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   block.status = 'plan_generating'
-          //   block.steps.push({
-          //     id: data.plan.id,
-          //     title: data.plan.description,
-          //     status: 'pending',
-          //   })
-          //   return
-          // }
-
-          // case 'planner-end-generate': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   block.status = 'plan_ready_execute'
-
-          //   block.steps = data.plans.map((p: PlanStep) => ({
-          //     id: p.id,
-          //     title: p.description,
-          //     status: 'pending',
-          //   }))
-
-          //   return
-          // }
-
-          // case 'planner-execute-item-start': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   const step = block.steps.find((s) => s.id === data.plan.id)
-
-          //   if (!step) return
-
-          //   step.status = 'running'
-
-          //   step.workflow = {
-          //     id: nanoid(),
-          //     type: 'workflow',
-          //     status: 'running',
-          //     messages: [],
-          //   }
-
-          //   block.status = 'running'
-
-          //   return
-          // }
-
-          // case 'planner-execute-item-success': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   const step = block.steps.find((s) => s.id === data.plan.id)
-
-          //   if (step) step.status = 'completed'
-
-          //   return
-          // }
-
-          // case 'planner-execute-item-error': {
-          //   if (!block || block.type !== 'plan') return
-
-          //   const step = block.steps.find((s) => s.id === data.plan.id)
-
-          //   if (step) step.status = 'failed'
-
-          //   block.status = 'error'
-
-          //   return
-          // }
-
-          /* ---------------- workflow lifecycle ---------------- */
 
           case 'workflow-finished': {
             if (!block) return
 
-            if (block.type === 'normal') block.status = 'finished'
-
-            if (block.type === 'plan') {
-              const step = getRunningStep(block)
-              if (step?.workflow) step.workflow.status = 'finished'
-            }
+            block.status = 'finished'
+            block.runtime.isStreaming = false
+            block.finishedAt = Date.now()
 
             return
           }
@@ -273,149 +164,127 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           case 'workflow-error': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
+            block.status = 'error'
 
-            messages?.push({
+            pushMessage(block, {
+              id: nanoid(),
               role: 'error',
               error: data.error,
             })
 
-            if (block.type === 'normal') block.status = 'error'
+            return
+          }
+
+          case 'workflow-wait-human-approve': {
+            if (!block) return
+
+            block.runtime.waitingHuman = true
+            return
+          }
+
+          /* ---------------- llm lifecycle ---------------- */
+
+          case 'workflow-llm-start': {
+            if (!block) return
+
+            block.runtime.isStreaming = true
+            return
+          }
+
+          case 'workflow-llm-end': {
+            if (!block) return
+
+            block.runtime.isStreaming = false
+            block.runtime.streamingReason = false
+            block.runtime.streamingText = false
 
             return
           }
 
-          /* ---------------- reasoning ---------------- */
+          /* ---------------- reasoning stream ---------------- */
 
           case 'workflow-llm-reasoning-start': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-
-            messages?.push({
-              role: 'assistant-reason',
-              content: '',
-            })
-
+            block.runtime.streamingReason = true
             return
           }
 
           case 'workflow-llm-reasoning-delta': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
-
-            if (last?.role === 'assistant-reason') {
-              last.content += data.chunk.delta
-            }
+            const msg = ensureLastMessage(block, 'assistant-reason')
+            msg.content += data.chunk.delta
 
             return
           }
 
-          /* ---------------- text ---------------- */
+          case 'workflow-llm-reasoning-end': {
+            if (!block) return
+
+            block.runtime.streamingReason = false
+            return
+          }
+
+          /* ---------------- assistant text ---------------- */
 
           case 'workflow-llm-text-start': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-
-            messages?.push({
-              role: 'assistant-text',
-              content: '',
-            })
-
+            block.runtime.streamingText = true
             return
           }
 
           case 'workflow-llm-text-delta': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
+            const msg = ensureLastMessage(block, 'assistant-text')
+            msg.content += data.chunk.delta
 
-            if (last?.role === 'assistant-text') {
-              last.content += data.chunk.delta
-            }
+            return
+          }
 
+          case 'workflow-llm-text-end': {
+            if (!block) return
+
+            block.runtime.streamingText = false
             return
           }
 
           /* ---------------- tool calls ---------------- */
 
-          case 'workflow-llm-tool-calls-start': {
+          case 'workflow-llm-tool-calls-end': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-
-            messages?.push({
+            pushMessage(block, {
+              id: nanoid(),
               role: 'tool-call',
-              toolCalls: [],
+              toolCalls: data.toolCalls,
             })
 
             return
           }
 
-          case 'workflow-llm-tool-call-name': {
-            if (!block) return
-
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
-
-            if (last?.role !== 'tool-call') return
-
-            last.toolCalls.push({
-              id: data.data.id,
-              type: 'function',
-              function: {
-                name: data.data.name,
-                arguments: '',
-              },
-            } as ToolCall)
-
-            return
-          }
-
-          case 'workflow-llm-tool-call-arguments': {
-            if (!block) return
-
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
-
-            if (last?.role !== 'tool-call') return
-
-            const tool = last.toolCalls.find((t) => t.id === data.data.id)
-
-            if (tool) tool.function.arguments = data.data.arguments
-
-            return
-          }
-
-          /* ---------------- tool result ---------------- */
+          /* ---------------- tool execution ---------------- */
 
           case 'workflow-tool-call-start': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-
-            messages?.push({
-              role: 'tool-result',
-              id: data.toolCall.id,
-              result: '',
-            })
-
+            block.runtime.runningToolId = data.toolCall.id
             return
           }
 
           case 'workflow-tool-call-success': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
+            block.runtime.runningToolId = undefined
 
-            if (last?.role === 'tool-result') {
-              last.result = data.toolCallResult.result
-            }
+            pushMessage(block, {
+              id: nanoid(),
+              role: 'tool-result',
+              toolCallId: data.toolCallResult.id,
+              result: data.toolCallResult.result,
+            })
 
             return
           }
@@ -423,12 +292,69 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           case 'workflow-tool-call-error': {
             if (!block) return
 
-            const messages = getWorkflowMessages(block)
-            const last = messages?.at(-1)
+            block.runtime.runningToolId = undefined
 
-            if (last?.role === 'tool-result') {
-              last.result = data.toolCallResult.error
+            pushMessage(block, {
+              id: nanoid(),
+              role: 'error',
+              error: data.toolCallResult.error,
+            })
+
+            return
+          }
+
+          /* ---------------- planner ---------------- */
+
+          case 'planner-start-generate': {
+            console.log('abc', 'planner-start-generate')
+            if (!block) return
+            block.planner = {
+              plannerId: data.plannerId,
+              steps: [],
             }
+
+            return
+          }
+
+          case 'planner-step-generate': {
+            if (!block) return
+            if (!block.planner) {
+              block.planner = {
+                plannerId: data.plannerId,
+                steps: [],
+              }
+            }
+
+            block.planner.steps.push(data.plan)
+            return
+          }
+
+          case 'planner-execute-item-start': {
+            if (!block?.planner) return
+
+            const step = block.planner.steps.find((s) => s.id === data.plan.id)
+
+            if (step) step.status = 'running'
+
+            return
+          }
+
+          case 'planner-execute-item-success': {
+            if (!block?.planner) return
+
+            const step = block.planner.steps.find((s) => s.id === data.plan.id)
+
+            if (step) step.status = 'completed'
+
+            return
+          }
+
+          case 'planner-execute-item-error': {
+            if (!block?.planner) return
+
+            const step = block.planner.steps.find((s) => s.id === data.plan.id)
+
+            if (step) step.status = 'failed'
 
             return
           }

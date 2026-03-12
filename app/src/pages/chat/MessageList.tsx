@@ -1,14 +1,91 @@
-import {
-  useThreadStore,
-  type ConversationBlock,
-  type PlanBlock,
-  type PlanStepBlock,
-} from '../../store/threadStore'
-export function MessageList({ loading }: { loading: boolean }) {
+import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
+
+/* ---------------- message ---------------- */
+
+function MessageView({ message }: { message: ThreadMessage }) {
+  switch (message.role) {
+    case 'user':
+      return (
+        <div className='bg-muted/30 rounded-xl border p-4'>
+          <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre>
+        </div>
+      )
+
+    case 'assistant-text':
+      return (
+        <div className='prose prose-sm dark:prose-invert max-w-none'>
+          <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre>
+        </div>
+      )
+
+    case 'assistant-reason':
+      return (
+        <div className='border-border text-text-secondary border-l-2 pl-4 text-sm'>
+          <pre className='whitespace-pre-wrap'>{message.content}</pre>
+        </div>
+      )
+
+    case 'error':
+      return (
+        <div className='rounded-xl border border-red-300 p-4 text-red-500'>
+          <pre className='text-xs'>{JSON.stringify(message.error, null, 2)}</pre>
+        </div>
+      )
+  }
+}
+
+/* ---------------- planner ---------------- */
+
+
+
+type ToolCallViewProps = {
+  message: Extract<ThreadMessage, { role: 'tool-call' }>
+  results: Map<string, unknown>
+}
+
+export function ToolCallView({ message, results }: ToolCallViewProps) {
+  return (
+    <div className='flex flex-wrap'>
+      {message.toolCalls
+        // .filter((i) => !i.function.name.startsWith(PLANNER_NAMESPACE))
+        .map((tool) => (
+          <ToolCallButton key={tool.id} tool={tool} result={results.get(tool.id)} />
+        ))}
+    </div>
+  )
+}
+
+/* ---------------- block ---------------- */
+
+function BlockView({ block }: { block: ConversationBlock }) {
+  const toolResults = new Map<string, unknown>()
+
+  for (const message of block.messages) {
+    if (message.role === 'tool-result') {
+      toolResults.set(message.toolCallId, message.result)
+    }
+  }
+
+  return (
+    <div className='relative space-y-3'>
+      {block.messages.map((message) => {
+        if (message.role === 'tool-call') {
+          return <ToolCallView key={message.id} message={message} results={toolResults} />
+        }
+
+        return <MessageView key={message.id} message={message} />
+      })}
+    </div>
+  )
+}
+
+/* ---------------- list ---------------- */
+
+export function MessageList() {
   const blocks = useThreadStore((s) => s.blocks)
 
   return (
-    <div className='mx-auto w-full max-w-3xl space-y-10 px-4 py-10'>
+    <div className='mx-auto w-full max-w-3xl space-y-10 px-6 py-10'>
       {blocks.map((block) => (
         <BlockView key={block.id} block={block} />
       ))}
@@ -16,162 +93,51 @@ export function MessageList({ loading }: { loading: boolean }) {
   )
 }
 
-/* -------------------------------- block -------------------------------- */
+import { useState } from 'react'
+import type { ToolCall } from '@/agent/core/types'
+import { PLANNER_NAMESPACE } from '@/agent/core/tools/planner'
 
-function BlockView({ block }: { block: ConversationBlock }) {
-  const status = block.status
+type ToolCallButtonProps = {
+  tool: ToolCall
+  result?: unknown
+}
+
+export function ToolCallButton({ tool, result }: ToolCallButtonProps) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <div>
-      {block.type === 'normal' ? (
-        <NormalBlockView block={block} />
-      ) : (
-        <PlanBlockView block={block} />
-      )}
-      {status === 'in_analyzeing' && (
-        <div className='text-text-secondary animate-pulse text-sm'>analyzeing user input...</div>
-      )}
-    </div>
-  )
-}
+    <div className='my-1'>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className='border-border text-text-secondary hover:bg-background flex items-center gap-2 rounded-md border px-3 py-1 text-xs'
+      >
+        <span className='font-mono'>{tool.function.name}</span>
+        <span className='text-text-info'>#{tool.id.slice(0, 4)}</span>
+      </button>
 
-/* -------------------------------- normal -------------------------------- */
+      {open && (
+        <div className='border-border bg-background mt-2 rounded-md border p-3'>
+          <div className='space-y-4'>
+            <div>
+              <div className='text-text-secondary mb-1 text-xs'>Arguments</div>
 
-function NormalBlockView({ block }: any) {
-  return (
-    <div className='space-y-4'>
-      {block.messages.map((m: any, i: number) => (
-        <MessageView key={i} message={m} />
-      ))}
-    </div>
-  )
-}
+              <pre className='bg-background overflow-auto rounded p-2 text-xs'>
+                {JSON.stringify(tool.function.arguments, null, 2)}
+              </pre>
+            </div>
 
-/* -------------------------------- plan -------------------------------- */
+            {result !== undefined && (
+              <div>
+                <div className='text-text-secondary mb-1 text-xs'>Result</div>
 
-function PlanBlockView({ block }: { block: PlanBlock }) {
-  return (
-    <div className='space-y-8'>
-      {/* user input */}
-      <div className='flex justify-end'>
-        <div className='bg-primary/10 max-w-[80%] rounded-lg px-4 py-2 text-sm'>{block.input}</div>
-      </div>
-
-      {/* plan steps */}
-      <div className='border-border space-y-8 border-l pl-6'>
-        {block.steps.map((step) => (
-          <StepView key={step.id} step={step} />
-        ))}
-      </div>
-      {block.status === 'plan_generating' && (
-        <div className='text-text-secondary animate-pulse text-sm'>generating plan...</div>
-      )}
-    </div>
-  )
-}
-
-/* -------------------------------- step -------------------------------- */
-
-function StepStatusIcon({ status }: { status: PlanStepBlock['status'] }) {
-  if (status === 'pending') {
-    return (
-      <div className='border-border bg-background absolute top-1 -left-[11px] h-3 w-3 rounded-full border' />
-    )
-  }
-
-  if (status === 'running') {
-    return (
-      <div className='absolute top-1 -left-[11px] flex h-3 w-3 items-center justify-center'>
-        <div className='bg-primary absolute h-3 w-3 animate-ping rounded-full opacity-50' />
-        <div className='bg-primary relative h-2 w-2 rounded-full' />
-      </div>
-    )
-  }
-
-  if (status === 'completed') {
-    return <div className='bg-primary absolute top-1 -left-[11px] h-3 w-3 rounded-full' />
-  }
-
-  if (status === 'failed') {
-    return (
-      <div className='absolute top-1 -left-[11px] flex h-3 w-3 items-center justify-center rounded-full border border-red-500'>
-        <div className='h-[6px] w-[6px] rounded-full bg-red-500' />
-      </div>
-    )
-  }
-
-  return null
-}
-function StepView({ step }: { step: PlanStepBlock }) {
-  return (
-    <div className='relative space-y-3 pl-4'>
-      <StepStatusIcon status={step.status} />
-
-      {/* title */}
-      <div className='text-text-secondary text-sm font-medium'>{step.title}</div>
-
-      {/* workflow */}
-      {step.workflow && (
-        <div className='space-y-4'>
-          {step.workflow.messages.map((m: any, i: number) => (
-            <MessageView key={i} message={m} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* -------------------------------- message -------------------------------- */
-
-function MessageView({ message }: any) {
-  switch (message.role) {
-    case 'user':
-      return (
-        <div className='flex justify-end'>
-          <div className='bg-primary/10 max-w-[80%] rounded-lg px-4 py-2 text-sm'>
-            {message.content}
+                <pre className='bg-background overflow-auto rounded p-2 text-xs'>
+                  {JSON.stringify(result, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
-      )
-
-    case 'assistant-text':
-      return (
-        <pre className='prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap'>
-          {message.content}
-        </pre>
-      )
-
-    case 'assistant-reason':
-      return (
-        <details className='text-text-secondary border-border rounded-md border p-2 text-xs'>
-          <summary className='cursor-pointer select-none'>Reasoning</summary>
-
-          <pre className='mt-2 text-xs whitespace-pre-wrap'>{message.content}</pre>
-        </details>
-      )
-
-    case 'tool-call':
-      return (
-        <div className='border-border bg-background rounded-md border p-3 text-xs'>
-          <div className='text-text-info mb-1'>Tool Call</div>
-
-          <pre className='overflow-auto'>{JSON.stringify(message.toolCalls, null, 2)}</pre>
-        </div>
-      )
-
-    case 'tool-result':
-      return (
-        <div className='border-border bg-background rounded-md border p-3 text-xs'>
-          <div className='text-text-info mb-1'>Tool Result</div>
-
-          <pre className='overflow-auto'>{JSON.stringify(message.result, null, 2)}</pre>
-        </div>
-      )
-
-    case 'error':
-      return <div className='text-sm text-red-500'>{String(message.error)}</div>
-
-    default:
-      return null
-  }
+      )}
+    </div>
+  )
 }

@@ -3,12 +3,6 @@ import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall }
 
 const AgentLifecycleEventChannels = {
   'agent-create-session': null as unknown as { sessionId: string },
-  'agent-session-start-analyze-input': null as unknown as { sessionId: string; userInput: string },
-  'agent-session-end-analyze-input': null as unknown as {
-    sessionId: string
-    userInput: string
-    mode: 'plan' | 'normal'
-  },
   'agent-session-finished': null as unknown as {
     sessionId: string
     userInput: string

@@ -1,13 +1,40 @@
-import { Send, StopCircle } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { useState, useRef, useEffect } from 'react'
+import { useThreadStore, type ConversationBlock } from '../../store/threadStore'
+
+function PlannerView({ block }: { block: ConversationBlock }) {
+  if (!block.planner) return null
+
+  return (
+    <div className='space-y-3 pl-4'>
+      {block.planner.steps.map((step) => (
+        <div key={step.id} className='flex items-center gap-3'>
+          <div
+            className={`mt-1 h-2 w-2 rounded-full ${
+              step.status === 'completed'
+                ? 'bg-primary'
+                : step.status === 'running'
+                  ? 'bg-foreground'
+                  : 'bg-border'
+            }`}
+          />
+          <div className='text-text-secondary text-sm'>{step.status}</div>
+          <div className='text-text-secondary text-sm'>{step.description}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { handleSend } = useChatContext()
+  const state = useThreadStore()
+  const currentBlock = state.blocks.find((b) => b.id === state.currentBlockId)
 
   // 自动调整 textarea 高度
   useEffect(() => {
@@ -27,7 +54,15 @@ export function ChatInput() {
 
   return (
     <div>
-      <div className='mx-auto max-w-5xl space-y-4 px-4 py-4'>
+      <div className='mx-auto max-w-5xl px-4 py-4'>
+        {currentBlock?.planner && (
+          <div className='flex justify-center'>
+            <div className='border-border w-9/10 rounded-xl rounded-ee-none rounded-es-none border border-b-0 py-3'>
+              <PlannerView block={currentBlock} />
+            </div>
+          </div>
+        )}
+
         <div className='border-border bg-background focus-within:border-primary focus-within:ring-primary/10 relative rounded-2xl border shadow-sm transition-all focus-within:ring-2'>
           <Textarea
             ref={textareaRef}
@@ -72,7 +107,7 @@ export function ChatInput() {
             >
               <Send className='h-4 w-4' />
               <span>Send</span>
-            </Button> 
+            </Button>
           </div>
         </div>
 
