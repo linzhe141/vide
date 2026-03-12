@@ -15,7 +15,7 @@ import { fileRead } from './tools/fileRead'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { Planner } from './tools/planner'
-import { AskUserQuestionTool } from './tools/askUserQuestion'
+import { ASK_USER_TOOL_NAMES, AskUserQuestionTool } from './tools/askUserQuestion'
 
 type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -144,6 +144,7 @@ export class Workflow {
   }
 
   async stateCallLLM(payload: CallLLMStepPayload): Promise<NextStep> {
+    console.log(JSON.stringify(payload.messages, null, 2))
     const { content, toolCalls } = await this.handleCallLLM(payload.messages)
 
     const assistantMessage: AssistantChatMessage = {
@@ -228,6 +229,14 @@ export class Workflow {
       const callLLMMessages: ChatMessage[] = []
       for (const block of this.runtime.session.workflowBlocks) {
         callLLMMessages.push(...block.thread.getMessages())
+      }
+      if (toolCall.function.name === ASK_USER_TOOL_NAMES.ASK_USER_QUESTION) {
+        return {
+          state: 'COMPLETED',
+          payload: {
+            content: 'Stop the current workflow and wait for the user to select an option',
+          },
+        }
       }
       return { state: 'CALL_LLM', payload: { messages: callLLMMessages } }
     }

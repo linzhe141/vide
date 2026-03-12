@@ -306,7 +306,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           /* ---------------- planner ---------------- */
 
           case 'planner-start-generate': {
-            console.log('abc', 'planner-start-generate')
             if (!block) return
             block.planner = {
               plannerId: data.plannerId,

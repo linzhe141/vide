@@ -36,18 +36,32 @@ export class AskUserQuestionTool {
       description: `
 Ask the user a structured question that requires selecting from predefined options.
 
-Use this tool when:
-- you need the user to make a decision
-- the workflow cannot continue without user input
-- the user must choose between multiple valid paths
+This is a WORKFLOW BREAKPOINT tool.
 
-Rules:
-- options MUST be meaningful and actionable
+Behavior:
+- Calling this tool INTERRUPTS the current workflow.
+- The workflow MUST stop immediately after this tool call.
+- The system will wait for the user to select one or more options.
+- No further reasoning or tool calls should happen after invoking this tool.
+
+Continuation:
+- Once the user makes a selection, the system will start a NEW workflow run.
+- The user's selection will be provided as new input for the next step.
+
+Use this tool when:
+- the workflow requires a human decision
+- multiple valid paths exist
+- the agent cannot safely continue without user input
+
+Option rules:
+- options MUST be clear and actionable
 - DO NOT include vague options like "other"
 - DO NOT expect free-text input
-- every option must represent a real choice
+- every option must represent a real decision
 
-After the user selects options, the workflow will continue with the user's selection.
+Selection mode:
+- "single": user selects one option
+- "multiple": user can select multiple options
 `,
 
       parameters: {
@@ -112,9 +126,9 @@ After the user selects options, the workflow will continue with the user's selec
       })
 
       return {
-        content:
-          'Waiting for user selection before continuing workflow. now need to break current workflow',
-        question: question,
+        workflow_state: 'user_input_required',
+        reason: 'ask_user_question',
+        instruction: 'Stop the current workflow and wait for the user to select an option.',
       }
     },
   }

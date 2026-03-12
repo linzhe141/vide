@@ -55,14 +55,11 @@ export function useWorkflowStream() {
           if (!value) continue
           handleEvent(value)
         }
-        console.log('abcd 1')
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
           console.error(err)
         }
       } finally {
-        console.log('abcd 2')
-
         reader.releaseLock()
         cleanup()
       }

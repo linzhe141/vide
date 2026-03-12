@@ -20,6 +20,7 @@ export function AskUserQuestionView({ args }: Props) {
   const { handleSend } = useChatContext()
 
   const [selected, setSelected] = useState<string[]>([])
+  const [submited, setSubmited] = useState(false)
 
   const toggle = (value: string) => {
     if (args.type === 'single') {
@@ -32,6 +33,7 @@ export function AskUserQuestionView({ args }: Props) {
   }
 
   const submit = () => {
+    setSubmited(true)
     const selectedOptions = args.options.filter((o) => selected.includes(o.value))
 
     const content = `
@@ -63,8 +65,9 @@ ${JSON.stringify(selectedOptions.map((o) => o.value))}
           return (
             <button
               key={opt.value}
+              disabled={submited}
               onClick={() => toggle(opt.value)}
-              className={`flex items-start gap-3 rounded-md border px-3 py-2 text-left transition ${
+              className={`flex items-start gap-3 rounded-md border px-3 py-2 text-left transition disabled:cursor-not-allowed ${
                 checked ? 'border-primary' : 'border-border hover:border-muted-foreground'
               } `}
             >
@@ -90,8 +93,8 @@ ${JSON.stringify(selectedOptions.map((o) => o.value))}
       {/* submit */}
       <button
         onClick={submit}
-        disabled={!selected.length}
-        className='border-primary text-primary hover:bg-primary/10 w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40'
+        disabled={!selected.length || submited}
+        className='border-primary text-primary hover:bg-primary/10 w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40'
       >
         Confirm
       </button>

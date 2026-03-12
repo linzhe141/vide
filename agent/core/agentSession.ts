@@ -18,6 +18,7 @@ export class AgentSession {
   }
 
   async run(userInput: string) {
+    console.log('userInput--->', userInput)
     try {
       activeSessions.push(this)
       const workflowBlock: SessionBlock = {

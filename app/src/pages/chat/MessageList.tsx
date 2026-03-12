@@ -1,5 +1,8 @@
 import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
-
+import { useState } from 'react'
+import type { ToolCall } from '@/agent/core/types'
+import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { AskUserQuestionView } from './AskUserQuestionView'
 /* ---------------- message ---------------- */
 
 function MessageView({ message }: { message: ThreadMessage }) {
@@ -42,8 +45,6 @@ type ToolCallViewProps = {
 }
 
 export function ToolCallView({ message, results }: ToolCallViewProps) {
-  const { handleSend } = useChatContext()
-  console.log(message.toolCalls)
   return (
     <div className='flex flex-wrap'>
       {message.toolCalls
@@ -98,13 +99,6 @@ export function MessageList() {
     </div>
   )
 }
-
-import { useState } from 'react'
-import type { ToolCall } from '@/agent/core/types'
-import { PLANNER_NAMESPACE } from '@/agent/core/tools/planner'
-import { ASK_USER_NAMESPACE, ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import { useChatContext } from './ChatProvider'
-import { AskUserQuestionView } from './AskUserQuestionView'
 
 type ToolCallButtonProps = {
   tool: ToolCall
