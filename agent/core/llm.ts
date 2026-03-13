@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import type { ChatMessage, FinishReason, FnProcessLLMStream, ToolCall } from './types'
 import { v4 as uuid } from 'uuid'
+import { AgentSystemPrompt } from './prompt/system'
 
 let model: string = null!
 export let llmClient: OpenAI = null!
@@ -32,7 +33,13 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 }) {
   const stream = await llmClient.chat.completions.create(
     {
-      messages,
+      messages: [
+        // {
+        //   role: 'system',
+        //   content: AgentSystemPrompt,
+        // },
+        ...messages,
+      ],
       model,
       stream: true,
       tools,

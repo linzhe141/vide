@@ -12,6 +12,8 @@ import type {
 import { processLLMStream } from './llm'
 import { getNormalizeTime } from './tools/getNormalizeTime'
 import { fileRead } from './tools/fileRead'
+import { fsWriteFile } from './tools/fileWrite'
+import { bashTool } from './tools/bash'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { Planner } from './tools/planner'
@@ -32,6 +34,8 @@ export class Workflow {
     this.tools = [
       getNormalizeTime,
       fileRead,
+      fsWriteFile,
+      bashTool,
       ...planner.getTools(),
       ...askUserQuestionTool.getTools(),
     ]

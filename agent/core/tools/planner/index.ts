@@ -303,7 +303,7 @@ Do NOT use this tool if:
       },
     },
 
-    executor: async (args) => {
+    executor: async (_args) => {
       const next = this.plan.find((s) => s.status === 'pending')
 
       if (!next) {

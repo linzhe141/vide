@@ -3,25 +3,28 @@ import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { useState, useRef, useEffect } from 'react'
-import { useThreadStore, type ConversationBlock } from '../../store/threadStore'
+import { useThreadStore, type ConversationBlock, type PlanStep } from '../../store/threadStore'
+import { cn } from '../../lib/utils'
+
+function StatusDot({ status }: { status: PlanStep['status'] }) {
+  return (
+    <div
+      className={cn('mt-1 h-2 w-2 rounded-full', {
+        'bg-primary': status === 'completed',
+        'bg-foreground animate-pulse': status === 'running',
+        'bg-border': status === 'pending',
+        'bg-destructive': status === 'failed',
+      })}
+    />
+  )
+}
 
 function PlannerView({ block }: { block: ConversationBlock }) {
-  if (!block.planner) return null
-
   return (
     <div className='space-y-3 pl-4'>
-      {block.planner.steps.map((step) => (
+      {block.planner!.steps.map((step) => (
         <div key={step.id} className='flex items-center gap-3'>
-          <div
-            className={`mt-1 h-2 w-2 rounded-full ${
-              step.status === 'completed'
-                ? 'bg-primary'
-                : step.status === 'running'
-                  ? 'bg-foreground'
-                  : 'bg-border'
-            }`}
-          />
-          <div className='text-text-secondary text-sm'>{step.status}</div>
+          <StatusDot status={step.status} />
           <div className='text-text-secondary text-sm'>{step.description}</div>
         </div>
       ))}
