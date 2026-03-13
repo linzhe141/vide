@@ -25,13 +25,14 @@ export class AgentSession {
         thread: new WorkflowThread({ messages: [] }),
       }
 
+      // todo 保留前面的planner 到新一轮的runtime里面，包括ui
+      const prevRuntime = this.workflowBlocks.at(-1)
       this.workflowBlocks.push(workflowBlock)
 
       const runtime = new WorkflowRuntimeContext({
         session: this,
         sessionBlock: workflowBlock,
       })
-
       const workflow = new Workflow(runtime)
 
       await workflow.run(userInput)

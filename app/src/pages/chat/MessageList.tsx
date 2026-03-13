@@ -53,6 +53,7 @@ export function ToolCallView({ message, results }: ToolCallViewProps) {
           if (!tool.function.name.startsWith(ASK_USER_NAMESPACE)) {
             return <ToolCallButton key={tool.id} tool={tool} result={results.get(tool.id)} />
           } else {
+            console.log('ToolCallView ASK_USER_NAMESPACE', tool.function.arguments)
             const args = JSON.parse(tool.function.arguments)
 
             return <AskUserQuestionView key={tool.id} args={args} />
