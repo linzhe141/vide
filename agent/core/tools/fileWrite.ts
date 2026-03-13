@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import type { Tool } from '@/agent/core/types'
-const TARGET_DIR = path.resolve(process.cwd(), '.vide/artifacts')
+
 export const fsWriteFile: Tool = {
   name: 'fs_write_file',
   type: 'function',
@@ -10,26 +10,17 @@ export const fsWriteFile: Tool = {
     description: `
 Write content to a file.
 
-⚠️ IMPORTANT:
-ALL file paths MUST start with:
-
-${TARGET_DIR}/
-
-This is the ONLY directory you are allowed to write files to.
-
-Examples:
-- ${TARGET_DIR}/report.md
-- ${TARGET_DIR}/slides/demo.md
-- ${TARGET_DIR}/data/output.json
-
 If the file exists it will be overwritten, otherwise a new file will be created.
+
+The path can be either absolute or relative.
+If the parent directory does not exist it will be created automatically.
 `,
     parameters: {
       type: 'object',
       properties: {
         path: {
           type: 'string',
-          description: `File path. MUST start with "${TARGET_DIR}/"`,
+          description: 'File path (absolute or relative)',
         },
         content: {
           type: 'string',
