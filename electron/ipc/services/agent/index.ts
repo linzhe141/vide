@@ -2,15 +2,18 @@ import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { Agent } from '@/agent/core/agent'
-import { onAgentEvent, onPalnnervent, onWorkflowEvent } from '@/agent/core/apiEvent'
+import {
+  onAgentEvent,
+  onAskUserQuestionvent,
+  onPalnnervent,
+  onWorkflowEvent,
+} from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 
 import type { AgentSession } from '@/agent/core/agentSession'
 import {
-  type WorkflowEvents,
-  type PlannerEvents,
-  type AgentLifecycleEvents,
   agentEventNames,
+  askUserQuestionEventNames,
   plannerEventNames,
   workflowEventNames,
 } from '@/agent/core/event/channels'
@@ -50,6 +53,12 @@ export class AgentIpcMainService implements IpcMainService {
 
     plannerEventNames.forEach((eventName) => {
       onPalnnervent(eventName, (data: any) => {
+        ipcMainApi.send(eventName, data)
+      })
+    })
+    
+    askUserQuestionEventNames.forEach((eventName) => {
+      onAskUserQuestionvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)
       })
     })

@@ -15,7 +15,6 @@ export const PLANNER_TOOL_NAMES = {
   COMPLETED_PLAN_GENERATE: `${PLANNER_NAMESPACE}_COMPLETED_PLAN_GENERATE_TOOL`,
   CHANGE_PLAN_ITEM_STATUS: `${PLANNER_NAMESPACE}_CHANGE_PLAN_ITEM_STATUS_TOOL`,
   GET_ALL_PLAN_LIST: `${PLANNER_NAMESPACE}_GET_ALL_PLAN_LIST_TOOL`,
-  EXECUTE_NEXT_PLAN_ITEM: `${PLANNER_NAMESPACE}_EXECUTE_NEXT_PLAN_ITEM`,
 } as const
 
 export class Planner {
@@ -55,8 +54,6 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
 `,
     },
     executor: async () => {
-      console.log('abzzzc', 'planner-start-generate')
-
       plannerEvent.emit('planner-start-generate', {
         sessionId: this.runtime.sessionId,
       })
@@ -268,71 +265,14 @@ The result includes:
       }
     },
   }
-  autoExecuteNextPlanItem: Tool = {
-    name: PLANNER_TOOL_NAMES.EXECUTE_NEXT_PLAN_ITEM,
-    type: 'function',
-    function: {
-      name: PLANNER_TOOL_NAMES.EXECUTE_NEXT_PLAN_ITEM,
-      description: `
-Automatically select and execute the next pending step in the current plan.
 
-Use this tool when you want the runtime to continue executing the plan.
-
-Behavior:
-- The runtime will find the next step with status "pending"
-- That step will be marked as "running"
-- The system will continue the workflow using that step as the current task
-
-Use this tool when:
-- the plan has already been generated
-- you want to proceed with executing the next step
-
-Do NOT use this tool if:
-- the plan is not yet generated
-- there are no remaining pending steps
-`,
-      parameters: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description:
-              'The unique identifier (ID) of the plan step whose status needs to be updated.',
-          },
-        },
-      },
-    },
-
-    executor: async (_args) => {
-      const next = this.plan.find((s) => s.status === 'pending')
-
-      if (!next) {
-        return {
-          content: 'No pending plan steps remaining. Plan execution completed.',
-          finished: true,
-        }
-      }
-      if (next.status === 'running') {
-        plannerEvent.emit('planner-execute-item-start', {
-          sessionId: this.runtime.sessionId,
-          plan: next,
-        })
-      }
-      next.status = 'running'
-
-      return {
-        content: `Executing next plan step: ${next.description}`,
-        step: next,
-      }
-    },
-  }
   getTools() {
     return [
+      this.startGenernatePlan,
       this.createTask,
       this.completeGenerate,
       this.changePlanItemStatus,
-      this.getAllPlans,
-      // this.autoExecuteNextPlanItem,
+      // this.getAllPlans,
     ]
   }
 }

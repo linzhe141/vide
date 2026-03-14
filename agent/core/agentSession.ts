@@ -6,6 +6,7 @@ import { WorkflowRuntimeContext } from './workflowRuntimeContext'
 
 export type SessionBlock = {
   thread: WorkflowThread
+  runtime: WorkflowRuntimeContext
 }
 
 export const activeSessions: AgentSession[] = []
@@ -23,16 +24,21 @@ export class AgentSession {
       activeSessions.push(this)
       const workflowBlock: SessionBlock = {
         thread: new WorkflowThread({ messages: [] }),
+        runtime: null!,
       }
 
-      // todo 保留前面的planner 到新一轮的runtime里面，包括ui
-      const prevRuntime = this.workflowBlocks.at(-1)
       this.workflowBlocks.push(workflowBlock)
 
       const runtime = new WorkflowRuntimeContext({
         session: this,
         sessionBlock: workflowBlock,
       })
+      workflowBlock.runtime = runtime
+      //  保留前面的planner 到新一轮的runtime里面，包括ui
+      const prevRuntime = this.workflowBlocks.at(-1)?.runtime
+      if (prevRuntime?.planner) {
+        runtime.planner = prevRuntime.planner
+      }
       const workflow = new Workflow(runtime)
 
       await workflow.run(userInput)

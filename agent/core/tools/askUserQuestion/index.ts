@@ -3,137 +3,244 @@ import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { askUserQuestionEvent } from '../../event'
 
 export type AskUserQuestionOption = {
-  id: string
   label: string
   description?: string
   value: string
 }
 
-export type AskUserQuestionConfig = {
-  id: string
-  title: string
+export type AskUserQuestionDraft = {
+  title?: string
   description?: string
-  type: 'single' | 'multiple'
+  type?: 'single' | 'multiple'
   options: AskUserQuestionOption[]
 }
-
 export const ASK_USER_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 
 export const ASK_USER_TOOL_NAMES = {
-  ASK_USER_QUESTION: `${ASK_USER_NAMESPACE}_ASK_USER_QUESTION`,
+  START_GENERATE: `${ASK_USER_NAMESPACE}_START_GENERATE`,
+  SET_TITLE: `${ASK_USER_NAMESPACE}_SET_TITLE`,
+  SET_DESCRIPTION: `${ASK_USER_NAMESPACE}_SET_DESCRIPTION`,
+  CREATE_OPTION: `${ASK_USER_NAMESPACE}_CREATE_OPTION`,
+  COMPLETE_GENERATE: `${ASK_USER_NAMESPACE}_COMPLETE_GENERATE`,
 } as const
 
 export class AskUserQuestionTool {
+  draft: AskUserQuestionDraft | null = null
+
   constructor(private runtime: WorkflowRuntimeContext) {}
 
-  askUserQuestion: Tool = {
-    name: ASK_USER_TOOL_NAMES.ASK_USER_QUESTION,
+  startGenerate: Tool = {
+    name: ASK_USER_TOOL_NAMES.START_GENERATE,
     type: 'function',
 
     function: {
-      name: ASK_USER_TOOL_NAMES.ASK_USER_QUESTION,
+      name: ASK_USER_TOOL_NAMES.START_GENERATE,
 
       description: `
-Ask the user a structured question that requires selecting from predefined options.
+Start generating a user question interactively.
 
-This is a WORKFLOW BREAKPOINT tool.
+Set the selection type.
 
-Behavior:
-- Calling this tool INTERRUPTS the current workflow.
-- The workflow MUST stop immediately after this tool call.
-- The system will wait for the user to select one or more options.
-- No further reasoning or tool calls should happen after invoking this tool.
+single: user selects one option
+multiple: user selects multiple options
 
-Continuation:
-- Once the user makes a selection, the system will start a NEW workflow run.
-- The user's selection will be provided as new input for the next step.
+Use this tool before generating question fields.
 
-Use this tool when:
-- the workflow requires a human decision
-- multiple valid paths exist
-- the agent cannot safely continue without user input
+After calling this tool you MUST generate:
 
-Option rules:
-- options MUST be clear and actionable
-- DO NOT include vague options like "other"
-- DO NOT expect free-text input
-- every option must represent a real decision
+- title
+- description (optional)
+- options
 
-Selection mode:
-- "single": user selects one option
-- "multiple": user can select multiple options
+Use the dedicated tools to build the question step by step.
 `,
 
       parameters: {
         type: 'object',
-
         properties: {
-          title: {
-            type: 'string',
-            description: 'Short title of the question',
-          },
-
-          description: {
-            type: 'string',
-            description: 'Additional explanation for the user',
-          },
-
           type: {
             type: 'string',
             enum: ['single', 'multiple'],
-            description: 'Whether the user can select one or multiple options',
-          },
-
-          options: {
-            type: 'array',
-
-            items: {
-              type: 'object',
-
-              properties: {
-                label: {
-                  type: 'string',
-                },
-
-                description: {
-                  type: 'string',
-                },
-
-                value: {
-                  type: 'string',
-                },
-              },
-
-              required: ['label', 'value'],
-            },
-
-            description: 'List of selectable options for the user',
           },
         },
-
-        required: ['title', 'type', 'options'],
+        required: ['type'],
       },
     },
 
     executor: async (args) => {
-      const question: AskUserQuestionConfig = {
+      this.draft = {
+        type: args.type,
+        options: [],
+      }
+
+      askUserQuestionEvent.emit('ask-user-start-generate', {
+        sessionId: this.runtime.sessionId,
+        type: args.type,
+      })
+
+      return {
+        content: 'Started generating ask user question',
+      }
+    },
+  }
+
+  setTitle: Tool = {
+    name: ASK_USER_TOOL_NAMES.SET_TITLE,
+    type: 'function',
+
+    function: {
+      name: ASK_USER_TOOL_NAMES.SET_TITLE,
+
+      description: `
+Set the title of the user question.
+`,
+
+      parameters: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+        },
+        required: ['title'],
+      },
+    },
+
+    executor: async ({ title }) => {
+      if (!this.draft) throw new Error('Question generation not started')
+
+      this.draft.title = title
+
+      askUserQuestionEvent.emit('ask-user-title', {
+        sessionId: this.runtime.sessionId,
+        title,
+      })
+
+      return {
+        content: 'Title generated',
+      }
+    },
+  }
+
+  setDescription: Tool = {
+    name: ASK_USER_TOOL_NAMES.SET_DESCRIPTION,
+    type: 'function',
+
+    function: {
+      name: ASK_USER_TOOL_NAMES.SET_DESCRIPTION,
+
+      description: `Set the description of the question.`,
+
+      parameters: {
+        type: 'object',
+        properties: {
+          description: { type: 'string' },
+        },
+      },
+    },
+
+    executor: async ({ description }) => {
+      if (!this.draft) throw new Error('Question generation not started')
+
+      this.draft.description = description
+
+      askUserQuestionEvent.emit('ask-user-description', {
+        sessionId: this.runtime.sessionId,
+        description,
+      })
+
+      return { content: 'Description generated' }
+    },
+  }
+
+  createOption: Tool = {
+    name: ASK_USER_TOOL_NAMES.CREATE_OPTION,
+    type: 'function',
+
+    function: {
+      name: ASK_USER_TOOL_NAMES.CREATE_OPTION,
+
+      description: `
+Create an option for the question.
+
+Call this tool multiple times to generate all options.
+`,
+
+      parameters: {
+        type: 'object',
+        properties: {
+          label: { type: 'string' },
+
+          description: { type: 'string' },
+
+          value: { type: 'string' },
+        },
+
+        required: ['label', 'value'],
+      },
+    },
+
+    executor: async (args) => {
+      if (!this.draft) throw new Error('Question generation not started')
+
+      const option = {
         ...args,
       }
 
-      askUserQuestionEvent.emit('ask-user-question', {
+      this.draft.options.push(option)
+
+      askUserQuestionEvent.emit('ask-user-option', {
         sessionId: this.runtime.sessionId,
-        question,
+        option,
+      })
+
+      return {
+        content: 'Option created',
+        option,
+      }
+    },
+  }
+
+  completeGenerate: Tool = {
+    name: ASK_USER_TOOL_NAMES.COMPLETE_GENERATE,
+
+    type: 'function',
+
+    function: {
+      name: ASK_USER_TOOL_NAMES.COMPLETE_GENERATE,
+
+      description: `
+Finish generating the question.
+
+This will interrupt the workflow and wait for user input.
+`,
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+
+    executor: async () => {
+      if (!this.draft) throw new Error('Question generation not started')
+
+      askUserQuestionEvent.emit('ask-user-complete', {
+        sessionId: this.runtime.sessionId,
+        question: this.draft,
       })
 
       return {
         workflow_state: 'user_input_required',
         reason: 'ask_user_question',
-        instruction: 'Stop the current workflow and wait for the user to select an option.',
+        question: this.draft,
       }
     },
   }
 
   getTools() {
-    return [this.askUserQuestion]
+    return [
+      this.startGenerate,
+      this.setTitle,
+      this.setDescription,
+      this.createOption,
+      this.completeGenerate,
+    ]
   }
 }

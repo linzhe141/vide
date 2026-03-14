@@ -4,6 +4,7 @@ import type {
   AgentLifecycleEvents,
   PlannerEvents,
   WorkflowEvents,
+  AskUserQuestionEvents,
 } from '@/agent/core/event/channels'
 
 export type ThreadMessageRowDto = {
@@ -61,4 +62,5 @@ export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
 } & AgentLifecycleEvents &
   PlannerEvents &
-  WorkflowEvents
+  WorkflowEvents &
+  AskUserQuestionEvents

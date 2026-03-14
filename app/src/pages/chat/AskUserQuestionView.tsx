@@ -1,29 +1,24 @@
 import { useState } from 'react'
 import { useChatContext } from './ChatProvider'
+import { type ConversationBlock } from '../../store/threadStore'
 
-type Option = {
-  label: string
-  description?: string
-  value: string
-}
-
-type Props = {
-  args: {
-    title: string
-    description?: string
-    type: 'single' | 'multiple'
-    options: Option[]
-  }
-}
-
-export function AskUserQuestionView({ args }: Props) {
+export function AskUserQuestionView({ block }: { block: ConversationBlock }) {
   const { handleSend } = useChatContext()
 
   const [selected, setSelected] = useState<string[]>([])
   const [submited, setSubmited] = useState(false)
 
+  const askUser = block.askUser ?? {
+    title: '',
+    submitValue: [],
+    description: '',
+    completed: false,
+    options: [],
+    type: 'single',
+  }
+
   const toggle = (value: string) => {
-    if (args.type === 'single') {
+    if (askUser.type === 'single') {
       setSelected([value])
     } else {
       setSelected((prev) =>
@@ -34,38 +29,37 @@ export function AskUserQuestionView({ args }: Props) {
 
   const submit = () => {
     setSubmited(true)
-    const selectedOptions = args.options.filter((o) => selected.includes(o.value))
+    const selectedOptions = askUser.options.filter((o) => selected.includes(o.value))
 
     const content = `
-User selected option(s) for "${args.title}"
-
+User selected option(s) for "${askUser.title}"
 Selected:
 ${selectedOptions.map((o) => `- ${o.label}`).join('\n')}
-
 Machine values:
 ${JSON.stringify(selectedOptions.map((o) => o.value))}
 `
 
     handleSend(content.trim())
   }
-
   return (
-    <div className='max-w-md space-y-3'>
+    <div className='my-3 max-w-md space-y-3'>
       {/* title */}
-      <div className='text-foreground text-sm font-semibold'>{args.title}</div>
+      <div className='text-foreground text-sm font-semibold'>{askUser.title}</div>
 
       {/* description */}
-      {args.description && <div className='text-muted-foreground text-xs'>{args.description}</div>}
+      {askUser.description && (
+        <div className='text-muted-foreground text-xs'>{askUser.description}</div>
+      )}
 
       {/* options */}
       <div className='flex flex-col gap-2'>
-        {args.options.map((opt) => {
+        {askUser.options.map((opt) => {
           const checked = selected.includes(opt.value)
 
           return (
             <button
               key={opt.value}
-              disabled={submited}
+              disabled={submited || !askUser.completed}
               onClick={() => toggle(opt.value)}
               className={`flex items-start gap-3 rounded-md border px-3 py-2 text-left transition disabled:cursor-not-allowed ${
                 checked ? 'border-primary' : 'border-border hover:border-muted-foreground'
@@ -91,13 +85,15 @@ ${JSON.stringify(selectedOptions.map((o) => o.value))}
       </div>
 
       {/* submit */}
-      <button
-        onClick={submit}
-        disabled={!selected.length || submited}
-        className='border-primary text-primary hover:bg-primary/10 w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40'
-      >
-        Confirm
-      </button>
+      {askUser.completed && (
+        <button
+          onClick={submit}
+          disabled={!selected.length || submited}
+          className='border-primary text-primary hover:bg-primary/10 w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40'
+        >
+          Confirm
+        </button>
+      )}
     </div>
   )
 }

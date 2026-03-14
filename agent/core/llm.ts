@@ -34,10 +34,10 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   const stream = await llmClient.chat.completions.create(
     {
       messages: [
-        // {
-        //   role: 'system',
-        //   content: AgentSystemPrompt,
-        // },
+        {
+          role: 'system',
+          content: AgentSystemPrompt,
+        },
         ...messages,
       ],
       model,

@@ -39,6 +39,15 @@ export type ConversationBlock = {
     steps: PlanStep[]
   }
 
+  askUser?: {
+    completed: boolean
+    submitValue: []
+    title: string
+    description: string
+    type: string
+    options: { label: string; value: string; description: string }[]
+  }
+
   runtime: {
     isStreaming: boolean
     streamingReason: boolean
@@ -144,7 +153,11 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
               createdAt: Date.now(),
             }
-
+            const prevBlock = state.blocks.at(-1)
+            // 同步未完成的planner
+            if (prevBlock?.planner) {
+              block.planner = prevBlock.planner
+            }
             state.blocks.push(block)
             state.currentBlockId = id
 
@@ -355,6 +368,52 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             if (step) step.status = 'failed'
 
+            return
+          }
+
+          /* ---------------- ask uer question ---------------- */
+
+          case 'ask-user-start-generate': {
+            if (!block) return
+            block.askUser = {
+              completed: false,
+              submitValue: [],
+              title: '',
+              description: '',
+              type: data.type,
+              options: [],
+            }
+
+            return
+          }
+
+          case 'ask-user-title': {
+            if (!block) return
+            if (block.askUser) {
+              block.askUser.title = data.title
+            }
+            return
+          }
+          case 'ask-user-description': {
+            if (!block) return
+            if (block.askUser) {
+              block.askUser.description = data.description
+            }
+            return
+          }
+
+          case 'ask-user-option': {
+            if (!block) return
+            if (block.askUser) {
+              block.askUser.options.push(data.option)
+            }
+            return
+          }
+          case 'ask-user-complete': {
+            if (!block) return
+            if (block.askUser) {
+              block.askUser.completed = true
+            }
             return
           }
         }

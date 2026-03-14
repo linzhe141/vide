@@ -1,7 +1,7 @@
 import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
 import { useState } from 'react'
 import type { ToolCall } from '@/agent/core/types'
-import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { ASK_USER_NAMESPACE, ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import { AskUserQuestionView } from './AskUserQuestionView'
 /* ---------------- message ---------------- */
 
@@ -46,19 +46,14 @@ type ToolCallViewProps = {
 
 export function ToolCallView({ message, results }: ToolCallViewProps) {
   return (
-    <div className='flex flex-wrap'>
-      {message.toolCalls
-        // .filter((i) => !i.function.name.startsWith(PLANNER_NAMESPACE))
-        .map((tool) => {
-          if (!tool.function.name.startsWith(ASK_USER_NAMESPACE)) {
-            return <ToolCallButton key={tool.id} tool={tool} result={results.get(tool.id)} />
-          } else {
-            console.log('ToolCallView ASK_USER_NAMESPACE', tool.function.arguments)
-            const args = JSON.parse(tool.function.arguments)
-
-            return <AskUserQuestionView key={tool.id} args={args} />
-          }
-        })}
+    <div>
+      {message.toolCalls.map((tool) => {
+        return (
+          <div key={tool.id}>
+            <ToolCallButton tool={tool} result={results.get(tool.id)} />
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -73,12 +68,36 @@ function BlockView({ block }: { block: ConversationBlock }) {
       toolResults.set(message.toolCallId, message.result)
     }
   }
-
+  const isLastAskUserQuestionMessage = (index: number) => {
+    const current = block.messages[index]
+    if (
+      current.role === 'tool-call' &&
+      current.toolCalls[0].function.name === ASK_USER_TOOL_NAMES.COMPLETE_GENERATE
+    ) {
+      return true
+    }
+    // +2 跳过toolcall result
+    const next = block.messages[index + 2]
+    if (
+      next &&
+      next.role === 'tool-call' &&
+      next.toolCalls.length &&
+      next.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)
+    ) {
+      return false
+    }
+    return true
+  }
   return (
     <div className='relative space-y-3'>
-      {block.messages.map((message) => {
+      {block.messages.map((message, index) => {
         if (message.role === 'tool-call') {
-          return <ToolCallView key={message.id} message={message} results={toolResults} />
+          return (
+            <div key={message.id}>
+              <ToolCallView message={message} results={toolResults} />
+              {isLastAskUserQuestionMessage(index) && <AskUserQuestionView block={block} />}
+            </div>
+          )
         }
 
         return <MessageView key={message.id} message={message} />

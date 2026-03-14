@@ -37,7 +37,7 @@ function ChatContent({ threadId }: { threadId: string }) {
   return (
     <div className='bg-background flex h-full w-full flex-col'>
       <div className='h-0 flex-1 overflow-auto'>
-        <MessageList loading={false} />
+        <MessageList />
       </div>
       <ChatInput />
     </div>

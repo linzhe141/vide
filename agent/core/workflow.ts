@@ -85,14 +85,10 @@ export class Workflow {
 
   stateInput(payload: UserInputStepPayload): NextStep {
     this.runtime.thread.addMessage({ role: 'user', content: payload.input })
-    const callLLMMessages: ChatMessage[] = []
-    for (const block of this.runtime.session.workflowBlocks) {
-      callLLMMessages.push(...block.thread.getMessages())
-    }
     return {
       state: 'CALL_LLM',
       payload: {
-        messages: callLLMMessages,
+        messages: this.buildLLMMessages(),
       },
     }
   }
@@ -150,7 +146,7 @@ export class Workflow {
   }
 
   async stateCallLLM(payload: CallLLMStepPayload): Promise<NextStep> {
-    console.log(JSON.stringify(payload.messages, null, 2))
+    // console.log(JSON.stringify(payload.messages, null, 2))
     const { content, toolCalls } = await this.handleCallLLM(payload.messages)
 
     const assistantMessage: AssistantChatMessage = {
@@ -229,22 +225,27 @@ export class Workflow {
     const index = payload.index
     const toolCall = toolCalls[index]
     await this.handleCallTool(toolCall)
+    if (toolCall.function.name === ASK_USER_TOOL_NAMES.COMPLETE_GENERATE) {
+      // handleCallTool 已经把toolresult 添加到message里面了
+      return {
+        state: 'COMPLETED',
+        payload: {
+          content: 'Stop the current workflow and wait for the user to select an option',
+        },
+      }
+    }
     if (index + 1 < toolCalls.length) {
       return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {
-      const callLLMMessages: ChatMessage[] = []
-      for (const block of this.runtime.session.workflowBlocks) {
-        callLLMMessages.push(...block.thread.getMessages())
-      }
-      if (toolCall.function.name === ASK_USER_TOOL_NAMES.ASK_USER_QUESTION) {
-        return {
-          state: 'COMPLETED',
-          payload: {
-            content: 'Stop the current workflow and wait for the user to select an option',
-          },
-        }
-      }
-      return { state: 'CALL_LLM', payload: { messages: callLLMMessages } }
+      return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
     }
+  }
+
+  buildLLMMessages() {
+    const callLLMMessages: ChatMessage[] = []
+    for (const block of this.runtime.session.workflowBlocks) {
+      callLLMMessages.push(...block.thread.getMessages())
+    }
+    return callLLMMessages
   }
 }

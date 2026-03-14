@@ -1,4 +1,4 @@
-import type { AskUserQuestionConfig } from '../tools/askUserQuestion'
+import type { AskUserQuestionDraft } from '../tools/askUserQuestion'
 import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
@@ -48,7 +48,27 @@ export type PlannerEvents = {
 }
 
 const AskUserQuestionEventChannels = {
-  'ask-user-question': null as unknown as { sessionId: string; question: AskUserQuestionConfig },
+  'ask-user-start-generate': null as unknown as {
+    sessionId: string
+    type: string
+  },
+  'ask-user-title': null as unknown as {
+    sessionId: string
+    title: string
+  },
+  'ask-user-description': null as unknown as {
+    sessionId: string
+    description: string
+  },
+
+  'ask-user-option': null as unknown as {
+    sessionId: string
+    option: { label: string; value: string; description: string }
+  },
+  'ask-user-complete': null as unknown as {
+    sessionId: string
+    question: AskUserQuestionDraft
+  },
 }
 export type AskUserQuestionEventKey = keyof typeof AskUserQuestionEventChannels
 export type AskUserQuestionEvents = {
