@@ -22,24 +22,24 @@ export class AgentSession {
     console.log('userInput--->', userInput)
     try {
       activeSessions.push(this)
-      const workflowBlock: SessionBlock = {
-        thread: new WorkflowThread({ messages: [] }),
-        runtime: null!,
+
+      const workflowBlock = this.buildWorlflowBlock(userInput)
+      //  保留前面的planner 到新一轮的runtime里面，包括ui
+      const prevRuntime = this.workflowBlocks.at(-1)?.runtime
+      if (
+        prevRuntime?.planner &&
+        prevRuntime.planner.some((i) => i.status === 'pending' || i.status === 'running')
+      ) {
+        workflowBlock.runtime.planner = prevRuntime.planner
+        workflowBlock.runtime.userInput =
+          prevRuntime.userInput + '\n' + workflowBlock.runtime.userInput
+        console.log('prev workflow planner')
+        console.log(JSON.stringify(prevRuntime.planner, null, 2))
       }
 
       this.workflowBlocks.push(workflowBlock)
 
-      const runtime = new WorkflowRuntimeContext({
-        session: this,
-        sessionBlock: workflowBlock,
-      })
-      workflowBlock.runtime = runtime
-      //  保留前面的planner 到新一轮的runtime里面，包括ui
-      const prevRuntime = this.workflowBlocks.at(-1)?.runtime
-      if (prevRuntime?.planner) {
-        runtime.planner = prevRuntime.planner
-      }
-      const workflow = new Workflow(runtime)
+      const workflow = new Workflow(workflowBlock.runtime)
 
       await workflow.run(userInput)
 
@@ -48,5 +48,19 @@ export class AgentSession {
       const index = activeSessions.findIndex((i) => i === this)
       if (index !== -1) activeSessions.splice(index, 1)
     }
+  }
+
+  buildWorlflowBlock(userInput: string) {
+    const workflowBlock: SessionBlock = {
+      thread: new WorkflowThread({ messages: [] }),
+      runtime: null!,
+    }
+    const runtime = new WorkflowRuntimeContext({
+      session: this,
+      sessionBlock: workflowBlock,
+      userInput,
+    })
+    workflowBlock.runtime = runtime
+    return workflowBlock
   }
 }

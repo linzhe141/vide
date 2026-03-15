@@ -66,23 +66,29 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
       if (reasonContent === '') {
         // just for ui
         onReasoningStart?.()
+        console.log('onReasoningStart')
       }
       // @ts-expect-error support reason_content
       reasonContent += delta.reasoning_content
       // @ts-expect-error support reason_content just for ui
       onReasoningDelta?.({ content: reasonContent, delta: delta.reasoning_content })
+      // @ts-expect-error support reason_content just for ui
+      process.stdout.write(delta.reasoning_content)
     }
 
     if (delta?.content) {
       if (reasonContent) {
         onReasoningEnd?.()
         reasonContent = ''
+        console.log()
       }
       if (content === '') {
         onTextStart?.()
+        console.log('onTextStart')
       }
       content += delta.content
       onTextDelta?.({ content, delta: delta.content })
+      process.stdout.write(delta.content)
       yield {
         content,
         delta: delta.content,
@@ -95,14 +101,17 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
       if (reasonContent) {
         onReasoningEnd?.()
         reasonContent = ''
+        console.log()
       }
       if (content) {
         content = ''
         onTextEnd?.()
+        console.log()
       }
 
       if (toolCalls.length === 0) {
         onToolCallsStart?.()
+        console.log('onToolCallsStart')
       }
       for (const toolCall of delta.tool_calls) {
         if (!toolCalls[toolCall.index]) {
@@ -134,6 +143,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 
   if (toolCalls.length > 0) {
     onToolCallsEnd?.(toolCalls.filter(Boolean))
+    console.log(JSON.stringify(toolCalls.filter(Boolean), null, 2))
     yield {
       tool_calls: toolCalls.filter(Boolean),
       finishReason: 'tool_calls' as const,

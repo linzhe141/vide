@@ -9,7 +9,7 @@ import { cn } from '../../lib/utils'
 function StatusDot({ status }: { status: PlanStep['status'] }) {
   return (
     <div
-      className={cn('mt-1 h-2 w-2 rounded-full', {
+      className={cn('mt-1 min-h-2 min-w-2 rounded-full', {
         'bg-primary': status === 'completed',
         'bg-foreground animate-pulse': status === 'running',
         'bg-border': status === 'pending',

@@ -51,6 +51,9 @@ export function ToolCallView({ message, results }: ToolCallViewProps) {
         return (
           <div key={tool.id}>
             <ToolCallButton tool={tool} result={results.get(tool.id)} />
+            {/* {!tool.function.name.startsWith('BUILDIN') && (
+              <ToolCallButton tool={tool} result={results.get(tool.id)} />
+            )} */}
           </div>
         )
       })}
@@ -68,8 +71,16 @@ function BlockView({ block }: { block: ConversationBlock }) {
       toolResults.set(message.toolCallId, message.result)
     }
   }
-  const isLastAskUserQuestionMessage = (index: number) => {
+  const showAskUserQuestionMessage = (index: number) => {
+    // 必修是ASK_USER_NAMESPACE
     const current = block.messages[index]
+    if (
+      current.role === 'tool-call' &&
+      !current.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)
+    ) {
+      return false
+    }
+    // 如果当前是 COMPLETE_GENERATE 显示 ui
     if (
       current.role === 'tool-call' &&
       current.toolCalls[0].function.name === ASK_USER_TOOL_NAMES.COMPLETE_GENERATE
@@ -95,7 +106,7 @@ function BlockView({ block }: { block: ConversationBlock }) {
           return (
             <div key={message.id}>
               <ToolCallView message={message} results={toolResults} />
-              {isLastAskUserQuestionMessage(index) && <AskUserQuestionView block={block} />}
+              {showAskUserQuestionMessage(index) && <AskUserQuestionView block={block} />}
             </div>
           )
         }

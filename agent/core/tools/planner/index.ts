@@ -14,14 +14,12 @@ export const PLANNER_TOOL_NAMES = {
   CREATE_PLAN_ITEM: `${PLANNER_NAMESPACE}_CREATE_PLAN_ITEM_TOOL`,
   COMPLETED_PLAN_GENERATE: `${PLANNER_NAMESPACE}_COMPLETED_PLAN_GENERATE_TOOL`,
   CHANGE_PLAN_ITEM_STATUS: `${PLANNER_NAMESPACE}_CHANGE_PLAN_ITEM_STATUS_TOOL`,
-  GET_ALL_PLAN_LIST: `${PLANNER_NAMESPACE}_GET_ALL_PLAN_LIST_TOOL`,
 } as const
 
 export class Planner {
-  plan: PlanStep[] = []
   constructor(private runtime: WorkflowRuntimeContext) {}
 
-  startGenernatePlan: Tool = {
+  start: Tool = {
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',
     function: {
@@ -57,13 +55,14 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
       plannerEvent.emit('planner-start-generate', {
         sessionId: this.runtime.sessionId,
       })
+      this.runtime.planner = []
       return {
         content: 'Has marked plan is generating',
       }
     },
   }
 
-  createTask: Tool = {
+  create: Tool = {
     name: PLANNER_TOOL_NAMES.CREATE_PLAN_ITEM,
     type: 'function',
     function: {
@@ -105,7 +104,7 @@ Continue calling this tool until all required steps for completing the task are 
         description: args.description,
       }
 
-      this.plan.push(planStep)
+      this.runtime.planner!.push(planStep)
       plannerEvent.emit('planner-step-generate', {
         sessionId: this.runtime.sessionId,
         plan: planStep,
@@ -117,7 +116,7 @@ Continue calling this tool until all required steps for completing the task are 
     },
   }
 
-  completeGenerate: Tool = {
+  completed: Tool = {
     name: PLANNER_TOOL_NAMES.COMPLETED_PLAN_GENERATE,
     type: 'function',
     function: {
@@ -142,18 +141,18 @@ Always call this tool after finishing plan generation.
     executor: async () => {
       return {
         content: 'Plan generation completed, all steps confirmed',
-        plan: this.plan,
+        plan: this.runtime.planner,
       }
     },
   }
 
-  changePlanItemStatus: Tool = {
+  changeStatus: Tool = {
     name: PLANNER_TOOL_NAMES.CHANGE_PLAN_ITEM_STATUS,
     type: 'function',
     function: {
       name: PLANNER_TOOL_NAMES.CHANGE_PLAN_ITEM_STATUS,
       description: `
-Update the execution status of a plan step.
+Update the execution status of the planned steps in sequence.
 
 Use this tool while executing the plan to reflect the current state of each step.
 
@@ -189,7 +188,7 @@ Typical usage pattern:
     executor: async (args) => {
       const id = args.id
       const status = args.status
-      const target = this.plan.find((i) => i.id === id)
+      const target = this.runtime.planner!.find((i) => i.id === id)
       if (target) {
         target.status = status
 
@@ -212,8 +211,23 @@ Typical usage pattern:
             plan: target,
           })
         }
+        const planner = this.runtime.planner!
+        const summary = {
+          planner: planner,
+          pending: planner.filter((s) => s.status === 'pending').length,
+          in_progress: planner.filter((s) => s.status === 'running').length,
+          completed: planner.filter((s) => s.status === 'completed').length,
+          failed: planner.filter((s) => s.status === 'failed').length,
+        }
         return {
-          content: `Step ${id} status successfully updated to: ${status}`,
+          content:
+            `Step ${id} status successfully updated to: ${status}\n` +
+            `this is user input
+${this.runtime.userInput}
+
+this is current workflow planner summary snapshot
+${JSON.stringify(summary, null, 2)}
+`,
         }
       }
       return {
@@ -222,57 +236,7 @@ Typical usage pattern:
     },
   }
 
-  getAllPlans: Tool = {
-    name: PLANNER_TOOL_NAMES.GET_ALL_PLAN_LIST,
-    type: 'function',
-    function: {
-      name: PLANNER_TOOL_NAMES.CHANGE_PLAN_ITEM_STATUS,
-      description: `
-Retrieve the current execution plan and its progress.
-
-Use this tool when you need to:
-- review all existing plan steps
-- check which steps are pending
-- understand the current execution state
-
-The result includes:
-- each step's ID
-- current status
-- step description
-- summary statistics
-`,
-      parameters: {
-        type: 'object',
-        properties: {},
-      },
-    },
-    executor: async () => {
-      const plan = this.plan
-      return {
-        content: 'Successfully retrieved all plan steps',
-        plans: plan.map((step) => ({
-          id: step.id,
-          status: step.status,
-          description: step.description,
-        })),
-        summary: {
-          total: plan.length,
-          pending: plan.filter((s) => s.status === 'pending').length,
-          in_progress: plan.filter((s) => s.status === 'running').length,
-          completed: plan.filter((s) => s.status === 'completed').length,
-          failed: plan.filter((s) => s.status === 'failed').length,
-        },
-      }
-    },
-  }
-
   getTools() {
-    return [
-      this.startGenernatePlan,
-      this.createTask,
-      this.completeGenerate,
-      this.changePlanItemStatus,
-      // this.getAllPlans,
-    ]
+    return [this.start, this.create, this.completed, this.changeStatus]
   }
 }

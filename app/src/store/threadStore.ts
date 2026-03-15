@@ -155,7 +155,11 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             }
             const prevBlock = state.blocks.at(-1)
             // 同步未完成的planner
-            if (prevBlock?.planner) {
+            // only prevBlock存在未完成的planner才进行同步
+            if (
+              prevBlock?.planner &&
+              prevBlock.planner.steps.some((i) => i.status === 'pending' || i.status === 'running')
+            ) {
               block.planner = prevBlock.planner
             }
             state.blocks.push(block)

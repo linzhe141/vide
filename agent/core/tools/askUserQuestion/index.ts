@@ -29,7 +29,7 @@ export class AskUserQuestionTool {
 
   constructor(private runtime: WorkflowRuntimeContext) {}
 
-  startGenerate: Tool = {
+  start: Tool = {
     name: ASK_USER_TOOL_NAMES.START_GENERATE,
     type: 'function',
 
@@ -84,7 +84,7 @@ Use the dedicated tools to build the question step by step.
     },
   }
 
-  setTitle: Tool = {
+  title: Tool = {
     name: ASK_USER_TOOL_NAMES.SET_TITLE,
     type: 'function',
 
@@ -120,7 +120,7 @@ Set the title of the user question.
     },
   }
 
-  setDescription: Tool = {
+  description: Tool = {
     name: ASK_USER_TOOL_NAMES.SET_DESCRIPTION,
     type: 'function',
 
@@ -151,7 +151,7 @@ Set the title of the user question.
     },
   }
 
-  createOption: Tool = {
+  create: Tool = {
     name: ASK_USER_TOOL_NAMES.CREATE_OPTION,
     type: 'function',
 
@@ -199,7 +199,7 @@ Call this tool multiple times to generate all options.
     },
   }
 
-  completeGenerate: Tool = {
+  completed: Tool = {
     name: ASK_USER_TOOL_NAMES.COMPLETE_GENERATE,
 
     type: 'function',
@@ -235,12 +235,6 @@ This will interrupt the workflow and wait for user input.
   }
 
   getTools() {
-    return [
-      this.startGenerate,
-      this.setTitle,
-      this.setDescription,
-      this.createOption,
-      this.completeGenerate,
-    ]
+    return [this.start, this.title, this.description, this.create, this.completed]
   }
 }
