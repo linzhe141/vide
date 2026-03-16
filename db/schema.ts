@@ -3,113 +3,148 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
 export const threads = sqliteTable('threads', {
   id: text('id').primaryKey(),
+
   title: text('title'),
+
   createdAt: integer('created_at').notNull(),
+
   updatedAt: integer('updated_at').notNull(),
 })
 
-export const threadMessages = sqliteTable('thread_messages', {
+export const threadWorkflowBlocks = sqliteTable('thread_workflow_blocks', {
   id: text('id').primaryKey(),
 
-  threadId: text('thread_id').notNull(),
+  threadId: text('thread_id')
+    .notNull()
+    .references(() => threads.id),
 
   /**
-   * UI / workflow 语义角色
+   * 用户输入
+   */
+  input: text('input').notNull(),
+
+  /**
+   * running | waiting_user | finished | error
+   */
+  status: text('status').notNull(),
+
+  createdAt: integer('created_at').notNull(),
+
+  updatedAt: integer('updated_at').notNull(),
+})
+
+export const threadWorkflowBlockMessages = sqliteTable('thread_workflow_block_messages', {
+  id: text('id').primaryKey(),
+
+  blockId: text('block_id')
+    .notNull()
+    .references(() => threadWorkflowBlocks.id),
+
+  /**
    * ThreadMessageRole
    */
   role: text('role').notNull(),
 
   /**
-   * 纯文本内容（user / assistant）
+   * 纯文本
    */
   content: text('content'),
 
   /**
-   * tool calls / tool result / error / meta
-   * JSON string
+   * toolcall / tool result
    */
   payload: text('payload'),
 
   createdAt: integer('created_at').notNull(),
-})
-
-export const workflowBlocks = sqliteTable('workflow_blocks', {
-  id: text('id').primaryKey(),
-  sessionId: text('session_id').notNull(),
-  input: text('input').notNull(),
-  status: text('status').notNull(),
-  createdAt: integer('created_at').notNull(),
-  finishedAt: integer('finished_at'),
-  activePlanId: text('active_plan_id'),
-  activeQuestionId: text('active_question_id'),
-  runtimeSnapshot: text('runtime_snapshot'),
-})
-
-export const messages = sqliteTable('messages', {
-  id: text('id').primaryKey(),
-  blockId: text('block_id').notNull(),
-  role: text('role').notNull(),
-  content: text('content'),
-  payload: text('payload'),
-  createdAt: integer('created_at').notNull(),
-})
-
-export const plans = sqliteTable('plans', {
-  id: text('id').primaryKey(),
-  sessionId: text('session_id').notNull(),
-  blockId: text('block_id').notNull(),
-  status: text('status').notNull(),
-  createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 })
 
-export const planSteps = sqliteTable('plan_steps', {
+export const planners = sqliteTable('planners', {
   id: text('id').primaryKey(),
-  planId: text('plan_id').notNull(),
-  seq: integer('seq').notNull(),
-  status: text('status').notNull(),
-  description: text('description').notNull(),
+
+  blockId: text('block_id')
+    .notNull()
+    .references(() => threadWorkflowBlocks.id),
+
+  /**
+   * "true" | "false"
+   */
+  completedGenerate: text('completed_generate').notNull(),
+
+  /**
+   * planner steps JSON
+   */
+  planJson: text('plan_json'),
+
   createdAt: integer('created_at').notNull(),
+
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const askUserQuestions = sqliteTable('ask_user_questions', {
   id: text('id').primaryKey(),
-  sessionId: text('session_id').notNull(),
-  blockId: text('block_id').notNull(),
-  status: text('status').notNull(),
-  type: text('type').notNull(),
-  title: text('title'),
-  description: text('description'),
+
+  blockId: text('block_id')
+    .notNull()
+    .references(() => threadWorkflowBlocks.id),
+
+  /**
+   * "true" | "false"
+   */
+  completedGenerate: text('completed_generate').notNull(),
+
+  /**
+   * AskUserQuestionDraft
+   */
+  draftJson: text('draft_json'),
+
+  /**
+   * 用户提交的答案
+   */
+  answerJson: text('answer_json'),
+
   createdAt: integer('created_at').notNull(),
+
   updatedAt: integer('updated_at').notNull(),
 })
 
-export const askUserOptions = sqliteTable('ask_user_options', {
-  id: text('id').primaryKey(),
-  questionId: text('question_id').notNull(),
-  idx: integer('idx').notNull(),
-  label: text('label').notNull(),
-  value: text('value').notNull(),
-  description: text('description'),
-})
-
-export const askUserAnswers = sqliteTable('ask_user_answers', {
-  id: text('id').primaryKey(),
-  questionId: text('question_id').notNull(),
-  sessionId: text('session_id').notNull(),
-  blockId: text('block_id').notNull(),
-  valuesJson: text('values_json').notNull(),
-  submittedAt: integer('submitted_at').notNull(),
-})
-
 export const threadsRelations = relations(threads, ({ many }) => ({
-  messages: many(threadMessages),
+  workflowBlocks: many(threadWorkflowBlocks),
 }))
 
-export const threadMessagesRelations = relations(threadMessages, ({ one }) => ({
+export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ one, many }) => ({
   thread: one(threads, {
-    fields: [threadMessages.threadId],
+    fields: [threadWorkflowBlocks.threadId],
     references: [threads.id],
+  }),
+
+  threadWorkflowBlockMessages: many(threadWorkflowBlockMessages),
+
+  planners: many(planners),
+
+  askUserQuestions: many(askUserQuestions),
+}))
+
+export const threadWorkflowBlockMessagesRelations = relations(
+  threadWorkflowBlockMessages,
+  ({ one }) => ({
+    threadWorkflowBlock: one(threadWorkflowBlocks, {
+      fields: [threadWorkflowBlockMessages.blockId],
+      references: [threadWorkflowBlocks.id],
+    }),
+  })
+)
+
+export const plannersRelations = relations(planners, ({ one }) => ({
+  threadWorkflowBlock: one(threadWorkflowBlocks, {
+    fields: [planners.blockId],
+    references: [threadWorkflowBlocks.id],
+  }),
+}))
+
+export const askUserQuestionsRelations = relations(askUserQuestions, ({ one }) => ({
+  threadWorkflowBlock: one(threadWorkflowBlocks, {
+    fields: [askUserQuestions.blockId],
+    references: [threadWorkflowBlocks.id],
   }),
 }))

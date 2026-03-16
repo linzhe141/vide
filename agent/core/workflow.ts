@@ -15,7 +15,7 @@ import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { registorTools } from './tools/registor'
 import { ASK_USER_TOOL_NAMES } from './tools/askUserQuestion'
 
-type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
+export type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
   state: WorkflowState
   payload: StepPayload

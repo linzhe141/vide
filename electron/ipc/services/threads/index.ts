@@ -2,8 +2,8 @@ import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/electron/databaseManager'
-import { threadMessages, threads } from '@/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { threads } from '@/db/schema'
+import { desc } from 'drizzle-orm'
 import type { ThreadMessageRowDto, ThreadRowDto } from '../../api/channels'
 
 export class ThreadIpcMainService implements IpcMainService {
@@ -15,12 +15,12 @@ export class ThreadIpcMainService implements IpcMainService {
       return rows as ThreadRowDto[]
     })
 
-    ipcMainApi.handle('get-threads-item-messages', async ({ sessionId }) => {
-      const rows = await db
-        .select()
-        .from(threadMessages)
-        .where(eq(threadMessages.threadId, sessionId))
-      return rows as ThreadMessageRowDto[]
+    ipcMainApi.handle('get-threads-item-messages', async () => {
+      // const rows = await db
+      //   .select()
+      //   .from(threadWorkflowBlockMessages)
+      //   .where(eq(threadWorkflowBlockMessages.threadId, sessionId))
+      return [] as ThreadMessageRowDto[]
     })
   }
 }

@@ -75,7 +75,7 @@ export type AskUserQuestionEvents = {
   [K in AskUserQuestionEventKey]: (data: (typeof AskUserQuestionEventChannels)[K]) => void
 }
 
-export type WorkflowEventCtx = { sessionId: string; workflowId: string; planId?: string }
+export type WorkflowEventCtx = { sessionId: string; workflowId: string }
 const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },

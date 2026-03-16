@@ -5,6 +5,7 @@ import type {
   ChatCompletionToolMessageParam,
   ChatCompletionUserMessageParam,
 } from 'openai/resources/chat/completions.mjs'
+import type { WorkflowState } from './workflow'
 
 export type SystemChatMessage = ChatCompletionSystemMessageParam
 export type UserChatMessage = ChatCompletionUserMessageParam
@@ -29,14 +30,6 @@ export type ToolCall = {
   id: string
   type: 'function'
 }
-
-export type WorkflowState =
-  | 'user-input'
-  | 'call-llm'
-  | 'call-tools'
-  | 'wait-human-approve'
-  | 'call-tool'
-  | 'finished'
 
 export type UserInputStepPayload = {
   input: string

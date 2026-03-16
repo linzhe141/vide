@@ -9,11 +9,12 @@ import type {
 
 export type ThreadMessageRowDto = {
   id: string
-  sessionId: string
+  blockId: string
   role: ThreadMessageRole
   content: string
   payload: string
   createdAt: number
+  updatedAt: number
 }
 
 export type ThreadRowDto = {
