@@ -76,6 +76,11 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
           if (currentSessionId === data.ctx.sessionId) {
             controller.enqueue({ type: eventName, data })
           }
+
+          if (eventName === 'workflow-error') {
+            controller.close()
+            cleanUp()
+          }
         })
         eventListeners.push(remove)
       })

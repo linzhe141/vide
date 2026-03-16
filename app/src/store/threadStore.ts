@@ -180,7 +180,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
           case 'workflow-error': {
             if (!block) return
-
+            console.error(data)
             block.status = 'error'
 
             pushMessage(block, {

@@ -26,13 +26,19 @@ export class AgentSession {
       const workflowBlock = this.buildWorlflowBlock(userInput)
       //  保留前面的planner 到新一轮的runtime里面，包括ui
       const prevRuntime = this.workflowBlocks.at(-1)?.runtime
+      if (prevRuntime) {
+        workflowBlock.runtime.userInput = [
+          ...prevRuntime.userInput,
+          ...workflowBlock.runtime.userInput,
+        ]
+        console.log('full user chat message', workflowBlock.runtime.userInput)
+      }
       if (
         prevRuntime?.planner &&
         prevRuntime.planner.some((i) => i.status === 'pending' || i.status === 'running')
       ) {
         workflowBlock.runtime.planner = prevRuntime.planner
-        workflowBlock.runtime.userInput =
-          prevRuntime.userInput + '\n' + workflowBlock.runtime.userInput
+
         console.log('prev workflow planner')
         console.log(JSON.stringify(prevRuntime.planner, null, 2))
       }

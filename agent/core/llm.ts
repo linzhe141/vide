@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import type { ChatMessage, FinishReason, FnProcessLLMStream, ToolCall } from './types'
 import { v4 as uuid } from 'uuid'
 import { AgentSystemPrompt } from './prompt/system'
+import { buildSkillsChatMessage } from './tools/skill'
 
 let model: string = null!
 export let llmClient: OpenAI = null!
@@ -33,13 +34,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 }) {
   const stream = await llmClient.chat.completions.create(
     {
-      messages: [
-        {
-          role: 'system',
-          content: AgentSystemPrompt,
-        },
-        ...messages,
-      ],
+      messages: await buildChatMessages(messages),
       model,
       stream: true,
       tools,
@@ -151,14 +146,19 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   }
 }
 
-export const generateJSON = async (messages: ChatMessage[]) => {
-  const completion = await llmClient.chat.completions.create({
-    model,
-    messages,
-    response_format: { type: 'json_object' },
-    reasoning_effort: 'minimal',
-  })
+export async function buildChatMessages(messages: ChatMessage[]) {
+  const skillsChatMessage = await buildSkillsChatMessage()
+  console.log(skillsChatMessage)
+  const chatMessages: ChatMessage[] = [
+    {
+      role: 'system',
+      content: AgentSystemPrompt,
+    },
+  ]
+  if (skillsChatMessage) {
+    chatMessages.push(skillsChatMessage)
+  }
+  chatMessages.push(...messages)
 
-  const result = JSON.parse(completion.choices[0].message.content || '{}')
-  return result
+  return chatMessages
 }

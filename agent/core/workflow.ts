@@ -10,15 +10,10 @@ import type {
   UserInputStepPayload,
 } from './types'
 import { processLLMStream } from './llm'
-import { getNormalizeTime } from './tools/getNormalizeTime'
-import { fileRead } from './tools/fileRead'
-import { fsWriteFile } from './tools/fileWrite'
-import { artifactTool } from './tools/artifact'
-import { bashTool } from './tools/bash'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
-import { Planner } from './tools/planner'
-import { ASK_USER_TOOL_NAMES, AskUserQuestionTool } from './tools/askUserQuestion'
+import { registorTools } from './tools/registor'
+import { ASK_USER_TOOL_NAMES } from './tools/askUserQuestion'
 
 type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -30,17 +25,7 @@ export class Workflow {
   state: WorkflowState = 'INPUT'
   tools: Tool[] = []
   constructor(public runtime: WorkflowRuntimeContext) {
-    const planner = new Planner(runtime)
-    const askUserQuestionTool = new AskUserQuestionTool(runtime)
-    this.tools = [
-      getNormalizeTime,
-      fileRead,
-      fsWriteFile,
-      bashTool,
-      artifactTool,
-      ...planner.getTools(),
-      ...askUserQuestionTool.getTools(),
-    ]
+    this.tools = registorTools(this.runtime)
   }
 
   async run(input: string) {

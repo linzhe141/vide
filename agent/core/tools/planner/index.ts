@@ -222,8 +222,19 @@ Typical usage pattern:
         return {
           content:
             `Step ${id} status successfully updated to: ${status}\n` +
-            `this is user input
-${this.runtime.userInput}
+            `this is user full input in chat
+${this.runtime.userInput
+  .map((i, index) => {
+    let content = i
+    if (index === this.runtime.userInput.length - 1) {
+      content = `current workflow user input:` + content
+    } else {
+      content = `turn(${index + 1}) workflow user input:` + content
+    }
+
+    return content
+  })
+  .join('\n')}
 
 this is current workflow planner summary snapshot
 ${JSON.stringify(summary, null, 2)}

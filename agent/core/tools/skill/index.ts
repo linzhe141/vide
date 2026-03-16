@@ -1,11 +1,27 @@
-import type { Tool } from '../../types'
+import type { ChatMessage, Tool } from '../../types'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
+import matter from 'gray-matter'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 
 export const SKILL_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
-
+export interface SkillMeta {
+  name: string
+  description: string
+}
 export const SKILL_TOOL_NAMES = {
   LOAD_SKILL: `${SKILL_NAMESPACE}_LOAD_SKILL`,
 } as const
+
+const SkillsMap: Record<
+  string,
+  {
+    content: string
+    filePath: string
+  }
+> = {}
+
+export const skillsPath = '.vide/skills'
 
 export class SkillTool {
   constructor(private runtime: WorkflowRuntimeContext) {}
@@ -36,16 +52,88 @@ Use this when a task matches an available skill description and you need the ful
       },
     },
 
-    executor: async (_args) => {
+    executor: async (args) => {
+      const name = args.name.trim()
+      const targetSkill = SkillsMap[name]
+      if (!targetSkill) {
+        return {
+          name,
+          content: `Skill "${name}" is not available`,
+        }
+      }
       return {
-        workflow_state: 'user_input_required',
-        reason: 'ask_user_question',
-        instruction: 'Stop the current workflow and wait for the user to select an option.',
+        name,
+        content: targetSkill.content,
+        filePath: targetSkill.filePath,
       }
     },
   }
 
   getTools() {
     return [this.loadSkill]
+  }
+}
+async function readSkill(filePath: string): Promise<SkillMeta | null> {
+  try {
+    const skillContent = await fs.readFile(filePath, 'utf8')
+    const { data, content } = matter(skillContent)
+
+    if (!data?.name && !data?.description) return null
+    SkillsMap[data.name] = {
+      content,
+      filePath,
+    }
+    return {
+      name: data.name,
+      description: data.description,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function scanSkills(): Promise<SkillMeta[]> {
+  const result: SkillMeta[] = []
+
+  const dirs = await fs.readdir(skillsPath, { withFileTypes: true })
+
+  for (const dir of dirs) {
+    if (!dir.isDirectory()) continue
+
+    const skillFile = path.join(skillsPath, dir.name, 'SKILL.md')
+
+    const meta = await readSkill(skillFile)
+
+    if (meta) {
+      result.push(meta)
+    }
+  }
+
+  return result
+}
+
+export async function buildSkillsChatMessage(): Promise<ChatMessage | null> {
+  const skills = await scanSkills()
+  console.log('skills-->')
+  console.log(Object.keys(SkillsMap))
+  console.log()
+  if (skills.length === 0) return null
+
+  const skillList = skills
+    .map((skill) => {
+      return `- ${skill.name}: ${skill.description}`
+    })
+    .join('\n')
+
+  return {
+    role: 'user',
+    content: `
+You have access to the following skills.
+
+${skillList}
+
+If a user's request clearly matches a skill's purpose, prefer using that skill.
+All necessary JavaScript and Python dependencies for the skills have been installed.
+`.trim(),
   }
 }

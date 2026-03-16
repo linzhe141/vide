@@ -9,11 +9,11 @@ export class WorkflowRuntimeContext {
   readonly workflowId: string
   readonly thread: WorkflowThread
   planner: PlanStep[] | null = null
-  userInput: string = ''
+  userInput: string[] = []
   constructor(options: { session: AgentSession; sessionBlock: SessionBlock; userInput: string }) {
     this.session = options.session
     this.workflowId = uuid()
-    this.userInput = options.userInput
+    this.userInput.push(options.userInput)
     this.thread = options.sessionBlock.thread
   }
 
