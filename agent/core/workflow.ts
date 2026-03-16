@@ -229,7 +229,7 @@ export class Workflow {
   buildLLMMessages() {
     const callLLMMessages: ChatMessage[] = []
     for (const block of this.runtime.session.workflowBlocks) {
-      callLLMMessages.push(...block.thread.getMessages())
+      callLLMMessages.push(...block.runtime.thread.getMessages())
     }
     return callLLMMessages
   }

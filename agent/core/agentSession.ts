@@ -1,19 +1,13 @@
 import { v4 as uuid } from 'uuid'
 import { Workflow } from './workflow'
-import { WorkflowThread } from './workflowThread'
 import { agentEvent } from './event'
 import { WorkflowRuntimeContext } from './workflowRuntimeContext'
-
-export type SessionBlock = {
-  thread: WorkflowThread
-  runtime: WorkflowRuntimeContext
-}
 
 export const activeSessions: AgentSession[] = []
 
 export class AgentSession {
   sessionId: string = null!
-  workflowBlocks: SessionBlock[] = []
+  workflowBlocks: SessionWorkflowBlock[] = []
   constructor() {
     this.sessionId = uuid()
   }
@@ -24,15 +18,16 @@ export class AgentSession {
       activeSessions.push(this)
 
       const workflowBlock = this.buildWorlflowBlock(userInput)
-      //  保留前面的planner 到新一轮的runtime里面，包括ui
       const prevRuntime = this.workflowBlocks.at(-1)?.runtime
       if (prevRuntime) {
+        // 保留完整的user input 或许效果更好 or not
         workflowBlock.runtime.userInput = [
           ...prevRuntime.userInput,
           ...workflowBlock.runtime.userInput,
         ]
         console.log('full user chat message', workflowBlock.runtime.userInput)
       }
+      //  保留前面的planner 到新一轮的runtime里面
       if (
         prevRuntime?.planner &&
         prevRuntime.planner.some((i) => i.status === 'pending' || i.status === 'running')
@@ -57,16 +52,17 @@ export class AgentSession {
   }
 
   buildWorlflowBlock(userInput: string) {
-    const workflowBlock: SessionBlock = {
-      thread: new WorkflowThread({ messages: [] }),
-      runtime: null!,
-    }
-    const runtime = new WorkflowRuntimeContext({
-      session: this,
-      sessionBlock: workflowBlock,
+    return new SessionWorkflowBlock(this, userInput)
+  }
+}
+
+export class SessionWorkflowBlock {
+  runtime: WorkflowRuntimeContext
+
+  constructor(session: AgentSession, userInput: string) {
+    this.runtime = new WorkflowRuntimeContext({
+      session,
       userInput,
     })
-    workflowBlock.runtime = runtime
-    return workflowBlock
   }
 }
