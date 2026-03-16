@@ -30,16 +30,6 @@ function setupEvents() {
     console.log(chalk.green(`✔ Session: ${data.sessionId}`))
   })
 
-  onAgentEvent('agent-session-start-analyze-input', ({ userInput }) => {
-    title('ANALYZE INPUT:' + userInput)
-    spinner = ora('Analyzing input...').start()
-  })
-
-  onAgentEvent('agent-session-end-analyze-input', (data) => {
-    spinner?.succeed('Analyze complete')
-    console.log(chalk.yellow(`Mode: ${data.mode}`))
-  })
-
   // ================= PLANNER =================
   onPalnnervent('planner-start-generate', () => {
     title('PLANNER')

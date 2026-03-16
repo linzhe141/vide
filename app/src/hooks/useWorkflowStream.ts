@@ -1,4 +1,4 @@
-﻿import { useCallback, useRef } from 'react'
+﻿import { useCallback, useRef, useState } from 'react'
 
 import { createWorkflowStream } from './createWorkflowStream'
 import { useThreadStore } from '../store/threadStore'
@@ -25,6 +25,7 @@ export function emitWorkflowEvent(event: WorkflowState['type'], ...args: any[]) 
 export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
+  const [running, setRunning] = useState(false)
 
   const handleEvent = useThreadStore((s) => s.handleEvent)
 
@@ -36,6 +37,7 @@ export function useWorkflowStream() {
 
   const send = useCallback(
     async (input: string) => {
+      setRunning(true)
       const abortController = new AbortController()
 
       abortControllerRef.current = abortController
@@ -46,8 +48,8 @@ export function useWorkflowStream() {
 
       readerRef.current = reader
 
-      await window.ipcRendererApi.invoke('agent-session-send', { input })
       try {
+        await window.ipcRendererApi.invoke('agent-session-send', { input })
         while (true) {
           const { value, done } = await reader.read()
 
@@ -60,6 +62,7 @@ export function useWorkflowStream() {
           console.error(err)
         }
       } finally {
+        setRunning(false)
         reader.releaseLock()
         cleanup()
       }
@@ -75,5 +78,6 @@ export function useWorkflowStream() {
   return {
     send,
     abort,
+    running,
   }
 }

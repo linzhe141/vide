@@ -19,7 +19,7 @@ export class ThreadIpcMainService implements IpcMainService {
       const rows = await db
         .select()
         .from(threadMessages)
-        .where(eq(threadMessages.threadId, threadId))
+        .where(eq(threadMessages.threadId, sessionId))
       return rows as ThreadMessageRowDto[]
     })
   }

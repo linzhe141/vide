@@ -3,9 +3,9 @@ import { useChatContext } from './ChatProvider'
 
 // 状态提示组件
 export function StatusIndicator() {
-  const { isFinished } = useChatContext()
+  const { running } = useChatContext()
 
-  if (!isFinished) return null
+  if (running) return null
 
   return (
     <div className='flex justify-center py-4'>

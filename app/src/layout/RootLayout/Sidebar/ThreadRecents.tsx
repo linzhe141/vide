@@ -23,7 +23,7 @@ export function ThreadRecents() {
           to={`/chat/${thread.id}`}
           onClick={async () => {
             const running = await window.ipcRendererApi.invoke('agent-change-session', {
-              threadId: thread.id,
+              sessionId: thread.id,
             })
             context.isRuning = running
           }}

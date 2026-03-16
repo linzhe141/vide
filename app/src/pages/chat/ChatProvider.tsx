@@ -4,12 +4,13 @@ import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 interface ChatContextType {
   // Actions
   handleSend: (input: string) => Promise<void>
+  running: boolean
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
-  const { send } = useWorkflowStream()
+  const { send, running } = useWorkflowStream()
 
   const handleSend = useCallback(
     async (input: string) => {
@@ -20,6 +21,7 @@ export function ChatProvider({ children }: PropsWithChildren) {
 
   const value: ChatContextType = useMemo(
     () => ({
+      running,
       handleSend,
     }),
     [handleSend]
