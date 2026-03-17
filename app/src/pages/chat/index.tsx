@@ -27,6 +27,12 @@ function ChatContent({ threadId }: { threadId: string }) {
       console.log('firstInput', firstInput)
       context.firstInput = ''
       handleSend(firstInput)
+    } else {
+      // async function fetchMessages() {
+      //   const res = await window.ipcRendererApi.invoke('get-threads-item-messages', {
+      //     sessionId: threadId,
+      //   })
+      // }
     }
 
     if (context.isRuning) {

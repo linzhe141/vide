@@ -110,6 +110,23 @@ export class Workflow {
       onTextEnd: () => {
         workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx })
       },
+      onToolCallsStart: () => {
+        workflowEvent.emit('workflow-llm-tool-calls-start', {
+          ctx: this.runtime.workflowEventCtx,
+        })
+      },
+      onToolCallName: (data) => {
+        workflowEvent.emit('workflow-llm-tool-call-name', {
+          ctx: this.runtime.workflowEventCtx,
+          data,
+        })
+      },
+      onToolCallArguments: (data) => {
+        workflowEvent.emit('workflow-llm-tool-call-arguments', {
+          ctx: this.runtime.workflowEventCtx,
+          data,
+        })
+      },
       onToolCallsEnd: (toolCalls) => {
         workflowEvent.emit('workflow-llm-tool-calls-end', {
           ctx: this.runtime.workflowEventCtx,

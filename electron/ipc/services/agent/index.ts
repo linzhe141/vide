@@ -4,8 +4,8 @@ import { ipcMainApi } from '../../api/ipcMain'
 import { Agent } from '@/agent/core/agent'
 import {
   onAgentEvent,
-  onAskUserQuestionvent,
-  onPalnnervent,
+  onAskUserQuestionEvent,
+  onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
@@ -17,9 +17,13 @@ import {
   plannerEventNames,
   workflowEventNames,
 } from '@/agent/core/event/channels'
+import { db } from '@/electron/databaseManager'
+import { threadWorkflowBlocks } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import * as schema from '@/db/schema'
 
 export class AgentIpcMainService implements IpcMainService {
-  agent: Agent = null!
+  agent: Agent
   session: AgentSession = null!
   constructor(private appManager: AppManager) {
     this.registerIpcMainSenders()
@@ -33,6 +37,39 @@ export class AgentIpcMainService implements IpcMainService {
 
       const sessionId = this.session.sessionId
       return sessionId
+    })
+
+    ipcMainApi.handle('agent-resume-session', async (data) => {
+      const blocks = await db
+        .select({ id: threadWorkflowBlocks.id, userInput: threadWorkflowBlocks.input })
+        .from(threadWorkflowBlocks)
+        .where(eq(threadWorkflowBlocks.threadId, data.sessionId))
+
+      type BlockData = {
+        id: string
+        userInput: string
+        messages: (typeof schema.threadWorkflowBlockMessages.$inferSelect)[]
+      }
+      const blockMessages: BlockData[] = []
+
+      for (const { id, userInput } of blocks) {
+        const blockMessageRows = await db
+          .select()
+          .from(schema.threadWorkflowBlockMessages)
+          .where(eq(schema.threadWorkflowBlockMessages.blockId, id))
+
+        blockMessages.push({
+          id,
+          userInput,
+          messages: blockMessageRows,
+        })
+      }
+
+      this.agent.resumeSession({
+        sessionId: data.sessionId,
+        blockData: blockMessages,
+      })
+      return blockMessages
     })
 
     ipcMainApi.handle('agent-session-send', async ({ input }) => {
@@ -52,13 +89,13 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     plannerEventNames.forEach((eventName) => {
-      onPalnnervent(eventName, (data: any) => {
+      onPalnnerEvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)
       })
     })
-    
+
     askUserQuestionEventNames.forEach((eventName) => {
-      onAskUserQuestionvent(eventName, (data: any) => {
+      onAskUserQuestionEvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)
       })
     })

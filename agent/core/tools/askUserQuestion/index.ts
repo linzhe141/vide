@@ -75,6 +75,7 @@ Use the dedicated tools to build the question step by step.
 
       askUserQuestionEvent.emit('ask-user-start-generate', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         type: args.type,
       })
 
@@ -111,6 +112,7 @@ Set the title of the user question.
 
       askUserQuestionEvent.emit('ask-user-title', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         title,
       })
 
@@ -144,6 +146,7 @@ Set the title of the user question.
 
       askUserQuestionEvent.emit('ask-user-description', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         description,
       })
 
@@ -189,6 +192,7 @@ Call this tool multiple times to generate all options.
 
       askUserQuestionEvent.emit('ask-user-option', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         option,
       })
 
@@ -223,6 +227,7 @@ This will interrupt the workflow and wait for user input.
 
       askUserQuestionEvent.emit('ask-user-complete', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         question: this.draft,
       })
 

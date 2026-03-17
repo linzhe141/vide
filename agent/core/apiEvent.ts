@@ -20,11 +20,11 @@ export function onWorkflowEvent<T extends keyof WorkflowEvents>(
   return workflowEvent.on(event, handle)
 }
 
-export function onPalnnervent<T extends keyof PlannerEvents>(event: T, handle: PlannerEvents[T]) {
+export function onPalnnerEvent<T extends keyof PlannerEvents>(event: T, handle: PlannerEvents[T]) {
   return plannerEvent.on(event, handle)
 }
 
-export function onAskUserQuestionvent<T extends keyof AskUserQuestionEvents>(
+export function onAskUserQuestionEvent<T extends keyof AskUserQuestionEvents>(
   event: T,
   handle: AskUserQuestionEvents[T]
 ) {

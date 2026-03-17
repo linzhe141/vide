@@ -24,7 +24,7 @@ export function ChatProvider({ children }: PropsWithChildren) {
       running,
       handleSend,
     }),
-    [handleSend]
+    [handleSend, running]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

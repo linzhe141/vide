@@ -54,6 +54,7 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
     executor: async () => {
       plannerEvent.emit('planner-start-generate', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
       })
       this.runtime.planner = []
       return {
@@ -107,6 +108,7 @@ Continue calling this tool until all required steps for completing the task are 
       this.runtime.planner!.push(planStep)
       plannerEvent.emit('planner-step-generate', {
         sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
         plan: planStep,
       })
       return {
@@ -195,12 +197,14 @@ Typical usage pattern:
         if (target.status === 'running') {
           plannerEvent.emit('planner-execute-item-start', {
             sessionId: this.runtime.sessionId,
+            workflowId: this.runtime.workflowId,
             plan: target,
           })
         }
         if (target.status === 'completed') {
           plannerEvent.emit('planner-execute-item-success', {
             sessionId: this.runtime.sessionId,
+            workflowId: this.runtime.workflowId,
             plan: target,
           })
         }
@@ -208,6 +212,7 @@ Typical usage pattern:
         if (target.status === 'failed') {
           plannerEvent.emit('planner-execute-item-error', {
             sessionId: this.runtime.sessionId,
+            workflowId: this.runtime.workflowId,
             plan: target,
           })
         }

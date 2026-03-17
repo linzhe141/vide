@@ -6,6 +6,7 @@ import type {
   WorkflowEvents,
   AskUserQuestionEvents,
 } from '@/agent/core/event/channels'
+import type { threadWorkflowBlockMessages } from '@/db/schema'
 
 export type ThreadMessageRowDto = {
   id: string
@@ -23,6 +24,11 @@ export type ThreadRowDto = {
   createdAt: number
   updatedAt: number
 }
+type BlockData = {
+  id: string
+  userInput: string
+  messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
+}
 
 export interface RenderChannel {
   // electron store
@@ -36,11 +42,11 @@ export interface RenderChannel {
 
   // agent
   'agent-create-session': () => Promise<string>
+  'agent-resume-session': (data: { sessionId: string }) => Promise<BlockData[]>
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
-  'agent-change-session': (data: { sessionId: string }) => Promise<boolean>
 
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>

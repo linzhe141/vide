@@ -15,30 +15,30 @@ export type AgentLifecycleEvents = {
 }
 
 const PlannerEventChannels = {
-  'planner-start-generate': null as unknown as { sessionId: string; plannerId?: string },
+  'planner-start-generate': null as unknown as { sessionId: string; workflowId: string },
   'planner-step-generate': null as unknown as {
     sessionId: string
-    plannerId?: string
+    workflowId: string
     plan: PlanStep
   },
   'planner-end-generate': null as unknown as {
     sessionId: string
-    plannerId?: string
+    workflowId: string
     plans: PlanStep[]
   },
   'planner-execute-item-start': null as unknown as {
     sessionId: string
-    plannerId?: string
+    workflowId: string
     plan: PlanStep
   },
   'planner-execute-item-success': null as unknown as {
     sessionId: string
-    plannerId?: string
+    workflowId: string
     plan: PlanStep
   },
   'planner-execute-item-error': null as unknown as {
     sessionId: string
-    plannerId?: string
+    workflowId: string
     plan: PlanStep
   },
 }
@@ -50,23 +50,28 @@ export type PlannerEvents = {
 const AskUserQuestionEventChannels = {
   'ask-user-start-generate': null as unknown as {
     sessionId: string
+    workflowId: string
     type: string
   },
   'ask-user-title': null as unknown as {
     sessionId: string
+    workflowId: string
     title: string
   },
   'ask-user-description': null as unknown as {
     sessionId: string
+    workflowId: string
     description: string
   },
 
   'ask-user-option': null as unknown as {
     sessionId: string
+    workflowId: string
     option: { label: string; value: string; description: string }
   },
   'ask-user-complete': null as unknown as {
     sessionId: string
+    workflowId: string
     question: AskUserQuestionDraft
   },
 }

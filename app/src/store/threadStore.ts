@@ -55,9 +55,6 @@ export type ConversationBlock = {
     runningToolId?: string
     waitingHuman: boolean
   }
-
-  createdAt: number
-  finishedAt?: number
 }
 
 /* ---------------- state ---------------- */
@@ -75,6 +72,7 @@ type ThreadState = {
 type ThreadActions = {
   handleEvent: (event: WorkflowState) => void
   reset: () => void
+  buildFromDatabase: (data: ThreadState) => void
 }
 
 /* ---------------- helpers ---------------- */
@@ -150,8 +148,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
                 streamingText: false,
                 waitingHuman: false,
               },
-
-              createdAt: Date.now(),
             }
             const prevBlock = state.blocks.at(-1)
             // 同步未完成的planner
@@ -173,7 +169,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
 
             block.status = 'finished'
             block.runtime.isStreaming = false
-            block.finishedAt = Date.now()
 
             return
           }
@@ -325,7 +320,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           case 'planner-start-generate': {
             if (!block) return
             block.planner = {
-              plannerId: data.plannerId,
               steps: [],
             }
 
@@ -336,7 +330,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             if (!block) return
             if (!block.planner) {
               block.planner = {
-                plannerId: data.plannerId,
                 steps: [],
               }
             }
@@ -421,6 +414,14 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             return
           }
         }
+      })
+    },
+
+    buildFromDatabase(data) {
+      set((state) => {
+        state.blocks = data.blocks
+        state.sessionId = data.sessionId
+        state.currentBlockId = data.currentBlockId
       })
     },
   }))

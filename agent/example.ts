@@ -1,5 +1,5 @@
 import { Agent } from './core/agent'
-import { onAgentEvent, onPalnnervent, onWorkflowEvent } from './core/apiEvent'
+import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from './core/apiEvent'
 import chalk from 'chalk'
 import ora from 'ora'
 import { DevConfig } from '@/dev.config'
@@ -31,12 +31,12 @@ function setupEvents() {
   })
 
   // ================= PLANNER =================
-  onPalnnervent('planner-start-generate', () => {
+  onPalnnerEvent('planner-start-generate', () => {
     title('PLANNER')
     spinner = ora('Generating plan...').start()
   })
 
-  onPalnnervent('planner-end-generate', (data) => {
+  onPalnnerEvent('planner-end-generate', (data) => {
     spinner?.succeed('Plan generated')
 
     data.plans.forEach((plan: any, index: number) => {
@@ -44,15 +44,15 @@ function setupEvents() {
     })
   })
 
-  onPalnnervent('planner-execute-item-start', (data) => {
+  onPalnnerEvent('planner-execute-item-start', (data) => {
     spinner = ora(`Executing: ${data.plan.description}`).start()
   })
 
-  onPalnnervent('planner-execute-item-success', () => {
+  onPalnnerEvent('planner-execute-item-success', () => {
     spinner?.succeed('Step done')
   })
 
-  onPalnnervent('planner-execute-item-error', () => {
+  onPalnnerEvent('planner-execute-item-error', () => {
     spinner?.fail('Step failed')
   })
 
