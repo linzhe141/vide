@@ -23,11 +23,6 @@ export const threadWorkflowBlocks = sqliteTable('thread_workflow_blocks', {
    */
   input: text('input').notNull(),
 
-  /**
-   * running | waiting_user | finished | error
-   */
-  status: text('status').notNull(),
-
   createdAt: integer('created_at').notNull(),
 
   updatedAt: integer('updated_at').notNull(),

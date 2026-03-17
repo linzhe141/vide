@@ -2,19 +2,8 @@ import { ThreadMessageRole } from '@/types'
 import { AgentSession } from './agentSession'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
-type BlockData = {
-  id: string
-  userInput: string
-  messages: {
-    id: string
-    createdAt: number
-    updatedAt: number
-    blockId: string
-    role: string
-    content: string | null
-    payload: string | null
-  }[]
-}
+import type { BlockData } from '@/electron/ipc/api/channels'
+
 export class Agent {
   constructor() {}
 

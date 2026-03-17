@@ -21,6 +21,8 @@ import { db } from '@/electron/databaseManager'
 import { threadWorkflowBlocks } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import * as schema from '@/db/schema'
+import type { BlockData } from '../../api/channels'
+import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -45,37 +47,58 @@ export class AgentIpcMainService implements IpcMainService {
         .from(threadWorkflowBlocks)
         .where(eq(threadWorkflowBlocks.threadId, data.sessionId))
 
-      type BlockData = {
-        id: string
-        userInput: string
-        messages: (typeof schema.threadWorkflowBlockMessages.$inferSelect)[]
-      }
-      const blockMessages: BlockData[] = []
+      const blockData: BlockData[] = []
 
       for (const { id, userInput } of blocks) {
         const blockMessageRows = await db
           .select()
           .from(schema.threadWorkflowBlockMessages)
           .where(eq(schema.threadWorkflowBlockMessages.blockId, id))
-
-        blockMessages.push({
+        const askUserQuestionRows = await db
+          .select()
+          .from(schema.askUserQuestions)
+          .where(eq(schema.askUserQuestions.blockId, id))
+        const askUserQuestion = askUserQuestionRows[0]
+        const draft = JSON.parse(askUserQuestion?.draftJson || '{}') as AskUserQuestionDraft
+        blockData.push({
           id,
           userInput,
           messages: blockMessageRows,
+          askUser: askUserQuestion
+            ? {
+                completed: askUserQuestion.completedGenerate === 'true',
+                submitValue: JSON.parse(askUserQuestion.answerJson || '[]'),
+                title: draft.title || '',
+                description: draft.description || '',
+                type: draft.type || 'single',
+                options: draft.options,
+              }
+            : undefined,
         })
       }
 
-      this.agent.resumeSession({
+      this.session = this.agent.resumeSession({
         sessionId: data.sessionId,
-        blockData: blockMessages,
+        blockData: blockData,
       })
-      return blockMessages
+      return blockData
     })
 
     ipcMainApi.handle('agent-session-send', async ({ input }) => {
       logger.info('agent-session-send ', input)
 
       this.session!.run(input)
+    })
+
+    ipcMainApi.handle('ask-user-question-submit', async (data) => {
+      console.log('xxxxxxxxxxxxxxxxxx')
+      await db
+        .update(schema.askUserQuestions)
+        .set({
+          answerJson: JSON.stringify(data.submitValue),
+        })
+        .where(eq(schema.askUserQuestions.blockId, data.workflowId))
+      console.log('yyyyyyyyyy')
     })
   }
 

@@ -15,31 +15,21 @@ import {
   threadWorkflowBlocks,
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import type { CallToolStepPayload, ToolCall } from '@/agent/core/types'
 import { ThreadMessageRole } from '@/types'
-import type { WorkflowState } from '@/agent/core/workflow'
 import type { PlanStep } from '@/agent/core/tools/planner'
 import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 
-export type ApproveToolCall = ToolCall & {
-  status: 'pending' | 'approve' | 'reject'
-  result?: string
-}
 export class ThreadsManager {
   // for stream update
-  currentAssistantReasonMessageId: string | null = null
-  currentAssistantMessageId: string | null = null
-  currentToolcallsMessageId: string | null = null
   currentPlannerId: string | null = null
   currentAaskUserQuestionId: string | null = null
-
-  currentPendingToolCall: { threadId: string; payload: CallToolStepPayload } | null = null
   constructor(private app: AppManager) {}
 
   init() {
     this.setupAgentEvents()
   }
 
+  // 只有end后才存入数据库
   setupAgentEvents() {
     onAgentEvent('agent-create-session', async (data) => {
       const time = Date.now()
@@ -53,13 +43,11 @@ export class ThreadsManager {
 
     onWorkflowEvent('workflow-start', async ({ input, ctx: { sessionId, workflowId } }) => {
       const time = Date.now()
-      const status: WorkflowState = 'INPUT'
       // insert workflow block
       await db.insert(threadWorkflowBlocks).values({
         id: workflowId,
         threadId: sessionId,
         input,
-        status,
         createdAt: time,
         updatedAt: time,
       })
@@ -84,10 +72,11 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-start', async () => {})
     onWorkflowEvent('workflow-llm-error', async () => {})
 
-    onWorkflowEvent('workflow-llm-reasoning-start', async ({ ctx: { workflowId } }) => {
-      this.currentAssistantReasonMessageId = uuid()
+    onWorkflowEvent('workflow-llm-reasoning-start', async () => {})
+    onWorkflowEvent('workflow-llm-reasoning-delta', async () => {})
+    onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId } }) => {
       await db.insert(threadWorkflowBlockMessages).values({
-        id: this.currentAssistantReasonMessageId,
+        id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantReason,
         content: '',
@@ -97,23 +86,11 @@ export class ThreadsManager {
       })
     })
 
-    onWorkflowEvent('workflow-llm-reasoning-delta', async ({ chunk }) => {
-      await db
-        .update(threadWorkflowBlockMessages)
-        .set({
-          content: chunk.content,
-        })
-        .where(eq(threadWorkflowBlockMessages.id, this.currentAssistantReasonMessageId!))
-    })
-
-    onWorkflowEvent('workflow-llm-reasoning-end', async () => {
-      this.currentAssistantReasonMessageId = null
-    })
-
-    onWorkflowEvent('workflow-llm-text-start', async ({ ctx: { workflowId } }) => {
-      this.currentAssistantMessageId = uuid()
+    onWorkflowEvent('workflow-llm-text-start', async () => {})
+    onWorkflowEvent('workflow-llm-text-delta', async () => {})
+    onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId } }) => {
       await db.insert(threadWorkflowBlockMessages).values({
-        id: this.currentAssistantMessageId,
+        id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantText,
         content: '',
@@ -123,96 +100,19 @@ export class ThreadsManager {
       })
     })
 
-    onWorkflowEvent('workflow-llm-text-delta', async ({ chunk }) => {
-      await db
-        .update(threadWorkflowBlockMessages)
-        .set({
-          content: chunk.content,
-        })
-        .where(eq(threadWorkflowBlockMessages.id, this.currentAssistantMessageId!))
-    })
-
-    onWorkflowEvent('workflow-llm-text-end', async () => {
-      this.currentAssistantMessageId = null
-    })
-
-    onWorkflowEvent('workflow-llm-tool-calls-start', async ({ ctx: { workflowId } }) => {
-      this.currentToolcallsMessageId = uuid()
+    onWorkflowEvent('workflow-llm-tool-calls-start', async () => {})
+    onWorkflowEvent('workflow-llm-tool-call-name', async () => {})
+    onWorkflowEvent('workflow-llm-tool-call-arguments', async () => {})
+    onWorkflowEvent('workflow-llm-tool-calls-end', async ({ ctx: { workflowId }, toolCalls }) => {
       await db.insert(threadWorkflowBlockMessages).values({
-        id: this.currentToolcallsMessageId!,
+        id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.ToolCalls,
         content: '',
-        payload: JSON.stringify({}),
+        payload: JSON.stringify(toolCalls),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       })
-    })
-
-    onWorkflowEvent('workflow-llm-tool-call-name', async ({ data: { id, name } }) => {
-      const target = await db
-        .select()
-        .from(threadWorkflowBlockMessages)
-        .where(eq(threadWorkflowBlockMessages.id, this.currentToolcallsMessageId!))
-      if (!target.length) {
-        return
-      }
-      const targetRow = target[0]
-      const toolCalls = JSON.parse(targetRow.payload ?? '{}') as ToolCall[]
-      const uptated = [...toolCalls]
-      uptated.push({
-        id,
-        type: 'function',
-        function: {
-          name,
-          arguments: '',
-        },
-      })
-      await db
-        .update(threadWorkflowBlockMessages)
-        .set({
-          payload: JSON.stringify(uptated),
-          updatedAt: Date.now(),
-        })
-        .where(eq(threadWorkflowBlockMessages.id, this.currentToolcallsMessageId!))
-    })
-
-    onWorkflowEvent(
-      'workflow-llm-tool-call-arguments',
-      async ({ data: { id, arguments: args } }) => {
-        const target = await db
-          .select()
-          .from(threadWorkflowBlockMessages)
-          .where(eq(threadWorkflowBlockMessages.id, this.currentToolcallsMessageId!))
-        if (!target.length) {
-          return
-        }
-        const targetRow = target[0]
-        const toolCalls = JSON.parse(targetRow.payload ?? '{}') as ToolCall[]
-        const uptated = toolCalls.map((i) => {
-          if (i.id === id) {
-            i.function.arguments = i.function.arguments + args
-          }
-          return i
-        })
-        await db
-          .update(threadWorkflowBlockMessages)
-          .set({
-            payload: JSON.stringify(uptated),
-            updatedAt: Date.now(),
-          })
-          .where(eq(threadWorkflowBlockMessages.id, this.currentToolcallsMessageId!))
-      }
-    )
-
-    onWorkflowEvent('workflow-llm-tool-calls-end', async ({ toolCalls }) => {
-      await db
-        .update(threadWorkflowBlockMessages)
-        .set({
-          payload: JSON.stringify(toolCalls),
-          updatedAt: Date.now(),
-        })
-        .where(eq(threadWorkflowBlockMessages.id, this.currentToolcallsMessageId!))
     })
 
     onWorkflowEvent('workflow-tool-call-start', async () => {})
@@ -268,6 +168,7 @@ export class ThreadsManager {
       })
     })
 
+    // TODO only end write db
     onPalnnerEvent('planner-step-generate', async ({ plan }) => {
       const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
       if (!target.length) {

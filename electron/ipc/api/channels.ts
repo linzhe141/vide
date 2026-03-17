@@ -24,9 +24,17 @@ export type ThreadRowDto = {
   createdAt: number
   updatedAt: number
 }
-type BlockData = {
+export type BlockData = {
   id: string
   userInput: string
+  askUser?: {
+    completed: boolean
+    submitValue: []
+    title: string
+    description: string
+    type: string
+    options: { label: string; value: string; description: string }[]
+  }
   messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
 }
 
@@ -47,6 +55,8 @@ export interface RenderChannel {
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
+
+  'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>

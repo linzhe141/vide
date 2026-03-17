@@ -3,11 +3,6 @@ import { useChatContext } from './ChatProvider'
 import { type ConversationBlock } from '../../store/threadStore'
 
 export function AskUserQuestionView({ block }: { block: ConversationBlock }) {
-  const { handleSend } = useChatContext()
-
-  const [selected, setSelected] = useState<string[]>([])
-  const [submited, setSubmited] = useState(false)
-
   const askUser = block.askUser ?? {
     title: '',
     submitValue: [],
@@ -16,6 +11,10 @@ export function AskUserQuestionView({ block }: { block: ConversationBlock }) {
     options: [],
     type: 'single',
   }
+  const { handleSend } = useChatContext()
+
+  const [selected, setSelected] = useState<string[]>(askUser.submitValue)
+  const [submited, setSubmited] = useState(askUser.submitValue.length > 0)
 
   const toggle = (value: string) => {
     if (askUser.type === 'single') {
@@ -40,6 +39,10 @@ ${JSON.stringify(selectedOptions.map((o) => o.value))}
 `
 
     handleSend(content.trim())
+    window.ipcRendererApi.invoke('ask-user-question-submit', {
+      submitValue: selected,
+      workflowId: block.id,
+    })
   }
   return (
     <div className='my-3 max-w-md space-y-3'>

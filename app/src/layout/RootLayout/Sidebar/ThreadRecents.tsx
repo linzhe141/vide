@@ -44,7 +44,7 @@ export function ThreadRecents() {
                 status: 'finished',
                 // TODO
                 planner: undefined,
-                askUser: undefined,
+                askUser: block.askUser,
                 // TODO
                 runtime: {} as any,
                 messages: [],

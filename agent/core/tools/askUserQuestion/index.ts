@@ -4,7 +4,7 @@ import { askUserQuestionEvent } from '../../event'
 
 export type AskUserQuestionOption = {
   label: string
-  description?: string
+  description: string
   value: string
 }
 
