@@ -97,14 +97,14 @@ const WorkflowEventChannels = {
     ctx: WorkflowEventCtx
     chunk: { delta: string; content: string }
   },
-  'workflow-llm-reasoning-end': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-reasoning-end': null as unknown as { ctx: WorkflowEventCtx; content: string },
 
   'workflow-llm-text-start': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-llm-text-delta': null as unknown as {
     ctx: WorkflowEventCtx
     chunk: { delta: string; content: string }
   },
-  'workflow-llm-text-end': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-text-end': null as unknown as { ctx: WorkflowEventCtx; content: string },
 
   'workflow-llm-tool-calls-start': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-llm-tool-call-name': null as unknown as {

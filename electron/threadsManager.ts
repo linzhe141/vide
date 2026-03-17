@@ -43,6 +43,12 @@ export class ThreadsManager {
 
     onWorkflowEvent('workflow-start', async ({ input, ctx: { sessionId, workflowId } }) => {
       const time = Date.now()
+
+      const rows = await db.select().from(threads).where(eq(threads.id, sessionId))
+      if (rows.length && !rows[0].title) {
+        await db.update(threads).set({ title: input }).where(eq(threads.id, sessionId))
+      }
+
       // insert workflow block
       await db.insert(threadWorkflowBlocks).values({
         id: workflowId,
@@ -74,12 +80,12 @@ export class ThreadsManager {
 
     onWorkflowEvent('workflow-llm-reasoning-start', async () => {})
     onWorkflowEvent('workflow-llm-reasoning-delta', async () => {})
-    onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId } }) => {
+    onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId }, content }) => {
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantReason,
-        content: '',
+        content: content,
         payload: '',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -88,12 +94,12 @@ export class ThreadsManager {
 
     onWorkflowEvent('workflow-llm-text-start', async () => {})
     onWorkflowEvent('workflow-llm-text-delta', async () => {})
-    onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId } }) => {
+    onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId }, content }) => {
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantText,
-        content: '',
+        content: content,
         payload: '',
         createdAt: Date.now(),
         updatedAt: Date.now(),

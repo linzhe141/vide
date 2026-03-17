@@ -98,8 +98,11 @@ export class Workflow {
           chunk,
         })
       },
-      onReasoningEnd: () => {
-        workflowEvent.emit('workflow-llm-reasoning-end', { ctx: this.runtime.workflowEventCtx })
+      onReasoningEnd: (content) => {
+        workflowEvent.emit('workflow-llm-reasoning-end', {
+          ctx: this.runtime.workflowEventCtx,
+          content,
+        })
       },
       onTextStart: () => {
         workflowEvent.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
@@ -107,8 +110,8 @@ export class Workflow {
       onTextDelta: (chunk) => {
         workflowEvent.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
       },
-      onTextEnd: () => {
-        workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx })
+      onTextEnd: (content) => {
+        workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
       },
       onToolCallsStart: () => {
         workflowEvent.emit('workflow-llm-tool-calls-start', {

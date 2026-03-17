@@ -90,11 +90,11 @@ export type FnProcessLLMStream = (data: {
   signal: AbortSignal
   onReasoningStart?: () => void
   onReasoningDelta?: (chunk: { delta: string; content: string }) => void
-  onReasoningEnd?: () => void
+  onReasoningEnd?: (content: string) => void
 
   onTextStart?: () => void
   onTextDelta?: (chunk: { delta: string; content: string }) => void
-  onTextEnd?: () => void
+  onTextEnd?: (content: string) => void
 
   onToolCallsStart?: () => void
   onToolCallName?: (data: { id: string; name: string }) => void

@@ -127,10 +127,9 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           /* ---------------- workflow lifecycle ---------------- */
 
           case 'workflow-start': {
-            const id = nanoid()
-
+            const workflowId = data.ctx.workflowId
             block = {
-              id,
+              id: workflowId,
               input: data.input,
               status: 'running',
 
@@ -159,7 +158,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
               block.planner = prevBlock.planner
             }
             state.blocks.push(block)
-            state.currentBlockId = id
+            state.currentBlockId = workflowId
 
             return
           }

@@ -73,7 +73,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 
     if (delta?.content) {
       if (reasonContent) {
-        onReasoningEnd?.()
+        onReasoningEnd?.(reasonContent)
         reasonContent = ''
         console.log()
       }
@@ -91,16 +91,23 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
       }
     }
 
+    if (chunkFinishReason === 'stop') {
+      if (content) {
+        onTextEnd?.(content)
+        content = ''
+        console.log()
+      }
+    }
     if (delta?.tool_calls) {
       // just for ui
       if (reasonContent) {
-        onReasoningEnd?.()
+        onReasoningEnd?.(reasonContent)
         reasonContent = ''
         console.log()
       }
       if (content) {
+        onTextEnd?.(content)
         content = ''
-        onTextEnd?.()
         console.log()
       }
 
