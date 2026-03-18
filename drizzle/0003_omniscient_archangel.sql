@@ -1,1 +1,0 @@
-ALTER TABLE `thread_workflow_blocks` DROP COLUMN `status`;
