@@ -2,6 +2,7 @@ import { uuid } from '@/app/src/lib/uuid'
 import type { Tool } from '../../types'
 import { plannerEvent } from '../../event'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
+import { SessionPlaner } from '../../agentSession'
 export type PlanStep = {
   id: string
   status: 'pending' | 'running' | 'completed' | 'failed'
@@ -18,7 +19,7 @@ export const PLANNER_TOOL_NAMES = {
 
 export class Planner {
   constructor(private runtime: WorkflowRuntimeContext) {}
-
+  sessionPlaner: SessionPlaner | null = null
   start: Tool = {
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',
@@ -56,7 +57,7 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
       })
-      this.runtime.planner = []
+      this.sessionPlaner = new SessionPlaner([])
       return {
         content: 'Has marked plan is generating',
       }
@@ -105,7 +106,7 @@ Continue calling this tool until all required steps for completing the task are 
         description: args.description,
       }
 
-      this.runtime.planner!.push(planStep)
+      this.sessionPlaner!.plans.push(planStep)
       plannerEvent.emit('planner-step-generate', {
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
@@ -144,11 +145,12 @@ Always call this tool after finishing plan generation.
       plannerEvent.emit('planner-end-generate', {
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
-        plans: this.runtime.planner ?? [],
+        plans: this.sessionPlaner!.plans,
       })
+      this.runtime.session.planners.push(this.sessionPlaner!)
       return {
         content: 'Plan generation completed, all steps confirmed',
-        plan: this.runtime.planner,
+        plan: this.sessionPlaner?.plans,
       }
     },
   }
@@ -195,7 +197,7 @@ Typical usage pattern:
     executor: async (args) => {
       const id = args.id
       const status = args.status
-      const target = this.runtime.planner!.find((i) => i.id === id)
+      const target = this.sessionPlaner?.plans.find((i) => i.id === id)
       if (target) {
         target.status = status
 
@@ -221,7 +223,7 @@ Typical usage pattern:
             plan: target,
           })
         }
-        const planner = this.runtime.planner!
+        const planner = this.sessionPlaner!.plans
         const summary = {
           planner: planner,
           pending: planner.filter((s) => s.status === 'pending').length,
@@ -237,9 +239,9 @@ ${this.runtime.userInput
   .map((i, index) => {
     let content = i
     if (index === this.runtime.userInput.length - 1) {
-      content = `current workflow user input:` + content
+      content = `current trun: workflow user input:` + content
     } else {
-      content = `turn(${index + 1}) workflow user input:` + content
+      content = `turn(${index + 1}): workflow user input:` + content
     }
 
     return content

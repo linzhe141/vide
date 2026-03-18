@@ -2,12 +2,14 @@ import { v4 as uuid } from 'uuid'
 import { Workflow } from './workflow'
 import { agentEvent } from './event'
 import { WorkflowRuntimeContext } from './workflowRuntimeContext'
+import type { PlanStep } from './tools/planner'
 
 export const activeSessions: AgentSession[] = []
 
 export class AgentSession {
   sessionId: string = null!
   workflowBlocks: SessionWorkflowBlock[] = []
+  planners: SessionPlaner[] = []
   constructor() {
     this.sessionId = uuid()
   }
@@ -28,15 +30,14 @@ export class AgentSession {
         console.log('full user chat message', workflowBlock.runtime.userInput)
       }
       //  保留前面的planner 到新一轮的runtime里面
-      if (
-        prevRuntime?.planner &&
-        prevRuntime.planner.some((i) => i.status === 'pending' || i.status === 'running')
-      ) {
-        workflowBlock.runtime.planner = prevRuntime.planner
 
-        console.log('prev workflow planner')
-        console.log(JSON.stringify(prevRuntime.planner, null, 2))
-      }
+      // const pendingPlanner = this.findPendingPlanner()
+      // if (pendingPlanner) {
+      //   workflowBlock.runtime.s = prevRuntime.planner
+
+      //   console.log('prev workflow planner')
+      //   console.log(JSON.stringify(prevRuntime.planner, null, 2))
+      // }
 
       this.workflowBlocks.push(workflowBlock)
 
@@ -54,6 +55,13 @@ export class AgentSession {
   buildWorlflowBlock(userInput: string) {
     return new SessionWorkflowBlock(this, userInput)
   }
+
+  findPendingPlanner() {
+    const target = this.planners.find((i) =>
+      i.plans.some((i) => i.status === 'pending' || i.status === 'running')
+    )
+    return target
+  }
 }
 
 export class SessionWorkflowBlock {
@@ -65,4 +73,8 @@ export class SessionWorkflowBlock {
       userInput,
     })
   }
+}
+
+export class SessionPlaner {
+  constructor(public plans: PlanStep[]) {}
 }

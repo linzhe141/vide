@@ -57,14 +57,9 @@ export const threadWorkflowBlockMessages = sqliteTable('thread_workflow_block_me
 export const planners = sqliteTable('planners', {
   id: text('id').primaryKey(),
 
-  blockId: text('block_id')
+  threadId: text('thread_id')
     .notNull()
-    .references(() => threadWorkflowBlocks.id),
-
-  /**
-   * "true" | "false"
-   */
-  completedGenerate: text('completed_generate').notNull(),
+    .references(() => threads.id),
 
   /**
    * planner steps JSON
@@ -84,11 +79,6 @@ export const askUserQuestions = sqliteTable('ask_user_questions', {
     .references(() => threadWorkflowBlocks.id),
 
   /**
-   * "true" | "false"
-   */
-  completedGenerate: text('completed_generate').notNull(),
-
-  /**
    * AskUserQuestionDraft
    */
   draftJson: text('draft_json'),
@@ -105,6 +95,7 @@ export const askUserQuestions = sqliteTable('ask_user_questions', {
 
 export const threadsRelations = relations(threads, ({ many }) => ({
   workflowBlocks: many(threadWorkflowBlocks),
+  planners: many(planners),
 }))
 
 export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ one, many }) => ({
@@ -115,9 +106,8 @@ export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ 
 
   threadWorkflowBlockMessages: many(threadWorkflowBlockMessages),
 
-  planners: many(planners),
-
-  askUserQuestions: many(askUserQuestions),
+  // user submit 后就是下一个workflow
+  askUserQuestions: one(askUserQuestions),
 }))
 
 export const threadWorkflowBlockMessagesRelations = relations(
@@ -131,9 +121,9 @@ export const threadWorkflowBlockMessagesRelations = relations(
 )
 
 export const plannersRelations = relations(planners, ({ one }) => ({
-  threadWorkflowBlock: one(threadWorkflowBlocks, {
-    fields: [planners.blockId],
-    references: [threadWorkflowBlocks.id],
+  threads: one(threads, {
+    fields: [planners.threadId],
+    references: [threads.id],
   }),
 }))
 
