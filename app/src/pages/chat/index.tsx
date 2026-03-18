@@ -53,8 +53,7 @@ function ChatContent({ threadId }: { threadId: string }) {
             input: block.userInput,
             // TODO
             status: 'finished',
-            // TODO
-            planner: undefined,
+            planner: block.planner,
             askUser: block.askUser,
             // TODO
             runtime: {} as any,
@@ -141,6 +140,7 @@ function ChatContent({ threadId }: { threadId: string }) {
             <div></div>
             <FileText
               className='text-text-secondary'
+              size={14}
               onClick={() => {
                 setOpenArtifacts((prev) => !prev)
               }}
@@ -152,7 +152,7 @@ function ChatContent({ threadId }: { threadId: string }) {
           <ChatInput />
         </div>
         <div
-          className={cn('transition-[width] duration-200 ease-out', {
+          className={cn('overflow-x-hidden transition-[width] duration-200 ease-out', {
             'w-0': !openArtifacts,
             'w-[1000px] border-l': openArtifacts,
           })}

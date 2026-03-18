@@ -35,7 +35,6 @@ export type ConversationBlock = {
   messages: ThreadMessage[]
 
   planner?: {
-    plannerId?: string
     steps: PlanStep[]
   }
 

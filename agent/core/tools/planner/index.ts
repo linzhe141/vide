@@ -141,6 +141,11 @@ Always call this tool after finishing plan generation.
       },
     },
     executor: async () => {
+      plannerEvent.emit('planner-end-generate', {
+        sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
+        plans: this.runtime.planner ?? [],
+      })
       return {
         content: 'Plan generation completed, all steps confirmed',
         plan: this.runtime.planner,

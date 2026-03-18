@@ -23,6 +23,7 @@ import { eq } from 'drizzle-orm'
 import * as schema from '@/db/schema'
 import type { BlockData } from '../../api/channels'
 import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
+import type { PlanStep } from '@/agent/core/tools/planner'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -60,10 +61,26 @@ export class AgentIpcMainService implements IpcMainService {
           .where(eq(schema.askUserQuestions.blockId, id))
         const askUserQuestion = askUserQuestionRows[0]
         const draft = JSON.parse(askUserQuestion?.draftJson || '{}') as AskUserQuestionDraft
+
+        const plannerRows = await db
+          .select()
+          .from(schema.planners)
+          .where(eq(schema.planners.blockId, id))
+        const plannerTarget = plannerRows[0]
+        const planner = JSON.parse(plannerTarget?.planJson || '[]') as PlanStep[]
+
+        const prevBlockPlaner = blockData.at(-1)?.planner
         blockData.push({
           id,
           userInput,
           messages: blockMessageRows,
+          planner: planner.length
+            ? {
+                steps: planner,
+              }
+            : prevBlockPlaner?.steps.length
+              ? prevBlockPlaner
+              : undefined,
           askUser: askUserQuestion
             ? {
                 completed: askUserQuestion.completedGenerate === 'true',

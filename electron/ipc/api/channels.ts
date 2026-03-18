@@ -7,6 +7,7 @@ import type {
   AskUserQuestionEvents,
 } from '@/agent/core/event/channels'
 import type { threadWorkflowBlockMessages } from '@/db/schema'
+import type { PlanStep } from '@/agent/core/tools/planner'
 
 export type ThreadMessageRowDto = {
   id: string
@@ -27,6 +28,9 @@ export type ThreadRowDto = {
 export type BlockData = {
   id: string
   userInput: string
+  planner?: {
+    steps: PlanStep[]
+  }
   askUser?: {
     completed: boolean
     submitValue: []

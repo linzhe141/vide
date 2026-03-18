@@ -13,3 +13,5 @@
 this is your runtime workflow code `agent\core\workflow.ts`, basic on this code need to generate a pptx file with 7 pages
 
 给我三个选项， only for testing
+
+输出一个plan 大概三个step,然后依次自动执行这几个mock plan step，并mock几个输出的文本，only for test
