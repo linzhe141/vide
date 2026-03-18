@@ -20,11 +20,9 @@ import type { PlanStep } from '@/agent/core/tools/planner'
 import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 
 export class ThreadsManager {
-  // for building in memory before end node
+  // for stream update
   currentPlannerId: string | null = null
-  currentPlannerDraft: PlanStep[] = []
   currentAaskUserQuestionId: string | null = null
-  currentAskUserQuestionDraft: AskUserQuestionDraft | null = null
   constructor(private app: AppManager) {}
 
   init() {
@@ -155,35 +153,57 @@ export class ThreadsManager {
         role: ThreadMessageRole.Tool,
         blockId: ctx.workflowId,
         content: '',
+        payload: JSON.stringify(toolCallResult),
         createdAt: time,
         updatedAt: time,
-        payload: JSON.stringify(toolCallResult),
       })
     })
 
-    // runtime - build in memory, insert only at end
+    // runtime
     onPalnnerEvent('planner-start-generate', async ({ workflowId }) => {
       this.currentPlannerId = uuid()
-      this.currentPlannerDraft = []
-    })
-
-    onPalnnerEvent('planner-step-generate', async ({ plan }) => {
-      // accumulate in memory only
-      this.currentPlannerDraft.push(plan)
-    })
-
-    onPalnnerEvent('planner-end-generate', async ({ workflowId }) => {
       const time = Date.now()
-      // insert complete plan at once
+
       await db.insert(planners).values({
-        id: this.currentPlannerId!,
+        id: this.currentPlannerId,
         blockId: workflowId,
-        completedGenerate: 'true',
-        planJson: JSON.stringify(this.currentPlannerDraft),
+        completedGenerate: 'false',
+        planJson: JSON.stringify([]),
         createdAt: time,
         updatedAt: time,
       })
-      this.currentPlannerDraft = []
+    })
+
+    // TODO only end write db
+    onPalnnerEvent('planner-step-generate', async ({ plan }) => {
+      const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
+      if (!target.length) {
+        return
+      }
+      const targetRow = target[0]
+      const planJson = JSON.parse(targetRow.planJson ?? '[]') as PlanStep[]
+      const uptated = [...planJson]
+      uptated.push(plan)
+
+      const time = Date.now()
+      await db
+        .update(planners)
+        .set({
+          planJson: JSON.stringify(uptated),
+          updatedAt: time,
+        })
+        .where(eq(planners.id, this.currentPlannerId!))
+    })
+
+    onPalnnerEvent('planner-end-generate', async () => {
+      const time = Date.now()
+      await db
+        .update(planners)
+        .set({
+          completedGenerate: 'true',
+          updatedAt: time,
+        })
+        .where(eq(planners.id, this.currentPlannerId!))
     })
 
     onPalnnerEvent('planner-execute-item-start', async ({ plan }) => {
@@ -262,52 +282,98 @@ export class ThreadsManager {
         .where(eq(planners.id, this.currentPlannerId!))
     })
 
-    // ask user question - build in memory, insert only at end
     onAskUserQuestionEvent('ask-user-start-generate', async ({ workflowId, type }) => {
       this.currentAaskUserQuestionId = uuid()
-      this.currentAskUserQuestionDraft = {
+      const time = Date.now()
+      const question: AskUserQuestionDraft = {
         type: type === 'single' ? 'single' : 'multiple',
         options: [],
       }
-    })
-
-    onAskUserQuestionEvent('ask-user-title', async ({ title }) => {
-      // accumulate in memory only
-      if (this.currentAskUserQuestionDraft) {
-        this.currentAskUserQuestionDraft = { ...this.currentAskUserQuestionDraft, title }
-      }
-    })
-
-    onAskUserQuestionEvent('ask-user-description', async ({ description }) => {
-      // accumulate in memory only
-      if (this.currentAskUserQuestionDraft) {
-        this.currentAskUserQuestionDraft = { ...this.currentAskUserQuestionDraft, description }
-      }
-    })
-
-    onAskUserQuestionEvent('ask-user-option', async ({ option }) => {
-      // accumulate in memory only
-      if (this.currentAskUserQuestionDraft) {
-        this.currentAskUserQuestionDraft = {
-          ...this.currentAskUserQuestionDraft,
-          options: [...this.currentAskUserQuestionDraft.options, option],
-        }
-      }
-    })
-
-    onAskUserQuestionEvent('ask-user-complete', async ({ workflowId }) => {
-      const time = Date.now()
-      // insert complete question at once
       await db.insert(askUserQuestions).values({
-        id: this.currentAaskUserQuestionId!,
+        id: this.currentAaskUserQuestionId,
         blockId: workflowId,
-        completedGenerate: 'true',
-        draftJson: JSON.stringify(this.currentAskUserQuestionDraft),
+        completedGenerate: 'false',
+        draftJson: JSON.stringify(question),
         createdAt: time,
         updatedAt: time,
       })
-      this.currentAskUserQuestionDraft = null
-      this.currentAaskUserQuestionId = null
+    })
+
+    onAskUserQuestionEvent('ask-user-title', async ({ title }) => {
+      const target = await db
+        .select()
+        .from(askUserQuestions)
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+      if (!target.length) {
+        return
+      }
+      const targetRow = target[0]
+      const draftJson = JSON.parse(targetRow.draftJson ?? '{}') as AskUserQuestionDraft
+      const uptated = { ...draftJson, title }
+
+      const time = Date.now()
+      await db
+        .update(askUserQuestions)
+        .set({
+          draftJson: JSON.stringify(uptated),
+          updatedAt: time,
+        })
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+    })
+
+    onAskUserQuestionEvent('ask-user-description', async ({ description }) => {
+      const target = await db
+        .select()
+        .from(askUserQuestions)
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+      if (!target.length) {
+        return
+      }
+      const targetRow = target[0]
+      const draftJson = JSON.parse(targetRow.draftJson ?? '{}') as AskUserQuestionDraft
+      const uptated = { ...draftJson, description }
+
+      const time = Date.now()
+      await db
+        .update(askUserQuestions)
+        .set({
+          draftJson: JSON.stringify(uptated),
+          updatedAt: time,
+        })
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+    })
+
+    onAskUserQuestionEvent('ask-user-option', async ({ option }) => {
+      const target = await db
+        .select()
+        .from(askUserQuestions)
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+      if (!target.length) {
+        return
+      }
+      const targetRow = target[0]
+      const draftJson = JSON.parse(targetRow.draftJson ?? '{}') as AskUserQuestionDraft
+      const uptated = { ...draftJson, options: [...draftJson.options, option] }
+
+      const time = Date.now()
+      await db
+        .update(askUserQuestions)
+        .set({
+          draftJson: JSON.stringify(uptated),
+          updatedAt: time,
+        })
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
+    })
+
+    onAskUserQuestionEvent('ask-user-complete', async () => {
+      const time = Date.now()
+      await db
+        .update(askUserQuestions)
+        .set({
+          completedGenerate: 'true',
+          updatedAt: time,
+        })
+        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
     })
   }
 }
