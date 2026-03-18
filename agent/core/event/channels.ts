@@ -52,22 +52,13 @@ const AskUserQuestionEventChannels = {
     sessionId: string
     workflowId: string
     type: string
-  },
-  'ask-user-title': null as unknown as {
-    sessionId: string
-    workflowId: string
     title: string
-  },
-  'ask-user-description': null as unknown as {
-    sessionId: string
-    workflowId: string
     description: string
   },
-
   'ask-user-option': null as unknown as {
     sessionId: string
     workflowId: string
-    option: { label: string; value: string; description: string }
+    option: { label: string; value: string; description: string; done?: boolean }
   },
   'ask-user-complete': null as unknown as {
     sessionId: string

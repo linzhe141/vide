@@ -374,27 +374,12 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             block.askUser = {
               completed: false,
               submitValue: [],
-              title: '',
-              description: '',
+              title: data.title,
+              description: data.description,
               type: data.type,
               options: [],
             }
 
-            return
-          }
-
-          case 'ask-user-title': {
-            if (!block) return
-            if (block.askUser) {
-              block.askUser.title = data.title
-            }
-            return
-          }
-          case 'ask-user-description': {
-            if (!block) return
-            if (block.askUser) {
-              block.askUser.description = data.description
-            }
             return
           }
 

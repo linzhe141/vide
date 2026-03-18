@@ -18,8 +18,6 @@ export const ASK_USER_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 
 export const ASK_USER_TOOL_NAMES = {
   START_GENERATE: `${ASK_USER_NAMESPACE}_START_GENERATE`,
-  SET_TITLE: `${ASK_USER_NAMESPACE}_SET_TITLE`,
-  SET_DESCRIPTION: `${ASK_USER_NAMESPACE}_SET_DESCRIPTION`,
   CREATE_OPTION: `${ASK_USER_NAMESPACE}_CREATE_OPTION`,
   COMPLETE_GENERATE: `${ASK_USER_NAMESPACE}_COMPLETE_GENERATE`,
 } as const
@@ -35,26 +33,11 @@ export class AskUserQuestionTool {
 
     function: {
       name: ASK_USER_TOOL_NAMES.START_GENERATE,
-
       description: `
-Start generating a user question interactively.
+Start generating a user question.
 
-Set the selection type.
-
-single: user selects one option
-multiple: user selects multiple options
-
-Use this tool before generating question fields.
-
-After calling this tool you MUST generate:
-
-- title
-- description (optional)
-- options
-
-Use the dedicated tools to build the question step by step.
+You MUST call CREATE_OPTION to generate options after this.
 `,
-
       parameters: {
         type: 'object',
         properties: {
@@ -62,95 +45,30 @@ Use the dedicated tools to build the question step by step.
             type: 'string',
             enum: ['single', 'multiple'],
           },
+          title: { type: 'string' },
+          description: { type: 'string' },
         },
-        required: ['type'],
+        required: ['type', 'title', 'description'],
       },
     },
 
-    executor: async (args) => {
+    executor: async ({ type, title, description }) => {
       this.draft = {
-        type: args.type,
+        type,
+        title,
+        description,
         options: [],
       }
 
       askUserQuestionEvent.emit('ask-user-start-generate', {
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
-        type: args.type,
-      })
-
-      return {
-        content: 'Started generating ask user question',
-      }
-    },
-  }
-
-  title: Tool = {
-    name: ASK_USER_TOOL_NAMES.SET_TITLE,
-    type: 'function',
-
-    function: {
-      name: ASK_USER_TOOL_NAMES.SET_TITLE,
-
-      description: `
-Set the title of the user question.
-`,
-
-      parameters: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-        },
-        required: ['title'],
-      },
-    },
-
-    executor: async ({ title }) => {
-      if (!this.draft) throw new Error('Question generation not started')
-
-      this.draft.title = title
-
-      askUserQuestionEvent.emit('ask-user-title', {
-        sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
+        type,
         title,
-      })
-
-      return {
-        content: 'Title generated',
-      }
-    },
-  }
-
-  description: Tool = {
-    name: ASK_USER_TOOL_NAMES.SET_DESCRIPTION,
-    type: 'function',
-
-    function: {
-      name: ASK_USER_TOOL_NAMES.SET_DESCRIPTION,
-
-      description: `Set the description of the question.`,
-
-      parameters: {
-        type: 'object',
-        properties: {
-          description: { type: 'string' },
-        },
-      },
-    },
-
-    executor: async ({ description }) => {
-      if (!this.draft) throw new Error('Question generation not started')
-
-      this.draft.description = description
-
-      askUserQuestionEvent.emit('ask-user-description', {
-        sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
         description,
       })
 
-      return { content: 'Description generated' }
+      return { content: 'started' }
     },
   }
 
@@ -160,23 +78,21 @@ Set the title of the user question.
 
     function: {
       name: ASK_USER_TOOL_NAMES.CREATE_OPTION,
-
       description: `
 Create an option for the question.
 
-Call this tool multiple times to generate all options.
-`,
+Call multiple times to add options.
 
+Set "done=true" when all options are generated.
+`,
       parameters: {
         type: 'object',
         properties: {
           label: { type: 'string' },
-
           description: { type: 'string' },
-
           value: { type: 'string' },
+          done: { type: 'boolean' },
         },
-
         required: ['label', 'value'],
       },
     },
@@ -184,62 +100,39 @@ Call this tool multiple times to generate all options.
     executor: async (args) => {
       if (!this.draft) throw new Error('Question generation not started')
 
-      const option = {
-        ...args,
-      }
+      const { done, ...option } = args
 
       this.draft.options.push(option)
 
+      // 每个 option 流式发
       askUserQuestionEvent.emit('ask-user-option', {
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
         option,
       })
 
-      return {
-        content: 'Option created',
-        option,
+      // ✅ 收口逻辑直接内聚
+      if (done) {
+        askUserQuestionEvent.emit('ask-user-complete', {
+          sessionId: this.runtime.sessionId,
+          workflowId: this.runtime.workflowId,
+          question: this.draft,
+        })
+
+        return {
+          workflow_state: 'user_input_required',
+          reason: 'ask_user_question',
+          question: this.draft,
+        }
       }
-    },
-  }
-
-  completed: Tool = {
-    name: ASK_USER_TOOL_NAMES.COMPLETE_GENERATE,
-
-    type: 'function',
-
-    function: {
-      name: ASK_USER_TOOL_NAMES.COMPLETE_GENERATE,
-
-      description: `
-Finish generating the question.
-
-This will interrupt the workflow and wait for user input.
-`,
-      parameters: {
-        type: 'object',
-        properties: {},
-      },
-    },
-
-    executor: async () => {
-      if (!this.draft) throw new Error('Question generation not started')
-
-      askUserQuestionEvent.emit('ask-user-complete', {
-        sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
-        question: this.draft,
-      })
 
       return {
-        workflow_state: 'user_input_required',
-        reason: 'ask_user_question',
-        question: this.draft,
+        content: 'option added',
       }
     },
   }
 
   getTools() {
-    return [this.start, this.title, this.description, this.create, this.completed]
+    return [this.start, this.create]
   }
 }

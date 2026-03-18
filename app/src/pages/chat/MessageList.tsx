@@ -3,14 +3,16 @@ import { useState } from 'react'
 import type { ToolCall } from '@/agent/core/types'
 import { ASK_USER_NAMESPACE, ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import { AskUserQuestionView } from './AskUserQuestionView'
+// import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 /* ---------------- message ---------------- */
 
 function MessageView({ message }: { message: ThreadMessage }) {
   switch (message.role) {
     case 'user':
       return (
-        <div className='bg-muted/30 rounded-xl border p-4'>
+        <div className='rounded-lg border p-3'>
           <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre>
+          {/* <MarkdownRenderer animation>{message.content}</MarkdownRenderer> */}
         </div>
       )
 
@@ -18,6 +20,7 @@ function MessageView({ message }: { message: ThreadMessage }) {
       return (
         <div className='prose prose-sm dark:prose-invert max-w-none'>
           <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre>
+          {/* <MarkdownRenderer animation>{message.content}</MarkdownRenderer> */}
         </div>
       )
 
@@ -25,6 +28,7 @@ function MessageView({ message }: { message: ThreadMessage }) {
       return (
         <div className='border-border text-text-secondary border-l-2 pl-4 text-sm'>
           <pre className='whitespace-pre-wrap'>{message.content}</pre>
+          {/* <MarkdownRenderer animation>{message.content}</MarkdownRenderer> */}
         </div>
       )
 
@@ -32,6 +36,7 @@ function MessageView({ message }: { message: ThreadMessage }) {
       return (
         <div className='rounded-xl border border-red-300 p-4 text-red-500'>
           <pre className='text-xs'>{JSON.stringify(message.error, null, 2)}</pre>
+          {/* <MarkdownRenderer animation>{JSON.stringify(message.error, null, 2)}</MarkdownRenderer> */}
         </div>
       )
   }

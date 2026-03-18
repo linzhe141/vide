@@ -1,7 +1,7 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
 import { context } from '../../hooks/chatContenxt'
 import { useThreadsStore } from '../../store/threadsStore'
@@ -11,6 +11,9 @@ import {
   type ConversationBlock,
   type ThreadMessage,
 } from '@/app/src/store/threadStore'
+import { FileText } from 'lucide-react'
+import { cn } from '../../lib/utils'
+import { ArtifactsDisplay } from './ArtifactsDisplay'
 
 export function Chat() {
   const params = useParams()
@@ -24,9 +27,9 @@ export function Chat() {
 
 function ChatContent({ threadId }: { threadId: string }) {
   const { setThreads } = useThreadsStore()
-
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useThreadStore()
+  const [openArtifacts, setOpenArtifacts] = useState(false)
 
   useEffect(() => {
     const firstInput = context.firstInput
@@ -132,10 +135,31 @@ function ChatContent({ threadId }: { threadId: string }) {
 
   return (
     <div className='bg-background flex h-full w-full flex-col'>
-      <div className='h-0 flex-1 overflow-auto'>
-        <MessageList />
+      <div className='flex h-0 flex-1'>
+        <div className='flex h-full flex-1 flex-col'>
+          <div className='sticky flex h-10 items-center justify-between px-5'>
+            <div></div>
+            <FileText
+              className='text-text-secondary'
+              onClick={() => {
+                setOpenArtifacts((prev) => !prev)
+              }}
+            ></FileText>
+          </div>
+          <div className='h-0 flex-1 overflow-auto'>
+            <MessageList />
+          </div>
+          <ChatInput />
+        </div>
+        <div
+          className={cn('transition-[width] duration-200 ease-out', {
+            'w-0': !openArtifacts,
+            'w-[1000px] border-l': openArtifacts,
+          })}
+        >
+          <ArtifactsDisplay></ArtifactsDisplay>
+        </div>
       </div>
-      <ChatInput />
     </div>
   )
 }

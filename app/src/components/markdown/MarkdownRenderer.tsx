@@ -1,5 +1,6 @@
 import { cn } from '../../lib/utils'
 import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { memo, useMemo, type FC, type PropsWithChildren } from 'react'
 import { MarkdownProvider } from './MarkdownProvider'
 import { rehypeStreamAnimated } from './animation/rehypeStreamAnimated'
@@ -43,13 +44,18 @@ export function MarkdownRenderer({
             <MemoMarkdowndown
               key={index}
               rehypePlugins={streamRehypePlugins}
+              remarkPlugins={[remarkGfm]}
               components={components}
             >
               {block}
             </MemoMarkdowndown>
           ))
         ) : (
-          <MemoMarkdowndown rehypePlugins={markdownRehypePlugins} components={components}>
+          <MemoMarkdowndown
+            rehypePlugins={markdownRehypePlugins}
+            components={components}
+            remarkPlugins={[remarkGfm]}
+          >
             {children}
           </MemoMarkdowndown>
         )}
