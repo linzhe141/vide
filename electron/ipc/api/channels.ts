@@ -67,6 +67,8 @@ export interface RenderChannel {
   'verify-llm-settings-connection': (
     data: LLMConfig
   ) => Promise<{ success: true } | { success: false; error: any }>
+  // only dev
+  'dev-delete-database-rows': () => void
 }
 
 export type MainChannel = {

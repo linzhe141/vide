@@ -4,6 +4,7 @@ import { WindowIpcMainService } from './services/window'
 import { AgentIpcMainService } from './services/agent'
 import { ThreadIpcMainService } from './services/threads'
 import { LLMSettingsIpcMainService } from './services/llmSettings'
+import { DevIpcMainService } from './services/dev'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -27,5 +28,8 @@ export class IpcService {
 
     const llmSettingsIpcMainService = new LLMSettingsIpcMainService(this.appManager)
     llmSettingsIpcMainService.registerIpcMainHandle()
+
+    const devIpcMainService = new DevIpcMainService(this.appManager)
+    devIpcMainService.registerIpcMainHandle()
   }
 }

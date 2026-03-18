@@ -136,7 +136,7 @@ function ChatContent({ threadId }: { threadId: string }) {
   return (
     <div className='bg-background flex h-full w-full flex-col'>
       <div className='flex h-0 flex-1'>
-        <div className='flex h-full flex-1 flex-col'>
+        <div className='flex h-full min-w-[500px] flex-1 flex-col'>
           <div className='sticky flex h-10 items-center justify-between px-5'>
             <div></div>
             <FileText
