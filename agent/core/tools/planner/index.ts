@@ -19,7 +19,6 @@ export const PLANNER_TOOL_NAMES = {
 
 export class Planner {
   constructor(private runtime: WorkflowRuntimeContext) {}
-  sessionPlaner: SessionPlaner | null = null
   start: Tool = {
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',
@@ -53,14 +52,15 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
 `,
     },
     executor: async () => {
-      this.sessionPlaner = new SessionPlaner([])
-
+      // pendingPlanner = new SessionPlaner([])
+      const sessionPlaner = new SessionPlaner([])
+      this.runtime.session.planners.push(sessionPlaner)
       plannerEvent.emit('planner-start-generate', {
         sessionId: this.runtime.sessionId,
-        plannerId: this.sessionPlaner.id,
+        plannerId: sessionPlaner.id,
       })
       return {
-        content: 'Has marked plan is generating',
+        content: 'Has marked plan is generating, this is planner id ' + sessionPlaner.id,
       }
     },
   }
@@ -96,6 +96,10 @@ Continue calling this tool until all required steps for completing the task are 
             description:
               'Detailed description of the plan step. Should clearly explain what specific operation needs to be completed and what output is expected. For example: "Analyze the uploaded sales data to extract key trends and outliers"',
           },
+          targetPlannerId: {
+            type: 'string',
+            description: `The plannerId created after executing the ${PLANNER_TOOL_NAMES.START_PLAN_GENERATE} tool.`,
+          },
         },
         required: ['description'],
       },
@@ -107,10 +111,13 @@ Continue calling this tool until all required steps for completing the task are 
         description: args.description,
       }
 
-      this.sessionPlaner!.plans.push(planStep)
+      const pendingPlanner = this.runtime.session.planners.find(
+        (i) => i.id === args.targetPlannerId
+      )!
+      pendingPlanner.plans.push(planStep)
       plannerEvent.emit('planner-step-generate', {
         sessionId: this.runtime.sessionId,
-        plannerId: this.sessionPlaner!.id,
+        plannerId: pendingPlanner.id,
         plan: planStep,
       })
       return {
@@ -139,19 +146,26 @@ Always call this tool after finishing plan generation.
 `,
       parameters: {
         type: 'object',
-        properties: {},
+        properties: {
+          targetPlannerId: {
+            type: 'string',
+            description: `The plannerId created after executing the ${PLANNER_TOOL_NAMES.START_PLAN_GENERATE} tool.`,
+          },
+        },
       },
     },
-    executor: async () => {
+    executor: async (args) => {
+      const pendingPlanner = this.runtime.session.planners.find(
+        (i) => i.id === args.targetPlannerId
+      )!
       plannerEvent.emit('planner-end-generate', {
         sessionId: this.runtime.sessionId,
-        plannerId: this.sessionPlaner!.id,
-        plans: this.sessionPlaner!.plans,
+        plannerId: pendingPlanner.id,
+        plans: pendingPlanner.plans,
       })
-      this.runtime.session.planners.push(this.sessionPlaner!)
       return {
         content: 'Plan generation completed, all steps confirmed',
-        plan: this.sessionPlaner?.plans,
+        plan: pendingPlanner.plans,
       }
     },
   }
@@ -191,28 +205,36 @@ Typical usage pattern:
               'The new status to set. Available options: pending(awaiting execution), in_progress(currently being executed), completed(successfully finished), failed(encountered error), blocked(waiting for dependencies).',
             enum: ['pending', 'running', 'completed', 'failed'],
           },
+          targetPlannerId: {
+            type: 'string',
+            description: `The plannerId created after executing the ${PLANNER_TOOL_NAMES.START_PLAN_GENERATE} tool.`,
+          },
         },
-        required: ['id', 'status'],
+        required: ['id', 'status', 'targetPlannerId'],
       },
     },
     executor: async (args) => {
       const id = args.id
       const status = args.status
-      const target = this.sessionPlaner?.plans.find((i) => i.id === id)
+      const pendingPlanner = this.runtime.session.planners.find(
+        (i) => i.id === args.targetPlannerId
+      )!
+
+      const target = pendingPlanner?.plans.find((i) => i.id === id)
       if (target) {
         target.status = status
 
         if (target.status === 'running') {
           plannerEvent.emit('planner-execute-item-start', {
             sessionId: this.runtime.sessionId,
-            plannerId: this.sessionPlaner!.id,
+            plannerId: pendingPlanner.id,
             plan: target,
           })
         }
         if (target.status === 'completed') {
           plannerEvent.emit('planner-execute-item-success', {
             sessionId: this.runtime.sessionId,
-            plannerId: this.sessionPlaner!.id,
+            plannerId: pendingPlanner.id,
             plan: target,
           })
         }
@@ -220,11 +242,11 @@ Typical usage pattern:
         if (target.status === 'failed') {
           plannerEvent.emit('planner-execute-item-error', {
             sessionId: this.runtime.sessionId,
-            plannerId: this.sessionPlaner!.id,
+            plannerId: pendingPlanner.id,
             plan: target,
           })
         }
-        const planner = this.sessionPlaner!.plans
+        const planner = pendingPlanner.plans
         const summary = {
           planner: planner,
           pending: planner.filter((s) => s.status === 'pending').length,

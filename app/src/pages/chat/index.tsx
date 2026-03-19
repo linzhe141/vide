@@ -1,10 +1,9 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
 import { context } from '../../hooks/chatContenxt'
-import { useThreadsStore } from '../../store/threadsStore'
 import { ThreadMessageRole } from '@/types'
 import {
   useThreadStore,
@@ -27,12 +26,59 @@ export function Chat() {
 }
 
 function ChatContent({ threadId }: { threadId: string }) {
-  const { setThreads } = useThreadsStore()
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useThreadStore()
+
   const [openSidePane, setOpenSidePane] = useState(false)
 
   const [paneType, setPaneType] = useState<'Artifacts' | 'Planners'>('Artifacts')
+
+  const scrollContainer = useRef<HTMLDivElement>(null)
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const distanceToBottom = scrollHeight - scrollTop - clientHeight
+
+      // 如果距离底部小于等于 100px，就记录一个标记（可以通过 data 属性或者 ref）
+      if (distanceToBottom <= 100) {
+        container.dataset.nearBottom = 'true'
+      } else {
+        container.dataset.nearBottom = 'false'
+      }
+    }
+
+    // 创建 MutationObserver 监听子节点变化
+    const observer = new MutationObserver(() => {
+      console.log('xabasfasd')
+      // 当内容变化时，如果之前在底部附近，就滚动到底部
+      if (container.dataset.nearBottom === 'true') {
+        container.scrollTop = container.scrollHeight
+      }
+    })
+
+    // 配置 observer：监听子节点和子树的变化
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
+    // 监听滚动事件
+    container.addEventListener('scroll', handleScroll)
+    // 初始化执行一次
+    handleScroll()
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      observer.disconnect()
+    }
+  }, [])
 
   useEffect(() => {
     const firstInput = context.firstInput
@@ -140,7 +186,7 @@ function ChatContent({ threadId }: { threadId: string }) {
     if (context.isRuning) {
       // restore()
     }
-  }, [threadId, handleSend, setThreads, buildFromDatabase])
+  }, [threadId, handleSend, buildFromDatabase])
 
   return (
     <div className='bg-background flex h-full w-full flex-col'>
@@ -185,7 +231,7 @@ function ChatContent({ threadId }: { threadId: string }) {
               ></FileText>
             </div>
           </div>
-          <div className='h-0 flex-1 overflow-auto'>
+          <div className='h-0 flex-1 overflow-auto' ref={scrollContainer}>
             <MessageList />
           </div>
           <ChatInput />
@@ -193,7 +239,8 @@ function ChatContent({ threadId }: { threadId: string }) {
         <div
           className={cn('overflow-x-hidden transition-[width] duration-200 ease-out', {
             'w-0': !openSidePane,
-            'w-[1000px] border-l': openSidePane,
+            'w-[1000px] border-l': openSidePane && paneType === 'Artifacts',
+            'w-[600px] border-l': openSidePane && paneType === 'Planners',
           })}
         >
           {paneType === 'Artifacts' && <ArtifactsDisplay threadId={threadId}></ArtifactsDisplay>}

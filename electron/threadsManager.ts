@@ -22,8 +22,6 @@ import type { PlanStep } from '@/agent/core/tools/planner'
 import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 
 export class ThreadsManager {
-  // for stream update
-  currentPlannerId: string | null = null
   constructor(private app: AppManager) {}
 
   init() {
@@ -164,20 +162,18 @@ export class ThreadsManager {
     // TODO only end write db
     onPalnnerEvent('planner-start-generate', async () => {})
     onPalnnerEvent('planner-step-generate', async () => {})
-    onPalnnerEvent('planner-end-generate', async ({ sessionId, plans }) => {
-      this.currentPlannerId = uuid()
+    onPalnnerEvent('planner-end-generate', async ({ sessionId, plannerId, plans }) => {
       const time = Date.now()
-
       await db.insert(planners).values({
-        id: this.currentPlannerId,
+        id: plannerId,
         threadId: sessionId,
         planJson: JSON.stringify(plans),
         createdAt: time,
         updatedAt: time,
       })
     })
-    onPalnnerEvent('planner-execute-item-start', async ({ plan }) => {
-      const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
+    onPalnnerEvent('planner-execute-item-start', async ({ plan, plannerId }) => {
+      const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) {
         return
       }
@@ -197,10 +193,10 @@ export class ThreadsManager {
           planJson: JSON.stringify(uptated),
           updatedAt: time,
         })
-        .where(eq(planners.id, this.currentPlannerId!))
+        .where(eq(planners.id, plannerId))
     })
-    onPalnnerEvent('planner-execute-item-success', async ({ plan }) => {
-      const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
+    onPalnnerEvent('planner-execute-item-success', async ({ plan, plannerId }) => {
+      const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) {
         return
       }
@@ -220,14 +216,10 @@ export class ThreadsManager {
           planJson: JSON.stringify(uptated),
           updatedAt: time,
         })
-        .where(eq(planners.id, this.currentPlannerId!))
-
-      if (uptated.every((i) => i.status === 'completed')) {
-        this.currentPlannerId = null
-      }
+        .where(eq(planners.id, plannerId))
     })
-    onPalnnerEvent('planner-execute-item-error', async ({ plan }) => {
-      const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
+    onPalnnerEvent('planner-execute-item-error', async ({ plan, plannerId }) => {
+      const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) {
         return
       }
@@ -247,7 +239,7 @@ export class ThreadsManager {
           planJson: JSON.stringify(uptated),
           updatedAt: time,
         })
-        .where(eq(planners.id, this.currentPlannerId!))
+        .where(eq(planners.id, plannerId))
     })
 
     onAskUserQuestionEvent('ask-user-start-generate', async () => {})

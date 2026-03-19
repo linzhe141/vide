@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react'
 import type { FileNode } from '@/electron/ipc/api/channels'
 import { CodeBlock } from '../../components/Pre/Pre'
@@ -16,6 +16,7 @@ export function ArtifactsDisplay({ threadId }: { threadId: string }) {
     }[]
   >([])
 
+  const timer = useRef<number | null>(null)
   useEffect(() => {
     async function fetchArtifacts() {
       const res = await window.ipcRendererApi.invoke('get-thread-artifacts', {
@@ -24,6 +25,12 @@ export function ArtifactsDisplay({ threadId }: { threadId: string }) {
       setArtifacts(res)
     }
     fetchArtifacts()
+
+    timer.current = window.setInterval(fetchArtifacts, 250)
+
+    return () => {
+      window.clearInterval(timer.current!)
+    }
   }, [threadId])
   return (
     <div className='flex h-full'>

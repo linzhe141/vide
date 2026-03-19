@@ -19,7 +19,6 @@ export const ASK_USER_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 export const ASK_USER_TOOL_NAMES = {
   START_GENERATE: `${ASK_USER_NAMESPACE}_START_GENERATE`,
   CREATE_OPTION: `${ASK_USER_NAMESPACE}_CREATE_OPTION`,
-  COMPLETE_GENERATE: `${ASK_USER_NAMESPACE}_COMPLETE_GENERATE`,
 } as const
 
 export class AskUserQuestionTool {
@@ -120,8 +119,8 @@ Set "done=true" when all options are generated.
         })
 
         return {
-          workflow_state: 'user_input_required',
-          reason: 'ask_user_question',
+          reason:
+            'important!!! Stop the current workflow and wait for the user to select an option',
           question: this.draft,
         }
       }

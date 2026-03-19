@@ -13,7 +13,7 @@ import { processLLMStream } from './llm'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { registorTools } from './tools/registor'
-import { ASK_USER_TOOL_NAMES } from './tools/askUserQuestion'
+// import { ASK_USER_TOOL_NAMES } from './tools/askUserQuestion'
 
 export type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -230,15 +230,15 @@ export class Workflow {
     const index = payload.index
     const toolCall = toolCalls[index]
     await this.handleCallTool(toolCall)
-    if (toolCall.function.name === ASK_USER_TOOL_NAMES.COMPLETE_GENERATE) {
-      // handleCallTool 已经把toolresult 添加到message里面了
-      return {
-        state: 'COMPLETED',
-        payload: {
-          content: 'Stop the current workflow and wait for the user to select an option',
-        },
-      }
-    }
+    // if (toolCall.function.name === ASK_USER_TOOL_NAMES.CREATE_OPTION) {
+    //   // handleCallTool 已经把toolresult 添加到message里面了
+    //   return {
+    //     state: 'COMPLETED',
+    //     payload: {
+    //       content: 'Stop the current workflow and wait for the user to select an option',
+    //     },
+    //   }
+    // }
     if (index + 1 < toolCalls.length) {
       return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {
