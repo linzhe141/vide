@@ -34,10 +34,6 @@ export type ConversationBlock = {
 
   messages: ThreadMessage[]
 
-  planner?: {
-    steps: PlanStep[]
-  }
-
   askUser?: {
     completed: boolean
     submitValue: []
@@ -61,9 +57,20 @@ export type ConversationBlock = {
 type ThreadState = {
   sessionId?: string
 
+  planner: { id: string; plan: PlanStep[] }[]
+
   blocks: ConversationBlock[]
 
   currentBlockId?: string
+  currentPlannerId?: string
+
+  artifacts: {
+    id: string
+    threadId: string
+    artifactWorkspaceName: string
+    createdAt: number
+    updatedAt: number
+  }[]
 }
 
 /* ---------------- actions ---------------- */
@@ -78,6 +85,9 @@ type ThreadActions = {
 
 function getCurrentBlock(state: ThreadState) {
   return state.blocks.find((b) => b.id === state.currentBlockId)
+}
+function getCurrentPlanner(state: ThreadState) {
+  return state.planner.find((b) => b.id === state.currentPlannerId)
 }
 
 function pushMessage(block: ConversationBlock, message: ThreadMessage) {
@@ -107,12 +117,16 @@ function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']
 export const useThreadStore = create<ThreadState & ThreadActions>()(
   immer((set) => ({
     blocks: [],
-
+    planner: [],
+    artifacts: [],
     reset() {
       set((state) => {
         state.blocks = []
         state.sessionId = undefined
         state.currentBlockId = undefined
+        state.planner = []
+        state.currentPlannerId = undefined
+        state.artifacts = []
       })
     },
 
@@ -147,15 +161,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
                 waitingHuman: false,
               },
             }
-            const prevBlock = state.blocks.at(-1)
-            // 同步未完成的planner
-            // only prevBlock存在未完成的planner才进行同步
-            if (
-              prevBlock?.planner &&
-              prevBlock.planner.steps.some((i) => i.status === 'pending' || i.status === 'running')
-            ) {
-              block.planner = prevBlock.planner
-            }
+
             state.blocks.push(block)
             state.currentBlockId = workflowId
 
@@ -313,59 +319,6 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             return
           }
 
-          /* ---------------- planner ---------------- */
-
-          case 'planner-start-generate': {
-            if (!block) return
-            block.planner = {
-              steps: [],
-            }
-
-            return
-          }
-
-          case 'planner-step-generate': {
-            if (!block) return
-            if (!block.planner) {
-              block.planner = {
-                steps: [],
-              }
-            }
-
-            block.planner.steps.push(data.plan)
-            return
-          }
-
-          case 'planner-execute-item-start': {
-            if (!block?.planner) return
-
-            const step = block.planner.steps.find((s) => s.id === data.plan.id)
-
-            if (step) step.status = 'running'
-
-            return
-          }
-
-          case 'planner-execute-item-success': {
-            if (!block?.planner) return
-
-            const step = block.planner.steps.find((s) => s.id === data.plan.id)
-
-            if (step) step.status = 'completed'
-
-            return
-          }
-
-          case 'planner-execute-item-error': {
-            if (!block?.planner) return
-
-            const step = block.planner.steps.find((s) => s.id === data.plan.id)
-
-            if (step) step.status = 'failed'
-
-            return
-          }
-
           /* ---------------- ask uer question ---------------- */
 
           case 'ask-user-start-generate': {
@@ -396,6 +349,52 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
             }
             return
           }
+
+          /* ---------------- planner ---------------- */
+
+          case 'planner-start-generate': {
+            state.currentPlannerId = data.plannerId
+            state.planner.push({
+              id: data.plannerId,
+              plan: [],
+            })
+            return
+          }
+
+          case 'planner-step-generate': {
+            const planner = getCurrentPlanner(state)
+            if (!planner) return
+
+            planner.plan.push(data.plan)
+            return
+          }
+
+          case 'planner-execute-item-start': {
+            const planner = getCurrentPlanner(state)
+            if (!planner) return
+
+            const step = planner.plan.find((s) => s.id === data.plan.id)
+            if (step) step.status = 'running'
+            return
+          }
+
+          case 'planner-execute-item-success': {
+            const planner = getCurrentPlanner(state)
+            if (!planner) return
+
+            const step = planner.plan.find((s) => s.id === data.plan.id)
+            if (step) step.status = 'completed'
+            return
+          }
+
+          case 'planner-execute-item-error': {
+            const planner = getCurrentPlanner(state)
+            if (!planner) return
+
+            const step = planner.plan.find((s) => s.id === data.plan.id)
+            if (step) step.status = 'failed'
+            return
+          }
         }
       })
     },
@@ -405,6 +404,8 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
         state.blocks = data.blocks
         state.sessionId = data.sessionId
         state.currentBlockId = data.currentBlockId
+        state.planner = data.planner
+        state.artifacts = data.artifacts
       })
     },
   }))

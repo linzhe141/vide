@@ -18,7 +18,7 @@ export class Agent {
     resumeAgetnSession.sessionId = sessionId
     resumeAgetnSession.workflowBlocks = []
     for (const block of blockData) {
-      const worlflowBlock = resumeAgetnSession.buildWorlflowBlock(block.userInput)
+      const worlflowBlock = resumeAgetnSession.buildWorkflowBlock(block.userInput)
       worlflowBlock.runtime.thread.ctx.messages = this.buildChatMessages(block.messages)
 
       resumeAgetnSession.workflowBlocks.push(worlflowBlock)

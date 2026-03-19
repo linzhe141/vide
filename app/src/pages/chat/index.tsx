@@ -11,9 +11,10 @@ import {
   type ConversationBlock,
   type ThreadMessage,
 } from '@/app/src/store/threadStore'
-import { FileText } from 'lucide-react'
+import { FileText, ListChecks } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { ArtifactsDisplay } from './ArtifactsDisplay'
+import { PlannersDisplay } from './PlannersDisplay'
 
 export function Chat() {
   const params = useParams()
@@ -29,7 +30,9 @@ function ChatContent({ threadId }: { threadId: string }) {
   const { setThreads } = useThreadsStore()
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useThreadStore()
-  const [openArtifacts, setOpenArtifacts] = useState(false)
+  const [openSidePane, setOpenSidePane] = useState(false)
+
+  const [paneType, setPaneType] = useState<'Artifacts' | 'Planners'>('Artifacts')
 
   useEffect(() => {
     const firstInput = context.firstInput
@@ -39,21 +42,23 @@ function ChatContent({ threadId }: { threadId: string }) {
       handleSend(firstInput)
     } else {
       async function fetchMessages() {
-        const res = await window.ipcRendererApi.invoke('agent-resume-session', {
-          sessionId: threadId,
-        })
-        const lastBlock = res.at(-1)
+        const { blockData, planner, artifacts } = await window.ipcRendererApi.invoke(
+          'agent-resume-session',
+          {
+            sessionId: threadId,
+          }
+        )
+        const lastBlock = blockData.at(-1)
         if (!lastBlock) return
 
         const lastBlockId = lastBlock.id
         const conversationBlocks: ConversationBlock[] = []
-        for (const block of res) {
+        for (const block of blockData) {
           const conversationBlock: ConversationBlock = {
             id: block.id,
             input: block.userInput,
             // TODO
             status: 'finished',
-            planner: block.planner,
             askUser: block.askUser,
             // TODO
             runtime: {} as any,
@@ -63,7 +68,7 @@ function ChatContent({ threadId }: { threadId: string }) {
           conversationBlock.messages = blockMessages
           conversationBlocks.push(conversationBlock)
         }
-        function buildBlockMessages(messages: (typeof res)[number]['messages']) {
+        function buildBlockMessages(messages: (typeof blockData)[number]['messages']) {
           const theadMessages: ThreadMessage[] = []
           for (const message of messages) {
             switch (message.role) {
@@ -118,10 +123,15 @@ function ChatContent({ threadId }: { threadId: string }) {
           }
           return theadMessages
         }
+
+        const pendingPlanner = planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
         buildFromDatabase({
           sessionId: threadId,
           blocks: conversationBlocks,
           currentBlockId: lastBlockId,
+          planner,
+          currentPlannerId: pendingPlanner?.id,
+          artifacts,
         })
       }
       fetchMessages()
@@ -138,13 +148,42 @@ function ChatContent({ threadId }: { threadId: string }) {
         <div className='flex h-full min-w-[500px] flex-1 flex-col'>
           <div className='sticky flex h-10 items-center justify-between px-5'>
             <div></div>
-            <FileText
-              className='text-text-secondary'
-              size={14}
-              onClick={() => {
-                setOpenArtifacts((prev) => !prev)
-              }}
-            ></FileText>
+            <div className='text-text-secondary flex items-center gap-2'>
+              <ListChecks
+                size={14}
+                className={cn({
+                  'text-primary': openSidePane && paneType === 'Planners',
+                })}
+                onClick={() => {
+                  setPaneType('Planners')
+                  if (!openSidePane) {
+                    setOpenSidePane(true)
+                    return
+                  }
+                  if (paneType === 'Planners') {
+                    setOpenSidePane(false)
+                    return
+                  }
+                }}
+              ></ListChecks>
+              <FileText
+                size={14}
+                className={cn({
+                  'text-primary': openSidePane && paneType === 'Artifacts',
+                })}
+                onClick={() => {
+                  setPaneType('Artifacts')
+                  if (!openSidePane) {
+                    setOpenSidePane(true)
+                    return
+                  }
+                  if (paneType === 'Artifacts') {
+                    setOpenSidePane(false)
+                    return
+                  }
+                }}
+              ></FileText>
+            </div>
           </div>
           <div className='h-0 flex-1 overflow-auto'>
             <MessageList />
@@ -153,11 +192,12 @@ function ChatContent({ threadId }: { threadId: string }) {
         </div>
         <div
           className={cn('overflow-x-hidden transition-[width] duration-200 ease-out', {
-            'w-0': !openArtifacts,
-            'w-[1000px] border-l': openArtifacts,
+            'w-0': !openSidePane,
+            'w-[1000px] border-l': openSidePane,
           })}
         >
-          <ArtifactsDisplay></ArtifactsDisplay>
+          {paneType === 'Artifacts' && <ArtifactsDisplay threadId={threadId}></ArtifactsDisplay>}
+          {paneType === 'Planners' && <PlannersDisplay></PlannersDisplay>}
         </div>
       </div>
     </div>

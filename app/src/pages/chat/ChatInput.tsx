@@ -3,42 +3,16 @@ import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useChatContext } from './ChatProvider'
 import { useState, useRef, useEffect } from 'react'
-import { useThreadStore, type ConversationBlock, type PlanStep } from '../../store/threadStore'
-import { cn } from '../../lib/utils'
-
-function StatusDot({ status }: { status: PlanStep['status'] }) {
-  return (
-    <div
-      className={cn('mt-1 min-h-2 min-w-2 rounded-full', {
-        'bg-primary': status === 'completed',
-        'bg-foreground animate-pulse': status === 'running',
-        'bg-border': status === 'pending',
-        'bg-destructive': status === 'failed',
-      })}
-    />
-  )
-}
-
-function PlannerView({ block }: { block: ConversationBlock }) {
-  return (
-    <div className='space-y-3 pl-4'>
-      {block.planner!.steps.map((step) => (
-        <div key={step.id} className='flex items-center gap-3'>
-          <StatusDot status={step.status} />
-          <div className='text-text-secondary text-sm'>{step.description}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
+import { useThreadStore } from '../../store/threadStore'
+import { Planner } from './PlannersDisplay'
 
 export function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { handleSend } = useChatContext()
-  const state = useThreadStore()
-  const currentBlock = state.blocks.find((b) => b.id === state.currentBlockId)
-
+  const pendingPlanner = useThreadStore((state) =>
+    state.planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
+  )
   // 自动调整 textarea 高度
   useEffect(() => {
     const textarea = textareaRef.current
@@ -58,10 +32,10 @@ export function ChatInput() {
   return (
     <div>
       <div className='mx-auto max-w-5xl px-4 py-4'>
-        {currentBlock?.planner && (
+        {pendingPlanner && (
           <div className='flex justify-center'>
             <div className='border-border w-9/10 rounded-xl rounded-ee-none rounded-es-none border border-b-0 py-3'>
-              <PlannerView block={currentBlock} />
+              <Planner planner={pendingPlanner} />
             </div>
           </div>
         )}

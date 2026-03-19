@@ -53,11 +53,12 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
 `,
     },
     executor: async () => {
+      this.sessionPlaner = new SessionPlaner([])
+
       plannerEvent.emit('planner-start-generate', {
         sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
+        plannerId: this.sessionPlaner.id,
       })
-      this.sessionPlaner = new SessionPlaner([])
       return {
         content: 'Has marked plan is generating',
       }
@@ -109,7 +110,7 @@ Continue calling this tool until all required steps for completing the task are 
       this.sessionPlaner!.plans.push(planStep)
       plannerEvent.emit('planner-step-generate', {
         sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
+        plannerId: this.sessionPlaner!.id,
         plan: planStep,
       })
       return {
@@ -144,7 +145,7 @@ Always call this tool after finishing plan generation.
     executor: async () => {
       plannerEvent.emit('planner-end-generate', {
         sessionId: this.runtime.sessionId,
-        workflowId: this.runtime.workflowId,
+        plannerId: this.sessionPlaner!.id,
         plans: this.sessionPlaner!.plans,
       })
       this.runtime.session.planners.push(this.sessionPlaner!)
@@ -204,14 +205,14 @@ Typical usage pattern:
         if (target.status === 'running') {
           plannerEvent.emit('planner-execute-item-start', {
             sessionId: this.runtime.sessionId,
-            workflowId: this.runtime.workflowId,
+            plannerId: this.sessionPlaner!.id,
             plan: target,
           })
         }
         if (target.status === 'completed') {
           plannerEvent.emit('planner-execute-item-success', {
             sessionId: this.runtime.sessionId,
-            workflowId: this.runtime.workflowId,
+            plannerId: this.sessionPlaner!.id,
             plan: target,
           })
         }
@@ -219,7 +220,7 @@ Typical usage pattern:
         if (target.status === 'failed') {
           plannerEvent.emit('planner-execute-item-error', {
             sessionId: this.runtime.sessionId,
-            workflowId: this.runtime.workflowId,
+            plannerId: this.sessionPlaner!.id,
             plan: target,
           })
         }

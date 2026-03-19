@@ -21,7 +21,8 @@ export function Pre(props: PropsWithChildren) {
   return <CodeBlock code={String(code)} lang={language}></CodeBlock>
 }
 
-function CodeBlock({ code, lang }: { code: string; lang: string }) {
+export function CodeBlock({ code, lang }: { code: string; lang: string }) {
+  console.log('render CodeBlock~~~')
   const formatLang = lang as keyof typeof defaultLangs
 
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
@@ -188,7 +189,7 @@ function CodeBlockWrapper({
         </div>
       </div>
       <pre
-        className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818]', '!my-0')}
+        className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818] p-2', '!my-0')}
         style={{ ...THEME.dark, fontSize: '14px' }}
       >
         {children}

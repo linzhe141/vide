@@ -19,7 +19,7 @@ export class AgentSession {
     try {
       activeSessions.push(this)
 
-      const workflowBlock = this.buildWorlflowBlock(userInput)
+      const workflowBlock = this.buildWorkflowBlock(userInput)
       const prevRuntime = this.workflowBlocks.at(-1)?.runtime
       if (prevRuntime) {
         // 保留完整的user input 或许效果更好 or not
@@ -52,7 +52,7 @@ export class AgentSession {
     }
   }
 
-  buildWorlflowBlock(userInput: string) {
+  buildWorkflowBlock(userInput: string) {
     return new SessionWorkflowBlock(this, userInput)
   }
 
@@ -76,5 +76,8 @@ export class SessionWorkflowBlock {
 }
 
 export class SessionPlaner {
-  constructor(public plans: PlanStep[]) {}
+  id: string
+  constructor(public plans: PlanStep[]) {
+    this.id = uuid()
+  }
 }

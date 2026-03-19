@@ -34,6 +34,7 @@
     "gray-matter": "^4.0.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "immer": "^11.1.4",
+    "isbinaryfile": "^6.0.0",
     "lucide-react": "^0.511.0",
     "marked": "^17.0.3",
     "openai": "^6.16.0",

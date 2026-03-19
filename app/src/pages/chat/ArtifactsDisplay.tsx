@@ -1,52 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react'
+import type { FileNode } from '@/electron/ipc/api/channels'
+import { CodeBlock } from '../../components/Pre/Pre'
 
-type FileNode = {
-  id: string
-  name: string
-  type: 'file' | 'folder'
-  content?: string
-  children?: FileNode[]
-}
-
-const mockTree: FileNode[] = [
-  {
-    id: '1',
-    name: 'src',
-    type: 'folder',
-    children: [
-      {
-        id: '1-1',
-        name: 'components',
-        type: 'folder',
-        children: [
-          {
-            id: '1-1-1',
-            name: 'Button.tsx',
-            type: 'file',
-            content: `export const Button = () => <button>Click</button>`,
-          },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'App.tsx',
-        type: 'file',
-        content: `export default function App() { return <div>Hello</div> }`,
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'package.json',
-    type: 'file',
-    content: `{ "name": "demo" }`,
-  },
-]
-
-export function ArtifactsDisplay() {
+export function ArtifactsDisplay({ threadId }: { threadId: string }) {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null)
+  const [artifacts, setArtifacts] = useState<
+    {
+      id: string
+      threadId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      file: FileNode
+      updatedAt: number
+    }[]
+  >([])
 
+  useEffect(() => {
+    async function fetchArtifacts() {
+      const res = await window.ipcRendererApi.invoke('get-thread-artifacts', {
+        sessionId: threadId,
+      })
+      setArtifacts(res)
+    }
+    fetchArtifacts()
+  }, [threadId])
   return (
     <div className='flex h-full'>
       {/* Sidebar */}
@@ -54,14 +32,14 @@ export function ArtifactsDisplay() {
         <div className='text-text-secondary p-3 text-sm'>Artifacts</div>
 
         <div className='px-2'>
-          {mockTree.map((node) => (
-            <TreeNode key={node.id} node={node} onSelect={setSelectedFile} />
+          {artifacts.map((i) => (
+            <TreeNode key={i.artifactWorkspaceName} node={i.file} onSelect={setSelectedFile} />
           ))}
         </div>
       </div>
 
       {/* Content */}
-      <div className='bg-background flex-1'>
+      <div className='bg-background w-0 flex-1'>
         <div className='flex h-full flex-col'>
           {/* header */}
           <div className='border-border text-text-secondary border-b px-4 py-2 text-sm'>
@@ -71,7 +49,14 @@ export function ArtifactsDisplay() {
           {/* content */}
           <div className='flex-1 overflow-auto p-4 font-mono text-sm'>
             {selectedFile ? (
-              <pre className='whitespace-pre-wrap'>{selectedFile.content}</pre>
+              selectedFile.content ? (
+                <CodeBlock
+                  code={selectedFile.content ?? ''}
+                  lang={selectedFile.name.split('.').at(-1) ?? 'tsx'}
+                ></CodeBlock>
+              ) : (
+                <div className='text-text-info'>this is a binary file</div>
+              )
             ) : (
               <div className='text-text-info'>Select a file to preview</div>
             )}
@@ -122,14 +107,16 @@ function TreeNode({
         {isFolder ? <Folder size={14} /> : <FileText size={14} />}
 
         {/* name */}
-        <span className='flex-1 text-xs font-thin'>{node.name}</span>
+        <span className='flex-1 overflow-hidden text-xs font-thin overflow-ellipsis whitespace-nowrap'>
+          {node.name}
+        </span>
       </div>
 
       {/* children */}
       {isFolder && open && node.children && (
         <div>
           {node.children.map((child) => (
-            <TreeNode key={child.id} node={child} level={level + 1} onSelect={onSelect} />
+            <TreeNode key={child.name} node={child} level={level + 1} onSelect={onSelect} />
           ))}
         </div>
       )}

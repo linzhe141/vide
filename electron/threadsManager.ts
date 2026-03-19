@@ -1,6 +1,7 @@
 import type { AppManager } from './appManager'
 import {
   onAgentEvent,
+  onArtifactEvent,
   onAskUserQuestionEvent,
   onPalnnerEvent,
   onWorkflowEvent,
@@ -8,6 +9,7 @@ import {
 import { v4 as uuid } from 'uuid'
 import { db } from './databaseManager'
 import {
+  artifacts,
   askUserQuestions,
   planners,
   threads,
@@ -22,7 +24,6 @@ import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 export class ThreadsManager {
   // for stream update
   currentPlannerId: string | null = null
-  currentAaskUserQuestionId: string | null = null
   constructor(private app: AppManager) {}
 
   init() {
@@ -160,52 +161,21 @@ export class ThreadsManager {
     })
 
     // runtime
-    onPalnnerEvent('planner-start-generate', async ({ workflowId }) => {
+    // TODO only end write db
+    onPalnnerEvent('planner-start-generate', async () => {})
+    onPalnnerEvent('planner-step-generate', async () => {})
+    onPalnnerEvent('planner-end-generate', async ({ sessionId, plans }) => {
       this.currentPlannerId = uuid()
       const time = Date.now()
 
       await db.insert(planners).values({
         id: this.currentPlannerId,
-        blockId: workflowId,
-        completedGenerate: 'false',
-        planJson: JSON.stringify([]),
+        threadId: sessionId,
+        planJson: JSON.stringify(plans),
         createdAt: time,
         updatedAt: time,
       })
     })
-
-    // TODO only end write db
-    onPalnnerEvent('planner-step-generate', async ({ plan }) => {
-      const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
-      if (!target.length) {
-        return
-      }
-      const targetRow = target[0]
-      const planJson = JSON.parse(targetRow.planJson ?? '[]') as PlanStep[]
-      const uptated = [...planJson]
-      uptated.push(plan)
-
-      const time = Date.now()
-      await db
-        .update(planners)
-        .set({
-          planJson: JSON.stringify(uptated),
-          updatedAt: time,
-        })
-        .where(eq(planners.id, this.currentPlannerId!))
-    })
-
-    onPalnnerEvent('planner-end-generate', async () => {
-      const time = Date.now()
-      await db
-        .update(planners)
-        .set({
-          completedGenerate: 'true',
-          updatedAt: time,
-        })
-        .where(eq(planners.id, this.currentPlannerId!))
-    })
-
     onPalnnerEvent('planner-execute-item-start', async ({ plan }) => {
       const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
       if (!target.length) {
@@ -229,7 +199,6 @@ export class ThreadsManager {
         })
         .where(eq(planners.id, this.currentPlannerId!))
     })
-
     onPalnnerEvent('planner-execute-item-success', async ({ plan }) => {
       const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
       if (!target.length) {
@@ -257,7 +226,6 @@ export class ThreadsManager {
         this.currentPlannerId = null
       }
     })
-
     onPalnnerEvent('planner-execute-item-error', async ({ plan }) => {
       const target = await db.select().from(planners).where(eq(planners.id, this.currentPlannerId!))
       if (!target.length) {
@@ -282,21 +250,21 @@ export class ThreadsManager {
         .where(eq(planners.id, this.currentPlannerId!))
     })
 
+    onAskUserQuestionEvent('ask-user-start-generate', async () => {})
+    onAskUserQuestionEvent('ask-user-option', async () => {})
     onAskUserQuestionEvent(
-      'ask-user-start-generate',
-      async ({ workflowId, type, title, description }) => {
-        this.currentAaskUserQuestionId = uuid()
+      'ask-user-complete',
+      async ({ workflowId, question: { type, title, description, options } }) => {
         const time = Date.now()
         const question: AskUserQuestionDraft = {
           type: type === 'single' ? 'single' : 'multiple',
           title,
           description,
-          options: [],
+          options,
         }
         await db.insert(askUserQuestions).values({
-          id: this.currentAaskUserQuestionId,
+          id: uuid(),
           blockId: workflowId,
-          completedGenerate: 'false',
           draftJson: JSON.stringify(question),
           createdAt: time,
           updatedAt: time,
@@ -304,38 +272,16 @@ export class ThreadsManager {
       }
     )
 
-    onAskUserQuestionEvent('ask-user-option', async ({ option }) => {
-      const target = await db
-        .select()
-        .from(askUserQuestions)
-        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
-      if (!target.length) {
-        return
-      }
-      const targetRow = target[0]
-      const draftJson = JSON.parse(targetRow.draftJson ?? '{}') as AskUserQuestionDraft
-      const uptated = { ...draftJson, options: [...draftJson.options, option] }
-
+    onArtifactEvent('artifacts-created-workspace', async ({ sessionId, workspaceName }) => {
       const time = Date.now()
-      await db
-        .update(askUserQuestions)
-        .set({
-          draftJson: JSON.stringify(uptated),
-          updatedAt: time,
-        })
-        .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
 
-      if (option.done) {
-        await db
-          .update(askUserQuestions)
-          .set({
-            completedGenerate: 'true',
-            updatedAt: time,
-          })
-          .where(eq(askUserQuestions.id, this.currentAaskUserQuestionId!))
-      }
+      await db.insert(artifacts).values({
+        id: uuid(),
+        threadId: sessionId,
+        artifactWorkspaceName: workspaceName,
+        createdAt: time,
+        updatedAt: time,
+      })
     })
-
-    onAskUserQuestionEvent('ask-user-complete', async () => {})
   }
 }

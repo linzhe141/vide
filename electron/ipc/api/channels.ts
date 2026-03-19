@@ -1,5 +1,5 @@
 import type { Settings } from '@/electron/store/settingsStore'
-import type { LLMConfig, ThreadMessageRole } from '@/types'
+import type { LLMConfig } from '@/types'
 import type {
   AgentLifecycleEvents,
   PlannerEvents,
@@ -9,14 +9,12 @@ import type {
 import type { threadWorkflowBlockMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
-export type ThreadMessageRowDto = {
-  id: string
-  blockId: string
-  role: ThreadMessageRole
-  content: string
-  payload: string
-  createdAt: number
-  updatedAt: number
+export type FileNode = {
+  name: string
+  type: 'file' | 'folder'
+  path: string // 绝对路径
+  content?: string
+  children?: FileNode[]
 }
 
 export type ThreadRowDto = {
@@ -28,9 +26,6 @@ export type ThreadRowDto = {
 export type BlockData = {
   id: string
   userInput: string
-  planner?: {
-    steps: PlanStep[]
-  }
   askUser?: {
     completed: boolean
     submitValue: []
@@ -54,7 +49,17 @@ export interface RenderChannel {
 
   // agent
   'agent-create-session': () => Promise<string>
-  'agent-resume-session': (data: { sessionId: string }) => Promise<BlockData[]>
+  'agent-resume-session': (data: { sessionId: string }) => Promise<{
+    planner: { id: string; plan: PlanStep[] }[]
+    blockData: BlockData[]
+    artifacts: {
+      id: string
+      threadId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      updatedAt: number
+    }[]
+  }>
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
@@ -64,7 +69,6 @@ export interface RenderChannel {
 
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>
-  'get-threads-item-messages': (data: { sessionId: string }) => Promise<ThreadMessageRowDto[]>
 
   // submit llm settings
   'submit-llm-seetings': (data: LLMConfig) => void
@@ -73,6 +77,17 @@ export interface RenderChannel {
   ) => Promise<{ success: true } | { success: false; error: any }>
   // only dev
   'dev-delete-database-rows': () => void
+
+  'get-thread-artifacts': (data: { sessionId: string }) => Promise<
+    {
+      id: string
+      threadId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      file: FileNode
+      updatedAt: number
+    }[]
+  >
 }
 
 export type MainChannel = {

@@ -11,7 +11,7 @@ export class WorkflowRuntimeContext {
   constructor(options: { session: AgentSession; userInput: string }) {
     this.session = options.session
     this.workflowId = uuid()
-    // userInput array ONLY one item
+    // During initialization, `userInput` contains only one element.
     this.userInput.push(options.userInput)
     this.thread = new WorkflowThread({ messages: [] })
   }

@@ -1,9 +1,10 @@
-import { agentEvent, plannerEvent, workflowEvent, askUserQuestionEvent } from './event'
+import { agentEvent, plannerEvent, workflowEvent, askUserQuestionEvent, artifactEvent } from './event'
 import type {
   AgentLifecycleEvents,
   WorkflowEvents,
   PlannerEvents,
   AskUserQuestionEvents,
+  ArtifactEvents,
 } from './event/channels'
 
 export function onAgentEvent<T extends keyof AgentLifecycleEvents>(
@@ -29,4 +30,11 @@ export function onAskUserQuestionEvent<T extends keyof AskUserQuestionEvents>(
   handle: AskUserQuestionEvents[T]
 ) {
   return askUserQuestionEvent.on(event, handle)
+}
+
+export function onArtifactEvent<T extends keyof ArtifactEvents>(
+  event: T,
+  handle: ArtifactEvents[T]
+) {
+  return artifactEvent.on(event, handle)
 }

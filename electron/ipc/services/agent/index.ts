@@ -62,28 +62,13 @@ export class AgentIpcMainService implements IpcMainService {
         const askUserQuestion = askUserQuestionRows[0]
         const draft = JSON.parse(askUserQuestion?.draftJson || '{}') as AskUserQuestionDraft
 
-        const plannerRows = await db
-          .select()
-          .from(schema.planners)
-          .where(eq(schema.planners.blockId, id))
-        const plannerTarget = plannerRows[0]
-        const planner = JSON.parse(plannerTarget?.planJson || '[]') as PlanStep[]
-
-        const prevBlockPlaner = blockData.at(-1)?.planner
         blockData.push({
           id,
           userInput,
           messages: blockMessageRows,
-          planner: planner.length
-            ? {
-                steps: planner,
-              }
-            : prevBlockPlaner?.steps.length
-              ? prevBlockPlaner
-              : undefined,
           askUser: askUserQuestion
             ? {
-                completed: askUserQuestion.completedGenerate === 'true',
+                completed: true,
                 submitValue: JSON.parse(askUserQuestion.answerJson || '[]'),
                 title: draft.title || '',
                 description: draft.description || '',
@@ -98,7 +83,26 @@ export class AgentIpcMainService implements IpcMainService {
         sessionId: data.sessionId,
         blockData: blockData,
       })
-      return blockData
+
+      const plannerRows = await db
+        .select()
+        .from(schema.planners)
+        .where(eq(schema.planners.threadId, data.sessionId))
+
+      const artifactRows = await db
+        .select()
+        .from(schema.artifacts)
+        .where(eq(schema.artifacts.threadId, data.sessionId))
+      return {
+        planner: plannerRows.map((i) => {
+          return {
+            id: i.id,
+            plan: JSON.parse(i?.planJson || '[]') as PlanStep[],
+          }
+        }),
+        blockData,
+        artifacts: artifactRows,
+      }
     })
 
     ipcMainApi.handle('agent-session-send', async ({ input }) => {
@@ -108,14 +112,12 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('ask-user-question-submit', async (data) => {
-      console.log('xxxxxxxxxxxxxxxxxx')
       await db
         .update(schema.askUserQuestions)
         .set({
           answerJson: JSON.stringify(data.submitValue),
         })
         .where(eq(schema.askUserQuestions.blockId, data.workflowId))
-      console.log('yyyyyyyyyy')
     })
   }
 

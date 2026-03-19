@@ -54,6 +54,20 @@ export const threadWorkflowBlockMessages = sqliteTable('thread_workflow_block_me
   updatedAt: integer('updated_at').notNull(),
 })
 
+export const artifacts = sqliteTable('artifacts', {
+  id: text('id').primaryKey(),
+
+  threadId: text('thread_id')
+    .notNull()
+    .references(() => threads.id),
+
+  artifactWorkspaceName: text('artifact_workspace_name').notNull(),
+
+  createdAt: integer('created_at').notNull(),
+
+  updatedAt: integer('updated_at').notNull(),
+})
+
 export const planners = sqliteTable('planners', {
   id: text('id').primaryKey(),
 
@@ -123,6 +137,13 @@ export const threadWorkflowBlockMessagesRelations = relations(
 export const plannersRelations = relations(planners, ({ one }) => ({
   threads: one(threads, {
     fields: [planners.threadId],
+    references: [threads.id],
+  }),
+}))
+
+export const artifactsRelations = relations(artifacts, ({ one }) => ({
+  threads: one(threads, {
+    fields: [artifacts.threadId],
     references: [threads.id],
   }),
 }))
