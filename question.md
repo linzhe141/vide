@@ -17,3 +17,6 @@ this is your runtime workflow code `agent\core\workflow.ts`, basic on this code 
 输出一个plan 大概三个step,然后依次自动执行这几个mock plan step，并mock几个输出的文本，only for test
 
 使用BUILDIN_ARTIFACT_NAMESPACE_CREATE_WORKSPACE，在这个workspace下面传教一个vue v-for的示例代码(sfc + setup + ts)，大概30行
+
+你先从 react重复渲染的角度去分析，我哪里有问题，是不是太多额外的重新渲染了,首先是这个文件
+是不是要加useMemo useCall 等去优化，memo组件，还要解释为什么又重新渲染了，不要考虑代码高亮的耗时，分析后要给我优化后完整的代码 ，只分析react代码

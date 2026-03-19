@@ -18,6 +18,10 @@ export const MarkdownProvider = ({
   children,
   animation,
 }: PropsWithChildren<{ animation: boolean }>) => {
-  const providerValue = useMemo(() => ({ animation }), [animation])
-  return <MarkdownContext.Provider value={providerValue}>{children}</MarkdownContext.Provider>
+  /**
+   * ✅ 防止 context 触发子组件全部 render
+   */
+  const value = useMemo(() => ({ animation }), [animation])
+
+  return <MarkdownContext.Provider value={value}>{children}</MarkdownContext.Provider>
 }

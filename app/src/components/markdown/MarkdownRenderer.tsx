@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import MarkdownReact, { type Options as ReactMarkdownOptions } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { memo, useMemo, type FC, type PropsWithChildren } from 'react'
+import { memo, useMemo, type FC } from 'react'
 import { MarkdownProvider } from './MarkdownProvider'
 import { rehypeStreamAnimated } from './animation/rehypeStreamAnimated'
 import { marked } from 'marked'
@@ -14,11 +14,20 @@ const parseMarkdownIntoBlocks = (markdown: string) => {
   return marked.lexer(markdown).map((token) => token.raw)
 }
 
-const MemoMarkdowndown: FC<PropsWithChildren<ReactMarkdownOptions>> = memo(
+/**
+ * ✅ 精确 memo
+ */
+const MemoMarkdown: FC<ReactMarkdownOptions> = memo(
   ({ children, ...rest }) => {
     return <MarkdownReact {...rest}>{children}</MarkdownReact>
   },
-  (prevProps, nextProps) => prevProps.children === nextProps.children
+  (prev, next) => {
+    return (
+      prev.children === next.children &&
+      prev.rehypePlugins === next.rehypePlugins &&
+      prev.components === next.components
+    )
+  }
 )
 
 export function MarkdownRenderer({
@@ -26,38 +35,41 @@ export function MarkdownRenderer({
   className,
   animation,
 }: ReactMarkdownOptions & { className?: string; animation: boolean }) {
-  const blocks = useMemo(() => parseMarkdownIntoBlocks(children ?? ''), [children])
+  /**
+   * ✅ 避免每次 render 重新 tokenize markdown
+   */
+  const blocks = useMemo(() => {
+    return parseMarkdownIntoBlocks(children ?? '')
+  }, [children])
 
   return (
     <MarkdownProvider animation={animation}>
       <article
         className={cn(
           'article-wrapper prose dark:prose-invert prose-slate max-w-none',
-          {
-            animation,
-          },
+          { animation },
           className
         )}
       >
         {animation ? (
           blocks.map((block, index) => (
-            <MemoMarkdowndown
+            <MemoMarkdown
               key={index}
               rehypePlugins={streamRehypePlugins}
               remarkPlugins={[remarkGfm]}
               components={components}
             >
               {block}
-            </MemoMarkdowndown>
+            </MemoMarkdown>
           ))
         ) : (
-          <MemoMarkdowndown
+          <MemoMarkdown
             rehypePlugins={markdownRehypePlugins}
             components={components}
             remarkPlugins={[remarkGfm]}
           >
             {children}
-          </MemoMarkdowndown>
+          </MemoMarkdown>
         )}
       </article>
     </MarkdownProvider>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PropsWithChildren, type ReactElement } from 'react'
+import { useEffect, useRef, memo, useMemo, type PropsWithChildren, type ReactElement } from 'react'
 import { cn } from '../../lib/utils'
 import { THEME } from '../highlight/codeTheme'
 import type { ThemedToken } from 'shiki'
@@ -6,36 +6,48 @@ import { highlighter, defaultLangs, FALLBACK_LANG } from '../highlight/shiki'
 import { ShikiStreamTokenizer } from 'shiki-stream'
 import { Copy, Check } from 'lucide-react'
 import { useMarkdown } from '../markdown/MarkdownProvider'
+import { useState } from 'react'
 
-export function Pre(props: PropsWithChildren) {
+export const Pre = memo(function Pre(props: PropsWithChildren) {
   const { animation } = useMarkdown()
   const codeElement = props.children as ReactElement<PropsWithChildren>
-  const code = codeElement.props.children
+
+  const code = codeElement?.props?.children ?? ''
   const language = getCodeLanguage(codeElement)
+
   if (animation) {
     if (code) {
-      return <StreamBlock code={String(code)} lang={language}></StreamBlock>
+      return <StreamBlock code={String(code)} lang={language} />
     }
     return null
   }
-  return <CodeBlock code={String(code)} lang={language}></CodeBlock>
-}
+
+  return <MemoCodeBlock code={String(code)} lang={language} />
+})
+
+/**
+ * ✅ 只要 code / lang 不变，就不会重新 render
+ */
+const MemoCodeBlock = memo(CodeBlock, (prev, next) => {
+  return prev.code === next.code && prev.lang === next.lang
+})
 
 export function CodeBlock({ code, lang }: { code: string; lang: string }) {
   console.log('render CodeBlock~~~')
-  const formatLang = lang as keyof typeof defaultLangs
 
+  const formatLang = lang as keyof typeof defaultLangs
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
 
-  function getTokens(input: string) {
-    const result = highlighter!.codeToTokens(input, {
+  /**
+   * ✅ 核心优化：只在 code 变化时计算 tokens
+   */
+  const tokens = useMemo(() => {
+    const result = highlighter!.codeToTokens(code, {
       lang: highlightLang,
       theme: 'css-variables',
     })
     return result.tokens
-  }
-
-  const tokens = getTokens(code)
+  }, [code, highlightLang])
 
   return (
     <CodeBlockWrapper lang={lang} code={code}>
@@ -78,6 +90,61 @@ function TokenSpan({ token }: { token: ThemedToken }) {
   )
 }
 
+/**
+ * ✅ 独立 CopyButton，避免影响整个 CodeBlock
+ */
+const CopyButton = memo(function CopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className='inline-flex h-7 w-7 items-center justify-center rounded-md'
+      aria-label='Copy code'
+    >
+      {copied ? (
+        <Check className='h-4 w-4 text-green-400' />
+      ) : (
+        <Copy className='h-4 w-4 text-white/90' />
+      )}
+    </button>
+  )
+})
+
+function CodeBlockWrapper({
+  lang,
+  code,
+  children,
+}: PropsWithChildren<{ lang: string; code: string }>) {
+  return (
+    <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
+      <div className='text-muted-foreground sticky top-0 z-10 flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
+        <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
+
+        <div className='flex items-center gap-1'>
+          <CopyButton code={code} />
+        </div>
+      </div>
+
+      <pre
+        className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818] p-2', '!my-0')}
+        style={{ ...THEME.dark, fontSize: '14px' }}
+      >
+        {children}
+      </pre>
+    </div>
+  )
+}
+
+/**
+ * ✅ 流式部分不动（已经绕过 React）
+ */
 function StreamBlock({ code, lang }: { code: string; lang: string }) {
   const formatLang = lang as keyof typeof defaultLangs
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
@@ -92,7 +159,6 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
       lang: highlightLang,
       theme: 'css-variables',
     })
-    // 重置容器
     if (codeContainerRef.current) {
       codeContainerRef.current.innerHTML = ''
     }
@@ -107,12 +173,12 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
       if (formatCode.length > indexRef.current) {
         const incrementalText = formatCode.slice(indexRef.current)
         indexRef.current = formatCode.length
-        await new Promise((resolve) => setTimeout(resolve, 100))
+
         const { stable, unstable, recall } = await tokenizerRef.current.enqueue(incrementalText)
+
         const chunkTokens = [...stable, ...unstable]
-        // 直接操作 DOM，完全跳过 React
+
         if (codeContainerRef.current) {
-          // 处理 recall（向后删除）
           if (recall > 0) {
             let count = 0
             let node = codeContainerRef.current.lastChild
@@ -124,7 +190,6 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
             }
           }
 
-          // 增量添加新 token
           chunkTokens.forEach((token) => {
             const span = document.createElement('span')
             if (token.color) span.style.color = token.color
@@ -141,6 +206,7 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
         }
       }
     }
+
     updateStreamTokens()
   }, [code])
 
@@ -152,48 +218,7 @@ function StreamBlock({ code, lang }: { code: string; lang: string }) {
 }
 
 function getCodeLanguage(codeElement: ReactElement<any>) {
-  if (!codeElement.props.className) return ''
-  // eslint-disable-next-line no-unsafe-optional-chaining
-  const [_, language] = codeElement.props.className?.split('language-')
-  return language as string
-}
-
-function CodeBlockWrapper({
-  lang,
-  code,
-  children,
-}: PropsWithChildren<{ lang: string; code: string }>) {
-  const [copied, setCopied] = useState(false)
-  function handleCopy() {
-    navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
-  }
-  return (
-    <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
-      <div className='text-muted-foreground sticky top-0 z-10 flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
-        <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
-
-        <div className='flex items-center gap-1'>
-          <button
-            onClick={handleCopy}
-            className='inline-flex h-7 w-7 items-center justify-center rounded-md'
-            aria-label='Copy code'
-          >
-            {copied ? (
-              <Check className='h-4 w-4 text-green-400' />
-            ) : (
-              <Copy className='h-4 w-4 text-white/90' />
-            )}
-          </button>
-        </div>
-      </div>
-      <pre
-        className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818] p-2', '!my-0')}
-        style={{ ...THEME.dark, fontSize: '14px' }}
-      >
-        {children}
-      </pre>
-    </div>
-  )
+  if (!codeElement?.props?.className) return ''
+  const [, language] = codeElement.props.className.split('language-')
+  return language || ''
 }
