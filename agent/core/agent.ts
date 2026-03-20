@@ -1,79 +1,89 @@
-import type { Tool, FnProcessLLMStream, ChatMessage } from './types'
-import { AgentContext } from './context'
-import { ToolService } from './services/tool'
-import { LLMService } from './services/llm'
-import { Workflow } from './workflow'
-import { Thread, ThreadsManager } from './threads'
+import { ThreadMessageRole } from '@/types'
+import { AgentSession } from './agentSession'
 import { agentEvent } from './event'
-
-export interface CreateAgentOptions {
-  processLLMStream: FnProcessLLMStream
-  tools: Tool[]
-}
+import type { AssistantChatMessage, ChatMessage } from './types'
+import type { BlockData } from '@/electron/ipc/api/channels'
 
 export class Agent {
-  ctx: AgentContext
-  threadsManager: ThreadsManager
-  llmService: LLMService
-  toolService: ToolService
-  constructor(options: CreateAgentOptions) {
-    this.ctx = new AgentContext(this)
-
-    const { processLLMStream, tools } = options
-    this.llmService = new LLMService(processLLMStream, tools)
-    this.toolService = new ToolService(tools)
-
-    this.threadsManager = new ThreadsManager({
-      threads: [],
-    })
-
-    agentEvent.emit('agent-ready')
-  }
+  constructor() {}
 
   createSession() {
-    const agetnSession = new AgentSession(this)
-    agentEvent.emit('agent-create-session', { threadId: agetnSession.thread.id })
-
+    const agetnSession = new AgentSession()
+    agentEvent.emit('agent-create-session', { sessionId: agetnSession.sessionId })
     return agetnSession
   }
 
-  restoreSession(threadId: string, messages: ChatMessage[]) {
-    return AgentSession.restore(this, threadId, messages)
-  }
-}
+  resumeSession({ sessionId, blockData }: { sessionId: string; blockData: BlockData[] }) {
+    const resumeAgetnSession = new AgentSession()
+    resumeAgetnSession.sessionId = sessionId
+    resumeAgetnSession.workflowBlocks = []
+    for (const block of blockData) {
+      const worlflowBlock = resumeAgetnSession.buildWorkflowBlock(block.userInput)
+      worlflowBlock.runtime.thread.ctx.messages = this.buildChatMessages(block.messages)
 
-export class AgentSession {
-  private currentWorkflow: Workflow = null!
-  thread: Thread
-  constructor(private agent: Agent) {
-    this.thread = this.agent.threadsManager.createNewThread()
-  }
-  static restore(agent: Agent, threadId: string, messages: ChatMessage[]) {
-    const agetnSession = new AgentSession(agent)
-    agetnSession.thread.id = threadId
-    agetnSession.thread.ctx.messages = messages
-    return agetnSession
-  }
-  async send(input: string) {
-    // 每一次user-input 都使用新的一个workflow
-    this.currentWorkflow = new Workflow(this.thread, this.agent.llmService, this.agent.toolService)
-    const threadId = this.thread.id
-    await this.currentWorkflow.start(threadId, { input })
+      resumeAgetnSession.workflowBlocks.push(worlflowBlock)
+    }
+    return resumeAgetnSession
   }
 
-  async humanApprove() {
-    this.currentWorkflow.humanApproveToolCall()
-  }
+  buildChatMessages(messages: BlockData['messages']) {
+    const chatMessages: ChatMessage[] = []
+    let assistantMessage: AssistantChatMessage | null = null
+    for (const message of messages) {
+      switch (message.role) {
+        case ThreadMessageRole.User: {
+          chatMessages.push({
+            role: 'user',
+            content: message.content || '',
+          })
+          break
+        }
+        case ThreadMessageRole.AssistantText: {
+          assistantMessage = {
+            role: 'assistant',
+            content: message.content || '',
+          }
+          chatMessages.push(assistantMessage)
+          break
+        }
+        case ThreadMessageRole.ToolCalls: {
+          if (assistantMessage) {
+            assistantMessage.tool_calls = JSON.parse(message.payload || '[]')
+          } else {
+            chatMessages.push({
+              role: 'assistant',
+              content: '',
+              tool_calls: JSON.parse(message.payload || '[]'),
+            })
+          }
+          break
+        }
+        case ThreadMessageRole.Tool: {
+          const toolResult = JSON.parse(message.payload || '{}') as
+            | { id: string; toolName: string; result: any }
+            | { id: string; toolName: string; error: any }
+          if ('result' in toolResult) {
+            chatMessages.push({
+              role: 'tool',
+              tool_call_id: toolResult.id,
+              content: JSON.stringify(toolResult.result),
+            })
+          } else if ('error' in toolResult) {
+            const error = toolResult.error
+            chatMessages.push({
+              role: 'tool',
+              tool_call_id: toolResult.id,
+              content: 'An exception occurred while executing toolCall: ' + String(error),
+            })
+          }
 
-  async humanReject(_rejectReason?: string) {
-    this.currentWorkflow.humanRejectToolCall()
-  }
-
-  setSessionSystemPrompt(prompt: string) {
-    this.agent.threadsManager.setThreadSystemPrompt(this.thread.id, prompt)
-  }
-
-  abort() {
-    this.currentWorkflow.abort()
+          break
+        }
+        default: {
+          break
+        }
+      }
+    }
+    return chatMessages
   }
 }

@@ -1,19 +1,20 @@
-import type {
-  AssistantChatMessage,
-  CallToolStepPayload,
-  FinishReason,
-  ToolCall,
-} from '@/agent/core/types'
 import type { Settings } from '@/electron/store/settingsStore'
-import type { LLMConfig, ThreadMessageRole } from '@/types'
+import type { LLMConfig } from '@/types'
+import type {
+  AgentLifecycleEvents,
+  PlannerEvents,
+  WorkflowEvents,
+  AskUserQuestionEvents,
+} from '@/agent/core/event/channels'
+import type { threadWorkflowBlockMessages } from '@/db/schema'
+import type { PlanStep } from '@/agent/core/tools/planner'
 
-export type ThreadMessageRowDto = {
-  id: string
-  threadId: string
-  role: ThreadMessageRole
-  content: string
-  payload: string
-  createdAt: number
+export type FileNode = {
+  name: string
+  type: 'file' | 'folder'
+  path: string // 绝对路径
+  content?: string
+  children?: FileNode[]
 }
 
 export type ThreadRowDto = {
@@ -21,6 +22,19 @@ export type ThreadRowDto = {
   title: string
   createdAt: number
   updatedAt: number
+}
+export type BlockData = {
+  id: string
+  userInput: string
+  askUser?: {
+    completed: boolean
+    submitValue: []
+    title: string
+    description: string
+    type: string
+    options: { label: string; value: string; description: string }[]
+  }
+  messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
 }
 
 export interface RenderChannel {
@@ -35,24 +49,48 @@ export interface RenderChannel {
 
   // agent
   'agent-create-session': () => Promise<string>
+  'agent-resume-session': (data: { sessionId: string }) => Promise<{
+    planner: { id: string; plan: PlanStep[] }[]
+    blockData: BlockData[]
+    artifacts: {
+      id: string
+      threadId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      updatedAt: number
+    }[]
+  }>
   'agent-session-send': (data: { input: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
-  'agent-change-session': (data: { threadId: string }) => Promise<boolean>
+
+  'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
   // thread message
   'get-threads-list': () => Promise<ThreadRowDto[]>
-  'get-threads-item-messages': (data: { threadId: string }) => Promise<ThreadMessageRowDto[]>
 
   // submit llm settings
   'submit-llm-seetings': (data: LLMConfig) => void
   'verify-llm-settings-connection': (
     data: LLMConfig
   ) => Promise<{ success: true } | { success: false; error: any }>
+  // only dev
+  'dev-delete-database-rows': () => void
+
+  'get-thread-artifacts': (data: { sessionId: string }) => Promise<
+    {
+      id: string
+      threadId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      file: FileNode
+      updatedAt: number
+    }[]
+  >
 }
 
-export interface MainChannel {
+export type MainChannel = {
   // example
   sendChunk: (chunk: string) => void
   foo: (data: Record<'foo', 'bar'>) => void
@@ -60,30 +98,7 @@ export interface MainChannel {
 
   // window
   'changed-window-size': (isMaximized: boolean) => void
-
-  // agent
-  'agent-workflow-start': (data: { threadId: string; input: string }) => void
-  'agent-llm-start': () => void
-  'agent-llm-text-delta': (data: { content: string; delta: string }) => void
-  'agent-llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
-  'agent-llm-end': (finishReason: FinishReason) => void
-  'agent-llm-result': (message: AssistantChatMessage) => void
-  'agent-llm-error': (error: any) => void
-  'agent-llm-aborted': () => void
-  'agent-tool-call-start': (data: { id: string; toolName: string; args: any }) => void
-  'agent-tool-call-success': (data: { id: string; toolName: string; result: any }) => void
-  'agent-tool-call-error': (data: { id: string; toolName: string; error: any }) => void
-  'agent-workflow-finished': (data: { threadId: string }) => void
-  'agent-workflow-wait-human-approve': (data: {
-    threadId: string
-    payload: CallToolStepPayload
-  }) => void
-  'agent-workflow-error': (data: { threadId: string; error: any }) => void
-  // just for ui
-  'agent-llm-tool-calls-start': () => void
-  'agent-llm-tool-call-name': (data: { name: string; id: string }) => void
-  'agent-llm-tool-call-arguments': (data: { arguments: string; id: string }) => void
-  'agent-llm-reasoning-start': () => void
-  'agent-llm-reasoning-delta': (data: { reasonContent: string }) => void
-  'agent-llm-reasoning-end': () => void
-}
+} & AgentLifecycleEvents &
+  PlannerEvents &
+  WorkflowEvents &
+  AskUserQuestionEvents

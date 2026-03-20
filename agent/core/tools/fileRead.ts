@@ -289,11 +289,11 @@ async function getFileStats(filePath: string) {
 /**
  * Read-only filesystem tool definition.
  */
-export const fileSystem: Tool = {
-  name: 'file_system',
+export const fileRead: Tool = {
+  name: 'file_system_only_read',
   type: 'function',
   function: {
-    name: 'file_system',
+    name: 'file_system_only_read',
     description:
       'Read-only filesystem access with smart filtering. Supports listing directories (excludes node_modules, .git, etc.), reading files (max 1MB), and retrieving file metadata. Automatically filters common build artifacts and binary files to prevent context overflow.',
     parameters: {
@@ -329,20 +329,30 @@ export const fileSystem: Tool = {
 
     try {
       switch (operation) {
-        case 'list':
-          return await listDirectory(filePath, recursive)
+        case 'list': {
+          const result = await listDirectory(filePath, recursive)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'read':
-          return await readFile(filePath, encoding)
+        case 'read': {
+          const result = await readFile(filePath, encoding)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'info':
-          return await getFileInfo(filePath)
+        case 'info': {
+          const result = await getFileInfo(filePath)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'exists':
-          return await checkExists(filePath)
+        case 'exists': {
+          const result = await checkExists(filePath)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'stats':
-          return await getFileStats(filePath)
+        case 'stats': {
+          const result = await getFileStats(filePath)
+          return { reason: 'call-llm', result }
+        }
 
         default:
           throw new Error(`Unsupported operation: ${operation}`)

@@ -37,7 +37,7 @@ export function SideBar() {
         <button
           onClick={() => setCollapsed((v) => !v)}
           className={cn(
-            'absolute top-1/2 -right-3 -translate-y-1/2',
+            'absolute top-1/2 -right-3 z-10 -translate-y-1/2',
             'flex size-6 items-center justify-center rounded-full',
             'border-border bg-background border',
             'text-text-secondary',

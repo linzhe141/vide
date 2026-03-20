@@ -69,8 +69,11 @@ export const getNormalizeTime: Tool = {
 
     const weekIndex = targetTime.day()
     return {
-      date: targetTime.format('YYYY-MM-DD HH:mm:ss'),
-      week: `${weekdaysCN[weekIndex]}（${weekdays[weekIndex]}）`,
+      reason: 'call-llm',
+      result: {
+        date: targetTime.format('YYYY-MM-DD HH:mm:ss'),
+        week: `${weekdaysCN[weekIndex]}（${weekdays[weekIndex]}）`,
+      },
     }
   },
 }

@@ -1,10 +1,12 @@
-import { Moon, Sun } from 'lucide-react'
+import { Eraser, Moon, Sun } from 'lucide-react'
 import { useTheme, themeColors, type ThemeColor } from '@/app/src/provider/ThemeProvider'
 import { cn } from '@/app/src/lib/utils'
+import { Button } from '@/app/src/ui/Button'
+import { useThreadsStore } from '@/app/src/store/threadsStore'
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
-
+  const { setThreads } = useThreadsStore()
   return (
     <div>
       <div className='mx-auto max-w-3xl px-6 py-14'>
@@ -101,6 +103,35 @@ export function GeneralSettings() {
                   </button>
                 )
               })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className='bg-border h-px' />
+
+          {/* clear database */}
+          <div className='flex items-center justify-between'>
+            <div>
+              <div className='text-foreground font-medium'>Clear database</div>
+              <div className='text-text-secondary text-sm'>Only dev mode</div>
+            </div>
+
+            <div>
+              <Button
+                onClick={async () => {
+                  const res = confirm('删除所有的 dababase 数据')
+                  if (res) {
+                    await window.ipcRendererApi.invoke('dev-delete-database-rows')
+                    alert('删除成功！')
+                    setThreads([])
+                  }
+                }}
+              >
+                <div className='flex items-center gap-2'>
+                  <Eraser size={14}></Eraser>
+                  <div>Clear !</div>
+                </div>
+              </Button>
             </div>
           </div>
         </section>

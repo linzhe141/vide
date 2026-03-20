@@ -1,26 +1,16 @@
 import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
-import { useThreadStore } from '../../store/threadStore'
 
 interface ChatContextType {
-  // From useWorkflowStream
-  isFinished: boolean
-  isRunning: boolean
-  isError: boolean
-  errorInfo: any
-
   // Actions
   handleSend: (input: string) => Promise<void>
-  handleApprove: (toolCallId: string) => void
-  handleReject: (toolCallId: string) => void
-  abort: () => void
+  running: boolean
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: PropsWithChildren) {
-  const { setToolCallStatus } = useThreadStore()
-  const { send, isFinished, isRunning, isError, errorInfo, abort } = useWorkflowStream()
+  const { send, running } = useWorkflowStream()
 
   const handleSend = useCallback(
     async (input: string) => {
@@ -29,34 +19,12 @@ export function ChatProvider({ children }: PropsWithChildren) {
     [send]
   )
 
-  const handleApprove = useCallback(
-    (toolCallId: string) => {
-      window.ipcRendererApi.invoke('agent-human-approved')
-      setToolCallStatus({ status: 'approve', toolCallId })
-    },
-    [setToolCallStatus]
-  )
-
-  const handleReject = useCallback(
-    (toolCallId: string) => {
-      window.ipcRendererApi.invoke('agent-human-rejected')
-      setToolCallStatus({ status: 'reject', toolCallId })
-    },
-    [setToolCallStatus]
-  )
-
   const value: ChatContextType = useMemo(
     () => ({
-      isFinished,
-      isRunning,
-      isError,
-      errorInfo,
+      running,
       handleSend,
-      handleApprove,
-      handleReject,
-      abort,
     }),
-    [isFinished, isRunning, isError, errorInfo, handleSend, handleApprove, handleReject, abort]
+    [handleSend, running]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

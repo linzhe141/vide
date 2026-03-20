@@ -1,57 +1,167 @@
-import type {
-  AssistantChatMessage,
-  CallToolStepPayload,
-  ChatMessage,
-  FinishReason,
-  ToolCall,
-} from '../types'
+import type { AskUserQuestionDraft } from '../tools/askUserQuestion'
+import type { PlanStep } from '../tools/planner'
+import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
+const AgentLifecycleEventChannels = {
+  'agent-create-session': null as unknown as { sessionId: string },
+  'agent-session-finished': null as unknown as {
+    sessionId: string
+    userInput: string
+  },
+}
+export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
 export type AgentLifecycleEvents = {
-  'agent-ready': () => void
-  'agent-create-session': (data: { threadId: string }) => void
+  [K in AgentLifecycleEventKey]: (data: (typeof AgentLifecycleEventChannels)[K]) => void
 }
 
-// TODO
-export type TheadEvents = {
-  'thread-created': (data: { threadId: string }) => void
-  'thread-message-added': (data: { threadId: string; message: ChatMessage }) => void
-  'thread-message-updated': (data: { threadId: string; message: ChatMessage }) => void
-  'thread-message-deleted': (data: { threadId: string }) => void
+const PlannerEventChannels = {
+  'planner-start-generate': null as unknown as { sessionId: string; plannerId: string },
+  'planner-step-generate': null as unknown as {
+    sessionId: string
+    plannerId: string
+    plan: PlanStep
+  },
+  'planner-end-generate': null as unknown as {
+    sessionId: string
+    plannerId: string
+    plans: PlanStep[]
+  },
+  'planner-execute-item-start': null as unknown as {
+    sessionId: string
+    plannerId: string
+    plan: PlanStep
+  },
+  'planner-execute-item-success': null as unknown as {
+    sessionId: string
+    plannerId: string
+    plan: PlanStep
+  },
+  'planner-execute-item-error': null as unknown as {
+    sessionId: string
+    plannerId: string
+    plan: PlanStep
+  },
+}
+export type PlannerEventKey = keyof typeof PlannerEventChannels
+export type PlannerEvents = {
+  [K in PlannerEventKey]: (data: (typeof PlannerEventChannels)[K]) => void
 }
 
+const AskUserQuestionEventChannels = {
+  'ask-user-start-generate': null as unknown as {
+    sessionId: string
+    workflowId: string
+    type: string
+    title: string
+    description: string
+  },
+  'ask-user-option': null as unknown as {
+    sessionId: string
+    workflowId: string
+    option: { label: string; value: string; description: string; done?: boolean }
+  },
+  'ask-user-complete': null as unknown as {
+    sessionId: string
+    workflowId: string
+    question: AskUserQuestionDraft
+  },
+}
+export type AskUserQuestionEventKey = keyof typeof AskUserQuestionEventChannels
+export type AskUserQuestionEvents = {
+  [K in AskUserQuestionEventKey]: (data: (typeof AskUserQuestionEventChannels)[K]) => void
+}
+
+const ArtifactEventChannels = {
+  'artifacts-created-workspace': null as unknown as {
+    sessionId: string
+    workspaceName: string
+  },
+}
+export type ArtifactEventKey = keyof typeof ArtifactEventChannels
+export type ArtifactEvents = {
+  [K in ArtifactEventKey]: (data: (typeof ArtifactEventChannels)[K]) => void
+}
+
+export type WorkflowEventCtx = { sessionId: string; workflowId: string }
+const WorkflowEventChannels = {
+  'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
+  'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-wait-human-approve': null as unknown as {
+    payload: CallToolStepPayload
+    ctx: WorkflowEventCtx
+  },
+  'workflow-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
+
+  'workflow-llm-start': null as unknown as { ctx: WorkflowEventCtx; messages: ChatMessage[] },
+
+  'workflow-llm-reasoning-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-reasoning-delta': null as unknown as {
+    ctx: WorkflowEventCtx
+    chunk: { delta: string; content: string }
+  },
+  'workflow-llm-reasoning-end': null as unknown as { ctx: WorkflowEventCtx; content: string },
+
+  'workflow-llm-text-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-text-delta': null as unknown as {
+    ctx: WorkflowEventCtx
+    chunk: { delta: string; content: string }
+  },
+  'workflow-llm-text-end': null as unknown as { ctx: WorkflowEventCtx; content: string },
+
+  'workflow-llm-tool-calls-start': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-tool-call-name': null as unknown as {
+    ctx: WorkflowEventCtx
+    data: { id: string; name: string }
+  },
+  'workflow-llm-tool-call-arguments': null as unknown as {
+    ctx: WorkflowEventCtx
+    data: { id: string; arguments: string }
+  },
+  'workflow-llm-tool-calls-end': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCalls: ToolCall[]
+  },
+
+  'workflow-llm-end': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-llm-result': null as unknown as {
+    ctx: WorkflowEventCtx
+    assistantChatMessage: AssistantChatMessage
+  },
+  'workflow-llm-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
+
+  'workflow-tool-call-start': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCall: { id: string; toolName: string; args: any }
+  },
+  'workflow-tool-call-success': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCallResult: { id: string; toolName: string; result: any }
+  },
+  'workflow-tool-call-error': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCallResult: { id: string; toolName: string; error: any }
+  },
+  'workflow-tool-call-reject': null as unknown as {
+    ctx: WorkflowEventCtx
+    toolCallResult: { id: string; toolName: string; reject: any }
+  },
+} as const
+export type WorkflowEventKey = keyof typeof WorkflowEventChannels
 export type WorkflowEvents = {
-  'workflow-start': (data: { threadId: string; input: string }) => void
-  'workflow-finished': (data: { threadId: string }) => void
-  'workflow-aborted': (data: { threadId: string }) => void
-  'workflow-wait-human-approve': (data: { threadId: string; payload: CallToolStepPayload }) => void
-  'workflow-error': (data: { threadId: string; error: any }) => void
-  'workflow-tool-call-approved': () => void
-  'workflow-tool-call-rejected': () => void
+  [K in WorkflowEventKey]: (data: (typeof WorkflowEventChannels)[K]) => void
 }
+export type Events =
+  | AgentLifecycleEvents
+  | WorkflowEvents
+  | PlannerEvents
+  | AskUserQuestionEvents
+  | ArtifactEvents
 
-export type LLMEvents = {
-  'llm-start': (data: { messages: ChatMessage[] }) => void
-  'llm-text-start': () => void
-  'llm-text-delta': (data: { delta: string; content: string }) => void
-  'llm-text-end': () => void
-  'llm-tool-calls': (data: { toolCalls: ToolCall[] }) => void
-  'llm-end': (data: { finishReason: FinishReason }) => void
-  'llm-result': (data: AssistantChatMessage) => void
-  'llm-error': (data: { error: any }) => void
-  'llm-aborted': () => void
-}
+export const agentEventNames = Object.keys(AgentLifecycleEventChannels) as AgentLifecycleEventKey[]
+export const plannerEventNames = Object.keys(PlannerEventChannels) as PlannerEventKey[]
+export const workflowEventNames = Object.keys(WorkflowEventChannels) as WorkflowEventKey[]
+export const askUserQuestionEventNames = Object.keys(
+  AskUserQuestionEventChannels
+) as AskUserQuestionEventKey[]
 
-export type ToolEvents = {
-  'tool-call-start': (data: { id: string; toolName: string; args: any }) => void
-  'tool-call-success': (data: { id: string; toolName: string; result: any }) => void
-  'tool-call-error': (data: { id: string; toolName: string; error: any }) => void
-  'tool-call-reject': (data: { id: string; toolName: string; reject: any }) => void
-}
-
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
-  ? I
-  : never
-
-export type Events = AgentLifecycleEvents | TheadEvents | WorkflowEvents | LLMEvents | ToolEvents
-
-export type AgentEvents = UnionToIntersection<Events>
+export const artifactEventNames = Object.keys(ArtifactEventChannels) as ArtifactEventKey[]

@@ -1,0 +1,12 @@
+import type { Tool } from '../types'
+import type { WorkflowRuntimeContext } from '../workflowRuntimeContext'
+
+export abstract class ToolProvider {
+  protected runtime: WorkflowRuntimeContext
+
+  constructor(runtime: WorkflowRuntimeContext) {
+    this.runtime = runtime
+  }
+
+  abstract getTools(): Tool[]
+}

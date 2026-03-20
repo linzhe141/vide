@@ -10,5 +10,6 @@ export const enum ThreadMessageRole {
   AssistantReason = 'assistant-reason',
   AssistantText = 'assistant-text',
   ToolCalls = 'tool-calls',
+  Tool = 'tool',
   Error = 'error',
 }

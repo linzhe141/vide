@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import type { AppManager } from './appManager'
 import { settingsStore } from './store/settingsStore'
+import { createLLMClient } from '@/agent/core/llm'
 export class AgentManager {
   protected llmClient: OpenAI = null!
   constructor(private app: AppManager) {}
@@ -13,13 +14,11 @@ export class AgentManager {
     return this.llmClient
   }
 
-  createLLMClient(config?: { apiKey: string; baseUrl: string }) {
+  createLLMClient(config?: { apiKey: string; baseUrl: string; model: string }) {
     const apiKey = config ? config.apiKey : settingsStore.get('llmConfig').apiKey
     const baseURL = config ? config.baseUrl : settingsStore.get('llmConfig').baseUrl
-    const client = new OpenAI({
-      apiKey,
-      baseURL,
-    })
-    this.llmClient = client
+    const model = config ? config.model : settingsStore.get('llmConfig').model
+
+    createLLMClient({ apiKey, baseURL, model })
   }
 }

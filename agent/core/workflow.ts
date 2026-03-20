@@ -1,224 +1,299 @@
 import type {
-  WorkflowState,
+  AssistantChatMessage,
   CallLLMStepPayload,
   CallToolsStepPayload,
-  StepPayload,
-  StepResult,
-  UserInputStepPayload,
   CallToolStepPayload,
+  ChatMessage,
+  StepPayload,
+  Tool,
   ToolCall,
+  ToolResult,
+  UserInputStepPayload,
 } from './types'
-import { toolEvent, workflowEvent } from './event'
-import type { Thread } from './threads'
-import type { LLMService } from './services/llm'
-import type { ToolService } from './services/tool'
+import { processLLMStream } from './llm'
+import { workflowEvent } from './event'
+import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
+import { registorTools } from './tools/registor'
 
-export const activeLatestThreadWorkflowMap = new Map<string, Workflow>()
+export type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
+type NextStep = {
+  state: WorkflowState
+  payload: StepPayload
+}
+
 export class Workflow {
-  private state: WorkflowState = 'finished'
-  private abortController: AbortController = new AbortController()
-  private isAborted: boolean = false
-  // for wait human approve to resume workflow
-  private nextStep: StepResult | null = null
-
-  constructor(
-    private thread: Thread,
-    private llmService: LLMService,
-    private toolService: ToolService
-  ) {}
-
-  // 每一次启动都是由 user-input 驱动
-  async start(threadId: string, initialPayload: UserInputStepPayload) {
-    this.setState('user-input')
-    workflowEvent.emit('workflow-start', { threadId, input: initialPayload.input })
-
-    await this.run(threadId, initialPayload)
+  state: WorkflowState = 'INPUT'
+  tools: Tool[] = []
+  constructor(public runtime: WorkflowRuntimeContext) {
+    this.tools = registorTools(this.runtime)
   }
 
-  async humanApproveToolCall() {
-    if (this.nextStep) {
-      workflowEvent.emit('workflow-tool-call-approved')
-      this.setState(this.nextStep.state)
-      this.run(this.thread.id, this.nextStep.payload)
-    }
-  }
-
-  async humanRejectToolCall() {
-    if (this.nextStep) {
-      const payload = this.nextStep.payload as CallToolStepPayload
-      const toolCall = payload.toolCalls[payload.index]
-      workflowEvent.emit('workflow-tool-call-rejected')
-      const rejectReason = 'human reject this tool call, stop workflow'
-      toolEvent.emit('tool-call-reject', {
-        id: toolCall.id,
-        toolName: toolCall.function.name,
-        reject: rejectReason,
-      })
-
-      // let llm summary
-      this.setState('call-llm')
-      this.thread.addMessage({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: rejectReason,
-      })
-      this.run(this.thread.id, {
-        messages: this.thread.getMessages(),
-      } satisfies CallLLMStepPayload)
-    }
-  }
-
-  async run(threadId: string, payload: StepPayload) {
-    activeLatestThreadWorkflowMap.set(threadId, this)
+  async run(input: string) {
     try {
+      workflowEvent.emit('workflow-start', { input, ctx: this.runtime.workflowEventCtx })
+      let payload: StepPayload = { input } as UserInputStepPayload
       while (true) {
-        if (this.isAborted) {
-          this.setState('finished')
-          return
-        }
-        const nextStepState = await this.runStep(payload)
+        const nextStep = await this.runStep(payload)
+        if (nextStep.state === 'COMPLETED') {
+          workflowEvent.emit('workflow-finished', { ctx: this.runtime.workflowEventCtx })
 
-        if (nextStepState.state === 'wait-human-approve') {
-          const callToolStepPayload = payload as CallToolStepPayload
-          workflowEvent.emit('workflow-wait-human-approve', {
-            threadId,
-            payload: callToolStepPayload,
-          })
-          return
+          break
         }
 
-        if (nextStepState.state === 'finished') {
-          workflowEvent.emit('workflow-finished', { threadId })
-
-          this.setState('finished')
-          return
-        }
-
-        this.setState(nextStepState.state)
-        payload = nextStepState.payload as StepPayload
+        this.state = nextStep.state
+        payload = nextStep.payload
       }
     } catch (error: any) {
-      console.log('Workflow run error:', error)
-      if (error.message === 'llm-aborted') {
-        return
-      }
-      workflowEvent.emit('workflow-error', { threadId, error })
-    } finally {
-      activeLatestThreadWorkflowMap.delete(threadId)
+      workflowEvent.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
     }
   }
 
-  async runStep(payload: StepPayload): Promise<StepResult> {
+  async runStep(payload: StepPayload): Promise<NextStep> {
     switch (this.state) {
-      case 'user-input':
-        return this.stateUserInput(payload as UserInputStepPayload)
-
-      case 'call-llm':
+      case 'INPUT': {
+        return this.stateInput(payload as UserInputStepPayload)
+      }
+      case 'CALL_LLM': {
         return this.stateCallLLM(payload as CallLLMStepPayload)
-
-      case 'call-tools':
+      }
+      case 'CALL_TOOLS': {
         return this.stateCallTools(payload as CallToolsStepPayload)
-
-      case 'call-tool':
-        return this.stateCallTool(payload as CallToolStepPayload)
-
-      default:
-        throw new Error(`Unknown state: ${this.state}`)
+      }
+      case 'CALL_SINGLE_CALL': {
+        return this.stateCallSingleCall(payload as CallToolStepPayload)
+      }
+      default: {
+        throw new Error('Invalid state')
+      }
     }
   }
 
-  setState(next: WorkflowState) {
-    this.state = next
-  }
-
-  async stateUserInput(payload: UserInputStepPayload): Promise<StepResult> {
-    this.thread.addMessage({
-      role: 'user',
-      content: payload.input,
-    })
-
-    const callLLMMessages = this.thread.getMessages()
-    return { state: 'call-llm', payload: { messages: callLLMMessages } }
-  }
-
-  async stateCallLLM(payload: CallLLMStepPayload): Promise<StepResult> {
-    const { content, toolCalls, finishReason } = await this.llmService.call(
-      payload.messages,
-      this.abortController!.signal
-    )
-    if (finishReason === 'tool_calls') {
-      this.thread.addMessage({ role: 'assistant', tool_calls: toolCalls, content })
-      return { state: 'call-tools', payload: { toolCalls } }
+  stateInput(payload: UserInputStepPayload): NextStep {
+    this.runtime.thread.addMessage({ role: 'user', content: payload.input })
+    return {
+      state: 'CALL_LLM',
+      payload: {
+        messages: this.buildLLMMessages(),
+      },
     }
-
-    this.thread.addMessage({ role: 'assistant', content })
-    return { state: 'finished', payload: { content } }
   }
 
-  async handleCallTool(toolCall: ToolCall) {
-    const toolCallRes = await this.toolService.execute(toolCall)
+  async handleCallLLM(messages: ChatMessage[]) {
+    let content = ''
+    let toolCalls: ToolCall[] = []
 
-    if (toolCallRes.success) {
-      this.thread.addMessage({
+    const llmAbortController = new AbortController()
+    workflowEvent.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
+
+    for await (const chunk of processLLMStream({
+      messages,
+      tools: this.tools,
+      signal: llmAbortController.signal,
+      onReasoningStart: () => {
+        workflowEvent.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+      },
+      onReasoningDelta: (chunk) => {
+        workflowEvent.emit('workflow-llm-reasoning-delta', {
+          ctx: this.runtime.workflowEventCtx,
+          chunk,
+        })
+      },
+      onReasoningEnd: (content) => {
+        workflowEvent.emit('workflow-llm-reasoning-end', {
+          ctx: this.runtime.workflowEventCtx,
+          content,
+        })
+      },
+      onTextStart: () => {
+        workflowEvent.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
+      },
+      onTextDelta: (chunk) => {
+        workflowEvent.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
+      },
+      onTextEnd: (content) => {
+        workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
+      },
+      onToolCallsStart: () => {
+        workflowEvent.emit('workflow-llm-tool-calls-start', {
+          ctx: this.runtime.workflowEventCtx,
+        })
+      },
+      onToolCallName: (data) => {
+        workflowEvent.emit('workflow-llm-tool-call-name', {
+          ctx: this.runtime.workflowEventCtx,
+          data,
+        })
+      },
+      onToolCallArguments: (data) => {
+        workflowEvent.emit('workflow-llm-tool-call-arguments', {
+          ctx: this.runtime.workflowEventCtx,
+          data,
+        })
+      },
+      onToolCallsEnd: (toolCalls) => {
+        workflowEvent.emit('workflow-llm-tool-calls-end', {
+          ctx: this.runtime.workflowEventCtx,
+          toolCalls,
+        })
+      },
+    })) {
+      if ('content' in chunk && chunk.content) {
+        content = chunk.content
+      }
+
+      if ('tool_calls' in chunk && chunk.tool_calls) {
+        toolCalls = chunk.tool_calls
+      }
+    }
+    workflowEvent.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
+
+    return { content, toolCalls }
+  }
+
+  async stateCallLLM(payload: CallLLMStepPayload): Promise<NextStep> {
+    // console.log(JSON.stringify(payload.messages, null, 2))
+    const { content, toolCalls } = await this.handleCallLLM(payload.messages)
+
+    const assistantMessage: AssistantChatMessage = {
+      role: 'assistant',
+      content,
+    }
+    if (toolCalls.length) {
+      assistantMessage.tool_calls = toolCalls
+    }
+    this.runtime.thread.addMessage(assistantMessage)
+
+    if (toolCalls.length) {
+      return { state: 'CALL_TOOLS', payload: { toolCalls } }
+    } else {
+      return { state: 'COMPLETED', payload: { content } }
+    }
+  }
+
+  stateCallTools(payload: CallToolsStepPayload): NextStep {
+    const toolCalls = payload.toolCalls
+
+    return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: 0 } }
+  }
+
+  async handleCallTool(toolCall: ToolCall): Promise<ToolResult['reason']> {
+    let reason: ToolResult['reason'] = 'call-llm'
+    const toolName = toolCall.function.name
+    const tool = this.tools.find((t) => t.name === toolName)
+    if (!tool) {
+      const errorMessage = `Tool not found: ${toolName}`
+      this.runtime.thread.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: JSON.stringify(toolCallRes.result),
+        content: errorMessage,
+      })
+
+      workflowEvent.emit('workflow-tool-call-error', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+      })
+      return 'call-llm'
+    }
+    let args = {}
+
+    try {
+      args = JSON.parse(toolCall.function.arguments)
+    } catch (error) {
+      console.log()
+      console.log(error)
+      console.log()
+
+      args = toolCall.function.arguments
+
+      let errorMessage = 'An exception occurred while parsing toolCall argument JSON;'
+
+      if (toolName === 'fs_write_file') {
+        errorMessage += `
+Perhaps the [fs_write_file tool] is writing too much content to the file;
+it could be split into modules and written in batches.`
+      }
+      this.runtime.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: errorMessage,
+      })
+
+      workflowEvent.emit('workflow-tool-call-error', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+      })
+      return 'call-llm'
+    }
+
+    const execute = async () => {
+      try {
+        const result = await tool.executor(args)
+        return { success: true, result }
+      } catch (error) {
+        return { success: false, error }
+      }
+    }
+
+    workflowEvent.emit('workflow-tool-call-start', {
+      ctx: this.runtime.workflowEventCtx,
+      toolCall: { id: toolCall.id, toolName, args },
+    })
+    const toolResult = await execute()
+    if (toolResult.success) {
+      reason = toolResult.result!.reason
+      const result = toolResult.result!.result
+      this.runtime.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(toolResult.result),
+      })
+
+      workflowEvent.emit('workflow-tool-call-success', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, result: result },
       })
     } else {
-      const error = toolCallRes.error
-      this.thread.addMessage({
+      const error = toolResult.error
+      this.runtime.thread.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(error),
       })
+
+      workflowEvent.emit('workflow-tool-call-error', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, error },
+      })
     }
+
+    return reason
   }
 
-  async stateCallTool(payload: CallToolStepPayload): Promise<StepResult> {
+  async stateCallSingleCall(payload: CallToolStepPayload): Promise<NextStep> {
     const toolCalls = payload.toolCalls
     const index = payload.index
     const toolCall = toolCalls[index]
-    const hasApproved = payload.approved
-
-    if (!hasApproved) {
-      // TODO USER reject
-      // 等待用户批准
-      // 默认批准当前工具调用
-      this.nextStep = { state: 'call-tool', payload: { index, toolCalls, approved: true } }
+    const reason = await this.handleCallTool(toolCall)
+    if (reason === 'stop') {
       return {
-        state: 'wait-human-approve',
+        state: 'COMPLETED',
         payload: {
-          nextStep: this.nextStep,
+          content: 'Stop the current workflow',
         },
       }
     }
-    await this.handleCallTool(toolCall)
     if (index + 1 < toolCalls.length) {
-      return {
-        state: 'call-tool',
-        payload: { index: index + 1, toolCalls },
-      }
+      return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {
-      const callLLMMessages = this.thread.getMessages()
-      return { state: 'call-llm', payload: { messages: callLLMMessages } }
+      return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
     }
   }
 
-  async stateCallTools(payload: CallToolsStepPayload): Promise<StepResult> {
-    const toolCalls = payload.toolCalls
-
-    return {
-      state: 'call-tool',
-      payload: { index: 0, toolCalls, approved: false },
+  buildLLMMessages() {
+    const callLLMMessages: ChatMessage[] = []
+    for (const block of this.runtime.session.workflowBlocks) {
+      callLLMMessages.push(...block.runtime.thread.getMessages())
     }
-  }
-
-  async abort() {
-    console.log('todo abort')
-    this.isAborted = true
-    if (this.abortController) {
-      this.abortController.abort()
-      workflowEvent.emit('workflow-aborted', { threadId: this.thread.id })
-    }
+    return callLLMMessages
   }
 }

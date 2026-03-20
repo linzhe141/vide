@@ -12,7 +12,7 @@ export function Welcome() {
   const { createThread } = useThreads()
 
   const [input, setInput] = useState('')
-  const { setThreadId, setBlocks } = useThreadStore()
+  const { reset } = useThreadStore()
   const navigate = useNavigate()
   const handleSend = async () => {
     if (!input.trim()) return
@@ -21,8 +21,7 @@ export function Welcome() {
 
     setInput('')
     // reset current active thread store
-    setThreadId(threadId)
-    setBlocks([])
+    reset()
     navigate('/chat/' + threadId)
   }
 

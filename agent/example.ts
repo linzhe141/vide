@@ -1,165 +1,109 @@
-import { type Tool, type FinishReason, type ToolCall, type FnProcessLLMStream } from './core/types'
-
+import { Agent } from './core/agent'
+import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from './core/apiEvent'
+import chalk from 'chalk'
+import ora from 'ora'
 import { DevConfig } from '@/dev.config'
-import OpenAI from 'openai'
-import { Agent, AgentSession } from './core/agent'
-import { onLLMEvent, onToolEvent, onWorkflowEvent } from './core/apiEvent'
+import { createLLMClient } from './core/llm'
 
-const client = new OpenAI({
-  apiKey: DevConfig.llm.apiKey,
-  baseURL: DevConfig.llm.baseURL,
-})
+const divider = () => console.log(chalk.gray('─'.repeat(process.stdout.columns || 50)))
 
-const tools: Tool[] = [
-  {
-    name: 'get_weather',
-    type: 'function',
-    function: {
-      name: 'get_weather',
-      description: 'Get current weather basic on city and normalized date (like 2000-10-10)',
-      parameters: {
-        type: 'object',
-        properties: {
-          city: { type: 'string' },
-          date: { type: 'string' },
-        },
-        required: ['city'],
-      },
-    },
-    async executor() {
-      const city = '北京'
-      const date = '2026-01-11'
-      return `city: ${city} date:${date} , 天气：冬雨，湿度高，注意保暖  温度：12°`
-    },
-  },
-  {
-    name: 'get_normalize_time',
-    type: 'function',
-    function: {
-      name: 'get_normalize_time',
-      description:
-        'Get normalized time power by dayjs, supporting semantic computation. DayJS knows the current time by default.',
-    },
-    async executor() {
-      return `2026-11-12`
-    },
-  },
-]
-
-const processLLMStream: FnProcessLLMStream = async function* ({ messages, tools, signal }) {
-  const stream = await client.chat.completions.create(
-    {
-      messages,
-      model: DevConfig.llm.model,
-      stream: true,
-      tools,
-    },
-    { signal }
-  )
-
-  let content = ''
-  const toolCalls: ToolCall[] = []
-  let finishReason: FinishReason = null!
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta
-    const chunkFinishReason = chunk.choices[0].finish_reason
-    if (chunkFinishReason) {
-      finishReason = chunkFinishReason as any
-    }
-    if (delta?.content) {
-      content += delta.content
-      yield {
-        content,
-        delta: delta.content,
-        finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
-      }
-    }
-
-    if (delta?.tool_calls) {
-      for (const toolCall of delta.tool_calls) {
-        if (!toolCalls[toolCall.index]) {
-          toolCalls[toolCall.index] = {
-            function: { arguments: '', name: '' },
-            id: toolCall.id ?? String(Date.now()),
-            type: 'function',
-          }
-        }
-        if (toolCall.function?.name) {
-          toolCalls[toolCall.index].function.name += toolCall.function.name
-        }
-        if (toolCall.function?.arguments) {
-          toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
-        }
-      }
-    }
-  }
-
-  if (toolCalls.length > 0) {
-    yield {
-      tool_calls: toolCalls.filter(Boolean),
-      finishReason: 'tool_calls' as const,
-    }
-  }
-}
+const title = (text: string) => console.log('\n' + chalk.cyan.bold(`▶ ${text}`))
 
 async function main() {
-  const agent = new Agent({ processLLMStream, tools })
+  console.clear()
+  createLLMClient(DevConfig.llm)
+  setupEvents()
+  const agent = new Agent()
   const session = agent.createSession()
-
-  session.setSessionSystemPrompt('使用小红书风格回复')
-  setupEvents(session)
-  // onWorkflowEvent('workflow-aborted', ({ threadId }) => {
-  //   console.log('workflow-aborted=>', threadId)
-  // })
-  // onWorkflowEvent('workflow-wait-human-approve', () => {
-  //   // session.abort()
-  // })
-  // onLLMEvent('llm-delta', ({ content, delta }) => {
-  //   process.stdout.write(delta)
-  // })
-  await session.send('hello 介绍下你自己')
-  console.log('\n==============================')
-  await session.send('那北京下个星期一的天气怎么样')
+  await session.run(
+    'hello! who are you ?, 明天是什么日期是多少,ps :使用小红书风格回复 output japanese'
+  )
 }
 
-function setupEvents(session: AgentSession) {
-  onWorkflowEvent('workflow-start', ({ threadId, input }) => {
-    console.log('> workflow-start ' + threadId)
-    console.log('> user input ' + input)
-  })
-  onWorkflowEvent('workflow-finished', ({ threadId }) => {
-    console.log('> workflow-finished ' + threadId)
-    console.log()
-  })
-  onWorkflowEvent('workflow-wait-human-approve', async () => {
-    console.log('> workflow-wait-human-approve')
-    await session.humanApprove()
-    console.log('> humanApprove')
+function setupEvents() {
+  let spinner: any
+
+  // ================= AGENT =================
+  onAgentEvent('agent-create-session', (data) => {
+    divider()
+    title('SESSION')
+    console.log(chalk.green(`✔ Session: ${data.sessionId}`))
   })
 
-  onLLMEvent('llm-start', () => {
-    console.log('> llm-start')
-  })
-  onLLMEvent('llm-text-delta', ({ delta }) => {
-    process.stdout.write(delta)
-  })
-  onLLMEvent('llm-tool-calls', ({ toolCalls }) => {
-    console.log()
-    console.log(JSON.stringify(toolCalls, null, 4))
-    console.log()
-  })
-  onLLMEvent('llm-end', ({ finishReason }) => {
-    console.log()
-    console.log('> llm-end ' + finishReason)
-    console.log()
+  // ================= PLANNER =================
+  onPalnnerEvent('planner-start-generate', () => {
+    title('PLANNER')
+    spinner = ora('Generating plan...').start()
   })
 
-  onToolEvent('tool-call-success', ({ toolName, result }) => {
-    console.log(`> ${toolName} tool result`)
-    console.log(JSON.stringify(result, null, 4))
+  onPalnnerEvent('planner-end-generate', (data) => {
+    spinner?.succeed('Plan generated')
+
+    data.plans.forEach((plan: any, index: number) => {
+      console.log(chalk.gray(`  ${index + 1}. ${plan.description}`))
+    })
+  })
+
+  onPalnnerEvent('planner-execute-item-start', (data) => {
+    spinner = ora(`Executing: ${data.plan.description}`).start()
+  })
+
+  onPalnnerEvent('planner-execute-item-success', () => {
+    spinner?.succeed('Step done')
+  })
+
+  onPalnnerEvent('planner-execute-item-error', () => {
+    spinner?.fail('Step failed')
+  })
+
+  // ================= WORKFLOW =================
+  onWorkflowEvent('workflow-start', () => {
+    title('WORKFLOW')
+  })
+
+  onWorkflowEvent('workflow-llm-start', () => {
+    spinner = ora('LLM thinking...').start()
+  })
+
+  onWorkflowEvent('workflow-llm-text-start', () => {
+    spinner?.stop()
+    console.log('\n' + chalk.greenBright('✨ AI Response:\n'))
+  })
+
+  onWorkflowEvent('workflow-llm-text-delta', ({ chunk }) => {
+    process.stdout.write(chalk.white(chunk.delta))
+  })
+
+  onWorkflowEvent('workflow-llm-text-end', () => {
+    console.log('\n')
+  })
+
+  onWorkflowEvent('workflow-llm-tool-calls-end', ({ toolCalls }) => {
+    console.log(chalk.blue('\n🔧 Tool Calls:\n' + JSON.stringify(toolCalls, null, 2)))
+  })
+
+  onWorkflowEvent('workflow-llm-end', () => {
+    console.log(chalk.gray('\nLLM finished'))
+  })
+
+  onWorkflowEvent('workflow-tool-call-start', ({ toolCall }) => {
+    console.log(chalk.cyan(`\n→ Tool: ${toolCall.toolName}`))
+  })
+
+  onWorkflowEvent('workflow-tool-call-success', (data) => {
+    console.log(chalk.green('  ✔ Tool success'))
+    console.log(chalk.green(JSON.stringify(data.toolCallResult, null, 2)))
+  })
+
+  onWorkflowEvent('workflow-tool-call-error', () => {
+    console.log(chalk.red('  ✖ Tool error'))
+  })
+
+  onWorkflowEvent('workflow-finished', () => {
+    divider()
+    console.log(chalk.green.bold('✅ Workflow Finished'))
+    divider()
   })
 }
-main().then(() => {
-  console.log()
-  console.log('> main end!')
-})
+
+main()

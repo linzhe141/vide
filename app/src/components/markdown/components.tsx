@@ -1,6 +1,6 @@
-import type { PropsWithChildren } from "react"
-import { AnimatedWrapper } from "./animation"
-import { Pre } from "../Pre/Pre"
+import type { PropsWithChildren } from 'react'
+import { AnimatedWrapper } from './animation'
+import { Pre } from '../Pre/Pre'
 
 export function A({ ...props }: PropsWithChildren) {
   return (

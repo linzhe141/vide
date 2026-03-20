@@ -8,7 +8,7 @@ export default function Layout() {
       <Titlebar></Titlebar>
       <div className='flex h-0 flex-1'>
         <SideBar></SideBar>
-        <main className='w-0 flex-1 overflow-auto'>
+        <main className='w-0 flex-1'>
           <Outlet />
         </main>
       </div>

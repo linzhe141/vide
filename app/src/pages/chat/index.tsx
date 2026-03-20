@@ -1,156 +1,131 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
-import {
-  useThreadStore,
-  type ConversationBlock,
-  type UserChatMessage,
-  type AssistantChatTextMessage,
-  type ToolCallsChatMessage,
-  type WorkflowErrorChatMessage,
-  type AssistantChatReasonMessage,
-} from '../../store/threadStore'
-import { context } from '../../hooks/chatContenxt'
-import { ThreadMessageRole } from '@/types'
-import { useThreadsStore } from '../../store/threadsStore'
-import { onWorkflowEvent } from '../../hooks/useWorkflowStream'
+import { ArrowDown, FileText, ListChecks } from 'lucide-react'
+import { cn } from '../../lib/utils'
+import { ArtifactsDisplay } from './ArtifactsDisplay'
+import { PlannersDisplay } from './PlannersDisplay'
+import { InitSession } from './InitSession'
+import { useAutoScroll } from './useAutoScroll'
 
 export function Chat() {
-  const params = useParams()
-  const id = params.id!
+  const { id } = useParams()
   return (
     <ChatProvider>
-      <ChatContent key={id} threadId={id} />
+      <ChatContent key={id} threadId={id!} />
     </ChatProvider>
   )
 }
 
 function ChatContent({ threadId }: { threadId: string }) {
-  const { setThreads } = useThreadsStore()
-
-  const [loading, setLoading] = useState(false)
   const { handleSend } = useChatContext()
-  const setBlocks = useThreadStore((data) => data.setBlocks)
 
-  useEffect(() => {
-    async function fetchThread() {
-      setLoading(true)
-      setBlocks([])
-      try {
-        const [res] = await Promise.all([
-          window.ipcRendererApi.invoke('get-threads-item-messages', { threadId }),
-          new Promise((resolve) => setTimeout(resolve, 250)),
-        ])
-        if (res?.length) {
-          const messages = res
-            .map((i) => {
-              switch (i.role) {
-                case ThreadMessageRole.User: {
-                  return {
-                    ...i,
-                    role: ThreadMessageRole.User,
-                    content: i.content,
-                  } as UserChatMessage
-                }
+  const placeholderRef = useRef<HTMLDivElement>(null)
+  const { ref: scrollRef, scrollToBottom } = useAutoScroll()
+  const [showToBottomButton, setShowToBottomButton] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState<'Artifacts' | 'Planners'>('Artifacts')
+  const [moving, setMoving] = useState(false)
 
-                case ThreadMessageRole.AssistantReason: {
-                  return {
-                    ...i,
-                    role: ThreadMessageRole.AssistantReason,
-                    content: i.content,
-                    reasoning: false,
-                  } as AssistantChatReasonMessage
-                }
+  const togglePane = (next: 'Artifacts' | 'Planners') => {
+    setMoving(true)
+    setTimeout(() => setMoving(false), 200)
 
-                case ThreadMessageRole.AssistantText: {
-                  return {
-                    ...i,
-                    role: ThreadMessageRole.AssistantText,
-                    content: i.content,
-                  } as AssistantChatTextMessage
-                }
-                case ThreadMessageRole.ToolCalls: {
-                  return {
-                    ...i,
-                    role: ThreadMessageRole.ToolCalls,
-                    tool_calls: JSON.parse(i.payload).toolCalls,
-                  } as ToolCallsChatMessage
-                }
-                case ThreadMessageRole.Error: {
-                  return {
-                    ...i,
-                    role: ThreadMessageRole.Error,
-                    error: i.payload,
-                  } as WorkflowErrorChatMessage
-                }
-              }
-            })
-            .filter(Boolean)
-          // 将消息列表转换为 blocks
-          const blocks: ConversationBlock[] = []
-          let currentBlock: ConversationBlock | null = null
-          let blockIndex = 0
-
-          for (const msg of messages) {
-            const message = msg!
-            if (message.role === ThreadMessageRole.User) {
-              // 完成上一个 block
-              if (currentBlock) {
-                blocks.push(currentBlock)
-              }
-              blockIndex += 1
-              // 创建新 block
-              currentBlock = {
-                id: `block-${blockIndex}`,
-                userMessage: message,
-                messages: [message],
-              }
-            } else if (currentBlock) {
-              // 添加到当前 block
-              currentBlock.messages.push(message)
-            }
-          }
-          // 完成最后一个 block
-          if (currentBlock) {
-            blocks.push(currentBlock)
-          }
-          setBlocks(blocks)
-        }
-      } finally {
-        setLoading(false)
-      }
+    if (!open) {
+      setType(next)
+      setOpen(true)
+      return
     }
 
-    const firstInput = context.firstInput
-    if (firstInput) {
-      console.log('firstInput', firstInput)
-      context.firstInput = ''
-      handleSend(firstInput)
+    if (type === next) {
+      setOpen(false)
     } else {
-      fetchThread()
+      setType(next)
     }
+  }
 
-    if (context.isRuning) {
-      // restore()
-    }
-    let firstRunning = true
-    onWorkflowEvent('workflow-start', async () => {
-      if (firstRunning) {
-        firstRunning = false
-        console.log('xxxx')
-        window.ipcRendererApi.invoke('get-threads-list').then((res) => {
-          setThreads(res)
+  const onSend = useCallback(
+    (text: string) => {
+      handleSend(text)
+      scrollToBottom()
+    },
+    [handleSend, scrollToBottom]
+  )
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setShowToBottomButton(!entry.isIntersecting)
         })
-      }
-    })
-  }, [threadId, setBlocks, handleSend, setThreads])
-
+      },
+      { threshold: 0.5 }
+    )
+    if (placeholderRef.current) {
+      observer.observe(placeholderRef.current)
+    }
+    return () => observer.disconnect()
+  }, [])
   return (
-    <div className='bg-background flex h-full w-full flex-col'>
-      <MessageList loading={loading} />
-      <ChatInput />
+    <div className='bg-background flex h-full flex-col'>
+      <InitSession threadId={threadId} />
+      <div className='flex h-0 flex-1'>
+        {/* 主区域 */}
+        <div className='flex min-w-[550px] flex-1 flex-col'>
+          {/* header */}
+          <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
+            <ListChecks
+              size={14}
+              className={cn({
+                'text-primary': open && type === 'Planners',
+              })}
+              onClick={() => togglePane('Planners')}
+            />
+            <FileText
+              size={14}
+              className={cn({
+                'text-primary': open && type === 'Artifacts',
+              })}
+              onClick={() => togglePane('Artifacts')}
+            />
+          </div>
+
+          {/* message */}
+          <div ref={scrollRef} className='h-0 flex-1 overflow-auto'>
+            <MessageList />
+            {showToBottomButton && (
+              <button
+                onClick={scrollToBottom}
+                className='bg-background border-border fixed bottom-60 left-1/2 z-50 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
+                aria-label='Scroll to bottom'
+              >
+                <ArrowDown size={18} className='text-foreground' />
+              </button>
+            )}
+            <div className='h-[200px]' ref={placeholderRef} />
+          </div>
+
+          {/* input */}
+          <ChatInput onSend={onSend} />
+        </div>
+
+        {/* side pane */}
+        <div
+          className={cn('overflow-hidden transition-[width] duration-200', {
+            'w-0': !open,
+            'w-[1000px] border-l': open && type === 'Artifacts',
+            'w-[600px] border-l': open && type === 'Planners',
+          })}
+        >
+          {type === 'Artifacts' && (
+            <ArtifactsDisplay threadId={threadId} className={cn({ 'whitespace-nowrap': moving })} />
+          )}
+          {type === 'Planners' && (
+            <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
+          )}
+        </div>
+      </div>
     </div>
   )
 }

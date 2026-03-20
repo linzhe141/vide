@@ -5,6 +5,7 @@ import type {
   ChatCompletionToolMessageParam,
   ChatCompletionUserMessageParam,
 } from 'openai/resources/chat/completions.mjs'
+import type { WorkflowState } from './workflow'
 
 export type SystemChatMessage = ChatCompletionSystemMessageParam
 export type UserChatMessage = ChatCompletionUserMessageParam
@@ -19,7 +20,7 @@ export type ChatMessage =
 
 export type Tool = ChatCompletionTool & {
   name: string
-  executor: (args: any) => Promise<any>
+  executor: (args: any) => Promise<ToolResult>
 }
 
 export type FinishReason = 'stop' | 'tool_calls'
@@ -29,14 +30,6 @@ export type ToolCall = {
   id: string
   type: 'function'
 }
-
-export type WorkflowState =
-  | 'user-input'
-  | 'call-llm'
-  | 'call-tools'
-  | 'wait-human-approve'
-  | 'call-tool'
-  | 'finished'
 
 export type UserInputStepPayload = {
   input: string
@@ -95,4 +88,21 @@ export type FnProcessLLMStream = (data: {
   messages: ChatMessage[]
   tools: Tool[]
   signal: AbortSignal
+  onReasoningStart?: () => void
+  onReasoningDelta?: (chunk: { delta: string; content: string }) => void
+  onReasoningEnd?: (content: string) => void
+
+  onTextStart?: () => void
+  onTextDelta?: (chunk: { delta: string; content: string }) => void
+  onTextEnd?: (content: string) => void
+
+  onToolCallsStart?: () => void
+  onToolCallName?: (data: { id: string; name: string }) => void
+  onToolCallArguments?: (data: { id: string; arguments: string }) => void
+  onToolCallsEnd?: (toolCalls: ToolCall[]) => void
 }) => AsyncGenerator<StreamContentChunk | StreamToolCallsChunk>
+
+export interface ToolResult {
+  reason: 'stop' | 'call-llm'
+  result: any
+}
