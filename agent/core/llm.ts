@@ -53,7 +53,9 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
     const delta = chunk.choices[0]?.delta
     // console.log(JSON.stringify(delta, null, 2))
     const chunkFinishReason = chunk.choices[0].finish_reason
-    console.log('chunkFinishReason===>', chunkFinishReason)
+    if (chunkFinishReason) {
+      console.log('\nchunkFinishReason===>', chunkFinishReason)
+    }
     if (chunkFinishReason) {
       finishReason = chunkFinishReason as any
     }

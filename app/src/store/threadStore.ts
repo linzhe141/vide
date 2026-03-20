@@ -55,6 +55,7 @@ export type ConversationBlock = {
 /* ---------------- state ---------------- */
 
 type ThreadState = {
+  streaming: boolean
   sessionId?: string
 
   planner: { id: string; plan: PlanStep[] }[]
@@ -116,6 +117,7 @@ function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']
 
 export const useThreadStore = create<ThreadState & ThreadActions>()(
   immer((set) => ({
+    streaming: false,
     blocks: [],
     planner: [],
     artifacts: [],
@@ -127,6 +129,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
         state.planner = []
         state.currentPlannerId = undefined
         state.artifacts = []
+        state.streaming = false
       })
     },
 
@@ -140,6 +143,8 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           /* ---------------- workflow lifecycle ---------------- */
 
           case 'workflow-start': {
+            state.streaming = true
+
             const workflowId = data.ctx.workflowId
             block = {
               id: workflowId,
@@ -169,6 +174,8 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           }
 
           case 'workflow-finished': {
+            state.streaming = false
+
             if (!block) return
 
             block.status = 'finished'
@@ -178,6 +185,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           }
 
           case 'workflow-error': {
+            state.streaming = false
             if (!block) return
             console.error(data)
             block.status = 'error'
@@ -406,6 +414,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
         state.currentBlockId = data.currentBlockId
         state.planner = data.planner
         state.artifacts = data.artifacts
+        state.streaming = data.streaming
       })
     },
   }))

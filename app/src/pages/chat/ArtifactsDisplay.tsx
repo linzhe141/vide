@@ -35,10 +35,10 @@ export function ArtifactsDisplay({ threadId }: { threadId: string }) {
   return (
     <div className='flex h-full'>
       {/* Sidebar */}
-      <div className='border-border bg-background w-64 border-r'>
-        <div className='text-text-secondary p-3 text-sm'>Artifacts</div>
+      <div className='border-border bg-background flex h-full w-64 flex-col border-r'>
+        <div className='text-text-secondary sticky p-3 text-sm'>Artifacts</div>
 
-        <div className='px-2'>
+        <div className='h-0 flex-1 overflow-auto px-2'>
           {artifacts.map((i) => (
             <TreeNode key={i.artifactWorkspaceName} node={i.file} onSelect={setSelectedFile} />
           ))}

@@ -33,10 +33,22 @@ function ChatContent({ threadId }: { threadId: string }) {
 
   const [paneType, setPaneType] = useState<'Artifacts' | 'Planners'>('Artifacts')
 
-  const scrollContainer = useRef<HTMLDivElement>(null)
-
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-
+  useEffect(() => {
+    const unsub = useThreadStore.subscribe((s) => {
+      if (s.streaming) {
+        //
+        console.log('xxxxabcdefag--->')
+        const container = scrollContainerRef.current
+        if (!container) return
+        container.scrollTop = container.scrollHeight
+        if (container.dataset.nearBottom === 'true') {
+          //
+        }
+      }
+    })
+    return unsub
+  }, [])
   useEffect(() => {
     const container = scrollContainerRef.current
     if (!container) return
@@ -53,22 +65,6 @@ function ChatContent({ threadId }: { threadId: string }) {
       }
     }
 
-    // 创建 MutationObserver 监听子节点变化
-    const observer = new MutationObserver(() => {
-      console.log('xabasfasd')
-      // 当内容变化时，如果之前在底部附近，就滚动到底部
-      if (container.dataset.nearBottom === 'true') {
-        container.scrollTop = container.scrollHeight
-      }
-    })
-
-    // 配置 observer：监听子节点和子树的变化
-    observer.observe(container, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    })
-
     // 监听滚动事件
     container.addEventListener('scroll', handleScroll)
     // 初始化执行一次
@@ -76,7 +72,6 @@ function ChatContent({ threadId }: { threadId: string }) {
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
-      observer.disconnect()
     }
   }, [])
 
@@ -178,6 +173,7 @@ function ChatContent({ threadId }: { threadId: string }) {
           planner,
           currentPlannerId: pendingPlanner?.id,
           artifacts,
+          streaming: false,
         })
       }
       fetchMessages()
@@ -231,8 +227,10 @@ function ChatContent({ threadId }: { threadId: string }) {
               ></FileText>
             </div>
           </div>
-          <div className='h-0 flex-1 overflow-auto' ref={scrollContainer}>
+          <div className='h-0 flex-1 overflow-auto' ref={scrollContainerRef}>
             <MessageList />
+
+            <div className='h-[200px]'></div>
           </div>
           <ChatInput />
         </div>

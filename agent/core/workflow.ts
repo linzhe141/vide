@@ -14,7 +14,6 @@ import { processLLMStream } from './llm'
 import { workflowEvent } from './event'
 import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { registorTools } from './tools/registor'
-// import { ASK_USER_TOOL_NAMES } from './tools/askUserQuestion'
 
 export type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -177,19 +176,58 @@ export class Workflow {
     return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: 0 } }
   }
 
-  async handleCallTool(toolCall: ToolCall) {
+  async handleCallTool(toolCall: ToolCall): Promise<ToolResult['reason']> {
     let reason: ToolResult['reason'] = 'call-llm'
     const toolName = toolCall.function.name
-    const args = JSON.parse(toolCall.function.arguments || '{}')
     const tool = this.tools.find((t) => t.name === toolName)
+    if (!tool) {
+      const errorMessage = `Tool not found: ${toolName}`
+      this.runtime.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: errorMessage,
+      })
+
+      workflowEvent.emit('workflow-tool-call-error', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+      })
+      return 'call-llm'
+    }
+    let args = {}
+
+    try {
+      args = JSON.parse(toolCall.function.arguments)
+    } catch (error) {
+      console.log()
+      console.log(error)
+      console.log()
+
+      args = toolCall.function.arguments
+
+      let errorMessage = 'An exception occurred while parsing toolCall argument JSON;'
+
+      if (toolName === 'fs_write_file') {
+        errorMessage += `
+Perhaps the [fs_write_file tool] is writing too much content to the file;
+it could be split into modules and written in batches.`
+      }
+      this.runtime.thread.addMessage({
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: errorMessage,
+      })
+
+      workflowEvent.emit('workflow-tool-call-error', {
+        ctx: this.runtime.workflowEventCtx,
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+      })
+      return 'call-llm'
+    }
 
     const execute = async () => {
-      if (!tool) {
-        return { success: false, error: `Tool not found: ${toolName}` }
-      }
       try {
         const result = await tool.executor(args)
-
         return { success: true, result }
       } catch (error) {
         return { success: false, error }
