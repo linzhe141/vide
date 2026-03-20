@@ -38,7 +38,10 @@ When generating JavaScript code, it must be in ESM format.
     const { path: filePath, content } = args
 
     if (!filePath) {
-      return { success: false, error: 'Path is required' }
+      return {
+        reason: 'call-llm',
+        result: { success: false, error: 'Path is required' },
+      }
     }
 
     try {
@@ -50,15 +53,21 @@ When generating JavaScript code, it must be in ESM format.
       const stats = await fs.stat(fullPath)
 
       return {
-        success: true,
-        path: fullPath,
-        size: stats.size,
-        message: 'File written successfully',
+        reason: 'call-llm',
+        result: {
+          success: true,
+          path: fullPath,
+          size: stats.size,
+          message: 'File written successfully',
+        },
       }
     } catch (error: any) {
       return {
-        success: false,
-        error: error.message,
+        reason: 'call-llm',
+        result: {
+          success: false,
+          error: error.message,
+        },
       }
     }
   },

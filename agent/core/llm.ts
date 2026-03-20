@@ -155,7 +155,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
 
 export async function buildChatMessages(messages: ChatMessage[]) {
   const skillsChatMessage = await buildSkillsChatMessage()
-  console.log(skillsChatMessage)
+  // console.log(skillsChatMessage)
   const chatMessages: ChatMessage[] = [
     {
       role: 'system',

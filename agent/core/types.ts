@@ -20,7 +20,7 @@ export type ChatMessage =
 
 export type Tool = ChatCompletionTool & {
   name: string
-  executor: (args: any) => Promise<any>
+  executor: (args: any) => Promise<ToolResult>
 }
 
 export type FinishReason = 'stop' | 'tool_calls'
@@ -101,3 +101,8 @@ export type FnProcessLLMStream = (data: {
   onToolCallArguments?: (data: { id: string; arguments: string }) => void
   onToolCallsEnd?: (toolCalls: ToolCall[]) => void
 }) => AsyncGenerator<StreamContentChunk | StreamToolCallsChunk>
+
+export interface ToolResult {
+  reason: 'stop' | 'call-llm'
+  result: any
+}

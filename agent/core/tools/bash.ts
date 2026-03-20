@@ -61,21 +61,26 @@ export const bashTool: Tool = {
         clearTimeout(timeoutId)
 
         resolve({
-          stdout,
-          stderr,
-          exitCode: exitCode ?? 0,
-          timedOut,
+          reason: 'call-llm',
+          result: {
+            stdout,
+            stderr,
+            exitCode: exitCode ?? 0,
+            timedOut,
+          },
         })
       })
 
       proc.on('error', (error) => {
         clearTimeout(timeoutId)
-
         resolve({
-          stdout: '',
-          stderr: `Error executing command: ${error.message}`,
-          exitCode: 1,
-          timedOut: false,
+          reason: 'call-llm',
+          result: {
+            stdout: '',
+            stderr: `Error executing command: ${error.message}`,
+            exitCode: 1,
+            timedOut: false,
+          },
         })
       })
     })

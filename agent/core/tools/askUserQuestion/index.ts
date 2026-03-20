@@ -1,6 +1,7 @@
 import type { Tool } from '../../types'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { askUserQuestionEvent } from '../../event'
+import { ToolProvider } from '../toolProvider'
 
 export type AskUserQuestionOption = {
   label: string
@@ -21,10 +22,12 @@ export const ASK_USER_TOOL_NAMES = {
   CREATE_OPTION: `${ASK_USER_NAMESPACE}_CREATE_OPTION`,
 } as const
 
-export class AskUserQuestionTool {
+export class AskUserQuestionTool extends ToolProvider {
   draft: AskUserQuestionDraft | null = null
 
-  constructor(private runtime: WorkflowRuntimeContext) {}
+  constructor(runtime: WorkflowRuntimeContext) {
+    super(runtime)
+  }
 
   start: Tool = {
     name: ASK_USER_TOOL_NAMES.START_GENERATE,
@@ -67,7 +70,7 @@ You MUST call CREATE_OPTION to generate options after this.
         description,
       })
 
-      return { content: 'started' }
+      return { reason: 'call-llm', result: { content: 'started' } }
     },
   }
 
@@ -119,14 +122,18 @@ Set "done=true" when all options are generated.
         })
 
         return {
-          reason:
-            'important!!! Stop the current workflow and wait for the user to select an option',
-          question: this.draft,
+          reason: 'stop',
+          result: {
+            question: this.draft,
+          },
         }
       }
 
       return {
-        content: 'option added',
+        reason: 'call-llm',
+        result: {
+          content: 'option added',
+        },
       }
     },
   }

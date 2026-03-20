@@ -3,6 +3,8 @@ import type { Tool } from '../../types'
 import { plannerEvent } from '../../event'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { SessionPlaner } from '../../agentSession'
+import { ToolProvider } from '../toolProvider'
+
 export type PlanStep = {
   id: string
   status: 'pending' | 'running' | 'completed' | 'failed'
@@ -17,8 +19,10 @@ export const PLANNER_TOOL_NAMES = {
   CHANGE_PLAN_ITEM_STATUS: `${PLANNER_NAMESPACE}_CHANGE_PLAN_ITEM_STATUS_TOOL`,
 } as const
 
-export class Planner {
-  constructor(private runtime: WorkflowRuntimeContext) {}
+export class Planner extends ToolProvider {
+  constructor(runtime: WorkflowRuntimeContext) {
+    super(runtime)
+  }
   start: Tool = {
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',
@@ -60,7 +64,10 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
         plannerId: sessionPlaner.id,
       })
       return {
-        content: 'Has marked plan is generating, this is planner id ' + sessionPlaner.id,
+        reason: 'call-llm',
+        result: {
+          content: 'Has marked plan is generating, this is planner id ' + sessionPlaner.id,
+        },
       }
     },
   }
@@ -121,8 +128,11 @@ Continue calling this tool until all required steps for completing the task are 
         plan: planStep,
       })
       return {
-        content: 'Plan step created successfully',
-        plan: planStep,
+        reason: 'call-llm',
+        result: {
+          content: 'Plan step created successfully',
+          plan: planStep,
+        },
       }
     },
   }
@@ -164,8 +174,11 @@ Always call this tool after finishing plan generation.
         plans: pendingPlanner.plans,
       })
       return {
-        content: 'Plan generation completed, all steps confirmed',
-        plan: pendingPlanner.plans,
+        reason: 'call-llm',
+        result: {
+          content: 'Plan generation completed, all steps confirmed',
+          plan: pendingPlanner.plans,
+        },
       }
     },
   }
@@ -254,10 +267,9 @@ Typical usage pattern:
           completed: planner.filter((s) => s.status === 'completed').length,
           failed: planner.filter((s) => s.status === 'failed').length,
         }
-        return {
-          content:
-            `Step ${id} status successfully updated to: ${status}\n` +
-            `this is user full input in chat
+        const content =
+          `Step ${id} status successfully updated to: ${status}\n` +
+          `this is user full input in chat
 ${this.runtime.userInput
   .map((i, index) => {
     let content = i
@@ -273,11 +285,19 @@ ${this.runtime.userInput
 
 this is current workflow planner summary snapshot
 ${JSON.stringify(summary, null, 2)}
-`,
+`
+        return {
+          reason: 'call-llm',
+          result: {
+            content,
+          },
         }
       }
       return {
-        content: `Plan step with ID ${id} not found. Please verify the ID is correct.`,
+        reason: 'call-llm',
+        result: {
+          content: `Plan step with ID ${id} not found. Please verify the ID is correct.`,
+        },
       }
     },
   }

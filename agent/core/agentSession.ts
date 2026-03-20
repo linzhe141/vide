@@ -15,7 +15,7 @@ export class AgentSession {
   }
 
   async run(userInput: string) {
-    console.log('userInput--->', userInput)
+    // console.log('userInput--->', userInput)
     try {
       activeSessions.push(this)
 
@@ -27,7 +27,7 @@ export class AgentSession {
           ...prevRuntime.userInput,
           ...workflowBlock.runtime.userInput,
         ]
-        console.log('full user chat message', workflowBlock.runtime.userInput)
+        // console.log('full user chat message', workflowBlock.runtime.userInput)
       }
       //  保留前面的planner 到新一轮的runtime里面
 

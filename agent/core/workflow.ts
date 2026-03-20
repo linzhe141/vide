@@ -7,6 +7,7 @@ import type {
   StepPayload,
   Tool,
   ToolCall,
+  ToolResult,
   UserInputStepPayload,
 } from './types'
 import { processLLMStream } from './llm'
@@ -177,6 +178,7 @@ export class Workflow {
   }
 
   async handleCallTool(toolCall: ToolCall) {
+    let reason: ToolResult['reason'] = 'call-llm'
     const toolName = toolCall.function.name
     const args = JSON.parse(toolCall.function.arguments || '{}')
     const tool = this.tools.find((t) => t.name === toolName)
@@ -200,6 +202,8 @@ export class Workflow {
     })
     const toolResult = await execute()
     if (toolResult.success) {
+      reason = toolResult.result!.reason
+      const result = toolResult.result!.result
       this.runtime.thread.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
@@ -208,7 +212,7 @@ export class Workflow {
 
       workflowEvent.emit('workflow-tool-call-success', {
         ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, result: toolResult.result },
+        toolCallResult: { id: toolCall.id, toolName, result: result },
       })
     } else {
       const error = toolResult.error
@@ -223,22 +227,23 @@ export class Workflow {
         toolCallResult: { id: toolCall.id, toolName, error },
       })
     }
+
+    return reason
   }
 
   async stateCallSingleCall(payload: CallToolStepPayload): Promise<NextStep> {
     const toolCalls = payload.toolCalls
     const index = payload.index
     const toolCall = toolCalls[index]
-    await this.handleCallTool(toolCall)
-    // if (toolCall.function.name === ASK_USER_TOOL_NAMES.CREATE_OPTION) {
-    //   // handleCallTool 已经把toolresult 添加到message里面了
-    //   return {
-    //     state: 'COMPLETED',
-    //     payload: {
-    //       content: 'Stop the current workflow and wait for the user to select an option',
-    //     },
-    //   }
-    // }
+    const reason = await this.handleCallTool(toolCall)
+    if (reason === 'stop') {
+      return {
+        state: 'COMPLETED',
+        payload: {
+          content: 'Stop the current workflow',
+        },
+      }
+    }
     if (index + 1 < toolCalls.length) {
       return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {

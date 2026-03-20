@@ -3,6 +3,7 @@ import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { ToolProvider } from '../toolProvider'
 
 export const SKILL_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 export interface SkillMeta {
@@ -23,8 +24,10 @@ const SkillsMap: Record<
 
 export const skillsPath = '.vide/skills'
 
-export class SkillTool {
-  constructor(private runtime: WorkflowRuntimeContext) {}
+export class SkillTool extends ToolProvider {
+  constructor(runtime: WorkflowRuntimeContext) {
+    super(runtime)
+  }
 
   loadSkill: Tool = {
     name: SKILL_TOOL_NAMES.LOAD_SKILL,
@@ -57,14 +60,17 @@ Use this when a task matches an available skill description and you need the ful
       const targetSkill = SkillsMap[name]
       if (!targetSkill) {
         return {
-          name,
-          content: `Skill "${name}" is not available`,
+          reason: 'call-llm',
+          result: `Skill "${name}" is not available`,
         }
       }
       return {
-        name,
-        content: targetSkill.content,
-        filePath: targetSkill.filePath,
+        reason: 'call-llm',
+        result: {
+          name,
+          content: targetSkill.content,
+          filePath: targetSkill.filePath,
+        },
       }
     },
   }

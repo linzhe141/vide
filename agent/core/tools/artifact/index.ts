@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 import type { Tool } from '@/agent/core/types'
 import { artifactEvent } from '../../event'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
+import { ToolProvider } from '../toolProvider'
 
 const ARTIFACT_ROOT = '.vide/artifacts'
 
@@ -12,8 +13,10 @@ export const ARTIFACT_TOOL_NAMES = {
   CREATE: `${ARTIFACT_NAMESPACE}_CREATE_WORKSPACE`,
 } as const
 
-export class Artifact {
-  constructor(private runtime: WorkflowRuntimeContext) {}
+export class Artifact extends ToolProvider {
+  constructor(runtime: WorkflowRuntimeContext) {
+    super(runtime)
+  }
   create: Tool = {
     name: ARTIFACT_TOOL_NAMES.CREATE,
     type: 'function',
@@ -61,10 +64,13 @@ All generated files MUST be written inside the returned artifactDir.
         workspaceName,
       })
       return {
-        success: true,
-        artifactDir,
-        workspaceId: uuid,
-        message: `Artifact workspace created at ${artifactDir}. All generated files MUST be written inside this directory.`,
+        reason: 'call-llm',
+        result: {
+          success: true,
+          artifactDir,
+          workspaceId: uuid,
+          message: `Artifact workspace created at ${artifactDir}. All generated files MUST be written inside this directory.`,
+        },
       }
     },
   }

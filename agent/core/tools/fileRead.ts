@@ -329,20 +329,30 @@ export const fileRead: Tool = {
 
     try {
       switch (operation) {
-        case 'list':
-          return await listDirectory(filePath, recursive)
+        case 'list': {
+          const result = await listDirectory(filePath, recursive)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'read':
-          return await readFile(filePath, encoding)
+        case 'read': {
+          const result = await readFile(filePath, encoding)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'info':
-          return await getFileInfo(filePath)
+        case 'info': {
+          const result = await getFileInfo(filePath)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'exists':
-          return await checkExists(filePath)
+        case 'exists': {
+          const result = await checkExists(filePath)
+          return { reason: 'call-llm', result }
+        }
 
-        case 'stats':
-          return await getFileStats(filePath)
+        case 'stats': {
+          const result = await getFileStats(filePath)
+          return { reason: 'call-llm', result }
+        }
 
         default:
           throw new Error(`Unsupported operation: ${operation}`)

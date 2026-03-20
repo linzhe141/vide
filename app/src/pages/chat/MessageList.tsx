@@ -1,7 +1,7 @@
 import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
 import { useState } from 'react'
 import type { ToolCall } from '@/agent/core/types'
-import { ASK_USER_NAMESPACE, ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
+import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
 import { AskUserQuestionView } from './AskUserQuestionView'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 /* ---------------- message ---------------- */
@@ -69,6 +69,7 @@ export function ToolCallView({ message, results }: ToolCallViewProps) {
 /* ---------------- block ---------------- */
 
 function BlockView({ block }: { block: ConversationBlock }) {
+  const [lastAskUserMessageIndex, setLastAskUserMessageIndex] = useState(-1)
   const toolResults = new Map<string, unknown>()
 
   for (const message of block.messages) {
@@ -76,42 +77,18 @@ function BlockView({ block }: { block: ConversationBlock }) {
       toolResults.set(message.toolCallId, message.result)
     }
   }
-  const showAskUserQuestionMessage = (index: number) => {
-    // 必修是ASK_USER_NAMESPACE
-    const current = block.messages[index]
-    if (
-      current.role === 'tool-call' &&
-      !current.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)
-    ) {
-      return false
-    }
-    // 如果当前是 COMPLETE_GENERATE 显示 ui
-    if (
-      current.role === 'tool-call' &&
-      current.toolCalls[0].function.name === ASK_USER_TOOL_NAMES.COMPLETE_GENERATE
-    ) {
-      return true
-    }
-    // +2 跳过toolcall result
-    const next = block.messages[index + 2]
-    if (
-      next &&
-      next.role === 'tool-call' &&
-      next.toolCalls.length &&
-      next.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)
-    ) {
-      return false
-    }
-    return true
-  }
+
   return (
     <div className='relative space-y-3'>
       {block.messages.map((message, index) => {
         if (message.role === 'tool-call') {
+          if (message.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)) {
+            setLastAskUserMessageIndex(index)
+          }
           return (
             <div key={message.id}>
               <ToolCallView message={message} results={toolResults} />
-              {showAskUserQuestionMessage(index) && <AskUserQuestionView block={block} />}
+              {index === lastAskUserMessageIndex && <AskUserQuestionView block={block} />}
             </div>
           )
         }
