@@ -1,15 +1,13 @@
 import { Send } from 'lucide-react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
-import { useChatContext } from './ChatProvider'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { useThreadStore } from '../../store/threadStore'
 import { Planner } from './PlannersDisplay'
 
-export function ChatInput() {
+export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: string) => void }) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { handleSend } = useChatContext()
   const pendingPlanner = useThreadStore((state) =>
     state.planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
   )
@@ -24,7 +22,7 @@ export function ChatInput() {
 
   const handleSubmit = () => {
     if (input.trim()) {
-      handleSend(input)
+      onSend(input)
       setInput('')
     }
   }
@@ -99,4 +97,4 @@ export function ChatInput() {
       </div>
     </div>
   )
-}
+})

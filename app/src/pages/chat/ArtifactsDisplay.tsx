@@ -2,8 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react'
 import type { FileNode } from '@/electron/ipc/api/channels'
 import { CodeBlock } from '../../components/Pre/Pre'
+import { cn } from '../../lib/utils'
 
-export function ArtifactsDisplay({ threadId }: { threadId: string }) {
+export function ArtifactsDisplay({
+  threadId,
+  className,
+}: {
+  threadId: string
+  className?: string
+}) {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null)
   const [artifacts, setArtifacts] = useState<
     {
@@ -33,7 +40,7 @@ export function ArtifactsDisplay({ threadId }: { threadId: string }) {
     }
   }, [threadId])
   return (
-    <div className='flex h-full'>
+    <div className={cn('flex h-full', className)}>
       {/* Sidebar */}
       <div className='border-border bg-background flex h-full w-64 flex-col border-r'>
         <div className='text-text-secondary sticky p-3 text-sm'>Artifacts</div>
@@ -85,7 +92,7 @@ function TreeNode({
   level?: number
   onSelect: (file: FileNode) => void
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
 
   const isFolder = node.type === 'folder'
 

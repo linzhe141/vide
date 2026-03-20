@@ -10,7 +10,7 @@ function MessageView({ message }: { message: ThreadMessage }) {
   switch (message.role) {
     case 'user':
       return (
-        <div className='rounded-lg border p-3'>
+        <div className='border-primary/50 my-10 rounded-lg border p-3'>
           {/* <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre> */}
           <MarkdownRenderer animation>{message.content}</MarkdownRenderer>
         </div>

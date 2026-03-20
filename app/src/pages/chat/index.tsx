@@ -1,7 +1,7 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
 import { context } from '../../hooks/chatContenxt'
 import { ThreadMessageRole } from '@/types'
@@ -28,22 +28,29 @@ export function Chat() {
 function ChatContent({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useThreadStore()
-
+  const [moving, setMoving] = useState(false)
   const [openSidePane, setOpenSidePane] = useState(false)
 
   const [paneType, setPaneType] = useState<'Artifacts' | 'Planners'>('Artifacts')
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const onSendHandler = useCallback(
+    async (data: string) => {
+      handleSend(data)
+      const container = scrollContainerRef.current
+      if (!container) return
+      container.scrollTop = container.scrollHeight
+    },
+    [handleSend]
+  )
   useEffect(() => {
     const unsub = useThreadStore.subscribe((s) => {
       if (s.streaming) {
         //
-        console.log('xxxxabcdefag--->')
         const container = scrollContainerRef.current
         if (!container) return
-        container.scrollTop = container.scrollHeight
         if (container.dataset.nearBottom === 'true') {
-          //
+          container.scrollTop = container.scrollHeight
         }
       }
     })
@@ -187,7 +194,7 @@ function ChatContent({ threadId }: { threadId: string }) {
   return (
     <div className='bg-background flex h-full w-full flex-col'>
       <div className='flex h-0 flex-1'>
-        <div className='flex h-full min-w-[500px] flex-1 flex-col'>
+        <div className='flex h-full min-w-[550px] flex-1 flex-col'>
           <div className='sticky flex h-10 items-center justify-between px-5'>
             <div></div>
             <div className='text-text-secondary flex items-center gap-2'>
@@ -197,6 +204,10 @@ function ChatContent({ threadId }: { threadId: string }) {
                   'text-primary': openSidePane && paneType === 'Planners',
                 })}
                 onClick={() => {
+                  setMoving(true)
+                  setTimeout(() => {
+                    setMoving(false)
+                  }, 200)
                   setPaneType('Planners')
                   if (!openSidePane) {
                     setOpenSidePane(true)
@@ -214,6 +225,10 @@ function ChatContent({ threadId }: { threadId: string }) {
                   'text-primary': openSidePane && paneType === 'Artifacts',
                 })}
                 onClick={() => {
+                  setMoving(true)
+                  setTimeout(() => {
+                    setMoving(false)
+                  }, 200)
                   setPaneType('Artifacts')
                   if (!openSidePane) {
                     setOpenSidePane(true)
@@ -232,7 +247,7 @@ function ChatContent({ threadId }: { threadId: string }) {
 
             <div className='h-[200px]'></div>
           </div>
-          <ChatInput />
+          <ChatInput onSend={onSendHandler} />
         </div>
         <div
           className={cn('overflow-x-hidden transition-[width] duration-200 ease-out', {
@@ -241,8 +256,21 @@ function ChatContent({ threadId }: { threadId: string }) {
             'w-[600px] border-l': openSidePane && paneType === 'Planners',
           })}
         >
-          {paneType === 'Artifacts' && <ArtifactsDisplay threadId={threadId}></ArtifactsDisplay>}
-          {paneType === 'Planners' && <PlannersDisplay></PlannersDisplay>}
+          {paneType === 'Artifacts' && (
+            <ArtifactsDisplay
+              threadId={threadId}
+              className={cn({
+                'whitespace-nowrap': moving,
+              })}
+            ></ArtifactsDisplay>
+          )}
+          {paneType === 'Planners' && (
+            <PlannersDisplay
+              className={cn({
+                'whitespace-nowrap': moving,
+              })}
+            ></PlannersDisplay>
+          )}
         </div>
       </div>
     </div>

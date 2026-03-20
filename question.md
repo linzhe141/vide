@@ -20,3 +20,5 @@ this is your runtime workflow code `agent\core\workflow.ts`, basic on this code 
 
 你先从 react重复渲染的角度去分析，我哪里有问题，是不是太多额外的重新渲染了,首先是这个文件
 是不是要加useMemo useCall 等去优化，memo组件，还要解释为什么又重新渲染了，不要考虑代码高亮的耗时，分析后要给我优化后完整的代码 ，只分析react代码
+
+创建一个pptx文件，一共有7页，每一页就主标题和副标题，js代码用esm，然后一共有7个文件依次slide1.mjs~slide7.mjs和一个index.mjs去整合，用于生成pptx文件的main入口
