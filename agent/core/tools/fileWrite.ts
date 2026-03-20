@@ -14,9 +14,6 @@ If the file exists it will be overwritten, otherwise a new file will be created.
 
 The path can be either absolute or relative.
 If the parent directory does not exist it will be created automatically.
-
-When generating code, it can be split into modules. Each code file should not exceed 300 lines.
-When generating JavaScript code, it must be in ESM format.
 `,
     parameters: {
       type: 'object',
@@ -62,6 +59,7 @@ When generating JavaScript code, it must be in ESM format.
         },
       }
     } catch (error: any) {
+      console.log('fs_write_file error', error)
       return {
         reason: 'call-llm',
         result: {

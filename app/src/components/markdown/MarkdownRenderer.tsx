@@ -46,7 +46,7 @@ export function MarkdownRenderer({
     <MarkdownProvider animation={animation}>
       <article
         className={cn(
-          'article-wrapper prose dark:prose-invert prose-slate max-w-none text-sm',
+          'article-wrapper prose dark:prose-invert prose-stone prose-sm max-w-none',
           { animation },
           className
         )}
