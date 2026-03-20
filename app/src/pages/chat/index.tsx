@@ -3,273 +3,126 @@ import { ChatInput } from './ChatInput'
 import { useParams } from 'react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatProvider, useChatContext } from './ChatProvider'
-import { context } from '../../hooks/chatContenxt'
-import { ThreadMessageRole } from '@/types'
-import {
-  useThreadStore,
-  type ConversationBlock,
-  type ThreadMessage,
-} from '@/app/src/store/threadStore'
-import { FileText, ListChecks } from 'lucide-react'
+import { ArrowDown, FileText, ListChecks } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { ArtifactsDisplay } from './ArtifactsDisplay'
 import { PlannersDisplay } from './PlannersDisplay'
+import { InitSession } from './InitSession'
+import { useAutoScroll } from './useAutoScroll'
 
 export function Chat() {
-  const params = useParams()
-  const id = params.id!
+  const { id } = useParams()
   return (
     <ChatProvider>
-      <ChatContent key={id} threadId={id} />
+      <ChatContent key={id} threadId={id!} />
     </ChatProvider>
   )
 }
 
 function ChatContent({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()
-  const { buildFromDatabase } = useThreadStore()
+
+  const placeholderRef = useRef<HTMLDivElement>(null)
+  const { ref: scrollRef, scrollToBottom } = useAutoScroll()
+  const [showToBottomButton, setShowToBottomButton] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState<'Artifacts' | 'Planners'>('Artifacts')
   const [moving, setMoving] = useState(false)
-  const [openSidePane, setOpenSidePane] = useState(false)
 
-  const [paneType, setPaneType] = useState<'Artifacts' | 'Planners'>('Artifacts')
+  const togglePane = (next: 'Artifacts' | 'Planners') => {
+    setMoving(true)
+    setTimeout(() => setMoving(false), 200)
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const onSendHandler = useCallback(
-    async (data: string) => {
-      handleSend(data)
-      const container = scrollContainerRef.current
-      if (!container) return
-      container.scrollTop = container.scrollHeight
+    if (!open) {
+      setType(next)
+      setOpen(true)
+      return
+    }
+
+    if (type === next) {
+      setOpen(false)
+    } else {
+      setType(next)
+    }
+  }
+
+  const onSend = useCallback(
+    (text: string) => {
+      handleSend(text)
+      scrollToBottom()
     },
-    [handleSend]
+    [handleSend, scrollToBottom]
   )
   useEffect(() => {
-    const unsub = useThreadStore.subscribe((s) => {
-      if (s.streaming) {
-        //
-        const container = scrollContainerRef.current
-        if (!container) return
-        if (container.dataset.nearBottom === 'true') {
-          container.scrollTop = container.scrollHeight
-        }
-      }
-    })
-    return unsub
-  }, [])
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) return
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container
-      const distanceToBottom = scrollHeight - scrollTop - clientHeight
-
-      // 如果距离底部小于等于 100px，就记录一个标记（可以通过 data 属性或者 ref）
-      if (distanceToBottom <= 100) {
-        container.dataset.nearBottom = 'true'
-      } else {
-        container.dataset.nearBottom = 'false'
-      }
-    }
-
-    // 监听滚动事件
-    container.addEventListener('scroll', handleScroll)
-    // 初始化执行一次
-    handleScroll()
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
-
-  useEffect(() => {
-    const firstInput = context.firstInput
-    if (firstInput) {
-      console.log('firstInput', firstInput)
-      context.firstInput = ''
-      handleSend(firstInput)
-    } else {
-      async function fetchMessages() {
-        const { blockData, planner, artifacts } = await window.ipcRendererApi.invoke(
-          'agent-resume-session',
-          {
-            sessionId: threadId,
-          }
-        )
-        const lastBlock = blockData.at(-1)
-        if (!lastBlock) return
-
-        const lastBlockId = lastBlock.id
-        const conversationBlocks: ConversationBlock[] = []
-        for (const block of blockData) {
-          const conversationBlock: ConversationBlock = {
-            id: block.id,
-            input: block.userInput,
-            // TODO
-            status: 'finished',
-            askUser: block.askUser,
-            // TODO
-            runtime: {} as any,
-            messages: [],
-          }
-          const blockMessages = buildBlockMessages(block.messages)
-          conversationBlock.messages = blockMessages
-          conversationBlocks.push(conversationBlock)
-        }
-        function buildBlockMessages(messages: (typeof blockData)[number]['messages']) {
-          const theadMessages: ThreadMessage[] = []
-          for (const message of messages) {
-            switch (message.role) {
-              case ThreadMessageRole.User: {
-                theadMessages.push({
-                  role: 'user',
-                  id: message.id,
-                  content: message.content || '',
-                })
-                break
-              }
-              case ThreadMessageRole.AssistantReason: {
-                theadMessages.push({
-                  role: 'assistant-reason',
-                  id: message.id,
-                  content: message.content || '',
-                })
-                break
-              }
-              case ThreadMessageRole.AssistantText: {
-                theadMessages.push({
-                  role: 'assistant-text',
-                  id: message.id,
-                  content: message.content || '',
-                })
-                break
-              }
-              case ThreadMessageRole.ToolCalls: {
-                theadMessages.push({
-                  role: 'tool-call',
-                  id: message.id,
-                  toolCalls: JSON.parse(message.payload || '[]'),
-                })
-                break
-              }
-              case ThreadMessageRole.Tool: {
-                const toolResult = JSON.parse(message.payload || '{}') as
-                  | { id: string; toolName: string; result: any }
-                  | { id: string; toolName: string; error: any }
-                theadMessages.push({
-                  role: 'tool-result',
-                  id: message.id,
-                  toolCallId: toolResult.id,
-                  result: 'result' in toolResult ? toolResult.result : toolResult.error,
-                })
-                break
-              }
-              default: {
-                break
-              }
-            }
-          }
-          return theadMessages
-        }
-
-        const pendingPlanner = planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
-        buildFromDatabase({
-          sessionId: threadId,
-          blocks: conversationBlocks,
-          currentBlockId: lastBlockId,
-          planner,
-          currentPlannerId: pendingPlanner?.id,
-          artifacts,
-          streaming: false,
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setShowToBottomButton(!entry.isIntersecting)
         })
-      }
-      fetchMessages()
+      },
+      { threshold: 0.5 }
+    )
+    if (placeholderRef.current) {
+      observer.observe(placeholderRef.current)
     }
-
-    if (context.isRuning) {
-      // restore()
-    }
-  }, [threadId, handleSend, buildFromDatabase])
-
+    return () => observer.disconnect()
+  }, [])
   return (
-    <div className='bg-background flex h-full w-full flex-col'>
+    <div className='bg-background flex h-full flex-col'>
+      <InitSession threadId={threadId} />
       <div className='flex h-0 flex-1'>
-        <div className='flex h-full min-w-[550px] flex-1 flex-col'>
-          <div className='sticky flex h-10 items-center justify-between px-5'>
-            <div></div>
-            <div className='text-text-secondary flex items-center gap-2'>
-              <ListChecks
-                size={14}
-                className={cn({
-                  'text-primary': openSidePane && paneType === 'Planners',
-                })}
-                onClick={() => {
-                  setMoving(true)
-                  setTimeout(() => {
-                    setMoving(false)
-                  }, 200)
-                  setPaneType('Planners')
-                  if (!openSidePane) {
-                    setOpenSidePane(true)
-                    return
-                  }
-                  if (paneType === 'Planners') {
-                    setOpenSidePane(false)
-                    return
-                  }
-                }}
-              ></ListChecks>
-              <FileText
-                size={14}
-                className={cn({
-                  'text-primary': openSidePane && paneType === 'Artifacts',
-                })}
-                onClick={() => {
-                  setMoving(true)
-                  setTimeout(() => {
-                    setMoving(false)
-                  }, 200)
-                  setPaneType('Artifacts')
-                  if (!openSidePane) {
-                    setOpenSidePane(true)
-                    return
-                  }
-                  if (paneType === 'Artifacts') {
-                    setOpenSidePane(false)
-                    return
-                  }
-                }}
-              ></FileText>
-            </div>
+        {/* 主区域 */}
+        <div className='flex min-w-[550px] flex-1 flex-col'>
+          {/* header */}
+          <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
+            <ListChecks
+              size={14}
+              className={cn({
+                'text-primary': open && type === 'Planners',
+              })}
+              onClick={() => togglePane('Planners')}
+            />
+            <FileText
+              size={14}
+              className={cn({
+                'text-primary': open && type === 'Artifacts',
+              })}
+              onClick={() => togglePane('Artifacts')}
+            />
           </div>
-          <div className='h-0 flex-1 overflow-auto' ref={scrollContainerRef}>
-            <MessageList />
 
-            <div className='h-[200px]'></div>
+          {/* message */}
+          <div ref={scrollRef} className='h-0 flex-1 overflow-auto'>
+            <MessageList />
+            {showToBottomButton && (
+              <button
+                onClick={scrollToBottom}
+                className='bg-background border-border fixed bottom-60 left-1/2 z-50 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
+                aria-label='Scroll to bottom'
+              >
+                <ArrowDown size={18} className='text-foreground' />
+              </button>
+            )}
+            <div className='h-[200px]' ref={placeholderRef} />
           </div>
-          <ChatInput onSend={onSendHandler} />
+
+          {/* input */}
+          <ChatInput onSend={onSend} />
         </div>
+
+        {/* side pane */}
         <div
-          className={cn('overflow-x-hidden transition-[width] duration-200 ease-out', {
-            'w-0': !openSidePane,
-            'w-[1000px] border-l': openSidePane && paneType === 'Artifacts',
-            'w-[600px] border-l': openSidePane && paneType === 'Planners',
+          className={cn('overflow-hidden transition-[width] duration-200', {
+            'w-0': !open,
+            'w-[1000px] border-l': open && type === 'Artifacts',
+            'w-[600px] border-l': open && type === 'Planners',
           })}
         >
-          {paneType === 'Artifacts' && (
-            <ArtifactsDisplay
-              threadId={threadId}
-              className={cn({
-                'whitespace-nowrap': moving,
-              })}
-            ></ArtifactsDisplay>
+          {type === 'Artifacts' && (
+            <ArtifactsDisplay threadId={threadId} className={cn({ 'whitespace-nowrap': moving })} />
           )}
-          {paneType === 'Planners' && (
-            <PlannersDisplay
-              className={cn({
-                'whitespace-nowrap': moving,
-              })}
-            ></PlannersDisplay>
+          {type === 'Planners' && (
+            <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
           )}
         </div>
       </div>
