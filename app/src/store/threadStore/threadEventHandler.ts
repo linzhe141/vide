@@ -1,6 +1,6 @@
-import { nanoid } from "nanoid"
-import type { ConversationBlock, ThreadMessage, ThreadState } from "."
-import type { WorkflowState } from "../../hooks/createWorkflowStream"
+import { nanoid } from 'nanoid'
+import type { ConversationBlock, ThreadMessage, ThreadState } from '.'
+import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
 export class ThreadEventHandler {
   constructor(
@@ -69,7 +69,7 @@ export class ThreadEventHandler {
         pushMessage(block, {
           id: nanoid(),
           role: 'error',
-          error: data.error,
+          error: data.error instanceof Error ? data.error.message : data.error,
         })
 
         return

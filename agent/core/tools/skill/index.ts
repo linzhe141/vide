@@ -5,6 +5,15 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { ToolProvider } from '../toolProvider'
 
+async function isDirectoryExists(dirPath: string) {
+  try {
+    await fs.access(dirPath)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const SKILL_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 export interface SkillMeta {
   name: string
@@ -101,6 +110,8 @@ async function readSkill(filePath: string): Promise<SkillMeta | null> {
 async function scanSkills(): Promise<SkillMeta[]> {
   const result: SkillMeta[] = []
 
+  const skillsDirExists = await isDirectoryExists(skillsPath)
+  if (!skillsDirExists) return []
   const dirs = await fs.readdir(skillsPath, { withFileTypes: true })
 
   for (const dir of dirs) {

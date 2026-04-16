@@ -71,7 +71,8 @@ export class ThreadsManager {
     })
     onWorkflowEvent('workflow-finished', async () => {})
     onWorkflowEvent('workflow-error', async ({ ctx, error }) => {
-      console.log(ctx, error)
+      console.log('onElectron main get workflow-error', ctx)
+      console.log(error)
     })
 
     onWorkflowEvent('workflow-llm-start', async () => {})
