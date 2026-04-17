@@ -47,7 +47,6 @@ export function InitSession({ threadId }: { threadId: string }) {
         planner,
         currentPlannerId: pendingPlanner?.id,
         artifacts,
-        streaming: false,
       })
     }
 

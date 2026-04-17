@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { useThreadStore } from '../../store/threadStore'
 
 export function useAutoScroll() {
   const ref = useRef<HTMLDivElement>(null)
@@ -21,18 +20,18 @@ export function useAutoScroll() {
   }, [])
 
   // streaming 时自动滚动
-  useEffect(() => {
-    const unsub = useThreadStore.subscribe((s) => {
-      if (!s.streaming) return
-      const el = ref.current
-      if (!el) return
+  // useEffect(() => {
+  //   const unsub = useThreadStore.subscribe((s) => {
+  //     if (!s.streaming) return
+  //     const el = ref.current
+  //     if (!el) return
 
-      if (el.dataset.nearBottom === 'true') {
-        el.scrollTop = el.scrollHeight
-      }
-    })
-    return unsub
-  }, [])
+  //     if (el.dataset.nearBottom === 'true') {
+  //       el.scrollTop = el.scrollHeight
+  //     }
+  //   })
+  //   return unsub
+  // }, [])
 
   const scrollToBottom = useCallback(() => {
     const el = ref.current

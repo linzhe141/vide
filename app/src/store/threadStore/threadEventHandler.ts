@@ -1,10 +1,10 @@
 import { nanoid } from 'nanoid'
-import type { ConversationBlock, ThreadMessage, ThreadState } from '.'
+import type { ConversationBlock, ThreadMessage, Thread } from '.'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
 export class ThreadEventHandler {
   constructor(
-    private state: ThreadState,
+    private state: Thread,
     private event: WorkflowState
   ) {}
 
@@ -17,8 +17,6 @@ export class ThreadEventHandler {
       /* ---------------- workflow lifecycle ---------------- */
 
       case 'workflow-start': {
-        this.state.streaming = true
-
         const workflowId = data.ctx.workflowId
         block = {
           id: workflowId,
@@ -48,8 +46,6 @@ export class ThreadEventHandler {
       }
 
       case 'workflow-finished': {
-        this.state.streaming = false
-
         if (!block) return
 
         block.status = 'finished'
@@ -59,7 +55,6 @@ export class ThreadEventHandler {
       }
 
       case 'workflow-error': {
-        this.state.streaming = false
         if (!block) return
 
         console.error(data)
@@ -294,10 +289,10 @@ export class ThreadEventHandler {
   }
 }
 
-function getCurrentBlock(state: ThreadState) {
+function getCurrentBlock(state: Thread) {
   return state.blocks.find((b) => b.id === state.currentBlockId)
 }
-function getCurrentPlanner(state: ThreadState) {
+function getCurrentPlanner(state: Thread) {
   return state.planner.find((b) => b.id === state.currentPlannerId)
 }
 

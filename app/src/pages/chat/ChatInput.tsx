@@ -4,12 +4,17 @@ import { Button } from '../../ui/Button'
 import { useState, useRef, useEffect, memo } from 'react'
 import { useThreadStore } from '../../store/threadStore'
 import { Planner } from './PlannersDisplay'
+import { useChatContext } from './ChatProvider'
 
 export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: string) => void }) {
+  const { threadId } = useChatContext()
+
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const pendingPlanner = useThreadStore((state) =>
-    state.planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
+    state.threads
+      .find((i) => i.sessionId === threadId)
+      ?.planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
   )
   // 自动调整 textarea 高度
   useEffect(() => {

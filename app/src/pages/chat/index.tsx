@@ -13,14 +13,15 @@ import { useAutoScroll } from './useAutoScroll'
 export function Chat() {
   const { id } = useParams()
   return (
-    <ChatProvider>
-      <ChatContent key={id} threadId={id!} />
+    <ChatProvider threadId={id!}>
+      <ChatContent key={id} />
     </ChatProvider>
   )
 }
 
-function ChatContent({ threadId }: { threadId: string }) {
-  const { handleSend } = useChatContext()
+function ChatContent() {
+  const { handleSend, threadId } = useChatContext()
+  console.log('xxxxxxxxxxxx', threadId)
 
   const placeholderRef = useRef<HTMLDivElement>(null)
   const { ref: scrollRef, scrollToBottom } = useAutoScroll()

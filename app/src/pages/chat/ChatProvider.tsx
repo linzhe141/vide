@@ -5,11 +5,12 @@ interface ChatContextType {
   // Actions
   handleSend: (input: string) => Promise<void>
   running: boolean
+  threadId: string
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
-export function ChatProvider({ children }: PropsWithChildren) {
+export function ChatProvider({ threadId, children }: PropsWithChildren<{ threadId: string }>) {
   const { send, running } = useWorkflowStream()
 
   const handleSend = useCallback(
@@ -23,8 +24,9 @@ export function ChatProvider({ children }: PropsWithChildren) {
     () => ({
       running,
       handleSend,
+      threadId,
     }),
-    [handleSend, running]
+    [handleSend, running, threadId]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

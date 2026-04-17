@@ -4,7 +4,6 @@ import { Button } from '../../ui/Button'
 import { useThreads } from '../../hooks/useThreads'
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
-import { useThreadStore } from '../../store/threadStore'
 import { MoveRight } from 'lucide-react'
 import LOGOIMG from './logo.png'
 
@@ -12,7 +11,6 @@ export function Welcome() {
   const { createThread } = useThreads()
 
   const [input, setInput] = useState('')
-  const { reset } = useThreadStore()
   const navigate = useNavigate()
   const handleSend = async () => {
     if (!input.trim()) return
@@ -20,8 +18,6 @@ export function Welcome() {
     const threadId = await createThread()
 
     setInput('')
-    // reset current active thread store
-    reset()
     navigate('/chat/' + threadId)
   }
 

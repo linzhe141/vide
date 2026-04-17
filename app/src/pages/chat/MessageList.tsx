@@ -4,6 +4,7 @@ import type { ToolCall } from '@/agent/core/types'
 import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
 import { AskUserQuestionView } from './AskUserQuestionView'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
+import { useChatContext } from './ChatProvider'
 /* ---------------- message ---------------- */
 
 function MessageView({ message }: { message: ThreadMessage }) {
@@ -102,13 +103,12 @@ function BlockView({ block }: { block: ConversationBlock }) {
 /* ---------------- list ---------------- */
 
 export function MessageList() {
-  const blocks = useThreadStore((s) => s.blocks)
+  const { threadId } = useChatContext()
+  const blocks = useThreadStore((s) => s.threads.find((i) => i.sessionId === threadId)?.blocks)
 
   return (
     <div className='mx-auto w-full max-w-3xl space-y-10 px-6 py-10'>
-      {blocks.map((block) => (
-        <BlockView key={block.id} block={block} />
-      ))}
+      {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
     </div>
   )
 }

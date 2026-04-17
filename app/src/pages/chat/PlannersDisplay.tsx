@@ -1,8 +1,11 @@
 import { cn } from '@/app/src/lib/utils'
 import { useThreadStore, type PlanStep } from '../../store/threadStore'
+import { useChatContext } from './ChatProvider'
 
 export function PlannersDisplay({ className }: { className?: string }) {
-  const planners = useThreadStore((s) => s.planner)
+  const { threadId } = useChatContext()
+
+  const planners = useThreadStore((s) => s.threads.find((i) => i.sessionId === threadId)?.planner)
 
   if (!planners?.length)
     return (
