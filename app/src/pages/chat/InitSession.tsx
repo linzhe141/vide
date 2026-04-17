@@ -1,13 +1,17 @@
 import { ThreadMessageRole } from '@/types'
 import { useChatContext } from './ChatProvider'
-import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
+import {
+  useThreadStoreActions,
+  type ConversationBlock,
+  type ThreadMessage,
+} from '../../store/threadStore'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
 
 export function InitSession({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()
-  const { buildFromDatabase } = useThreadStore()
+  const { buildFromDatabase } = useThreadStoreActions()
 
   useEffect(() => {
     const firstInput = context.firstInput

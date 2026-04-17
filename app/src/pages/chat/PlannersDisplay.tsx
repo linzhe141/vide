@@ -1,12 +1,11 @@
 import { cn } from '@/app/src/lib/utils'
-import { useThreadStore, type PlanStep } from '../../store/threadStore'
+import { useThreadPlanners, type PlanStep } from '../../store/threadStore'
 import { useChatContext } from './ChatProvider'
 
 export function PlannersDisplay({ className }: { className?: string }) {
   const { threadId } = useChatContext()
 
-  const planners = useThreadStore((s) => s.threads.find((i) => i.sessionId === threadId)?.planner)
-
+  const planners = useThreadPlanners(threadId)
   if (!planners?.length)
     return (
       <div className={cn('text-text-info flex justify-center p-4', className)}>

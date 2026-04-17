@@ -1,4 +1,8 @@
-import { useThreadStore, type ConversationBlock, type ThreadMessage } from '../../store/threadStore'
+import {
+  useThreadBlocks,
+  type ConversationBlock,
+  type ThreadMessage,
+} from '../../store/threadStore'
 import { useState } from 'react'
 import type { ToolCall } from '@/agent/core/types'
 import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
@@ -104,7 +108,7 @@ function BlockView({ block }: { block: ConversationBlock }) {
 
 export function MessageList() {
   const { threadId } = useChatContext()
-  const blocks = useThreadStore((s) => s.threads.find((i) => i.sessionId === threadId)?.blocks)
+  const blocks = useThreadBlocks(threadId)
 
   return (
     <div className='mx-auto w-full max-w-3xl space-y-10 px-6 py-10'>

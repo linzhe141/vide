@@ -2,7 +2,7 @@ import { Send } from 'lucide-react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
 import { useState, useRef, useEffect, memo } from 'react'
-import { useThreadStore } from '../../store/threadStore'
+import { useThreadPlanners } from '../../store/threadStore'
 import { Planner } from './PlannersDisplay'
 import { useChatContext } from './ChatProvider'
 
@@ -11,11 +11,8 @@ export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: s
 
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const pendingPlanner = useThreadStore((state) =>
-    state.threads
-      .find((i) => i.sessionId === threadId)
-      ?.planner.find((i) => i.plan.some((i) => i.status !== 'completed'))
-  )
+  const planners = useThreadPlanners(threadId)
+  const pendingPlanner = planners?.find((i) => i.plan.some((i) => i.status !== 'completed'))
   // 自动调整 textarea 高度
   useEffect(() => {
     const textarea = textareaRef.current
