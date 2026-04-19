@@ -119,6 +119,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
                 state.threads.push(newThread)
               } else {
                 targetThread.blocks.push(newBlock)
+                targetThread.currentBlockId = workflowId
               }
               return
             }
@@ -411,8 +412,10 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          // state.threads.push(data)
-          console.log('todo buildFromDatabase', data, state)
+          // 只有store中没有对应的thread才从数据库build
+          const target = state.threads.find((i) => i.sessionId === data.sessionId)
+          if (target) return
+          state.threads.push(data)
         })
       },
     },
