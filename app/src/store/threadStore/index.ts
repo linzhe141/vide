@@ -1,9 +1,9 @@
+import { nanoid } from 'nanoid'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
 import type { ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
-import { nanoid } from 'nanoid'
 
 export type PlanStep = {
   id: string
@@ -83,328 +83,214 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       handleEvent(event) {
         set((state) => {
           const { type, data } = event
+
           switch (type) {
             case 'workflow-start': {
               const { sessionId, workflowId } = data.ctx
+              const thread = getOrCreateThread(state, sessionId)
 
-              const newBlock: ConversationBlock = {
-                id: workflowId,
-                input: data.input,
-                status: 'running',
-
-                messages: [
-                  {
-                    id: nanoid(),
-                    role: 'user',
-                    content: data.input,
-                  },
-                ],
-
-                runtime: {
-                  isStreaming: false,
-                  streamingReason: false,
-                  streamingText: false,
-                  waitingHuman: false,
-                },
-              }
-              const targetThread = state.threads.find((i) => i.sessionId === sessionId)
-              if (!targetThread) {
-                const newThread: Thread = {
-                  sessionId,
-                  blocks: [newBlock],
-                  planner: [],
-                  artifacts: [],
-                  currentBlockId: workflowId,
-                }
-                state.threads.push(newThread)
-              } else {
-                targetThread.blocks.push(newBlock)
-                targetThread.currentBlockId = workflowId
-              }
+              thread.blocks.push(createConversationBlock(workflowId, data.input))
+              thread.currentBlockId = workflowId
               return
             }
 
             case 'workflow-finished': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-
-              if (!block) return
-              block.status = 'finished'
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.status = 'finished'
+              })
               return
             }
 
             case 'workflow-error': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
               console.error(data)
 
-              block.status = 'error'
-              pushMessage(block, {
-                id: nanoid(),
-                role: 'error',
-                error: data.error instanceof Error ? data.error.message : data.error,
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.status = 'error'
+                pushMessage(block, {
+                  id: nanoid(),
+                  role: 'error',
+                  error: data.error instanceof Error ? data.error.message : data.error,
+                })
               })
-
               return
             }
 
             case 'workflow-wait-human-approve': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.waitingHuman = true
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.waitingHuman = true
+              })
               return
             }
 
-            /* ---------------- llm lifecycle ---------------- */
-
             case 'workflow-llm-start': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.isStreaming = true
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.isStreaming = true
+              })
               return
             }
 
             case 'workflow-llm-end': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.isStreaming = false
-              block.runtime.streamingReason = false
-              block.runtime.streamingText = false
-
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.isStreaming = false
+                block.runtime.streamingReason = false
+                block.runtime.streamingText = false
+              })
               return
             }
 
-            /* ---------------- reasoning stream ---------------- */
-
             case 'workflow-llm-reasoning-start': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.streamingReason = true
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.streamingReason = true
+              })
               return
             }
 
             case 'workflow-llm-reasoning-delta': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              const msg = ensureLastMessage(block, 'assistant-reason')
-              msg.content += data.chunk.delta
-
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                const msg = ensureLastMessage(block, 'assistant-reason')
+                msg.content += data.chunk.delta
+              })
               return
             }
 
             case 'workflow-llm-reasoning-end': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.streamingReason = false
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.streamingReason = false
+              })
               return
             }
 
-            /* ---------------- assistant text ---------------- */
-
             case 'workflow-llm-text-start': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.streamingText = true
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.streamingText = true
+              })
               return
             }
 
             case 'workflow-llm-text-delta': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              const msg = ensureLastMessage(block, 'assistant-text')
-              msg.content += data.chunk.delta
-
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                const msg = ensureLastMessage(block, 'assistant-text')
+                msg.content += data.chunk.delta
+              })
               return
             }
 
             case 'workflow-llm-text-end': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.streamingText = false
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.streamingText = false
+              })
               return
             }
-
-            /* ---------------- tool calls ---------------- */
 
             case 'workflow-llm-tool-calls-end': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              pushMessage(block, {
-                id: nanoid(),
-                role: 'tool-call',
-                toolCalls: data.toolCalls,
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                pushMessage(block, {
+                  id: nanoid(),
+                  role: 'tool-call',
+                  toolCalls: data.toolCalls,
+                })
               })
-
               return
             }
 
-            /* ---------------- tool execution ---------------- */
-
             case 'workflow-tool-call-start': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.runningToolId = data.toolCall.id
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.runningToolId = data.toolCall.id
+              })
               return
             }
 
             case 'workflow-tool-call-success': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.runningToolId = undefined
-
-              pushMessage(block, {
-                id: nanoid(),
-                role: 'tool-result',
-                toolCallId: data.toolCallResult.id,
-                result: data.toolCallResult.result,
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.runningToolId = undefined
+                pushMessage(block, {
+                  id: nanoid(),
+                  role: 'tool-result',
+                  toolCallId: data.toolCallResult.id,
+                  result: data.toolCallResult.result,
+                })
               })
-
               return
             }
 
             case 'workflow-tool-call-error': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.ctx.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.runtime.runningToolId = undefined
-
-              pushMessage(block, {
-                id: nanoid(),
-                role: 'error',
-                error: data.toolCallResult.error,
+              updateCurrentBlock(state, data.ctx.sessionId, (block) => {
+                block.runtime.runningToolId = undefined
+                pushMessage(block, {
+                  id: nanoid(),
+                  role: 'error',
+                  error: data.toolCallResult.error,
+                })
               })
-
               return
             }
 
-            /* ---------------- ask user ---------------- */
-
             case 'ask-user-start-generate': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              block.askUser = {
-                completed: false,
-                submitValue: [],
-                title: data.title,
-                description: data.description,
-                type: data.type,
-                options: [],
-              }
-
+              updateCurrentBlock(state, data.sessionId, (block) => {
+                block.askUser = {
+                  completed: false,
+                  submitValue: [],
+                  title: data.title,
+                  description: data.description,
+                  type: data.type,
+                  options: [],
+                }
+              })
               return
             }
 
             case 'ask-user-option': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              if (block.askUser) {
-                block.askUser.options.push(data.option)
-              }
-
+              updateCurrentBlock(state, data.sessionId, (block) => {
+                block.askUser?.options.push(data.option)
+              })
               return
             }
 
             case 'ask-user-complete': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              const block = targetThread?.blocks.find((b) => b.id === targetThread.currentBlockId)
-              if (!block) return
-
-              if (block.askUser) {
-                block.askUser.completed = true
-              }
-
+              updateCurrentBlock(state, data.sessionId, (block) => {
+                if (block.askUser) {
+                  block.askUser.completed = true
+                }
+              })
               return
             }
 
-            /* ---------------- planner ---------------- */
-
             case 'planner-start-generate': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              if (!targetThread) return
-              targetThread.currentPlannerId = data.plannerId
-
-              targetThread.planner.push({
-                id: data.plannerId,
-                plan: [],
+              updateThread(state, data.sessionId, (thread) => {
+                thread.currentPlannerId = data.plannerId
+                thread.planner.push({
+                  id: data.plannerId,
+                  plan: [],
+                })
               })
-
               return
             }
 
             case 'planner-step-generate': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              if (!targetThread) return
-              const planner = getCurrentPlanner(targetThread)
-              if (!planner) return
-
-              planner.plan.push(data.plan)
+              updateCurrentPlanner(state, data.sessionId, (planner) => {
+                planner.plan.push(data.plan)
+              })
               return
             }
 
             case 'planner-execute-item-start': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              if (!targetThread) return
-              const planner = getCurrentPlanner(targetThread)
-              if (!planner) return
-
-              const step = planner.plan.find((s) => s.id === data.plan.id)
-              if (step) step.status = 'running'
-
+              updatePlannerStep(state, data.sessionId, data.plan.id, (step) => {
+                step.status = 'running'
+              })
               return
             }
 
             case 'planner-execute-item-success': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              if (!targetThread) return
-              const planner = getCurrentPlanner(targetThread)
-              if (!planner) return
-
-              const step = planner.plan.find((s) => s.id === data.plan.id)
-              if (step) step.status = 'completed'
-
+              updatePlannerStep(state, data.sessionId, data.plan.id, (step) => {
+                step.status = 'completed'
+              })
               return
             }
 
             case 'planner-execute-item-error': {
-              const targetThread = state.threads.find((i) => i.sessionId === data.sessionId)
-              if (!targetThread) return
-              const planner = getCurrentPlanner(targetThread)
-              if (!planner) return
-
-              const step = planner.plan.find((s) => s.id === data.plan.id)
-              if (step) step.status = 'failed'
-
+              updatePlannerStep(state, data.sessionId, data.plan.id, (step) => {
+                step.status = 'failed'
+              })
               return
             }
           }
@@ -412,7 +298,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          // 只有store中没有对应的thread才从数据库build
+          // 鍙湁store涓病鏈夊搴旂殑thread鎵嶄粠鏁版嵁搴揵uild
           const target = state.threads.find((i) => i.sessionId === data.sessionId)
           if (target) return
           state.threads.push(data)
@@ -429,6 +315,96 @@ export const useThreadBlocks = (threadId: string) =>
 
 export const useThreadPlanners = (threadId: string) =>
   useThreadStore((state) => state.threads.find((i) => i.sessionId === threadId)?.planner)
+
+function createConversationBlock(workflowId: string, input: string): ConversationBlock {
+  return {
+    id: workflowId,
+    input,
+    status: 'running',
+
+    messages: [
+      {
+        id: nanoid(),
+        role: 'user',
+        content: input,
+      },
+    ],
+
+    runtime: {
+      isStreaming: false,
+      streamingReason: false,
+      streamingText: false,
+      waitingHuman: false,
+    },
+  }
+}
+
+function getOrCreateThread(state: ThreadState, sessionId: string) {
+  let thread = state.threads.find((item) => item.sessionId === sessionId)
+  if (thread) return thread
+
+  thread = {
+    sessionId,
+    planner: [],
+    blocks: [],
+    artifacts: [],
+  }
+  state.threads.push(thread)
+
+  return thread
+}
+
+function findCurrentBlock(state: ThreadState, sessionId: string) {
+  const thread = state.threads.find((item) => item.sessionId === sessionId)
+  if (!thread || !thread.currentBlockId) return
+
+  return thread.blocks.find((block) => block.id === thread.currentBlockId)
+}
+
+function updateThread(state: ThreadState, sessionId: string, updater: (thread: Thread) => void) {
+  const thread = state.threads.find((item) => item.sessionId === sessionId)
+  if (!thread) return
+
+  updater(thread)
+}
+
+function updateCurrentBlock(
+  state: ThreadState,
+  sessionId: string,
+  updater: (block: ConversationBlock) => void
+) {
+  const block = findCurrentBlock(state, sessionId)
+  if (!block) return
+
+  updater(block)
+}
+
+function updateCurrentPlanner(
+  state: ThreadState,
+  sessionId: string,
+  updater: (planner: Thread['planner'][number]) => void
+) {
+  updateThread(state, sessionId, (thread) => {
+    const planner = getCurrentPlanner(thread)
+    if (!planner) return
+
+    updater(planner)
+  })
+}
+
+function updatePlannerStep(
+  state: ThreadState,
+  sessionId: string,
+  planId: string,
+  updater: (step: PlanStep) => void
+) {
+  updateCurrentPlanner(state, sessionId, (planner) => {
+    const step = planner.plan.find((item) => item.id === planId)
+    if (!step) return
+
+    updater(step)
+  })
+}
 
 function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']) {
   const last = block.messages.at(-1)
