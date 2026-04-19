@@ -42,7 +42,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             controller.enqueue({ type: eventName, data })
           }
 
-          if (eventName === 'agent-session-finished') {
+          if (eventName === 'agent-session-finished' && currentSessionId === data.sessionId) {
             controller.close()
             cleanUp()
           }
@@ -77,7 +77,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             controller.enqueue({ type: eventName, data })
           }
 
-          if (eventName === 'workflow-error') {
+          if (eventName === 'workflow-error' && currentSessionId === data.ctx.sessionId) {
             controller.close()
             cleanUp()
           }
