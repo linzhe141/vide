@@ -100,11 +100,26 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
     case 'workflow-tool-call-start':
       if (!block) return
       block.runtime.runningToolId = event.data.toolCall.id
+      block.runtime.toolStates[event.data.toolCall.id] = {
+        status: 'running',
+        startedAt: Date.now(),
+      }
       return
 
     case 'workflow-tool-call-success':
       if (!block) return
       block.runtime.runningToolId = undefined
+      {
+        const prev = block.runtime.toolStates[event.data.toolCallResult.id]
+        const finishedAt = Date.now()
+        block.runtime.toolStates[event.data.toolCallResult.id] = {
+          status: 'success',
+          startedAt: prev?.startedAt,
+          finishedAt,
+          durationMs: prev?.startedAt ? finishedAt - prev.startedAt : undefined,
+          result: event.data.toolCallResult.result,
+        }
+      }
       pushMessage(block, {
         id: nanoid(),
         role: 'tool-result',
@@ -115,6 +130,20 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
 
     case 'workflow-tool-call-error':
       if (!block) return
+      {
+        const finishedAt = Date.now()
+        const toolCallId = event.data.toolCallResult.id || block.runtime.runningToolId
+        if (toolCallId) {
+          const prev = block.runtime.toolStates[toolCallId]
+          block.runtime.toolStates[toolCallId] = {
+            status: 'error',
+            startedAt: prev?.startedAt,
+            finishedAt,
+            durationMs: prev?.startedAt ? finishedAt - prev.startedAt : undefined,
+            error: event.data.toolCallResult.error,
+          }
+        }
+      }
       block.runtime.runningToolId = undefined
       pushMessage(block, {
         id: nanoid(),
@@ -210,6 +239,7 @@ function createConversationBlock(workflowId: string, input: string): Conversatio
       streamingReason: false,
       streamingText: false,
       waitingHuman: false,
+      toolStates: {},
     },
   }
 }

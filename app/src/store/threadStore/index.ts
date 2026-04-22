@@ -43,6 +43,17 @@ export type ConversationBlock = {
     streamingText: boolean
     runningToolId?: string
     waitingHuman: boolean
+    toolStates: Record<
+      string,
+      {
+        status: 'pending' | 'running' | 'success' | 'error'
+        startedAt?: number
+        finishedAt?: number
+        durationMs?: number
+        result?: any
+        error?: any
+      }
+    >
   }
 }
 

@@ -119,7 +119,7 @@ ${JSON.stringify(selectedOptions.map((o) => o.value))}
             >
               {/* radio */}
               <div
-                className={`mt-1 flex h-4 w-4 items-center justify-center rounded-full border transition-all ${checked ? 'border-primary' : 'border-text-secondary'} `}
+                className={`mt-1 flex min-h-4 min-w-4 items-center justify-center rounded-full border transition-all ${checked ? 'border-primary' : 'border-text-secondary'} `}
               >
                 {checked && <div className='bg-primary h-2 w-2 rounded-full' />}
               </div>

@@ -1,98 +1,190 @@
+import { useMemo, useState } from 'react'
+import {
+  Brain,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Clock3,
+  Ellipsis,
+  SquareTerminal,
+  Wrench,
+  XCircle,
+} from 'lucide-react'
+import type { ToolCall } from '@/agent/core/types'
+import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import {
   useThreadBlocks,
   type ConversationBlock,
   type ThreadMessage,
 } from '../../store/threadStore'
-import { useState } from 'react'
-import type { ToolCall } from '@/agent/core/types'
-import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
-import { AskUserQuestionView } from './AskUserQuestionView'
-import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import { useChatContext } from './ChatProvider'
-/* ---------------- message ---------------- */
+import { AskUserQuestionView } from './AskUserQuestionView'
+
+function formatDuration(durationMs?: number) {
+  if (!durationMs) return null
+  if (durationMs < 1000) return `${durationMs}ms`
+
+  const seconds = durationMs / 1000
+  if (seconds < 10) return `${seconds.toFixed(1)}s`
+
+  return `${Math.round(seconds)}s`
+}
+
+function getToolLabel(name: string) {
+  const last = name.split('.').at(-1) ?? name
+  return last.replace(/[-_]/g, ' ')
+}
 
 function MessageView({ message }: { message: ThreadMessage }) {
   switch (message.role) {
     case 'user':
       return (
-        <div className='border-primary/50 my-10 rounded-lg border p-3'>
-          {/* <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre> */}
-          <MarkdownRenderer animation>{message.content}</MarkdownRenderer>
+        <div className='flex justify-end'>
+          <div className='bg-foreground text-background border-foreground/10 dark:border-foreground/5 max-w-[min(78%,680px)] rounded-[24px] rounded-tr-md border px-5 py-3 text-[15px] leading-7 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.3)]'>
+            <MarkdownRenderer animation={false} className='text-inherit'>
+              {message.content}
+            </MarkdownRenderer>
+          </div>
         </div>
       )
 
     case 'assistant-text':
       return (
-        <div className='prose prose-sm dark:prose-invert max-w-none'>
-          {/* <pre className='text-sm whitespace-pre-wrap'>{message.content}</pre> */}
-          <MarkdownRenderer animation>{message.content}</MarkdownRenderer>
+        <div className='max-w-none'>
+          <MarkdownRenderer
+            animation
+            className='text-foreground prose prose-sm dark:prose-invert max-w-none text-[17px] leading-8'
+          >
+            {message.content}
+          </MarkdownRenderer>
         </div>
       )
 
     case 'assistant-reason':
-      return (
-        <div className='border-border text-text-secondary border-l-2 pl-4 text-sm'>
-          {/* <pre className='whitespace-pre-wrap'>{message.content}</pre> */}
-          <MarkdownRenderer animation>{message.content}</MarkdownRenderer>
-        </div>
-      )
+      return null
 
     case 'error':
       return (
-        <div className='rounded-xl border border-red-300 p-4 text-red-500'>
-          {/* <pre className='text-xs'>{JSON.stringify(message.error, null, 2)}</pre> */}
-          <MarkdownRenderer animation>{JSON.stringify(message.error, null, 2)}</MarkdownRenderer>
+        <div className='rounded-[24px] border border-red-500/20 bg-red-500/6 px-4 py-3 text-sm text-red-600 dark:text-red-400'>
+          <MarkdownRenderer animation={false}>{JSON.stringify(message.error, null, 2)}</MarkdownRenderer>
         </div>
       )
   }
 }
 
-/* ---------------- planner ---------------- */
+function ReasoningPanel({ block }: { block: ConversationBlock }) {
+  const isRunning = block.runtime.streamingReason
+  const [open, setOpen] = useState(isRunning)
+  const reasonMessages = block.messages.filter(
+    (message): message is Extract<ThreadMessage, { role: 'assistant-reason' }> =>
+      message.role === 'assistant-reason'
+  )
 
-type ToolCallViewProps = {
-  message: Extract<ThreadMessage, { role: 'tool-call' }>
-  results: Map<string, unknown>
-}
+  if (!reasonMessages.length) return null
 
-export function ToolCallView({ message, results }: ToolCallViewProps) {
+  const content = reasonMessages.map((message) => message.content).join('\n\n').trim()
+
   return (
-    <div>
-      {message.toolCalls.map((tool) => {
-        return (
-          <div key={tool.id}>
-            <ToolCallButton tool={tool} result={results.get(tool.id)} />
-            {/* {!tool.function.name.startsWith('BUILDIN') && (
-              <ToolCallButton tool={tool} result={results.get(tool.id)} />
-            )} */}
+    <div className='space-y-4'>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className='text-text-secondary flex items-center gap-3 text-[15px] font-medium'
+      >
+        <Brain size={16} strokeWidth={2} />
+        <span>{isRunning ? '思考中' : '思考过程'}</span>
+        {open ? <ChevronDown size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
+      </button>
+
+      {open && (
+        <div className='space-y-4 pl-2'>
+          <div className='flex items-start gap-3'>
+            <div className='text-text-secondary/60 pt-2 text-[10px]'>
+              <Circle size={8} fill='currentColor' strokeWidth={0} />
+            </div>
+            <div className='text-text-secondary text-[15px] font-medium'>思考</div>
           </div>
-        )
-      })}
+          <div className='border-border border-l pl-10'>
+            <MarkdownRenderer
+              animation={isRunning}
+              className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[15px] leading-7'
+            >
+              {content}
+            </MarkdownRenderer>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-/* ---------------- block ---------------- */
+type ToolCallViewProps = {
+  block: ConversationBlock
+  message: Extract<ThreadMessage, { role: 'tool-call' }>
+}
 
-function BlockView({ block }: { block: ConversationBlock }) {
-  const [lastAskUserMessageIndex, setLastAskUserMessageIndex] = useState(-1)
-  const toolResults = new Map<string, unknown>()
+function ToolCallView({ block, message }: ToolCallViewProps) {
+  const toolCount = message.toolCalls.filter(
+    (tool) => !tool.function.name.startsWith(ASK_USER_NAMESPACE)
+  ).length
 
-  for (const message of block.messages) {
-    if (message.role === 'tool-result') {
-      toolResults.set(message.toolCallId, message.result)
-    }
+  if (!toolCount && !message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))) {
+    return null
   }
 
   return (
-    <div className='relative space-y-3'>
+    <div className='space-y-3'>
+      {message.toolCalls.map((tool) => {
+        if (tool.function.name.startsWith(ASK_USER_NAMESPACE)) {
+          return null
+        }
+
+        return <ToolCallButton key={tool.id} tool={tool} block={block} />
+      })}
+      {toolCount > 0 && (
+        <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
+          <Wrench size={15} />
+          <span>{toolCount} 个工具</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BlockView({ block }: { block: ConversationBlock }) {
+  const lastAskUserMessageIndex = useMemo(() => {
+    let matchIndex = -1
+
+    block.messages.forEach((message, index) => {
+      if (
+        message.role === 'tool-call' &&
+        message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))
+      ) {
+        matchIndex = index
+      }
+    })
+
+    return matchIndex
+  }, [block.messages])
+
+  return (
+    <div className='space-y-6'>
       {block.messages.map((message, index) => {
+        if (message.role === 'assistant-reason') {
+          return index === block.messages.findIndex((item) => item.role === 'assistant-reason') ? (
+            <ReasoningPanel key={message.id} block={block} />
+          ) : null
+        }
+
+        if (message.role === 'tool-result') {
+          return null
+        }
+
         if (message.role === 'tool-call') {
-          if (message.toolCalls[0].function.name.startsWith(ASK_USER_NAMESPACE)) {
-            setLastAskUserMessageIndex(index)
-          }
           return (
-            <div key={message.id}>
-              <ToolCallView message={message} results={toolResults} />
+            <div key={message.id} className='space-y-3'>
+              <ToolCallView block={block} message={message} />
               {index === lastAskUserMessageIndex && <AskUserQuestionView block={block} />}
             </div>
           )
@@ -104,56 +196,97 @@ function BlockView({ block }: { block: ConversationBlock }) {
   )
 }
 
-/* ---------------- list ---------------- */
-
 export function MessageList() {
   const { threadId } = useChatContext()
   const blocks = useThreadBlocks(threadId)
 
   return (
-    <div className='mx-auto w-full max-w-3xl space-y-10 px-6 py-10'>
+    <div className='mx-auto flex w-full max-w-[920px] flex-col gap-12 px-8 py-12'>
       {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
     </div>
   )
 }
 
 type ToolCallButtonProps = {
+  block: ConversationBlock
   tool: ToolCall
-  result?: unknown
 }
 
-export function ToolCallButton({ tool, result }: ToolCallButtonProps) {
+function ToolCallButton({ tool, block }: ToolCallButtonProps) {
   const [open, setOpen] = useState(false)
+  const toolState = block.runtime.toolStates[tool.id]
+  const result = toolState?.result
+  const isRunning = toolState?.status === 'running' || block.runtime.runningToolId === tool.id
+  const isSuccess = toolState?.status === 'success'
+  const isError = toolState?.status === 'error'
+  const duration = formatDuration(toolState?.durationMs)
 
   return (
-    <div className='my-1'>
+    <div className='space-y-2'>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className='border-border text-text-secondary hover:bg-background flex items-center gap-2 rounded-md border px-3 py-1 text-xs'
+        onClick={() => setOpen((value) => !value)}
+        className='border-border bg-background/80 dark:bg-background/60 flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition hover:bg-foreground/[0.03] dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)] dark:hover:bg-foreground/[0.05]'
       >
-        <span className='font-mono'>{tool.function.name}</span>
-        <span className='text-text-info'>#{tool.id.slice(0, 4)}</span>
+        <div className='text-text-secondary shrink-0'>
+          <SquareTerminal size={17} strokeWidth={1.8} />
+        </div>
+        <div className='min-w-0 flex-1'>
+          <div className='flex items-center gap-3'>
+            <span className='text-foreground truncate text-[15px] font-medium'>
+              {getToolLabel(tool.function.name)}
+            </span>
+            {isSuccess && (
+              <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
+                完成
+              </span>
+            )}
+            {isRunning && (
+              <span className='bg-foreground/6 text-text-secondary rounded-full px-2 py-0.5 text-[12px] font-medium dark:bg-foreground/10'>
+                执行中
+              </span>
+            )}
+            {isError && (
+              <span className='rounded-full bg-red-100 px-2 py-0.5 text-[12px] font-medium text-red-500 dark:bg-red-950/40 dark:text-red-300'>
+                失败
+              </span>
+            )}
+          </div>
+        </div>
+        <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
+          {duration && (
+            <span className='flex items-center gap-1.5'>
+              <Clock3 size={14} />
+              {duration}
+            </span>
+          )}
+          {isRunning && <Ellipsis size={16} className='animate-pulse' />}
+          {isSuccess && <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />}
+          {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
+          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </div>
       </button>
 
       {open && (
-        <div className='border-border bg-background mt-2 max-w-[720px] rounded-md border p-3'>
+        <div className='border-border bg-foreground/[0.03] dark:bg-foreground/[0.04] rounded-[22px] border p-4'>
           <div className='space-y-4'>
-            <div>
-              <div className='text-text-secondary mb-1 text-xs'>Arguments</div>
-
-              <pre className='bg-background overflow-auto rounded p-2 text-xs'>
-                {JSON.stringify(tool.function.arguments, null, 2)}
-              </pre>
-            </div>
-
-            {result !== undefined && (
-              <div>
-                <div className='text-text-secondary mb-1 text-xs'>Result</div>
-
-                <pre className='bg-background overflow-auto rounded p-2 text-xs'>
-                  {JSON.stringify(result, null, 2)}
-                </pre>
+            <section className='space-y-2'>
+              <div className='text-text-secondary text-[12px] font-medium uppercase tracking-[0.16em]'>
+                Arguments
               </div>
+              <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
+                {tool.function.arguments}
+              </pre>
+            </section>
+
+            {(result !== undefined || toolState?.error !== undefined) && (
+              <section className='space-y-2'>
+                <div className='text-text-secondary text-[12px] font-medium uppercase tracking-[0.16em]'>
+                  {toolState?.error !== undefined ? 'Error' : 'Result'}
+                </div>
+                <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
+                  {JSON.stringify(toolState?.error ?? result, null, 2)}
+                </pre>
+              </section>
             )}
           </div>
         </div>
