@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Circle,
   Clock3,
   Ellipsis,
   SquareTerminal,
@@ -68,7 +67,9 @@ function MessageView({ message }: { message: ThreadMessage }) {
     case 'error':
       return (
         <div className='rounded-[24px] border border-red-500/20 bg-red-500/6 px-4 py-3 text-sm text-red-600 dark:text-red-400'>
-          <MarkdownRenderer animation={false}>{JSON.stringify(message.error, null, 2)}</MarkdownRenderer>
+          <MarkdownRenderer animation={false}>
+            {JSON.stringify(message.error, null, 2)}
+          </MarkdownRenderer>
         </div>
       )
   }
@@ -84,7 +85,10 @@ function ReasoningPanel({ block }: { block: ConversationBlock }) {
 
   if (!reasonMessages.length) return null
 
-  const content = reasonMessages.map((message) => message.content).join('\n\n').trim()
+  const content = reasonMessages
+    .map((message) => message.content)
+    .join('\n\n')
+    .trim()
 
   return (
     <div className='space-y-4'>
@@ -94,17 +98,15 @@ function ReasoningPanel({ block }: { block: ConversationBlock }) {
       >
         <Brain size={16} strokeWidth={2} />
         <span>{isRunning ? '思考中' : '思考过程'}</span>
-        {open ? <ChevronDown size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
+        {open ? (
+          <ChevronDown size={16} strokeWidth={2} />
+        ) : (
+          <ChevronRight size={16} strokeWidth={2} />
+        )}
       </button>
 
       {open && (
         <div className='space-y-4 pl-2'>
-          <div className='flex items-start gap-3'>
-            <div className='text-text-secondary/60 pt-2 text-[10px]'>
-              <Circle size={8} fill='currentColor' strokeWidth={0} />
-            </div>
-            <div className='text-text-secondary text-[15px] font-medium'>思考</div>
-          </div>
           <div className='border-border border-l pl-10'>
             <MarkdownRenderer
               animation={isRunning}
@@ -129,7 +131,10 @@ function ToolCallView({ block, message }: ToolCallViewProps) {
     (tool) => !tool.function.name.startsWith(ASK_USER_NAMESPACE)
   ).length
 
-  if (!toolCount && !message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))) {
+  if (
+    !toolCount &&
+    !message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))
+  ) {
     return null
   }
 
@@ -225,7 +230,7 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background/80 dark:bg-background/60 flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition hover:bg-foreground/[0.03] dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)] dark:hover:bg-foreground/[0.05]'
+        className='border-border bg-background/80 dark:bg-background/60 hover:bg-foreground/[0.03] dark:hover:bg-foreground/[0.05] flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='text-text-secondary shrink-0'>
           <SquareTerminal size={17} strokeWidth={1.8} />
@@ -241,7 +246,7 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
               </span>
             )}
             {isRunning && (
-              <span className='bg-foreground/6 text-text-secondary rounded-full px-2 py-0.5 text-[12px] font-medium dark:bg-foreground/10'>
+              <span className='bg-foreground/6 text-text-secondary dark:bg-foreground/10 rounded-full px-2 py-0.5 text-[12px] font-medium'>
                 执行中
               </span>
             )}
@@ -260,7 +265,9 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
             </span>
           )}
           {isRunning && <Ellipsis size={16} className='animate-pulse' />}
-          {isSuccess && <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />}
+          {isSuccess && (
+            <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
+          )}
           {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
           {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </div>
@@ -270,7 +277,7 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
         <div className='border-border bg-foreground/[0.03] dark:bg-foreground/[0.04] rounded-[22px] border p-4'>
           <div className='space-y-4'>
             <section className='space-y-2'>
-              <div className='text-text-secondary text-[12px] font-medium uppercase tracking-[0.16em]'>
+              <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                 Arguments
               </div>
               <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
@@ -280,7 +287,7 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
 
             {(result !== undefined || toolState?.error !== undefined) && (
               <section className='space-y-2'>
-                <div className='text-text-secondary text-[12px] font-medium uppercase tracking-[0.16em]'>
+                <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   {toolState?.error !== undefined ? 'Error' : 'Result'}
                 </div>
                 <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
