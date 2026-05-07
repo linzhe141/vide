@@ -243,10 +243,8 @@ export class ThreadsManager {
         .where(eq(planners.id, plannerId))
     })
 
-    onAskUserQuestionEvent('ask-user-start-generate', async () => {})
-    onAskUserQuestionEvent('ask-user-option', async () => {})
     onAskUserQuestionEvent(
-      'ask-user-complete',
+      'ask-user',
       async ({ workflowId, question: { type, title, description, options } }) => {
         const time = Date.now()
         const question: AskUserQuestionDraft = {
@@ -259,6 +257,19 @@ export class ThreadsManager {
           id: uuid(),
           blockId: workflowId,
           draftJson: JSON.stringify(question),
+          createdAt: time,
+          updatedAt: time,
+        })
+        await db.insert(threadWorkflowBlockMessages).values({
+          id: uuid(),
+          blockId: workflowId,
+          role: ThreadMessageRole.AskUser,
+          content: '',
+          payload: JSON.stringify({
+            completed: true,
+            submitValue: [],
+            ...question,
+          }),
           createdAt: time,
           updatedAt: time,
         })

@@ -13,10 +13,30 @@ export type PlanStep = {
 
 export type ThreadMessage =
   | { id: string; role: 'user'; content: string }
-  | { id: string; role: 'assistant-reason'; content: string }
+  | { id: string; role: 'assistant-reason'; content: string; reasoning: string }
   | { id: string; role: 'assistant-text'; content: string }
   | { id: string; role: 'tool-call'; toolCalls: ToolCall[] }
-  | { id: string; role: 'tool-result'; toolCallId: string; result: any }
+  | {
+      id: string
+      role: 'tool-result'
+      toolCallId: string
+      status: 'success' | 'error'
+      result?: any
+      error?: any
+      startedAt?: number
+      finishedAt?: number
+      durationMs?: number
+    }
+  | {
+      id: string
+      role: 'ask-user'
+      completed: boolean
+      submitValue: string[]
+      title: string
+      description: string
+      type: 'single' | 'multiple'
+      options: { label: string; value: string; description: string }[]
+    }
   | { id: string; role: 'error'; error: any }
 
 export type ConversationBlock = {
@@ -28,32 +48,9 @@ export type ConversationBlock = {
 
   messages: ThreadMessage[]
 
-  askUser?: {
-    completed: boolean
-    submitValue: []
-    title: string
-    description: string
-    type: string
-    options: { label: string; value: string; description: string }[]
-  }
-
   runtime: {
     isStreaming: boolean
-    streamingReason: boolean
-    streamingText: boolean
-    runningToolId?: string
     waitingHuman: boolean
-    toolStates: Record<
-      string,
-      {
-        status: 'pending' | 'running' | 'success' | 'error'
-        startedAt?: number
-        finishedAt?: number
-        durationMs?: number
-        result?: any
-        error?: any
-      }
-    >
   }
 }
 

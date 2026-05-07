@@ -60,22 +60,37 @@ export class AgentIpcMainService implements IpcMainService {
           .from(schema.askUserQuestions)
           .where(eq(schema.askUserQuestions.blockId, id))
         const askUserQuestion = askUserQuestionRows[0]
-        const draft = JSON.parse(askUserQuestion?.draftJson || '{}') as AskUserQuestionDraft
+        const draft = JSON.parse(
+          askUserQuestion?.draftJson || '{}'
+        ) as Partial<AskUserQuestionDraft>
+        const answer = JSON.parse(askUserQuestion?.answerJson || '[]') as string[]
+        const messages =
+          askUserQuestion && !blockMessageRows.some((message) => message.role === 'ask-user')
+            ? [
+                ...blockMessageRows,
+                {
+                  id: `ask-user:${id}`,
+                  blockId: id,
+                  role: 'ask-user',
+                  content: '',
+                  payload: JSON.stringify({
+                    completed: true,
+                    submitValue: answer,
+                    title: draft.title || '',
+                    description: draft.description || '',
+                    type: draft.type || 'single',
+                    options: draft.options || [],
+                  }),
+                  createdAt: askUserQuestion.createdAt,
+                  updatedAt: askUserQuestion.updatedAt,
+                },
+              ]
+            : blockMessageRows
 
         blockData.push({
           id,
           userInput,
-          messages: blockMessageRows,
-          askUser: askUserQuestion
-            ? {
-                completed: true,
-                submitValue: JSON.parse(askUserQuestion.answerJson || '[]'),
-                title: draft.title || '',
-                description: draft.description || '',
-                type: draft.type || 'single',
-                options: draft.options,
-              }
-            : undefined,
+          messages,
         })
       }
 

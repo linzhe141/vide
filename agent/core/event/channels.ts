@@ -48,19 +48,7 @@ export type PlannerEvents = {
 }
 
 const AskUserQuestionEventChannels = {
-  'ask-user-start-generate': null as unknown as {
-    sessionId: string
-    workflowId: string
-    type: string
-    title: string
-    description: string
-  },
-  'ask-user-option': null as unknown as {
-    sessionId: string
-    workflowId: string
-    option: { label: string; value: string; description: string; done?: boolean }
-  },
-  'ask-user-complete': null as unknown as {
+  'ask-user': null as unknown as {
     sessionId: string
     workflowId: string
     question: AskUserQuestionDraft
@@ -135,11 +123,25 @@ const WorkflowEventChannels = {
   },
   'workflow-tool-call-success': null as unknown as {
     ctx: WorkflowEventCtx
-    toolCallResult: { id: string; toolName: string; result: any }
+    toolCallResult: {
+      id: string
+      toolName: string
+      result: any
+      startedAt: number
+      finishedAt: number
+      durationMs: number
+    }
   },
   'workflow-tool-call-error': null as unknown as {
     ctx: WorkflowEventCtx
-    toolCallResult: { id: string; toolName: string; error: any }
+    toolCallResult: {
+      id: string
+      toolName: string
+      error: any
+      startedAt?: number
+      finishedAt: number
+      durationMs?: number
+    }
   },
   'workflow-tool-call-reject': null as unknown as {
     ctx: WorkflowEventCtx

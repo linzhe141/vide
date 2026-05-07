@@ -54,38 +54,18 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
     case 'workflow-llm-end':
       if (!block) return
       block.runtime.isStreaming = false
-      block.runtime.streamingReason = false
-      block.runtime.streamingText = false
-      return
-
-    case 'workflow-llm-reasoning-start':
-      if (!block) return
-      block.runtime.streamingReason = true
       return
 
     case 'workflow-llm-reasoning-delta':
       if (!block) return
-      ensureLastMessage(block, 'assistant-reason').content += event.data.chunk.delta
-      return
-
-    case 'workflow-llm-reasoning-end':
-      if (!block) return
-      block.runtime.streamingReason = false
-      return
-
-    case 'workflow-llm-text-start':
-      if (!block) return
-      block.runtime.streamingText = true
+      const reasoningMessage = ensureLastReasoningMessage(block)
+      reasoningMessage.content += event.data.chunk.delta
+      reasoningMessage.reasoning += event.data.chunk.delta
       return
 
     case 'workflow-llm-text-delta':
       if (!block) return
       ensureLastMessage(block, 'assistant-text').content += event.data.chunk.delta
-      return
-
-    case 'workflow-llm-text-end':
-      if (!block) return
-      block.runtime.streamingText = false
       return
 
     case 'workflow-llm-tool-calls-end':
@@ -99,79 +79,51 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
 
     case 'workflow-tool-call-start':
       if (!block) return
-      block.runtime.runningToolId = event.data.toolCall.id
-      block.runtime.toolStates[event.data.toolCall.id] = {
-        status: 'running',
-        startedAt: Date.now(),
-      }
       return
 
     case 'workflow-tool-call-success':
       if (!block) return
-      block.runtime.runningToolId = undefined
-      {
-        const prev = block.runtime.toolStates[event.data.toolCallResult.id]
-        const finishedAt = Date.now()
-        block.runtime.toolStates[event.data.toolCallResult.id] = {
-          status: 'success',
-          startedAt: prev?.startedAt,
-          finishedAt,
-          durationMs: prev?.startedAt ? finishedAt - prev.startedAt : undefined,
-          result: event.data.toolCallResult.result,
-        }
-      }
       pushMessage(block, {
         id: nanoid(),
         role: 'tool-result',
         toolCallId: event.data.toolCallResult.id,
+        status: 'success',
         result: event.data.toolCallResult.result,
+        startedAt: event.data.toolCallResult.startedAt,
+        finishedAt: event.data.toolCallResult.finishedAt,
+        durationMs: event.data.toolCallResult.durationMs,
       })
       return
 
     case 'workflow-tool-call-error':
       if (!block) return
-      {
-        const finishedAt = Date.now()
-        const toolCallId = event.data.toolCallResult.id || block.runtime.runningToolId
-        if (toolCallId) {
-          const prev = block.runtime.toolStates[toolCallId]
-          block.runtime.toolStates[toolCallId] = {
-            status: 'error',
-            startedAt: prev?.startedAt,
-            finishedAt,
-            durationMs: prev?.startedAt ? finishedAt - prev.startedAt : undefined,
-            error: event.data.toolCallResult.error,
-          }
-        }
+      if (event.data.toolCallResult.id) {
+        pushMessage(block, {
+          id: nanoid(),
+          role: 'tool-result',
+          toolCallId: event.data.toolCallResult.id,
+          status: 'error',
+          error: event.data.toolCallResult.error,
+          startedAt: event.data.toolCallResult.startedAt,
+          finishedAt: event.data.toolCallResult.finishedAt,
+          durationMs: event.data.toolCallResult.durationMs,
+        })
       }
-      block.runtime.runningToolId = undefined
+      return
+
+    case 'ask-user':
+      if (!block) return
+      block.runtime.waitingHuman = true
       pushMessage(block, {
         id: nanoid(),
-        role: 'error',
-        error: event.data.toolCallResult.error,
-      })
-      return
-
-    case 'ask-user-start-generate':
-      if (!block) return
-      block.askUser = {
-        completed: false,
+        role: 'ask-user',
+        completed: true,
         submitValue: [],
-        title: event.data.title,
-        description: event.data.description,
-        type: event.data.type,
-        options: [],
-      }
-      return
-
-    case 'ask-user-option':
-      if (!block?.askUser) return
-      block.askUser.options.push(event.data.option)
-      return
-
-    case 'ask-user-complete':
-      if (!block?.askUser) return
-      block.askUser.completed = true
+        title: event.data.question.title,
+        description: event.data.question.description,
+        type: event.data.question.type,
+        options: event.data.question.options,
+      })
       return
 
     case 'planner-start-generate':
@@ -236,10 +188,7 @@ function createConversationBlock(workflowId: string, input: string): Conversatio
 
     runtime: {
       isStreaming: false,
-      streamingReason: false,
-      streamingText: false,
       waitingHuman: false,
-      toolStates: {},
     },
   }
 }
@@ -268,6 +217,25 @@ function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']
       role,
       content: '',
     } as any
+
+    block.messages.push(msg)
+
+    return msg
+  }
+
+  return last
+}
+
+function ensureLastReasoningMessage(block: ConversationBlock) {
+  const last = block.messages.at(-1)
+
+  if (!last || last.role !== 'assistant-reason') {
+    const msg: Extract<ThreadMessage, { role: 'assistant-reason' }> = {
+      id: nanoid(),
+      role: 'assistant-reason',
+      content: '',
+      reasoning: '',
+    }
 
     block.messages.push(msg)
 

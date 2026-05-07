@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   Brain,
   CheckCircle2,
@@ -36,7 +36,7 @@ function getToolLabel(name: string) {
   return last.replace(/[-_]/g, ' ')
 }
 
-function MessageView({ message }: { message: ThreadMessage }) {
+function MessageView({ block, message }: { block: ConversationBlock; message: ThreadMessage }) {
   switch (message.role) {
     case 'user':
       return (
@@ -62,7 +62,16 @@ function MessageView({ message }: { message: ThreadMessage }) {
       )
 
     case 'assistant-reason':
+      return <ReasoningPanel message={message} block={block} />
+
+    case 'tool-call':
+      return <ToolCallView block={block} message={message} />
+
+    case 'tool-result':
       return null
+
+    case 'ask-user':
+      return <AskUserQuestionView blockId={block.id} message={message} />
 
     case 'error':
       return (
@@ -75,20 +84,17 @@ function MessageView({ message }: { message: ThreadMessage }) {
   }
 }
 
-function ReasoningPanel({ block }: { block: ConversationBlock }) {
-  const isRunning = block.runtime.streamingReason
+function ReasoningPanel({
+  block,
+  message,
+}: {
+  block: ConversationBlock
+  message: Extract<ThreadMessage, { role: 'assistant-reason' }>
+}) {
+  const isRunning = block.runtime.isStreaming && block.messages.at(-1)?.id === message.id
   const [open, setOpen] = useState(isRunning)
-  const reasonMessages = block.messages.filter(
-    (message): message is Extract<ThreadMessage, { role: 'assistant-reason' }> =>
-      message.role === 'assistant-reason'
-  )
 
-  if (!reasonMessages.length) return null
-
-  const content = reasonMessages
-    .map((message) => message.content)
-    .join('\n\n')
-    .trim()
+  if (!message.reasoning.trim()) return null
 
   return (
     <div className='space-y-4'>
@@ -97,7 +103,7 @@ function ReasoningPanel({ block }: { block: ConversationBlock }) {
         className='text-text-secondary flex items-center gap-3 text-[15px] font-medium'
       >
         <Brain size={16} strokeWidth={2} />
-        <span>{isRunning ? '思考中' : '思考过程'}</span>
+        <span>{isRunning ? 'Thinking' : 'Reason'}</span>
         {open ? (
           <ChevronDown size={16} strokeWidth={2} />
         ) : (
@@ -107,12 +113,12 @@ function ReasoningPanel({ block }: { block: ConversationBlock }) {
 
       {open && (
         <div className='space-y-4 pl-2'>
-          <div className='border-border border-l pl-10'>
+          <div className='border-border border-l pl-5'>
             <MarkdownRenderer
               animation={isRunning}
-              className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[15px] leading-7'
+              className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[12px] leading-7'
             >
-              {content}
+              {message.reasoning}
             </MarkdownRenderer>
           </div>
         </div>
@@ -121,82 +127,49 @@ function ReasoningPanel({ block }: { block: ConversationBlock }) {
   )
 }
 
+function findToolResult(
+  block: ConversationBlock,
+  toolCallId: string
+): Extract<ThreadMessage, { role: 'tool-result' }> | undefined {
+  return [...block.messages]
+    .reverse()
+    .find(
+      (message): message is Extract<ThreadMessage, { role: 'tool-result' }> =>
+        message.role === 'tool-result' && message.toolCallId === toolCallId
+    )
+}
+
 type ToolCallViewProps = {
   block: ConversationBlock
   message: Extract<ThreadMessage, { role: 'tool-call' }>
 }
 
 function ToolCallView({ block, message }: ToolCallViewProps) {
-  const toolCount = message.toolCalls.filter(
+  const visibleTools = message.toolCalls.filter(
     (tool) => !tool.function.name.startsWith(ASK_USER_NAMESPACE)
-  ).length
+  )
 
-  if (
-    !toolCount &&
-    !message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))
-  ) {
-    return null
-  }
+  if (!visibleTools.length) return null
 
   return (
     <div className='space-y-3'>
-      {message.toolCalls.map((tool) => {
-        if (tool.function.name.startsWith(ASK_USER_NAMESPACE)) {
-          return null
-        }
-
-        return <ToolCallButton key={tool.id} tool={tool} block={block} />
-      })}
-      {toolCount > 0 && (
-        <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
-          <Wrench size={15} />
-          <span>{toolCount} 个工具</span>
-        </div>
-      )}
+      {visibleTools.map((tool) => (
+        <ToolCallButton key={tool.id} tool={tool} result={findToolResult(block, tool.id)} />
+      ))}
+      <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
+        <Wrench size={15} />
+        <span>{visibleTools.length} tools</span>
+      </div>
     </div>
   )
 }
 
 function BlockView({ block }: { block: ConversationBlock }) {
-  const lastAskUserMessageIndex = useMemo(() => {
-    let matchIndex = -1
-
-    block.messages.forEach((message, index) => {
-      if (
-        message.role === 'tool-call' &&
-        message.toolCalls.some((tool) => tool.function.name.startsWith(ASK_USER_NAMESPACE))
-      ) {
-        matchIndex = index
-      }
-    })
-
-    return matchIndex
-  }, [block.messages])
-
   return (
     <div className='space-y-6'>
-      {block.messages.map((message, index) => {
-        if (message.role === 'assistant-reason') {
-          return index === block.messages.findIndex((item) => item.role === 'assistant-reason') ? (
-            <ReasoningPanel key={message.id} block={block} />
-          ) : null
-        }
-
-        if (message.role === 'tool-result') {
-          return null
-        }
-
-        if (message.role === 'tool-call') {
-          return (
-            <div key={message.id} className='space-y-3'>
-              <ToolCallView block={block} message={message} />
-              {index === lastAskUserMessageIndex && <AskUserQuestionView block={block} />}
-            </div>
-          )
-        }
-
-        return <MessageView key={message.id} message={message} />
-      })}
+      {block.messages.map((message) => (
+        <MessageView key={message.id} block={block} message={message} />
+      ))}
     </div>
   )
 }
@@ -213,18 +186,16 @@ export function MessageList() {
 }
 
 type ToolCallButtonProps = {
-  block: ConversationBlock
   tool: ToolCall
+  result?: Extract<ThreadMessage, { role: 'tool-result' }>
 }
 
-function ToolCallButton({ tool, block }: ToolCallButtonProps) {
+function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   const [open, setOpen] = useState(false)
-  const toolState = block.runtime.toolStates[tool.id]
-  const result = toolState?.result
-  const isRunning = toolState?.status === 'running' || block.runtime.runningToolId === tool.id
-  const isSuccess = toolState?.status === 'success'
-  const isError = toolState?.status === 'error'
-  const duration = formatDuration(toolState?.durationMs)
+  const isRunning = !result
+  const isSuccess = result?.status === 'success'
+  const isError = result?.status === 'error'
+  const duration = formatDuration(result?.durationMs)
 
   return (
     <div className='space-y-2'>
@@ -242,17 +213,17 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
             </span>
             {isSuccess && (
               <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
-                完成
+                Success
               </span>
             )}
             {isRunning && (
               <span className='bg-foreground/6 text-text-secondary dark:bg-foreground/10 rounded-full px-2 py-0.5 text-[12px] font-medium'>
-                执行中
+                Running
               </span>
             )}
             {isError && (
               <span className='rounded-full bg-red-100 px-2 py-0.5 text-[12px] font-medium text-red-500 dark:bg-red-950/40 dark:text-red-300'>
-                失败
+                Error
               </span>
             )}
           </div>
@@ -285,13 +256,13 @@ function ToolCallButton({ tool, block }: ToolCallButtonProps) {
               </pre>
             </section>
 
-            {(result !== undefined || toolState?.error !== undefined) && (
+            {(result?.result !== undefined || result?.error !== undefined) && (
               <section className='space-y-2'>
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  {toolState?.error !== undefined ? 'Error' : 'Result'}
+                  {result?.error !== undefined ? 'Error' : 'Result'}
                 </div>
                 <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
-                  {JSON.stringify(toolState?.error ?? result, null, 2)}
+                  {JSON.stringify(result?.error ?? result?.result, null, 2)}
                 </pre>
               </section>
             )}

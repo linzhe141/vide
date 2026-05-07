@@ -37,8 +37,10 @@ export function InitSession({ threadId }: { threadId: string }) {
         id: block.id,
         input: block.userInput,
         status: 'finished',
-        askUser: block.askUser,
-        runtime: {} as any,
+        runtime: {
+          isStreaming: false,
+          waitingHuman: false,
+        },
         messages: buildBlockMessages(block.messages),
       }))
 
@@ -77,6 +79,7 @@ function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
           role: 'assistant-reason',
           id: message.id,
           content: message.content || '',
+          reasoning: message.content || '',
         })
         break
 
@@ -102,7 +105,27 @@ function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
           role: 'tool-result',
           id: message.id,
           toolCallId: data.id,
-          result: data.result ?? data.error,
+          status: data.error === undefined ? 'success' : 'error',
+          result: data.result,
+          error: data.error,
+          startedAt: data.startedAt,
+          finishedAt: data.finishedAt,
+          durationMs: data.durationMs,
+        })
+        break
+      }
+
+      case ThreadMessageRole.AskUser: {
+        const data = JSON.parse(message.payload || '{}')
+        result.push({
+          role: 'ask-user',
+          id: message.id,
+          completed: Boolean(data.completed),
+          submitValue: Array.isArray(data.submitValue) ? data.submitValue : [],
+          title: data.title || '',
+          description: data.description || '',
+          type: data.type === 'multiple' ? 'multiple' : 'single',
+          options: Array.isArray(data.options) ? data.options : [],
         })
         break
       }

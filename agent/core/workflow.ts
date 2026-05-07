@@ -182,6 +182,7 @@ export class Workflow {
     const tool = this.tools.find((t) => t.name === toolName)
     if (!tool) {
       const errorMessage = `Tool not found: ${toolName}`
+      const finishedAt = Date.now()
       this.runtime.thread.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
@@ -190,7 +191,7 @@ export class Workflow {
 
       workflowEvent.emit('workflow-tool-call-error', {
         ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage, finishedAt },
       })
       return 'call-llm'
     }
@@ -206,6 +207,7 @@ export class Workflow {
       args = toolCall.function.arguments
 
       let errorMessage = 'An exception occurred while parsing toolCall argument JSON;'
+      const finishedAt = Date.now()
 
       if (toolName === 'fs_write_file') {
         errorMessage += `
@@ -220,7 +222,7 @@ it could be split into modules and written in batches.`
 
       workflowEvent.emit('workflow-tool-call-error', {
         ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, error: errorMessage },
+        toolCallResult: { id: toolCall.id, toolName, error: errorMessage, finishedAt },
       })
       return 'call-llm'
     }
@@ -234,11 +236,13 @@ it could be split into modules and written in batches.`
       }
     }
 
+    const startedAt = Date.now()
     workflowEvent.emit('workflow-tool-call-start', {
       ctx: this.runtime.workflowEventCtx,
       toolCall: { id: toolCall.id, toolName, args },
     })
     const toolResult = await execute()
+    const finishedAt = Date.now()
     if (toolResult.success) {
       reason = toolResult.result!.reason
       const result = toolResult.result!.result
@@ -250,7 +254,14 @@ it could be split into modules and written in batches.`
 
       workflowEvent.emit('workflow-tool-call-success', {
         ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, result: result },
+        toolCallResult: {
+          id: toolCall.id,
+          toolName,
+          result,
+          startedAt,
+          finishedAt,
+          durationMs: finishedAt - startedAt,
+        },
       })
     } else {
       const error = toolResult.error
@@ -262,7 +273,14 @@ it could be split into modules and written in batches.`
 
       workflowEvent.emit('workflow-tool-call-error', {
         ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, error },
+        toolCallResult: {
+          id: toolCall.id,
+          toolName,
+          error,
+          startedAt,
+          finishedAt,
+          durationMs: finishedAt - startedAt,
+        },
       })
     }
 
