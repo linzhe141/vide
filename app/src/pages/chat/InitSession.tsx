@@ -42,7 +42,7 @@ export function InitSession({ threadId }: { threadId: string }) {
           isStreaming: false,
           waitingHuman: false,
         },
-        messages: buildBlockMessages(block.messages),
+        messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
       }))
 
       const pendingPlanner = planner.find((p) => p.plan.some((i) => i.status !== 'completed'))
@@ -62,10 +62,12 @@ export function InitSession({ threadId }: { threadId: string }) {
   return null
 }
 
-function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
+function buildBlockMessages(
+  messages: BlockData['messages'],
+  askUserSubmitValue: string[]
+): ThreadMessage[] {
   const result: ThreadMessage[] = []
   const toolCallsById = new Map<string, { function: { name: string } }>()
-
   for (const message of messages) {
     switch (message.role) {
       case ThreadMessageRole.User:
@@ -125,7 +127,7 @@ function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
               role: 'ask-user',
               id: `${message.id}:ask-user`,
               completed: true,
-              submitValue: [],
+              submitValue: askUserSubmitValue,
               title: question.title || '',
               description: question.description || '',
               type: question.type === 'multiple' ? 'multiple' : 'single',

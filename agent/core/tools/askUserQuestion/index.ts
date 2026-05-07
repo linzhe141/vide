@@ -1,5 +1,6 @@
 import type { Tool } from '../../types'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
+import { askUserQuestionEvent } from '../../event'
 import { ToolProvider } from '../toolProvider'
 
 export type AskUserQuestionOption = {
@@ -62,6 +63,12 @@ Create a complete user question and pause the workflow for user input.
     },
 
     executor: async (question: AskUserQuestionDraft) => {
+      askUserQuestionEvent.emit('ask-user', {
+        sessionId: this.runtime.sessionId,
+        workflowId: this.runtime.workflowId,
+        question,
+      })
+
       return {
         reason: 'stop',
         result: {

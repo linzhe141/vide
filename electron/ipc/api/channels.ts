@@ -25,6 +25,7 @@ export type ThreadRowDto = {
 export type BlockData = {
   id: string
   userInput: string
+  askUserSubmitValue?: string[]
   messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
 }
 

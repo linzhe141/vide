@@ -38,12 +38,22 @@ export class AgentIpcMainService implements IpcMainService {
         .where(eq(threadWorkflowBlocks.threadId, data.sessionId))
 
       const blockData: BlockData[] = []
+      const askUserSubmitValues = new Map<string, string[]>()
 
       for (const { id, userInput } of blocks) {
         const blockMessageRows = await db
           .select()
           .from(schema.threadWorkflowBlockMessages)
           .where(eq(schema.threadWorkflowBlockMessages.blockId, id))
+        const askUserQuestionRows = await db
+          .select()
+          .from(schema.askUserQuestions)
+          .where(eq(schema.askUserQuestions.blockId, id))
+        const askUserQuestion = askUserQuestionRows[0]
+
+        if (askUserQuestion) {
+          askUserSubmitValues.set(id, JSON.parse(askUserQuestion.answerJson || '[]'))
+        }
 
         blockData.push({
           id,
@@ -56,6 +66,10 @@ export class AgentIpcMainService implements IpcMainService {
         sessionId: data.sessionId,
         blockData: blockData,
       })
+      const uiBlockData = blockData.map((block) => ({
+        ...block,
+        askUserSubmitValue: askUserSubmitValues.get(block.id),
+      }))
 
       const plannerRows = await db
         .select()
@@ -73,7 +87,7 @@ export class AgentIpcMainService implements IpcMainService {
             plan: JSON.parse(i?.planJson || '[]') as PlanStep[],
           }
         }),
-        blockData,
+        blockData: uiBlockData,
         artifacts: artifactRows,
       }
     })
@@ -85,7 +99,12 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('ask-user-question-submit', async (data) => {
-      logger.info('ask-user-question-submit ', data.workflowId, data.submitValue)
+      await db
+        .update(schema.askUserQuestions)
+        .set({
+          answerJson: JSON.stringify(data.submitValue),
+        })
+        .where(eq(schema.askUserQuestions.blockId, data.workflowId))
     })
   }
 

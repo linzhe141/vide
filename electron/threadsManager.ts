@@ -2,6 +2,7 @@ import type { AppManager } from './appManager'
 import {
   onAgentEvent,
   onArtifactEvent,
+  onAskUserQuestionEvent,
   onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
@@ -9,6 +10,7 @@ import { v4 as uuid } from 'uuid'
 import { db } from './databaseManager'
 import {
   artifacts,
+  askUserQuestions,
   planners,
   threads,
   threadWorkflowBlockMessages,
@@ -16,6 +18,7 @@ import {
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { ThreadMessageRole } from '@/types'
+import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
 export class ThreadsManager {
@@ -238,6 +241,24 @@ export class ThreadsManager {
           updatedAt: time,
         })
         .where(eq(planners.id, plannerId))
+    })
+
+    onAskUserQuestionEvent('ask-user', async ({ workflowId, question }) => {
+      const time = Date.now()
+      const normalizedQuestion: AskUserQuestionDraft = {
+        type: question.type === 'multiple' ? 'multiple' : 'single',
+        title: question.title,
+        description: question.description,
+        options: question.options,
+      }
+
+      await db.insert(askUserQuestions).values({
+        id: uuid(),
+        blockId: workflowId,
+        draftJson: JSON.stringify(normalizedQuestion),
+        createdAt: time,
+        updatedAt: time,
+      })
     })
 
     onArtifactEvent('artifacts-created-workspace', async ({ sessionId, workspaceName }) => {
