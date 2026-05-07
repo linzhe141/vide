@@ -14,7 +14,7 @@ async function isDirectoryExists(dirPath: string) {
   }
 }
 
-export const SKILL_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
+export const SKILL_NAMESPACE = 'BUILDIN_SKILLS_NAMESPACE'
 export interface SkillMeta {
   name: string
   description: string
