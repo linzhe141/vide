@@ -4,7 +4,6 @@ import type {
   AgentLifecycleEvents,
   PlannerEvents,
   WorkflowEvents,
-  AskUserQuestionEvents,
 } from '@/agent/core/event/channels'
 import type { threadWorkflowBlockMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
@@ -92,5 +91,4 @@ export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
 } & AgentLifecycleEvents &
   PlannerEvents &
-  WorkflowEvents &
-  AskUserQuestionEvents
+  WorkflowEvents

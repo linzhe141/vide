@@ -2,7 +2,6 @@ import type { AppManager } from './appManager'
 import {
   onAgentEvent,
   onArtifactEvent,
-  onAskUserQuestionEvent,
   onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
@@ -10,7 +9,6 @@ import { v4 as uuid } from 'uuid'
 import { db } from './databaseManager'
 import {
   artifacts,
-  askUserQuestions,
   planners,
   threads,
   threadWorkflowBlockMessages,
@@ -19,7 +17,6 @@ import {
 import { eq } from 'drizzle-orm'
 import { ThreadMessageRole } from '@/types'
 import type { PlanStep } from '@/agent/core/tools/planner'
-import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 
 export class ThreadsManager {
   constructor(private app: AppManager) {}
@@ -242,39 +239,6 @@ export class ThreadsManager {
         })
         .where(eq(planners.id, plannerId))
     })
-
-    onAskUserQuestionEvent(
-      'ask-user',
-      async ({ workflowId, question: { type, title, description, options } }) => {
-        const time = Date.now()
-        const question: AskUserQuestionDraft = {
-          type: type === 'single' ? 'single' : 'multiple',
-          title,
-          description,
-          options,
-        }
-        await db.insert(askUserQuestions).values({
-          id: uuid(),
-          blockId: workflowId,
-          draftJson: JSON.stringify(question),
-          createdAt: time,
-          updatedAt: time,
-        })
-        await db.insert(threadWorkflowBlockMessages).values({
-          id: uuid(),
-          blockId: workflowId,
-          role: ThreadMessageRole.AskUser,
-          content: '',
-          payload: JSON.stringify({
-            completed: true,
-            submitValue: [],
-            ...question,
-          }),
-          createdAt: time,
-          updatedAt: time,
-        })
-      }
-    )
 
     onArtifactEvent('artifacts-created-workspace', async ({ sessionId, workspaceName }) => {
       const time = Date.now()

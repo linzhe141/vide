@@ -8,6 +8,7 @@ import {
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
+import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
 
 export function InitSession({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()
@@ -63,6 +64,7 @@ export function InitSession({ threadId }: { threadId: string }) {
 
 function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
   const result: ThreadMessage[] = []
+  const toolCallsById = new Map<string, { function: { name: string } }>()
 
   for (const message of messages) {
     switch (message.role) {
@@ -92,6 +94,9 @@ function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
         break
 
       case ThreadMessageRole.ToolCalls:
+        for (const toolCall of JSON.parse(message.payload || '[]')) {
+          toolCallsById.set(toolCall.id, toolCall)
+        }
         result.push({
           role: 'tool-call',
           id: message.id,
@@ -112,21 +117,22 @@ function buildBlockMessages(messages: BlockData['messages']): ThreadMessage[] {
           finishedAt: data.finishedAt,
           durationMs: data.durationMs,
         })
-        break
-      }
-
-      case ThreadMessageRole.AskUser: {
-        const data = JSON.parse(message.payload || '{}')
-        result.push({
-          role: 'ask-user',
-          id: message.id,
-          completed: Boolean(data.completed),
-          submitValue: Array.isArray(data.submitValue) ? data.submitValue : [],
-          title: data.title || '',
-          description: data.description || '',
-          type: data.type === 'multiple' ? 'multiple' : 'single',
-          options: Array.isArray(data.options) ? data.options : [],
-        })
+        const toolCall = toolCallsById.get(data.id)
+        if (toolCall?.function.name.startsWith(ASK_USER_NAMESPACE)) {
+          const question = data.result?.question
+          if (question) {
+            result.push({
+              role: 'ask-user',
+              id: `${message.id}:ask-user`,
+              completed: true,
+              submitValue: [],
+              title: question.title || '',
+              description: question.description || '',
+              type: question.type === 'multiple' ? 'multiple' : 'single',
+              options: Array.isArray(question.options) ? question.options : [],
+            })
+          }
+        }
         break
       }
     }

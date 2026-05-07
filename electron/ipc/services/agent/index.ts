@@ -2,27 +2,16 @@ import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { Agent } from '@/agent/core/agent'
-import {
-  onAgentEvent,
-  onAskUserQuestionEvent,
-  onPalnnerEvent,
-  onWorkflowEvent,
-} from '@/agent/core/apiEvent'
+import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 
 import type { AgentSession } from '@/agent/core/agentSession'
-import {
-  agentEventNames,
-  askUserQuestionEventNames,
-  plannerEventNames,
-  workflowEventNames,
-} from '@/agent/core/event/channels'
+import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/core/event/channels'
 import { db } from '@/electron/databaseManager'
 import { threadWorkflowBlocks } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import * as schema from '@/db/schema'
 import type { BlockData } from '../../api/channels'
-import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
 export class AgentIpcMainService implements IpcMainService {
@@ -55,42 +44,11 @@ export class AgentIpcMainService implements IpcMainService {
           .select()
           .from(schema.threadWorkflowBlockMessages)
           .where(eq(schema.threadWorkflowBlockMessages.blockId, id))
-        const askUserQuestionRows = await db
-          .select()
-          .from(schema.askUserQuestions)
-          .where(eq(schema.askUserQuestions.blockId, id))
-        const askUserQuestion = askUserQuestionRows[0]
-        const draft = JSON.parse(
-          askUserQuestion?.draftJson || '{}'
-        ) as Partial<AskUserQuestionDraft>
-        const answer = JSON.parse(askUserQuestion?.answerJson || '[]') as string[]
-        const messages =
-          askUserQuestion && !blockMessageRows.some((message) => message.role === 'ask-user')
-            ? [
-                ...blockMessageRows,
-                {
-                  id: `ask-user:${id}`,
-                  blockId: id,
-                  role: 'ask-user',
-                  content: '',
-                  payload: JSON.stringify({
-                    completed: true,
-                    submitValue: answer,
-                    title: draft.title || '',
-                    description: draft.description || '',
-                    type: draft.type || 'single',
-                    options: draft.options || [],
-                  }),
-                  createdAt: askUserQuestion.createdAt,
-                  updatedAt: askUserQuestion.updatedAt,
-                },
-              ]
-            : blockMessageRows
 
         blockData.push({
           id,
           userInput,
-          messages,
+          messages: blockMessageRows,
         })
       }
 
@@ -127,12 +85,7 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('ask-user-question-submit', async (data) => {
-      await db
-        .update(schema.askUserQuestions)
-        .set({
-          answerJson: JSON.stringify(data.submitValue),
-        })
-        .where(eq(schema.askUserQuestions.blockId, data.workflowId))
+      logger.info('ask-user-question-submit ', data.workflowId, data.submitValue)
     })
   }
 
@@ -147,12 +100,6 @@ export class AgentIpcMainService implements IpcMainService {
 
     plannerEventNames.forEach((eventName) => {
       onPalnnerEvent(eventName, (data: any) => {
-        ipcMainApi.send(eventName, data)
-      })
-    })
-
-    askUserQuestionEventNames.forEach((eventName) => {
-      onAskUserQuestionEvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)
       })
     })

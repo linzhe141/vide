@@ -1,12 +1,10 @@
 import {
   agentEventNames,
   plannerEventNames,
-  askUserQuestionEventNames,
   workflowEventNames,
   type AgentLifecycleEvents,
   type PlannerEvents,
   type WorkflowEvents,
-  type AskUserQuestionEvents,
 } from '@/agent/core/event/channels'
 
 type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
@@ -14,7 +12,6 @@ type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
 }[keyof T]
 export type WorkflowState =
   | EventMapToUnion<AgentLifecycleEvents>
-  | EventMapToUnion<AskUserQuestionEvents>
   | EventMapToUnion<PlannerEvents>
   | EventMapToUnion<WorkflowEvents>
 
@@ -51,15 +48,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       })
 
       plannerEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (currentSessionId === data.sessionId) {
-            controller.enqueue({ type: eventName, data })
-          }
-        })
-        eventListeners.push(remove)
-      })
-
-      askUserQuestionEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
           if (currentSessionId === data.sessionId) {
             controller.enqueue({ type: eventName, data })

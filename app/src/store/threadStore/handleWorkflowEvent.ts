@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
 import type { ConversationBlock, PlanStep, Thread, ThreadMessage, ThreadState } from '.'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
@@ -93,6 +94,13 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
         finishedAt: event.data.toolCallResult.finishedAt,
         durationMs: event.data.toolCallResult.durationMs,
       })
+      if (event.data.toolCallResult.toolName.startsWith(ASK_USER_NAMESPACE)) {
+        const question = event.data.toolCallResult.result?.question
+        if (question) {
+          block.runtime.waitingHuman = true
+          pushMessage(block, createAskUserMessage(question))
+        }
+      }
       return
 
     case 'workflow-tool-call-error':
@@ -109,21 +117,6 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
           durationMs: event.data.toolCallResult.durationMs,
         })
       }
-      return
-
-    case 'ask-user':
-      if (!block) return
-      block.runtime.waitingHuman = true
-      pushMessage(block, {
-        id: nanoid(),
-        role: 'ask-user',
-        completed: true,
-        submitValue: [],
-        title: event.data.question.title,
-        description: event.data.question.description,
-        type: event.data.question.type,
-        options: event.data.question.options,
-      })
       return
 
     case 'planner-start-generate':
@@ -247,6 +240,19 @@ function ensureLastReasoningMessage(block: ConversationBlock) {
 
 function pushMessage(block: ConversationBlock, message: ThreadMessage) {
   block.messages.push(message)
+}
+
+function createAskUserMessage(question: any): Extract<ThreadMessage, { role: 'ask-user' }> {
+  return {
+    id: nanoid(),
+    role: 'ask-user',
+    completed: true,
+    submitValue: [],
+    title: question.title || '',
+    description: question.description || '',
+    type: question.type === 'multiple' ? 'multiple' : 'single',
+    options: Array.isArray(question.options) ? question.options : [],
+  }
 }
 
 function getCurrentPlanner(state: Thread) {
