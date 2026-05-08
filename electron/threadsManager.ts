@@ -18,7 +18,7 @@ import {
 } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { ThreadMessageRole } from '@/types'
-import type { AskUserQuestionDraft } from '@/agent/core/tools/askUserQuestion'
+import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
 export class ThreadsManager {
@@ -245,7 +245,7 @@ export class ThreadsManager {
 
     onAskUserQuestionEvent('ask-user', async ({ workflowId, question }) => {
       const time = Date.now()
-      const normalizedQuestion: AskUserQuestionDraft = {
+      const normalizedQuestion: AskUserQuestion = {
         type: question.type === 'multiple' ? 'multiple' : 'single',
         title: question.title,
         description: question.description,

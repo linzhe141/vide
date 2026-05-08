@@ -1,9 +1,8 @@
 import { uuid } from '@/app/src/lib/uuid'
-import type { Tool } from '../../types'
 import { plannerEvent } from '../../event'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { SessionPlaner } from '../../agentSession'
-import { ToolProvider } from '../toolProvider'
+import { defineTool, ToolProvider } from '../toolProvider'
 
 export type PlanStep = {
   id: string
@@ -23,7 +22,8 @@ export class Planner extends ToolProvider {
   constructor(runtime: WorkflowRuntimeContext) {
     super(runtime)
   }
-  start: Tool = {
+
+  startPlanGenerate = defineTool({
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',
     function: {
@@ -70,9 +70,9 @@ Do not generate the plan inside the tool call. Generate the plan using planner s
         },
       }
     },
-  }
+  })
 
-  create: Tool = {
+  createPlanItem = defineTool({
     name: PLANNER_TOOL_NAMES.CREATE_PLAN_ITEM,
     type: 'function',
     function: {
@@ -135,9 +135,9 @@ Continue calling this tool until all required steps for completing the task are 
         },
       }
     },
-  }
+  })
 
-  completed: Tool = {
+  completedPlanGenerate = defineTool({
     name: PLANNER_TOOL_NAMES.COMPLETED_PLAN_GENERATE,
     type: 'function',
     function: {
@@ -181,9 +181,9 @@ Always call this tool after finishing plan generation.
         },
       }
     },
-  }
+  })
 
-  changeStatus: Tool = {
+  changePlanItemStatus = defineTool({
     name: PLANNER_TOOL_NAMES.CHANGE_PLAN_ITEM_STATUS,
     type: 'function',
     function: {
@@ -300,9 +300,14 @@ ${JSON.stringify(summary, null, 2)}
         },
       }
     },
-  }
+  })
 
   getTools() {
-    return [this.start, this.create, this.completed, this.changeStatus]
+    return [
+      this.startPlanGenerate,
+      this.createPlanItem,
+      this.completedPlanGenerate,
+      this.changePlanItemStatus,
+    ]
   }
 }

@@ -1,4 +1,4 @@
-import type { AskUserQuestionDraft } from '../tools/askUserQuestion'
+import type { AskUserQuestion } from '../tools/askUserQuestion'
 import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
@@ -51,7 +51,7 @@ const AskUserQuestionEventChannels = {
   'ask-user': null as unknown as {
     sessionId: string
     workflowId: string
-    question: AskUserQuestionDraft
+    question: AskUserQuestion
   },
 }
 export type AskUserQuestionEventKey = keyof typeof AskUserQuestionEventChannels

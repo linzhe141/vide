@@ -1,9 +1,9 @@
-import type { ChatMessage, Tool } from '../../types'
+import type { ChatMessage } from '../../types'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { ToolProvider } from '../toolProvider'
+import { defineTool, ToolProvider } from '../toolProvider'
 
 async function isDirectoryExists(dirPath: string) {
   try {
@@ -38,7 +38,7 @@ export class SkillTool extends ToolProvider {
     super(runtime)
   }
 
-  loadSkill: Tool = {
+  loadSkill = defineTool({
     name: SKILL_TOOL_NAMES.LOAD_SKILL,
     type: 'function',
 
@@ -82,7 +82,7 @@ Use this when a task matches an available skill description and you need the ful
         },
       }
     },
-  }
+  })
 
   getTools() {
     return [this.loadSkill]

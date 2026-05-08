@@ -1,7 +1,6 @@
-import type { Tool } from '../../types'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { askUserQuestionEvent } from '../../event'
-import { ToolProvider } from '../toolProvider'
+import { defineTool, ToolProvider } from '../toolProvider'
 
 export type AskUserQuestionOption = {
   label: string
@@ -9,7 +8,7 @@ export type AskUserQuestionOption = {
   value: string
 }
 
-export type AskUserQuestionDraft = {
+export type AskUserQuestion = {
   title: string
   description: string
   type: 'single' | 'multiple'
@@ -19,7 +18,7 @@ export type AskUserQuestionDraft = {
 export const ASK_USER_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
 
 export const ASK_USER_TOOL_NAMES = {
-  CREATE: `${ASK_USER_NAMESPACE}_CREATE`,
+  GENERATE: `${ASK_USER_NAMESPACE}_GENERATE`,
 } as const
 
 export class AskUserQuestionTool extends ToolProvider {
@@ -27,12 +26,12 @@ export class AskUserQuestionTool extends ToolProvider {
     super(runtime)
   }
 
-  create: Tool = {
-    name: ASK_USER_TOOL_NAMES.CREATE,
+  generate = defineTool({
+    name: ASK_USER_TOOL_NAMES.GENERATE,
     type: 'function',
 
     function: {
-      name: ASK_USER_TOOL_NAMES.CREATE,
+      name: ASK_USER_TOOL_NAMES.GENERATE,
       description: `
 Create a complete user question and pause the workflow for user input.
 `,
@@ -62,7 +61,7 @@ Create a complete user question and pause the workflow for user input.
       },
     },
 
-    executor: async (question: AskUserQuestionDraft) => {
+    executor: async (question: AskUserQuestion) => {
       askUserQuestionEvent.emit('ask-user', {
         sessionId: this.runtime.sessionId,
         workflowId: this.runtime.workflowId,
@@ -76,9 +75,9 @@ Create a complete user question and pause the workflow for user input.
         },
       }
     },
-  }
+  })
 
   getTools() {
-    return [this.create]
+    return [this.generate]
   }
 }

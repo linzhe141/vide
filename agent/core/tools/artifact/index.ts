@@ -1,27 +1,27 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { randomUUID } from 'crypto'
-import type { Tool } from '@/agent/core/types'
 import { artifactEvent } from '../../event'
 import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
-import { ToolProvider } from '../toolProvider'
+import { defineTool, ToolProvider } from '../toolProvider'
 
 const ARTIFACT_ROOT = '.vide/artifacts'
 
 export const ARTIFACT_NAMESPACE = 'BUILDIN_ARTIFACT_NAMESPACE'
 export const ARTIFACT_TOOL_NAMES = {
-  CREATE: `${ARTIFACT_NAMESPACE}_CREATE_WORKSPACE`,
+  CREATE_WORKSPACE: `${ARTIFACT_NAMESPACE}_CREATE_WORKSPACE`,
 } as const
 
 export class Artifact extends ToolProvider {
   constructor(runtime: WorkflowRuntimeContext) {
     super(runtime)
   }
-  create: Tool = {
-    name: ARTIFACT_TOOL_NAMES.CREATE,
+
+  createWorkspace = defineTool({
+    name: ARTIFACT_TOOL_NAMES.CREATE_WORKSPACE,
     type: 'function',
     function: {
-      name: ARTIFACT_TOOL_NAMES.CREATE,
+      name: ARTIFACT_TOOL_NAMES.CREATE_WORKSPACE,
       description: `
 Create a workspace directory for generated artifacts.
 
@@ -73,9 +73,9 @@ All generated files MUST be written inside the returned artifactDir.
         },
       }
     },
-  }
+  })
 
   getTools() {
-    return [this.create]
+    return [this.createWorkspace]
   }
 }

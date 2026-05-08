@@ -7,7 +7,6 @@ import {
   Clock3,
   Ellipsis,
   SquareTerminal,
-  Wrench,
   XCircle,
 } from 'lucide-react'
 import type { ToolCall } from '@/agent/core/types'
@@ -97,10 +96,10 @@ function ReasoningPanel({
   if (!message.reasoning.trim()) return null
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 text-xs'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='text-text-secondary flex items-center gap-3 text-[15px] font-medium'
+        className='text-text-secondary flex items-center gap-3 font-medium'
       >
         <Brain size={16} strokeWidth={2} />
         <span>{isRunning ? 'Thinking' : 'Reason'}</span>
@@ -156,10 +155,10 @@ function ToolCallView({ block, message }: ToolCallViewProps) {
       {visibleTools.map((tool) => (
         <ToolCallButton key={tool.id} tool={tool} result={findToolResult(block, tool.id)} />
       ))}
-      <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
+      {/* <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
         <Wrench size={15} />
         <span>{visibleTools.length} tools</span>
-      </div>
+      </div> */}
     </div>
   )
 }

@@ -10,3 +10,7 @@ export abstract class ToolProvider {
 
   abstract getTools(): Tool[]
 }
+
+export function defineTool(tool: Tool) {
+  return tool
+}

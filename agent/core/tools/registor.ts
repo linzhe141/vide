@@ -1,28 +1,35 @@
-import { getNormalizeTime } from './getNormalizeTime'
-import { fileRead } from './fileRead'
-import { fsWriteFile } from './fileWrite'
-import { fsEditFile } from './edit'
+// import { fileRead } from './fileRead'
+import { Time } from './time'
+import { Write } from './write'
+import { Edit } from './edit'
 import { Artifact } from './artifact'
-import { bashTool } from './bash'
+import { Bash } from './bash'
 import { Planner } from './planner'
+import { Grep } from './grep'
 import { AskUserQuestionTool } from './askUserQuestion'
 import { SkillTool } from './skill'
 import type { WorkflowRuntimeContext } from '../workflowRuntimeContext'
 import type { Tool } from '../types'
 
 export function registorTools(runtime: WorkflowRuntimeContext) {
+  const timer = new Time(runtime)
+  const write = new Write(runtime)
+  const edit = new Edit(runtime)
+  const artifact = new Artifact(runtime)
+  const bash = new Bash(runtime)
   const planner = new Planner(runtime)
+  const grep = new Grep(runtime)
   const askUserQuestionTool = new AskUserQuestionTool(runtime)
   const skill = new SkillTool(runtime)
-  const artifact = new Artifact(runtime)
   const tools: Tool[] = [
-    getNormalizeTime,
-    fileRead,
-    fsWriteFile,
-    fsEditFile,
-    bashTool,
+    // fileRead,
+    ...timer.getTools(),
+    ...write.getTools(),
+    ...edit.getTools(),
     ...artifact.getTools(),
+    ...bash.getTools(),
     ...planner.getTools(),
+    ...grep.getTools(),
     ...askUserQuestionTool.getTools(),
     ...skill.getTools(),
   ]
