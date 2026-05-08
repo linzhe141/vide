@@ -10,34 +10,62 @@ export type PlanStep = {
   description: string
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
+export interface UserInputThreadMessage { id: string; role: 'user'; content: string }
+export interface AssistantReasonThreadMessage {
+  id: string
+  role: 'assistant-reason'
+  content: string
+  reasoning: string
+}
+export interface AssistantTextThreadMessage {
+  id: string
+  role: 'assistant-text'
+  content: string
+  reasoning: string
+}
+export interface ToolCallThreadMessage {
+  id: string
+  role: 'tool-call'
+  toolCalls: ToolCall[]
+}
+
+export interface ToolResultThreadMessage {
+  id: string
+  role: 'tool-result'
+  toolCallId: string
+  status: 'success' | 'error'
+  result?: any
+  error?: any
+  startedAt?: number
+  finishedAt?: number
+  durationMs?: number
+}
+
+export interface AskUserThreadMessage {
+  id: string
+  role: 'ask-user'
+  completed: boolean
+  submitValue: string[]
+  title: string
+  description: string
+  type: 'single' | 'multiple'
+  options: { label: string; value: string; description: string }[]
+}
+
+export interface ErrorThreadMessage {
+  id: string
+  role: 'error'
+  error: any
+}
 
 export type ThreadMessage =
-  | { id: string; role: 'user'; content: string }
-  | { id: string; role: 'assistant-reason'; content: string; reasoning: string }
-  | { id: string; role: 'assistant-text'; content: string }
-  | { id: string; role: 'tool-call'; toolCalls: ToolCall[] }
-  | {
-      id: string
-      role: 'tool-result'
-      toolCallId: string
-      status: 'success' | 'error'
-      result?: any
-      error?: any
-      startedAt?: number
-      finishedAt?: number
-      durationMs?: number
-    }
-  | {
-      id: string
-      role: 'ask-user'
-      completed: boolean
-      submitValue: string[]
-      title: string
-      description: string
-      type: 'single' | 'multiple'
-      options: { label: string; value: string; description: string }[]
-    }
-  | { id: string; role: 'error'; error: any }
+  | UserInputThreadMessage
+  | AssistantReasonThreadMessage
+  | AssistantTextThreadMessage
+  | ToolCallThreadMessage
+  | ToolResultThreadMessage
+  | AskUserThreadMessage
+  | ErrorThreadMessage
 
 export type ConversationBlock = {
   id: string

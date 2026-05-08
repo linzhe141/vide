@@ -92,6 +92,7 @@ function buildBlockMessages(
           role: 'assistant-text',
           id: message.id,
           content: message.content || '',
+          reasoning: message.content || '',
         })
         break
 

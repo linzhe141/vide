@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react'
 import { AnimatedWrapper } from './animation'
-import { Pre } from '../Pre/Pre'
+import { Pre } from '../codeblock'
 
 export function A({ ...props }: PropsWithChildren) {
   return (

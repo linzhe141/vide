@@ -1,90 +1,47 @@
-import { BrainCircuit, Loader2, ChevronDown } from 'lucide-react'
-import { MarkdownRenderer } from '@/app/src/components/markdown/MarkdownRenderer'
-import { cn } from '../../lib/utils'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import type { AssistantReasonThreadMessage, ConversationBlock } from '../../store/threadStore'
+import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
+import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
 
 export function AssistantReasonMessage({
-  content,
-  reasoning,
+  block,
+  message,
 }: {
-  content: string
-  reasoning: boolean
+  block: ConversationBlock
+  message: AssistantReasonThreadMessage
 }) {
-  const [isExpanded, setIsExpanded] = useState(reasoning)
+  const isRunning = block.runtime.isStreaming && block.messages.at(-1)?.id === message.id
+  const [open, setOpen] = useState(isRunning)
 
-  // 当 reasoning 状态变化时自动控制展开
-  useEffect(() => {
-    if (reasoning) {
-      setIsExpanded(true)
-    }
-  }, [reasoning])
+  if (!message.reasoning.trim()) return null
 
   return (
-    <div className='w-full'>
-      <div
-        className={cn(
-          'relative w-full rounded-2xl border px-4 py-3 shadow-sm',
-          'bg-background border-border'
-        )}
-        onClick={() => setIsExpanded((v) => !v)}
+    <div className='space-y-4 text-xs'>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className='text-text-secondary flex items-center gap-3 font-medium'
       >
-        {/* Header (Clickable) */}
-        <button
-          className={cn(
-            'text-text-info mb-2 flex w-full items-center justify-between',
-            'hover:text-foreground text-[11px] transition-colors'
-          )}
-        >
-          <div className='flex items-center gap-2'>
-            {reasoning ? (
-              <Loader2 className='text-primary h-3.5 w-3.5 animate-spin' />
-            ) : (
-              <BrainCircuit className='text-primary h-3.5 w-3.5' />
-            )}
+        <Brain size={16} strokeWidth={2} />
+        <span>{isRunning ? 'Thinking' : 'Reason'}</span>
+        {open ? (
+          <ChevronDown size={16} strokeWidth={2} />
+        ) : (
+          <ChevronRight size={16} strokeWidth={2} />
+        )}
+      </button>
 
-            <span className='font-medium tracking-wide'>
-              {reasoning ? 'Reasoning…' : 'Reasoning'}
-            </span>
-          </div>
-
-          {/* Chevron */}
-          <ChevronDown
-            className={cn(
-              'h-3.5 w-3.5 transition-transform duration-200',
-              isExpanded && 'rotate-180'
-            )}
-          />
-        </button>
-
-        {/* Collapsible Content */}
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
-          className={cn(
-            'grid transition-all duration-300 ease-out',
-            isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          )}
-        >
-          <div className='overflow-hidden'>
-            {/* Divider */}
-            <div className='bg-border mb-3 h-px w-full' />
-
-            {/* Markdown */}
+      {open && (
+        <div className='space-y-4 pl-2'>
+          <div className='border-border border-l pl-5'>
             <MarkdownRenderer
-              className={cn('font-sans text-xs leading-relaxed', 'text-text-secondary')}
-              animation={reasoning}
+              animation={isRunning}
+              className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[12px] leading-7'
             >
-              {content}
+              {message.reasoning}
             </MarkdownRenderer>
           </div>
         </div>
-
-        {/* Streaming gradient mask */}
-        {reasoning && isExpanded && (
-          <div className='to-background/70 pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-transparent via-transparent' />
-        )}
-      </div>
+      )}
     </div>
   )
 }

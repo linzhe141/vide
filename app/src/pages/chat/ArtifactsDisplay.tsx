@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react'
 import type { FileNode } from '@/electron/ipc/api/channels'
-import { CodeBlock } from '../../components/Pre/Pre'
+import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
 
 export function ArtifactsDisplay({
