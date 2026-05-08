@@ -1,6 +1,7 @@
 import { getNormalizeTime } from './getNormalizeTime'
 import { fileRead } from './fileRead'
 import { fsWriteFile } from './fileWrite'
+import { fsEditFile } from './edit'
 import { Artifact } from './artifact'
 import { bashTool } from './bash'
 import { Planner } from './planner'
@@ -18,6 +19,7 @@ export function registorTools(runtime: WorkflowRuntimeContext) {
     getNormalizeTime,
     fileRead,
     fsWriteFile,
+    fsEditFile,
     bashTool,
     ...artifact.getTools(),
     ...planner.getTools(),
