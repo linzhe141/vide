@@ -6,9 +6,8 @@ import { app } from 'electron'
 import path from 'path'
 import type { AppManager } from './appManager'
 import { logger } from './logger'
-import { fileURLToPath } from 'url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const dbPath = path.join(app.getPath('userData'), 'data.db')
 
