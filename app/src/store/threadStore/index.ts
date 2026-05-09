@@ -10,7 +10,11 @@ export type PlanStep = {
   description: string
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
-export interface UserInputThreadMessage { id: string; role: 'user'; content: string }
+export interface UserInputThreadMessage {
+  id: string
+  role: 'user'
+  content: string
+}
 export interface AssistantReasonThreadMessage {
   id: string
   role: 'assistant-reason'
@@ -109,6 +113,7 @@ type ThreadActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
     buildFromDatabase: (data: Thread) => void
+    updateAskUserSubmitValue: (id: string, value: string[]) => void
   }
 }
 
@@ -127,6 +132,19 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           const target = state.threads.find((i) => i.sessionId === data.sessionId)
           if (target) return
           state.threads.push(data)
+        })
+      },
+      updateAskUserSubmitValue(id, value) {
+        set((state) => {
+          for (const thread of state.threads) {
+            for (const block of thread.blocks) {
+              const msg = block.messages.find((m) => m.id === id)
+              if (msg && msg.role === 'ask-user') {
+                msg.submitValue = value
+                return
+              }
+            }
+          }
         })
       },
     },

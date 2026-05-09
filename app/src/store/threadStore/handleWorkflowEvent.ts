@@ -57,12 +57,13 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       block.runtime.isStreaming = false
       return
 
-    case 'workflow-llm-reasoning-delta':
+    case 'workflow-llm-reasoning-delta': {
       if (!block) return
       const reasoningMessage = ensureLastReasoningMessage(block)
       reasoningMessage.content += event.data.chunk.delta
       reasoningMessage.reasoning += event.data.chunk.delta
       return
+    }
 
     case 'workflow-llm-text-delta':
       if (!block) return

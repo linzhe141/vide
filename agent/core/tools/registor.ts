@@ -1,4 +1,4 @@
-// import { fileRead } from './fileRead'
+import { fileRead } from './fileRead'
 import { Time } from './time'
 import { Write } from './write'
 import { Edit } from './edit'
@@ -22,7 +22,7 @@ export function registorTools(runtime: WorkflowRuntimeContext) {
   const askUserQuestionTool = new AskUserQuestionTool(runtime)
   const skill = new SkillTool(runtime)
   const tools: Tool[] = [
-    // fileRead,
+    fileRead,
     ...timer.getTools(),
     ...write.getTools(),
     ...edit.getTools(),

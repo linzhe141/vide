@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useChatContext } from './ChatProvider'
-import { type ThreadMessage } from '../../store/threadStore'
+import { useThreadStoreActions, type ThreadMessage } from '../../store/threadStore'
 
 export function AskUserQuestionView({
   blockId,
@@ -12,7 +12,7 @@ export function AskUserQuestionView({
   const { handleSend } = useChatContext()
   const [selected, setSelected] = useState<string[]>(message.submitValue)
   const [submited, setSubmited] = useState(message.submitValue.length > 0)
-
+  const { updateAskUserSubmitValue } = useThreadStoreActions()
   useEffect(() => {
     setSelected(message.submitValue)
     setSubmited(message.submitValue.length > 0)
@@ -24,13 +24,15 @@ export function AskUserQuestionView({
       return
     }
 
-    setSelected((prev) =>
-      prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value]
-    )
+    setSelected((prev) => {
+      const next = prev.includes(value) ? prev.filter((i) => i !== value) : [...prev, value]
+      return next
+    })
   }
 
   const submit = () => {
     setSubmited(true)
+    updateAskUserSubmitValue(message.id, selected)
 
     const selectedOptions = message.options.filter((option) => selected.includes(option.value))
 
