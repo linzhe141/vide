@@ -1,17 +1,11 @@
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
 
-export const BASH_NAMESPACE = 'BUILDIN_BASH_NAMESPACE'
 export const BASH_TOOL_NAMES = {
-  EXECUTE_BASH_COMMAND: `${BASH_NAMESPACE}_EXECUTE_BASH_COMMAND`,
+  EXECUTE_BASH_COMMAND: `execute-bash-command`,
 } as const
 
 export class Bash extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   executeCommand = defineTool({
     name: BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND,
     type: 'function',

@@ -2,21 +2,15 @@ import fs from 'fs/promises'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { artifactEvent } from '../../event'
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 
 const ARTIFACT_ROOT = '.vide/artifacts'
 
-export const ARTIFACT_NAMESPACE = 'BUILDIN_ARTIFACT_NAMESPACE'
 export const ARTIFACT_TOOL_NAMES = {
-  CREATE_WORKSPACE: `${ARTIFACT_NAMESPACE}_CREATE_WORKSPACE`,
+  CREATE_WORKSPACE: `create-workspace`,
 } as const
 
 export class Artifact extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   createWorkspace = defineTool({
     name: ARTIFACT_TOOL_NAMES.CREATE_WORKSPACE,
     type: 'function',

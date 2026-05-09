@@ -3,6 +3,7 @@ import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/electron/databaseManager'
 import {
+  artifacts,
   askUserQuestions,
   planners,
   threads,
@@ -16,10 +17,13 @@ export class DevIpcMainService implements IpcMainService {
   registerIpcMainHandle() {
     ipcMainApi.handle('dev-delete-database-rows', async () => {
       await db.delete(threadWorkflowBlockMessages)
-      await db.delete(planners)
       await db.delete(askUserQuestions)
 
       await db.delete(threadWorkflowBlocks)
+
+      await db.delete(planners)
+      await db.delete(artifacts)
+
       await db.delete(threads)
     })
   }

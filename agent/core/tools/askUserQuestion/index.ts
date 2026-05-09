@@ -1,4 +1,3 @@
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { askUserQuestionEvent } from '../../event'
 import { defineTool, ToolProvider } from '../toolProvider'
 
@@ -15,17 +14,11 @@ export type AskUserQuestion = {
   options: AskUserQuestionOption[]
 }
 
-export const ASK_USER_NAMESPACE = 'BUILDIN_ASK_USER_NAMESPACE'
-
 export const ASK_USER_TOOL_NAMES = {
-  GENERATE: `${ASK_USER_NAMESPACE}_GENERATE`,
+  GENERATE: `ask-user-question-generate`,
 } as const
 
 export class AskUserQuestionTool extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   generate = defineTool({
     name: ASK_USER_TOOL_NAMES.GENERATE,
     type: 'function',

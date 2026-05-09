@@ -1,6 +1,5 @@
 import { uuid } from '@/app/src/lib/uuid'
 import { plannerEvent } from '../../event'
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { SessionPlaner } from '../../agentSession'
 import { defineTool, ToolProvider } from '../toolProvider'
 
@@ -10,19 +9,14 @@ export type PlanStep = {
   description: string
 }
 
-export const PLANNER_NAMESPACE = 'BUILDIN_PLANNER_NAMESPACE'
 export const PLANNER_TOOL_NAMES = {
-  START_PLAN_GENERATE: `${PLANNER_NAMESPACE}_START_PLAN_GENERATE`,
-  CREATE_PLAN_ITEM: `${PLANNER_NAMESPACE}_CREATE_PLAN_ITEM_TOOL`,
-  COMPLETED_PLAN_GENERATE: `${PLANNER_NAMESPACE}_COMPLETED_PLAN_GENERATE_TOOL`,
-  CHANGE_PLAN_ITEM_STATUS: `${PLANNER_NAMESPACE}_CHANGE_PLAN_ITEM_STATUS_TOOL`,
+  START_PLAN_GENERATE: `start-plan-generate`,
+  CREATE_PLAN_ITEM: `create-plan-item-tool`,
+  COMPLETED_PLAN_GENERATE: `completed-plan-generate-tool`,
+  CHANGE_PLAN_ITEM_STATUS: `change-plan-item-status-tool`,
 } as const
 
 export class Planner extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   startPlanGenerate = defineTool({
     name: PLANNER_TOOL_NAMES.START_PLAN_GENERATE,
     type: 'function',

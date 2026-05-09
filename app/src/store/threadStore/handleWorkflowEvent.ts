@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import type { ConversationBlock, PlanStep, Thread, ThreadMessage, ThreadState } from '.'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
@@ -94,7 +94,7 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
         finishedAt: event.data.toolCallResult.finishedAt,
         durationMs: event.data.toolCallResult.durationMs,
       })
-      if (event.data.toolCallResult.toolName.startsWith(ASK_USER_NAMESPACE)) {
+      if (event.data.toolCallResult.toolName === ASK_USER_TOOL_NAMES.GENERATE) {
         const question = event.data.toolCallResult.result?.question
         if (question) {
           block.runtime.waitingHuman = true

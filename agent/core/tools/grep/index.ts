@@ -1,17 +1,11 @@
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
 
-export const GREP_NAMESPACE = 'BUILDIN_GREP_NAMESPACE'
 export const GREP_TOOL_NAMES = {
-  SEARCH: `${GREP_NAMESPACE}_SEARCH`,
+  SEARCH: `rg-content-search`,
 } as const
 
 export class Grep extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   search = defineTool({
     name: GREP_TOOL_NAMES.SEARCH,
     type: 'function',

@@ -9,6 +9,8 @@ import { ArtifactsDisplay } from './ArtifactsDisplay'
 import { PlannersDisplay } from './PlannersDisplay'
 import { InitSession } from './InitSession'
 import { useAutoScroll } from './useAutoScroll'
+import { MessageNavigator } from './MessageNavigator'
+import { useThreadBlocks } from '../../store/threadStore'
 
 export function Chat() {
   const { id } = useParams()
@@ -21,7 +23,6 @@ export function Chat() {
 
 function ChatContent() {
   const { handleSend, threadId } = useChatContext()
-  console.log('xxxxxxxxxxxx', threadId)
 
   const placeholderRef = useRef<HTMLDivElement>(null)
   const { ref: scrollRef, scrollToBottom } = useAutoScroll()
@@ -29,6 +30,7 @@ function ChatContent() {
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<'Artifacts' | 'Planners'>('Artifacts')
   const [moving, setMoving] = useState(false)
+  const blocks = useThreadBlocks(threadId)
 
   const togglePane = (next: 'Artifacts' | 'Planners') => {
     setMoving(true)
@@ -69,7 +71,7 @@ function ChatContent() {
     return () => observer.disconnect()
   }, [])
   return (
-    <div className='bg-background flex h-full flex-col'>
+    <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
       <InitSession threadId={threadId} />
       <div className='flex h-0 flex-1'>
         {/* 主区域 */}
@@ -95,6 +97,17 @@ function ChatContent() {
           {/* message */}
           <div ref={scrollRef} className='h-0 flex-1 overflow-auto'>
             <MessageList />
+            {blocks && (
+              <MessageNavigator
+                items={blocks.map((i, index) => {
+                  return {
+                    index,
+                    id: i.id,
+                    label: i.input,
+                  }
+                })}
+              />
+            )}
             {showToBottomButton && (
               <button
                 onClick={scrollToBottom}

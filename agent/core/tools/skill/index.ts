@@ -1,5 +1,4 @@
 import type { ChatMessage } from '../../types'
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -14,13 +13,12 @@ async function isDirectoryExists(dirPath: string) {
   }
 }
 
-export const SKILL_NAMESPACE = 'BUILDIN_SKILLS_NAMESPACE'
 export interface SkillMeta {
   name: string
   description: string
 }
 export const SKILL_TOOL_NAMES = {
-  LOAD_SKILL: `${SKILL_NAMESPACE}_LOAD_SKILL`,
+  LOAD_SKILL: `load-skill`,
 } as const
 
 const SkillsMap: Record<
@@ -34,10 +32,6 @@ const SkillsMap: Record<
 export const skillsPath = '.vide/skills'
 
 export class SkillTool extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   loadSkill = defineTool({
     name: SKILL_TOOL_NAMES.LOAD_SKILL,
     type: 'function',

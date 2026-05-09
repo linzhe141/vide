@@ -6,7 +6,7 @@ export function AssistantTextMessage({ message }: { message: AssistantTextThread
     <div className='max-w-none'>
       <MarkdownRenderer
         animation
-        className='text-foreground prose prose-sm dark:prose-invert max-w-none text-[17px] leading-8'
+        className='text-foreground prose prose-sm dark:prose-invert max-w-none leading-8'
       >
         {message.content}
       </MarkdownRenderer>

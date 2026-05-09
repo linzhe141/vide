@@ -1,12 +1,10 @@
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 import fs from 'fs/promises'
 import path from 'path'
 import * as Diff from 'diff'
 
-export const EDIT_NAMESPACE = 'BUILDIN_EDIT_NAMESPACE'
 export const EDIT_TOOL_NAMES = {
-  EDIT_FILE: `${EDIT_NAMESPACE}_EDIT_FILE`,
+  EDIT_FILE: `edit-file`,
 } as const
 
 interface EditText {
@@ -15,10 +13,6 @@ interface EditText {
 }
 
 export class Edit extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-  
   editFile = defineTool({
     name: EDIT_TOOL_NAMES.EDIT_FILE,
     type: 'function',

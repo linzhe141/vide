@@ -1,17 +1,11 @@
 import dayjs from 'dayjs'
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 
-export const TIME_NAMESPACE = 'BUILDIN_TIME_NAMESPACE'
 export const TIME_TOOL_NAMES = {
-  GET_NORMALIZE_TIME: `${TIME_NAMESPACE}_GET_NORMALIZE_TIME`,
+  GET_NORMALIZE_TIME: `get-normalize-time`,
 } as const
 
 export class Time extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   getNormalizeTime = defineTool({
     name: TIME_TOOL_NAMES.GET_NORMALIZE_TIME,
     type: 'function',

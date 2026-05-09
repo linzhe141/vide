@@ -1,18 +1,12 @@
 import fs from 'fs/promises'
 import path from 'path'
-import type { WorkflowRuntimeContext } from '../../workflowRuntimeContext'
 import { defineTool, ToolProvider } from '../toolProvider'
 
-export const WRITE_NAMESPACE = 'BUILDIN_WRITE_NAMESPACE'
 export const WRITE_TOOL_NAMES = {
-  WRITE_FILE: `${WRITE_NAMESPACE}_WRITE_FILE`,
+  WRITE_FILE: `write-file`,
 } as const
 
 export class Write extends ToolProvider {
-  constructor(runtime: WorkflowRuntimeContext) {
-    super(runtime)
-  }
-
   writeFile = defineTool({
     name: WRITE_TOOL_NAMES.WRITE_FILE,
     type: 'function',

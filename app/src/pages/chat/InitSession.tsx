@@ -8,7 +8,7 @@ import {
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
-import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 
 export function InitSession({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()
@@ -121,7 +121,7 @@ function buildBlockMessages(
           durationMs: data.durationMs,
         })
         const toolCall = toolCallsById.get(data.id)
-        if (toolCall?.function.name.startsWith(ASK_USER_NAMESPACE)) {
+        if (toolCall?.function.name === ASK_USER_TOOL_NAMES.GENERATE) {
           const question = data.result?.question
           if (question) {
             result.push({

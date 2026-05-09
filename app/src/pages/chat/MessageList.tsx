@@ -44,7 +44,7 @@ function MessageView({ block, message }: { block: ConversationBlock; message: Th
 
 function BlockView({ block }: { block: ConversationBlock }) {
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6' id={block.id}>
       {block.messages.map((message) => (
         <MessageView key={message.id} block={block} message={message} />
       ))}

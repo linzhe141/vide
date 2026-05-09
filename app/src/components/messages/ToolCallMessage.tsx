@@ -1,4 +1,4 @@
-import { ASK_USER_NAMESPACE } from '@/agent/core/tools/askUserQuestion'
+import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import type {
   ConversationBlock,
   ToolCallThreadMessage,
@@ -23,7 +23,7 @@ type ToolCallViewProps = {
 
 export function ToolCallMessage({ block, message }: ToolCallViewProps) {
   const visibleTools = message.toolCalls.filter(
-    (tool) => !tool.function.name.startsWith(ASK_USER_NAMESPACE)
+    (tool) => tool.function.name !== ASK_USER_TOOL_NAMES.GENERATE
   )
 
   if (!visibleTools.length) return null
@@ -64,7 +64,7 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-3'>
             <span className='text-foreground truncate text-[15px] font-medium'>
-              {getToolLabel(tool.function.name)}
+              {tool.function.name}
             </span>
             {isSuccess && (
               <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
@@ -136,11 +136,6 @@ function formatDuration(durationMs?: number) {
   if (seconds < 10) return `${seconds.toFixed(1)}s`
 
   return `${Math.round(seconds)}s`
-}
-
-function getToolLabel(name: string) {
-  const last = name.split('.').at(-1) ?? name
-  return last.replace(/[-_]/g, ' ')
 }
 
 function findToolResult(

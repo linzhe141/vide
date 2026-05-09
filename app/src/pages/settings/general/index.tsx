@@ -121,9 +121,14 @@ export function GeneralSettings() {
                 onClick={async () => {
                   const res = confirm('删除所有的 dababase 数据')
                   if (res) {
-                    await window.ipcRendererApi.invoke('dev-delete-database-rows')
-                    alert('删除成功！')
-                    setThreads([])
+                    try {
+                      await window.ipcRendererApi.invoke('dev-delete-database-rows')
+                      alert('删除成功！')
+                      setThreads([])
+                    } catch (error) {
+                      console.error('Failed to delete database rows:', error)
+                      alert('删除失败！' + (error instanceof Error ? error.message : String(error)))
+                    }
                   }
                 }}
               >
