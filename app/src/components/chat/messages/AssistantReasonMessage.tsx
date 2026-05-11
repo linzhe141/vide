@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import type { AssistantReasonThreadMessage, ConversationBlock } from '../../store/threadStore'
-import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
+import type { AssistantReasonThreadMessage, ConversationBlock } from '@/app/src/store/threadStore'
+import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantReasonMessage({
   block,

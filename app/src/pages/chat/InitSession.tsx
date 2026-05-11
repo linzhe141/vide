@@ -1,5 +1,4 @@
 import { ThreadMessageRole } from '@/types'
-import { useChatContext } from './ChatProvider'
 import {
   useThreadStoreActions,
   type ConversationBlock,
@@ -9,6 +8,7 @@ import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
+import { useChatContext } from '../../components/chat/ChatProvider'
 
 export function InitSession({ threadId }: { threadId: string }) {
   const { handleSend } = useChatContext()

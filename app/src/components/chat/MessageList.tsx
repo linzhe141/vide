@@ -4,12 +4,13 @@ import {
   type ConversationBlock,
   type ThreadMessage,
 } from '../../store/threadStore'
+import { AskUserQuestionView } from './AskUserQuestionView';
 import { useChatContext } from './ChatProvider'
-import { AskUserQuestionView } from './AskUserQuestionView'
-import { UserInputMessage } from '../../components/messages/UserInputMessage'
-import { AssistantTextMessage } from '../../components/messages/AssistantTextMessage'
-import { AssistantReasonMessage } from '../../components/messages/AssistantReasonMessage'
-import { ToolCallMessage } from '../../components/messages/ToolCallMessage'
+import { AssistantReasonMessage } from './messages/AssistantReasonMessage';
+import { AssistantTextMessage } from './messages/AssistantTextMessage';
+import { ToolCallMessage } from './messages/ToolCallMessage';
+import { UserInputMessage } from './messages/UserInputMessage';
+
 
 function MessageView({ block, message }: { block: ConversationBlock; message: ThreadMessage }) {
   switch (message.role) {

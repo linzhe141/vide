@@ -1,5 +1,5 @@
-import type { UserInputThreadMessage } from '../../store/threadStore'
-import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
+import type { UserInputThreadMessage } from '@/app/src/store/threadStore'
+import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function UserInputMessage({ message }: { message: UserInputThreadMessage }) {
   return (

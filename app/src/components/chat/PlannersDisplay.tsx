@@ -1,6 +1,6 @@
 import { cn } from '@/app/src/lib/utils'
 import { useThreadPlanners, type PlanStep } from '../../store/threadStore'
-import { useChatContext } from './ChatProvider'
+import { useChatContext } from './ChatProvider';
 
 export function PlannersDisplay({ className }: { className?: string }) {
   const { threadId } = useChatContext()
@@ -39,7 +39,7 @@ function StatusDot({ status }: { status: PlanStep['status'] }) {
 
 export function Planner({ planner }: { planner: { id: string; plan: PlanStep[] } }) {
   return (
-    <div className='h-full w-full space-y-3 overflow-auto overflow-x-hidden pl-4'>
+    <div className='h-full max-h-64 w-full space-y-3 overflow-auto overflow-x-hidden pl-4'>
       {planner.plan.map((plan) => (
         <div key={plan.id} className='flex items-center gap-3'>
           <StatusDot status={plan.status} />

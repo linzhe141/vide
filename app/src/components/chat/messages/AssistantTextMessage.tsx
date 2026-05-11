@@ -1,5 +1,5 @@
-import type { AssistantTextThreadMessage } from '../../store/threadStore'
-import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
+import type { AssistantTextThreadMessage } from '@/app/src/store/threadStore'
+import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantTextMessage({ message }: { message: AssistantTextThreadMessage }) {
   return (

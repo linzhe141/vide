@@ -1,9 +1,5 @@
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import type {
-  ConversationBlock,
-  ToolCallThreadMessage,
-  ToolResultThreadMessage,
-} from '../../store/threadStore'
+import type { ConversationBlock, ToolCallThreadMessage, ToolResultThreadMessage } from '@/app/src/store/threadStore'
 import {
   CheckCircle2,
   ChevronDown,

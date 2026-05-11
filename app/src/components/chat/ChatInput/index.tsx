@@ -1,10 +1,10 @@
+import { useThreadPlanners } from '@/app/src/store/threadStore'
 import { Send } from 'lucide-react'
-import { Textarea } from '../../ui/Textarea'
-import { Button } from '../../ui/Button'
 import { useState, useRef, useEffect, memo } from 'react'
-import { useThreadPlanners } from '../../store/threadStore'
-import { Planner } from './PlannersDisplay'
-import { useChatContext } from './ChatProvider'
+import { Planner } from '../PlannersDisplay'
+import { Textarea } from '@/app/src/ui/Textarea'
+import { Button } from '@/app/src/ui/Button'
+import { useChatContext } from '../ChatProvider'
 
 export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: string) => void }) {
   const { threadId } = useChatContext()
