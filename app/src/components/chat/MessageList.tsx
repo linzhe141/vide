@@ -4,13 +4,23 @@ import {
   type ConversationBlock,
   type ThreadMessage,
 } from '../../store/threadStore'
-import { AskUserQuestionView } from './AskUserQuestionView';
+import { AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
-import { AssistantReasonMessage } from './messages/AssistantReasonMessage';
-import { AssistantTextMessage } from './messages/AssistantTextMessage';
-import { ToolCallMessage } from './messages/ToolCallMessage';
-import { UserInputMessage } from './messages/UserInputMessage';
+import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
+import { AssistantTextMessage } from './messages/AssistantTextMessage'
+import { ToolCallMessage } from './messages/ToolCallMessage'
+import { UserInputMessage } from './messages/UserInputMessage'
 
+export function MessageList() {
+  const { threadId } = useChatContext()
+  const blocks = useThreadBlocks(threadId)
+
+  return (
+    <div className='flex w-full flex-col gap-12 px-8 py-12'>
+      {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
+    </div>
+  )
+}
 
 function MessageView({ block, message }: { block: ConversationBlock; message: ThreadMessage }) {
   switch (message.role) {
@@ -49,17 +59,6 @@ function BlockView({ block }: { block: ConversationBlock }) {
       {block.messages.map((message) => (
         <MessageView key={message.id} block={block} message={message} />
       ))}
-    </div>
-  )
-}
-
-export function MessageList() {
-  const { threadId } = useChatContext()
-  const blocks = useThreadBlocks(threadId)
-
-  return (
-    <div className='mx-auto flex w-full max-w-[920px] flex-col gap-12 px-8 py-12'>
-      {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
     </div>
   )
 }

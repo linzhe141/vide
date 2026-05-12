@@ -1,6 +1,6 @@
 import { cn } from '@/app/src/lib/utils'
 import { useThreadPlanners, type PlanStep } from '../../store/threadStore'
-import { useChatContext } from './ChatProvider';
+import { useChatContext } from '../../components/chat/ChatProvider';
 
 export function PlannersDisplay({ className }: { className?: string }) {
   const { threadId } = useChatContext()
