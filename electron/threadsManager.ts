@@ -160,9 +160,6 @@ export class ThreadsManager {
     })
 
     // runtime
-    // TODO only end write db
-    onPalnnerEvent('planner-start-generate', async () => {})
-    onPalnnerEvent('planner-step-generate', async () => {})
     onPalnnerEvent('planner-end-generate', async ({ sessionId, plannerId, plans }) => {
       const time = Date.now()
       await db.insert(planners).values({

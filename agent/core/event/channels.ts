@@ -15,12 +15,6 @@ export type AgentLifecycleEvents = {
 }
 
 const PlannerEventChannels = {
-  'planner-start-generate': null as unknown as { sessionId: string; plannerId: string },
-  'planner-step-generate': null as unknown as {
-    sessionId: string
-    plannerId: string
-    plan: PlanStep
-  },
   'planner-end-generate': null as unknown as {
     sessionId: string
     plannerId: string

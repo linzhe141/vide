@@ -120,19 +120,15 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       }
       return
 
-    case 'planner-start-generate':
+    case 'planner-end-generate': {
       if (!thread) return
       thread.currentPlannerId = event.data.plannerId
       thread.planner.push({
         id: event.data.plannerId,
-        plan: [],
+        plan: event.data.plans,
       })
       return
-
-    case 'planner-step-generate':
-      if (!planner) return
-      planner.plan.push(event.data.plan)
-      return
+    }
 
     case 'planner-execute-item-start':
       updatePlannerStepStatus(planner, event.data.plan.id, 'running')

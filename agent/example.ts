@@ -31,10 +31,6 @@ function setupEvents() {
   })
 
   // ================= PLANNER =================
-  onPalnnerEvent('planner-start-generate', () => {
-    title('PLANNER')
-    spinner = ora('Generating plan...').start()
-  })
 
   onPalnnerEvent('planner-end-generate', (data) => {
     spinner?.succeed('Plan generated')
