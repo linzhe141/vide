@@ -170,17 +170,28 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
 export function ChatLayoutInput({ children }: PropsWithChildren) {
   const { threadId } = useChatContext()
   const planners = useThreadPlanners(threadId)
+  // const pendingPlanner = planners?.[0] // for test
   const pendingPlanner = planners?.find((i) => i.plan.some((i) => i.status !== 'completed'))
+
   return (
-    <div className='mx-auto w-full max-w-[920px]'>
+    <div
+      className='relative mx-auto w-full max-w-[920px]'
+      style={{
+        paddingBottom: pendingPlanner ? 80 : 0, // 👈 关键：预留空间
+      }}
+    >
       {pendingPlanner && (
-        <div className='flex justify-center'>
-          <div className='border-border w-9/10 rounded-xl rounded-ee-none rounded-es-none border border-b-0 py-3'>
-            <Planner planner={pendingPlanner} />
+        <div className='absolute bottom-full left-0 z-10 w-full'>
+          <div className='flex justify-center'>
+            <div className='border-border bg-background/80 w-9/10 rounded-xl rounded-b-none border border-b-0 py-3'>
+              <Planner planner={pendingPlanner} />
+            </div>
           </div>
         </div>
       )}
+
       {children}
+
       <p className='text-text-info my-2 text-center text-xs'>
         <kbd className='bg-border/50 rounded px-1.5 py-0.5 font-mono text-[10px]'>Enter</kbd>
         to send,
