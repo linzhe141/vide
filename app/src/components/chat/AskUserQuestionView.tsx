@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useChatContext } from './ChatProvider'
 import { useThreadStoreActions, type ThreadMessage } from '../../store/threadStore'
+import { cn } from '../../lib/utils'
 
+export const AskUserQuestionUserSlectedReultPrefix = 'AskUserQuestionUserSlectedReult'
 export function AskUserQuestionView({
   blockId,
   message,
@@ -36,7 +38,7 @@ export function AskUserQuestionView({
 
     const selectedOptions = message.options.filter((option) => selected.includes(option.value))
 
-    const content = `
+    const content = `${AskUserQuestionUserSlectedReultPrefix}
 User selected option(s) for "${message.title}"
 Selected:
 ${selectedOptions.map((option) => `- ${option.label}`).join('\n')}
@@ -98,7 +100,10 @@ ${JSON.stringify(selectedOptions.map((option) => option.value))}
         <button
           onClick={submit}
           disabled={!selected.length || submited}
-          className='border-border hover:bg-foreground/5 w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40'
+          className={cn(
+            'border-border w-full rounded-md border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40',
+            !selected.length || submited ? 'cursor-not-allowed' : 'hover:bg-foreground/5'
+          )}
         >
           Confirm
         </button>

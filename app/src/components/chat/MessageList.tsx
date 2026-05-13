@@ -4,7 +4,7 @@ import {
   type ConversationBlock,
   type ThreadMessage,
 } from '../../store/threadStore'
-import { AskUserQuestionView } from './AskUserQuestionView'
+import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
@@ -25,7 +25,9 @@ export function MessageList() {
 function MessageView({ block, message }: { block: ConversationBlock; message: ThreadMessage }) {
   switch (message.role) {
     case 'user':
-      return <UserInputMessage message={message} />
+      return message.content.startsWith(AskUserQuestionUserSlectedReultPrefix) ? null : (
+        <UserInputMessage message={message} />
+      )
 
     case 'assistant-text':
       return <AssistantTextMessage message={message} />
