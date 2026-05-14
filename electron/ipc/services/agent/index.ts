@@ -93,6 +93,7 @@ export class AgentIpcMainService implements IpcMainService {
 
       const uiBlockData = blockData.map((block) => ({
         ...block,
+        parentBlockId: block.parentBlockId,
         askUserSubmitValue: askUserSubmitValues.get(block.id),
       }))
 
@@ -107,6 +108,8 @@ export class AgentIpcMainService implements IpcMainService {
         .where(eq(schema.artifacts.threadId, data.sessionId))
 
       return {
+        activeBranch: threadRow?.activeBranch || 'main',
+        branches: branchRows,
         planner: plannerRows.map((item) => ({
           id: item.id,
           plan: JSON.parse(item.planJson || '[]') as PlanStep[],
@@ -116,9 +119,15 @@ export class AgentIpcMainService implements IpcMainService {
       }
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ input }) => {
-      logger.info('agent-session-send ', input)
-      this.session.run(input)
+    ipcMainApi.handle('agent-session-send', async ({ input, branchName }) => {
+      logger.info('agent-session-send ', input, branchName)
+      this.session.run(input, branchName)
+    })
+
+    ipcMainApi.handle('agent-session-fork', async ({ targetBlockId, branchName }) => {
+      logger.info('agent-session-fork ', branchName, targetBlockId)
+      const targetNode = targetBlockId ? this.session.getWorkflowNode(targetBlockId) : null
+      this.session.fork(branchName, targetNode)
     })
 
     ipcMainApi.handle('ask-user-question-submit', async (data) => {

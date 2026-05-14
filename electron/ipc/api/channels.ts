@@ -25,6 +25,7 @@ export type ThreadRowDto = {
 export type BlockData = {
   id: string
   userInput: string
+  parentBlockId?: string | null
   askUserSubmitValue?: string[]
   messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
 }
@@ -42,6 +43,8 @@ export interface RenderChannel {
   // agent
   'agent-create-session': () => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
+    activeBranch: string
+    branches: { name: string; headWorkflowId: string | null }[]
     planner: { id: string; plan: PlanStep[] }[]
     blockData: BlockData[]
     artifacts: {
@@ -52,7 +55,8 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   }>
-  'agent-session-send': (data: { input: string }) => void
+  'agent-session-send': (data: { input: string; branchName?: string }) => void
+  'agent-session-fork': (data: { targetBlockId: string | null; branchName: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void

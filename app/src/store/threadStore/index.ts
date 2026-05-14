@@ -1,6 +1,6 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-
 import type { ToolCall } from '@/agent/core/types'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 import { handleWorkflowEvent } from './handleWorkflowEvent'
@@ -10,23 +10,27 @@ export type PlanStep = {
   description: string
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
+
 export interface UserInputThreadMessage {
   id: string
   role: 'user'
   content: string
 }
+
 export interface AssistantReasonThreadMessage {
   id: string
   role: 'assistant-reason'
   content: string
   reasoning: string
 }
+
 export interface AssistantTextThreadMessage {
   id: string
   role: 'assistant-text'
   content: string
   reasoning: string
 }
+
 export interface ToolCallThreadMessage {
   id: string
   role: 'tool-call'
@@ -73,29 +77,31 @@ export type ThreadMessage =
 
 export type ConversationBlock = {
   id: string
-
+  parentBlockId: string | null
+  childBlockIds: string[]
   status: 'running' | 'finished' | 'error'
-
   input: string
-
   messages: ThreadMessage[]
-
   runtime: {
     isStreaming: boolean
     waitingHuman: boolean
   }
 }
 
+export type SessionBranch = {
+  name: string
+  headBlockId: string | null
+}
+
 export type Thread = {
   sessionId: string
-
+  activeBranch: string
+  branches: SessionBranch[]
   planner: { id: string; plan: PlanStep[] }[]
-
-  blocks: ConversationBlock[]
-
+  blockMap: Record<string, ConversationBlock>
+  blockOrder: string[]
   currentBlockId?: string
   currentPlannerId?: string
-
   artifacts: {
     id: string
     threadId: string
@@ -114,6 +120,7 @@ type ThreadActions = {
     handleEvent: (event: WorkflowState) => void
     buildFromDatabase: (data: Thread) => void
     updateAskUserSubmitValue: (id: string, value: string[]) => void
+    switchBranch: (sessionId: string, branchName: string) => void
   }
 }
 
@@ -128,8 +135,7 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          // 鍙湁store涓病鏈夊搴旂殑thread鎵嶄粠鏁版嵁搴揵uild
-          const target = state.threads.find((i) => i.sessionId === data.sessionId)
+          const target = state.threads.find((item) => item.sessionId === data.sessionId)
           if (target) return
           state.threads.push(data)
         })
@@ -137,8 +143,10 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       updateAskUserSubmitValue(id, value) {
         set((state) => {
           for (const thread of state.threads) {
-            for (const block of thread.blocks) {
-              const msg = block.messages.find((m) => m.id === id)
+            for (const blockId of thread.blockOrder) {
+              const block = thread.blockMap[blockId]
+              if (!block) continue
+              const msg = block.messages.find((message) => message.id === id)
               if (msg && msg.role === 'ask-user') {
                 msg.submitValue = value
                 return
@@ -147,14 +155,66 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
           }
         })
       },
+      switchBranch(sessionId, branchName) {
+        set((state) => {
+          const thread = state.threads.find((item) => item.sessionId === sessionId)
+          if (!thread) return
+          const targetBranch = thread.branches.find((item) => item.name === branchName)
+          if (!targetBranch) return
+          thread.activeBranch = branchName
+          thread.currentBlockId = targetBranch.headBlockId || undefined
+        })
+      },
     },
   }))
 )
 
 export const useThreadStoreActions = () => useThreadStore((state) => state.actions)
 
-export const useThreadBlocks = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((i) => i.sessionId === threadId)?.blocks)
+export const useThread = (threadId: string) =>
+  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId))
+
+export const useThreadBlocks = (threadId: string) => {
+  const thread = useThread(threadId)
+  return useMemo(() => {
+    if (!thread) return undefined
+    return getBlocksForActiveBranch(thread)
+  }, [thread])
+}
 
 export const useThreadPlanners = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((i) => i.sessionId === threadId)?.planner)
+  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.planner)
+
+export const useThreadBranches = (threadId: string) =>
+  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.branches)
+
+export function getBlocksForActiveBranch(thread: Thread) {
+  const activeBranch = thread.branches.find((item) => item.name === thread.activeBranch)
+  const pathIds = buildBlockPath(activeBranch?.headBlockId || null, thread.blockMap)
+  return pathIds.map((blockId) => thread.blockMap[blockId]).filter(Boolean)
+}
+
+export function buildBlockPath(
+  headBlockId: string | null,
+  blockMap: Record<string, ConversationBlock>
+) {
+  const pathIds: string[] = []
+  let currentId = headBlockId
+  while (currentId) {
+    const block = blockMap[currentId]
+    if (!block) break
+    pathIds.unshift(block.id)
+    currentId = block.parentBlockId
+  }
+  return pathIds
+}
+
+export function getNextBranchName(existingBranchNames: string[], prefix = 'branch') {
+  let index = existingBranchNames.length + 1
+  let candidate = `${prefix}-${index}`
+  while (existingBranchNames.includes(candidate)) {
+    index += 1
+    candidate = `${prefix}-${index}`
+  }
+  return candidate
+}

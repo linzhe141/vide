@@ -1,6 +1,13 @@
 import { nanoid } from 'nanoid'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import type { ConversationBlock, PlanStep, Thread, ThreadMessage, ThreadState } from '.'
+import type {
+  ConversationBlock,
+  PlanStep,
+  SessionBranch,
+  Thread,
+  ThreadMessage,
+  ThreadState,
+} from '.'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
 type ThreadEventContext = {
@@ -17,12 +24,43 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
   const { event, state, thread, block, planner } = context
 
   switch (event.type) {
-    case 'workflow-start': {
-      const { sessionId, workflowId } = event.data.ctx
-      const targetThread = getOrCreateThread(state, sessionId)
+    case 'agent-create-session': {
+      getOrCreateThread(state, event.data.sessionId, event.data.activeBranch)
+      return
+    }
 
-      targetThread.blocks.push(createConversationBlock(workflowId, event.data.input))
+    case 'agent-session-forked': {
+      if (!thread) return
+      upsertBranch(thread, {
+        name: event.data.branchName,
+        headBlockId: event.data.sourceWorkflowId,
+      })
+      thread.activeBranch = event.data.branchName
+      thread.currentBlockId = event.data.sourceWorkflowId || undefined
+      return
+    }
+
+    case 'workflow-start': {
+      const { sessionId, workflowId, parentWorkflowId, branchName } = event.data.ctx
+      const targetThread = getOrCreateThread(state, sessionId, branchName)
+      const createdBlock = createConversationBlock(workflowId, event.data.input, parentWorkflowId)
+
+      targetThread.blockMap[workflowId] = createdBlock
+      if (!targetThread.blockOrder.includes(workflowId)) {
+        targetThread.blockOrder.push(workflowId)
+      }
+      if (parentWorkflowId) {
+        const parentBlock = targetThread.blockMap[parentWorkflowId]
+        if (parentBlock && !parentBlock.childBlockIds.includes(workflowId)) {
+          parentBlock.childBlockIds.push(workflowId)
+        }
+      }
       targetThread.currentBlockId = workflowId
+      targetThread.activeBranch = branchName
+      upsertBranch(targetThread, {
+        name: branchName,
+        headBlockId: workflowId,
+      })
       return
     }
 
@@ -32,7 +70,6 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       return
 
     case 'workflow-error':
-      console.error(event.data)
       if (!block) return
       block.status = 'error'
       pushMessage(block, {
@@ -80,7 +117,6 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       return
 
     case 'workflow-tool-call-start':
-      if (!block) return
       return
 
     case 'workflow-tool-call-success':
@@ -147,10 +183,8 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
 function createThreadEventContext(state: ThreadState, event: WorkflowState): ThreadEventContext {
   const sessionId = getEventSessionId(event)
   const thread = sessionId ? state.threads.find((item) => item.sessionId === sessionId) : undefined
-  const block =
-    thread && thread.currentBlockId
-      ? thread.blocks.find((item) => item.id === thread.currentBlockId)
-      : undefined
+  const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
+  const block = workflowId && thread ? thread.blockMap[workflowId] : undefined
   const planner = thread ? getCurrentPlanner(thread) : undefined
 
   return {
@@ -162,12 +196,18 @@ function createThreadEventContext(state: ThreadState, event: WorkflowState): Thr
     event,
   }
 }
-function createConversationBlock(workflowId: string, input: string): ConversationBlock {
+
+function createConversationBlock(
+  workflowId: string,
+  input: string,
+  parentBlockId: string | null
+): ConversationBlock {
   return {
     id: workflowId,
+    parentBlockId,
+    childBlockIds: [],
     input,
     status: 'running',
-
     messages: [
       {
         id: nanoid(),
@@ -175,7 +215,6 @@ function createConversationBlock(workflowId: string, input: string): Conversatio
         content: input,
       },
     ],
-
     runtime: {
       isStreaming: false,
       waitingHuman: false,
@@ -183,19 +222,31 @@ function createConversationBlock(workflowId: string, input: string): Conversatio
   }
 }
 
-function getOrCreateThread(state: ThreadState, sessionId: string) {
+function getOrCreateThread(state: ThreadState, sessionId: string, activeBranch: string) {
   let thread = state.threads.find((item) => item.sessionId === sessionId)
   if (thread) return thread
 
   thread = {
     sessionId,
+    activeBranch,
+    branches: [{ name: activeBranch, headBlockId: null }],
     planner: [],
-    blocks: [],
+    blockMap: {},
+    blockOrder: [],
     artifacts: [],
   }
   state.threads.push(thread)
 
   return thread
+}
+
+function upsertBranch(thread: Thread, branch: SessionBranch) {
+  const target = thread.branches.find((item) => item.name === branch.name)
+  if (target) {
+    target.headBlockId = branch.headBlockId
+    return
+  }
+  thread.branches.push(branch)
 }
 
 function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']) {
@@ -253,7 +304,7 @@ function createAskUserMessage(question: any): Extract<ThreadMessage, { role: 'as
 }
 
 function getCurrentPlanner(state: Thread) {
-  return state.planner.find((b) => b.id === state.currentPlannerId)
+  return state.planner.find((block) => block.id === state.currentPlannerId)
 }
 
 function updatePlannerStepStatus(
@@ -263,7 +314,6 @@ function updatePlannerStepStatus(
 ) {
   const step = planner?.plan.find((item) => item.id === planId)
   if (!step) return
-
   step.status = status
 }
 

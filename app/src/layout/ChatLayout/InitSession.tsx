@@ -24,33 +24,51 @@ export function InitSession({ threadId }: { threadId: string }) {
     }
 
     async function fetchMessages() {
-      const { blockData, planner, artifacts } = await window.ipcRendererApi.invoke(
+      const { blockData, planner, artifacts, activeBranch, branches } = await window.ipcRendererApi.invoke(
         'agent-resume-session',
         {
           sessionId: threadId,
         }
       )
 
-      const lastBlock = blockData.at(-1)
-      if (!lastBlock) return
+      const conversationBlockMap: Record<string, ConversationBlock> = Object.fromEntries(
+        blockData.map((block) => [
+          block.id,
+          {
+            id: block.id,
+            parentBlockId: block.parentBlockId ?? null,
+            childBlockIds: [],
+            input: block.userInput,
+            status: 'finished',
+            runtime: {
+              isStreaming: false,
+              waitingHuman: false,
+            },
+            messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
+          } satisfies ConversationBlock,
+        ])
+      )
 
-      const conversationBlocks: ConversationBlock[] = blockData.map((block) => ({
-        id: block.id,
-        input: block.userInput,
-        status: 'finished',
-        runtime: {
-          isStreaming: false,
-          waitingHuman: false,
-        },
-        messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
-      }))
+      for (const block of Object.values(conversationBlockMap)) {
+        if (!block.parentBlockId) continue
+        const parentBlock = conversationBlockMap[block.parentBlockId]
+        if (!parentBlock) continue
+        parentBlock.childBlockIds.push(block.id)
+      }
 
       const pendingPlanner = planner.find((p) => p.plan.some((i) => i.status !== 'completed'))
+      const activeHead = branches.find((branch) => branch.name === activeBranch)?.headWorkflowId
 
       buildFromDatabase({
         sessionId: threadId,
-        blocks: conversationBlocks,
-        currentBlockId: lastBlock.id,
+        activeBranch,
+        branches: branches.map((branch) => ({
+          name: branch.name,
+          headBlockId: branch.headWorkflowId,
+        })),
+        blockMap: conversationBlockMap,
+        blockOrder: blockData.map((block) => block.id),
+        currentBlockId: activeHead || undefined,
         planner,
         currentPlannerId: pendingPlanner?.id,
         artifacts,

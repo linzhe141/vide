@@ -35,6 +35,7 @@ export class Session {
   sessionId: string
   activeBranch = 'main'
   branchs: Record<string, SessionBranchHead> = {}
+  workflowNodeMap = new Map<string, SessionWorkflowNode>()
   planners: SessionPlaner[] = []
 
   constructor(options?: { sessionId?: string; activeBranch?: string }) {
@@ -73,6 +74,7 @@ export class Session {
       parent: null,
       children: [],
     }
+    this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
     const workflow = new Workflow(workflowRuntimeContext)
     return {
       workflowCommitNode,
@@ -109,6 +111,10 @@ export class Session {
     // TODO implement compact to reduce message/token size for long sessions.
   }
 
+  getWorkflowNode(workflowId: string) {
+    return this.workflowNodeMap.get(workflowId) ?? null
+  }
+
   static resume(snapshot: SessionSnapshot) {
     const session = new Session({
       sessionId: snapshot.sessionId,
@@ -117,12 +123,14 @@ export class Session {
     const workflowNodeMap = new Map<string, SessionWorkflowNode>()
 
     for (const workflow of snapshot.workflows) {
-      workflowNodeMap.set(workflow.id, {
+      const node = {
         id: workflow.id,
         messages: workflow.messages,
         parent: null,
         children: [],
-      })
+      }
+      workflowNodeMap.set(workflow.id, node)
+      session.workflowNodeMap.set(workflow.id, node)
     }
 
     for (const workflow of snapshot.workflows) {

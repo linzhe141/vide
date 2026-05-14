@@ -15,9 +15,16 @@ export type WorkflowState =
   | EventMapToUnion<PlannerEvents>
   | EventMapToUnion<WorkflowEvents>
 
-export function createWorkflowStream(abortSignal: AbortSignal) {
+export function createWorkflowStream(
+  abortSignal: AbortSignal,
+  options?: {
+    sessionId?: string
+    closeOn?: WorkflowState['type'][]
+  }
+) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
-  let currentSessionId: string | null = null
+  let currentSessionId: string | null = options?.sessionId || null
+  const closeOn = new Set<WorkflowState['type']>(options?.closeOn || [])
   function cleanUp() {
     eventListeners.forEach((remove) => remove())
     eventListeners = []
@@ -39,7 +46,10 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             controller.enqueue({ type: eventName, data })
           }
 
-          if (eventName === 'agent-session-finished' && currentSessionId === data.sessionId) {
+          if (
+            currentSessionId === data.sessionId &&
+            (eventName === 'agent-session-finished' || closeOn.has(eventName))
+          ) {
             controller.close()
             cleanUp()
           }
@@ -65,7 +75,10 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             controller.enqueue({ type: eventName, data })
           }
 
-          if (eventName === 'workflow-error' && currentSessionId === data.ctx.sessionId) {
+          if (
+            currentSessionId === data.ctx.sessionId &&
+            (eventName === 'workflow-error' || closeOn.has(eventName))
+          ) {
             controller.close()
             cleanUp()
           }
