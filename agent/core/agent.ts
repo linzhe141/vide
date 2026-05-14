@@ -28,13 +28,11 @@ export class Agent {
     branches: SessionBranchSnapshot[]
     blockData: (BlockData & {
       parentBlockId: string | null
-      branchName: string
     })[]
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.blockData.map((block) => ({
       id: block.id,
       parentWorkflowId: block.parentBlockId,
-      branchName: block.branchName,
       messages: this.buildChatMessages(block.messages),
     }))
 

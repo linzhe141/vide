@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import {
   onAgentEvent,
@@ -33,7 +33,6 @@ export class ThreadsManager {
     sessionId: string
     branchName: string
     headBlockId: string | null
-    createdFromBlockId?: string | null
   }) {
     const time = Date.now()
     const existingRows = await db
@@ -49,10 +48,6 @@ export class ThreadsManager {
         .update(sessionBranches)
         .set({
           headBlockId: data.headBlockId,
-          createdFromBlockId:
-            data.createdFromBlockId === undefined
-              ? existingRow.createdFromBlockId
-              : data.createdFromBlockId,
           updatedAt: time,
         })
         .where(eq(sessionBranches.id, existingRow.id))
@@ -64,7 +59,6 @@ export class ThreadsManager {
       threadId: data.sessionId,
       name: data.branchName,
       headBlockId: data.headBlockId,
-      createdFromBlockId: data.createdFromBlockId ?? data.headBlockId,
       createdAt: time,
       updatedAt: time,
     })
@@ -94,7 +88,6 @@ export class ThreadsManager {
         sessionId: data.sessionId,
         branchName: data.activeBranch,
         headBlockId: null,
-        createdFromBlockId: null,
       })
     })
 
@@ -107,7 +100,6 @@ export class ThreadsManager {
         sessionId: data.sessionId,
         branchName: data.branchName,
         headBlockId: data.sourceWorkflowId,
-        createdFromBlockId: data.sourceWorkflowId,
       })
     })
 
@@ -127,7 +119,6 @@ export class ThreadsManager {
         id: ctx.workflowId,
         threadId: ctx.sessionId,
         parentBlockId: ctx.parentWorkflowId,
-        branchName: ctx.branchName,
         input,
         createdAt: time,
         updatedAt: time,

@@ -9,7 +9,6 @@ export interface SessionWorkflowNode {
   messages: ChatMessage[]
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
-  branchName: string
 }
 
 export type SessionBranchHead = SessionWorkflowNode | null
@@ -17,7 +16,6 @@ export type SessionBranchHead = SessionWorkflowNode | null
 export interface SessionWorkflowSnapshot {
   id: string
   parentWorkflowId: string | null
-  branchName: string
   messages: ChatMessage[]
 }
 
@@ -48,8 +46,6 @@ export class Session {
     this.activeBranch = branchName
 
     const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
-    // 保证数据一致性，因为workflow run 会修改 messages
-    // TODO 后续实现一个commit的逻辑，保证数据的完整性和可追溯性 是否有必要
     const currentBranchCommitNode = this.branchs[this.activeBranch]
     if (!currentBranchCommitNode) {
       this.branchs[this.activeBranch] = workflowCommitNode
@@ -76,7 +72,6 @@ export class Session {
       messages: workflowRuntimeContext.thread.getMessages(),
       parent: null,
       children: [],
-      branchName: this.activeBranch,
     }
     const workflow = new Workflow(workflowRuntimeContext)
     return {
@@ -85,7 +80,7 @@ export class Session {
     }
   }
 
-  fork(newBranchName: string, targetCommitNode: SessionWorkflowNode) {
+  fork(newBranchName: string, targetCommitNode: SessionWorkflowNode | null) {
     this.activeBranch = newBranchName
     this.branchs[newBranchName] = targetCommitNode
     agentEvent.emit('agent-session-forked', {
@@ -111,7 +106,7 @@ export class Session {
   }
 
   compact() {
-    // TODO 实现 compact 的逻辑，合并 messages，减少Token 数量
+    // TODO implement compact to reduce message/token size for long sessions.
   }
 
   static resume(snapshot: SessionSnapshot) {
@@ -127,7 +122,6 @@ export class Session {
         messages: workflow.messages,
         parent: null,
         children: [],
-        branchName: workflow.branchName,
       })
     }
 

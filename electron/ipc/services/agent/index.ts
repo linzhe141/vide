@@ -40,7 +40,6 @@ export class AgentIpcMainService implements IpcMainService {
           id: schema.threadWorkflowBlocks.id,
           userInput: schema.threadWorkflowBlocks.input,
           parentBlockId: schema.threadWorkflowBlocks.parentBlockId,
-          branchName: schema.threadWorkflowBlocks.branchName,
         })
         .from(schema.threadWorkflowBlocks)
         .where(eq(schema.threadWorkflowBlocks.threadId, data.sessionId))
@@ -48,7 +47,6 @@ export class AgentIpcMainService implements IpcMainService {
 
       const blockData: (BlockData & {
         parentBlockId: string | null
-        branchName: string
       })[] = []
       const askUserSubmitValues = new Map<string, string[]>()
 
@@ -73,21 +71,11 @@ export class AgentIpcMainService implements IpcMainService {
           id: block.id,
           userInput: block.userInput,
           parentBlockId: block.parentBlockId,
-          branchName: block.branchName,
           messages: blockMessageRows,
         })
       }
 
-      const isLegacyLinearSession =
-        blockData.length > 0 && blockData.every((block) => block.parentBlockId === null)
-
-      if (isLegacyLinearSession) {
-        blockData.forEach((block, index) => {
-          block.parentBlockId = index > 0 ? blockData[index - 1].id : null
-        })
-      }
-
-      let branchRows = await db
+      const branchRows = await db
         .select({
           name: schema.sessionBranches.name,
           headWorkflowId: schema.sessionBranches.headBlockId,
@@ -95,15 +83,6 @@ export class AgentIpcMainService implements IpcMainService {
         .from(schema.sessionBranches)
         .where(eq(schema.sessionBranches.threadId, data.sessionId))
         .orderBy(asc(schema.sessionBranches.createdAt))
-
-      if (!branchRows.length) {
-        branchRows = [
-          {
-            name: threadRow?.activeBranch || 'main',
-            headWorkflowId: blockData.at(-1)?.id || null,
-          },
-        ]
-      }
 
       this.session = this.agent.resumeSession({
         sessionId: data.sessionId,

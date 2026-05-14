@@ -15,7 +15,6 @@ export const threadWorkflowBlocks = sqliteTable('thread_workflow_blocks', {
     .notNull()
     .references(() => threads.id),
   parentBlockId: text('parent_block_id').references((): AnySQLiteColumn => threadWorkflowBlocks.id),
-  branchName: text('branch_name').notNull().default('main'),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
@@ -30,7 +29,6 @@ export const sessionBranches = sqliteTable(
       .references(() => threads.id),
     name: text('name').notNull(),
     headBlockId: text('head_block_id').references(() => threadWorkflowBlocks.id),
-    createdFromBlockId: text('created_from_block_id').references(() => threadWorkflowBlocks.id),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
@@ -106,12 +104,7 @@ export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ 
   }),
   threadWorkflowBlockMessages: many(threadWorkflowBlockMessages),
   askUserQuestions: one(askUserQuestions),
-  sessionBranchesAsHead: many(sessionBranches, {
-    relationName: 'session_branch_head',
-  }),
-  sessionBranchesAsSource: many(sessionBranches, {
-    relationName: 'session_branch_source',
-  }),
+  sessionBranchesAsHead: many(sessionBranches),
 }))
 
 export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => ({
@@ -122,12 +115,6 @@ export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => 
   headBlock: one(threadWorkflowBlocks, {
     fields: [sessionBranches.headBlockId],
     references: [threadWorkflowBlocks.id],
-    relationName: 'session_branch_head',
-  }),
-  createdFromBlock: one(threadWorkflowBlocks, {
-    fields: [sessionBranches.createdFromBlockId],
-    references: [threadWorkflowBlocks.id],
-    relationName: 'session_branch_source',
   }),
 }))
 
