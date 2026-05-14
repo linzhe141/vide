@@ -1,30 +1,30 @@
 import { ThreadMessageRole } from '@/types'
-import { AgentSession } from './agentSession'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
 import type { BlockData } from '@/electron/ipc/api/channels'
+import { Session } from './session'
 
 export class Agent {
   constructor() {}
 
   createSession() {
-    const agetnSession = new AgentSession()
-    agentEvent.emit('agent-create-session', { sessionId: agetnSession.sessionId })
-    return agetnSession
+    const session = new Session()
+    agentEvent.emit('agent-create-session', { sessionId: session.sessionId })
+    return session
   }
 
-  resumeSession({ sessionId, blockData }: { sessionId: string; blockData: BlockData[] }) {
-    const resumeAgetnSession = new AgentSession()
-    resumeAgetnSession.sessionId = sessionId
-    resumeAgetnSession.workflowBlocks = []
-    for (const block of blockData) {
-      const worlflowBlock = resumeAgetnSession.buildWorkflowBlock(block.userInput)
-      worlflowBlock.runtime.thread.ctx.messages = this.buildChatMessages(block.messages)
+  // resumeSession({ sessionId, blockData }: { sessionId: string; blockData: BlockData[] }) {
+  //   const resumeSession = new Session()
+  //   resumeSession.sessionId = sessionId
+  //   resumeSession.workflowBlocks = []
+  //   for (const block of blockData) {
+  //     const worlflowBlock = resumeSession.buildWorkflowBlock(block.userInput)
+  //     worlflowBlock.runtime.thread.ctx.messages = this.buildChatMessages(block.messages)
 
-      resumeAgetnSession.workflowBlocks.push(worlflowBlock)
-    }
-    return resumeAgetnSession
-  }
+  //     resumeSession.workflowBlocks.push(worlflowBlock)
+  //   }
+  //   return resumeSession
+  // }
 
   buildChatMessages(messages: BlockData['messages']) {
     const chatMessages: ChatMessage[] = []

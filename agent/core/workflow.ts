@@ -12,8 +12,10 @@ import type {
 } from './types'
 import { processLLMStream } from './llm'
 import { workflowEvent } from './event'
-import type { WorkflowRuntimeContext } from './workflowRuntimeContext'
 import { registorTools } from './tools/registor'
+import type { WorkflowEventCtx } from './event/channels'
+import type { Session } from './session'
+import { v4 as uuid } from 'uuid'
 
 export type WorkflowState = 'INPUT' | 'CALL_LLM' | 'CALL_TOOLS' | 'CALL_SINGLE_CALL' | 'COMPLETED'
 type NextStep = {
@@ -308,10 +310,43 @@ it could be split into modules and written in batches.`
   }
 
   buildLLMMessages() {
-    const callLLMMessages: ChatMessage[] = []
-    for (const block of this.runtime.session.workflowBlocks) {
-      callLLMMessages.push(...block.runtime.thread.getMessages())
+    return this.runtime.session.buildLLMMessages()
+  }
+}
+
+export class WorkflowRuntimeContext {
+  readonly session: Session
+  readonly workflowId: string
+  readonly thread: WorkflowThread
+  userInput: string[] = []
+  constructor(options: { session: Session; userInput: string }) {
+    this.session = options.session
+    this.workflowId = uuid()
+    // During initialization, `userInput` contains only one element.
+    this.userInput.push(options.userInput)
+    this.thread = new WorkflowThread()
+  }
+
+  get sessionId() {
+    return this.session.sessionId
+  }
+
+  get workflowEventCtx(): WorkflowEventCtx {
+    return {
+      sessionId: this.sessionId,
+      workflowId: this.workflowId,
     }
-    return callLLMMessages
+  }
+}
+
+export class WorkflowThread {
+  messages: ChatMessage[] = []
+
+  addMessage(message: ChatMessage) {
+    this.messages.push(message)
+  }
+
+  getMessages() {
+    return this.messages
   }
 }

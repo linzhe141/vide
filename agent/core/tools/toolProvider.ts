@@ -1,5 +1,5 @@
 import type { Tool } from '../types'
-import type { WorkflowRuntimeContext } from '../workflowRuntimeContext'
+import type { WorkflowRuntimeContext } from '../workflow'
 
 export abstract class ToolProvider {
   protected runtime: WorkflowRuntimeContext

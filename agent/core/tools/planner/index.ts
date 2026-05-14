@@ -1,6 +1,6 @@
 import { uuid } from '@/app/src/lib/uuid'
 import { plannerEvent } from '../../event'
-import { SessionPlaner } from '../../agentSession'
+import { SessionPlaner } from '../../session'
 import { defineTool, ToolProvider } from '../toolProvider'
 
 export type PlanStep = {

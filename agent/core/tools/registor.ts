@@ -8,8 +8,8 @@ import { Planner } from './planner'
 import { Grep } from './grep'
 import { AskUserQuestionTool } from './askUserQuestion'
 import { SkillTool } from './skill'
-import type { WorkflowRuntimeContext } from '../workflowRuntimeContext'
 import type { Tool } from '../types'
+import type { WorkflowRuntimeContext } from '../workflow'
 
 export function registorTools(runtime: WorkflowRuntimeContext) {
   const timer = new Time(runtime)

@@ -5,7 +5,7 @@ import { Agent } from '@/agent/core/agent'
 import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { logger } from '@/electron/logger'
 
-import type { AgentSession } from '@/agent/core/agentSession'
+import type { Session } from '@/agent/core/session'
 import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/core/event/channels'
 import { db } from '@/electron/databaseManager'
 import { threadWorkflowBlocks } from '@/db/schema'
@@ -16,7 +16,7 @@ import type { PlanStep } from '@/agent/core/tools/planner'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
-  session: AgentSession = null!
+  session: Session = null!
   constructor(private appManager: AppManager) {
     this.registerIpcMainSenders()
     this.agent = new Agent()
