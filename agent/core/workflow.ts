@@ -318,10 +318,19 @@ export class WorkflowRuntimeContext {
   readonly session: Session
   readonly workflowId: string
   readonly thread: WorkflowThread
+  readonly branchName: string
+  readonly parentWorkflowId: string | null
   userInput: string[] = []
-  constructor(options: { session: Session; userInput: string }) {
+  constructor(options: {
+    session: Session
+    userInput: string
+    branchName: string
+    parentWorkflowId: string | null
+  }) {
     this.session = options.session
     this.workflowId = uuid()
+    this.branchName = options.branchName
+    this.parentWorkflowId = options.parentWorkflowId
     // During initialization, `userInput` contains only one element.
     this.userInput.push(options.userInput)
     this.thread = new WorkflowThread()
@@ -335,6 +344,8 @@ export class WorkflowRuntimeContext {
     return {
       sessionId: this.sessionId,
       workflowId: this.workflowId,
+      branchName: this.branchName,
+      parentWorkflowId: this.parentWorkflowId,
     }
   }
 }

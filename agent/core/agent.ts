@@ -2,29 +2,51 @@ import { ThreadMessageRole } from '@/types'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
 import type { BlockData } from '@/electron/ipc/api/channels'
-import { Session } from './session'
+import {
+  Session,
+  type SessionBranchSnapshot,
+  type SessionSnapshot,
+  type SessionWorkflowSnapshot,
+} from './session'
 
 export class Agent {
   constructor() {}
 
   createSession() {
     const session = new Session()
-    agentEvent.emit('agent-create-session', { sessionId: session.sessionId })
+    session.branchs[session.activeBranch] = null
+    agentEvent.emit('agent-create-session', {
+      sessionId: session.sessionId,
+      activeBranch: session.activeBranch,
+    })
     return session
   }
 
-  // resumeSession({ sessionId, blockData }: { sessionId: string; blockData: BlockData[] }) {
-  //   const resumeSession = new Session()
-  //   resumeSession.sessionId = sessionId
-  //   resumeSession.workflowBlocks = []
-  //   for (const block of blockData) {
-  //     const worlflowBlock = resumeSession.buildWorkflowBlock(block.userInput)
-  //     worlflowBlock.runtime.thread.ctx.messages = this.buildChatMessages(block.messages)
+  resumeSession(data: {
+    sessionId: string
+    activeBranch: string
+    branches: SessionBranchSnapshot[]
+    blockData: (BlockData & {
+      parentBlockId: string | null
+      branchName: string
+    })[]
+  }) {
+    const workflows: SessionWorkflowSnapshot[] = data.blockData.map((block) => ({
+      id: block.id,
+      parentWorkflowId: block.parentBlockId,
+      branchName: block.branchName,
+      messages: this.buildChatMessages(block.messages),
+    }))
 
-  //     resumeSession.workflowBlocks.push(worlflowBlock)
-  //   }
-  //   return resumeSession
-  // }
+    const snapshot: SessionSnapshot = {
+      sessionId: data.sessionId,
+      activeBranch: data.activeBranch,
+      workflows,
+      branches: data.branches,
+    }
+
+    return Session.resume(snapshot)
+  }
 
   buildChatMessages(messages: BlockData['messages']) {
     const chatMessages: ChatMessage[] = []

@@ -1,115 +1,94 @@
 import { relations } from 'drizzle-orm'
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 
 export const threads = sqliteTable('threads', {
   id: text('id').primaryKey(),
-
   title: text('title'),
-
+  activeBranch: text('active_branch').notNull().default('main'),
   createdAt: integer('created_at').notNull(),
-
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const threadWorkflowBlocks = sqliteTable('thread_workflow_blocks', {
   id: text('id').primaryKey(),
-
   threadId: text('thread_id')
     .notNull()
     .references(() => threads.id),
-
-  /**
-   * 用户输入
-   */
+  parentBlockId: text('parent_block_id').references((): AnySQLiteColumn => threadWorkflowBlocks.id),
+  branchName: text('branch_name').notNull().default('main'),
   input: text('input').notNull(),
-
   createdAt: integer('created_at').notNull(),
-
   updatedAt: integer('updated_at').notNull(),
 })
 
+export const sessionBranches = sqliteTable(
+  'session_branches',
+  {
+    id: text('id').primaryKey(),
+    threadId: text('thread_id')
+      .notNull()
+      .references(() => threads.id),
+    name: text('name').notNull(),
+    headBlockId: text('head_block_id').references(() => threadWorkflowBlocks.id),
+    createdFromBlockId: text('created_from_block_id').references(() => threadWorkflowBlocks.id),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => ({
+    threadNameUnique: uniqueIndex('session_branches_thread_name_unique').on(
+      table.threadId,
+      table.name
+    ),
+  })
+)
+
 export const threadWorkflowBlockMessages = sqliteTable('thread_workflow_block_messages', {
   id: text('id').primaryKey(),
-
   blockId: text('block_id')
     .notNull()
     .references(() => threadWorkflowBlocks.id),
-
-  /**
-   * ThreadMessageRole
-   */
   role: text('role').notNull(),
-
-  /**
-   * 纯文本
-   */
   content: text('content'),
-
-  /**
-   * toolcall / tool result
-   */
   payload: text('payload'),
-
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const artifacts = sqliteTable('artifacts', {
   id: text('id').primaryKey(),
-
   threadId: text('thread_id')
     .notNull()
     .references(() => threads.id),
-
   artifactWorkspaceName: text('artifact_workspace_name').notNull(),
-
   createdAt: integer('created_at').notNull(),
-
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const planners = sqliteTable('planners', {
   id: text('id').primaryKey(),
-
   threadId: text('thread_id')
     .notNull()
     .references(() => threads.id),
-
-  /**
-   * planner steps JSON
-   */
   planJson: text('plan_json'),
-
   createdAt: integer('created_at').notNull(),
-
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const askUserQuestions = sqliteTable('ask_user_questions', {
   id: text('id').primaryKey(),
-
   blockId: text('block_id')
     .notNull()
     .references(() => threadWorkflowBlocks.id),
-
-  /**
-   * AskUserQuestionDraft
-   */
   draftJson: text('draft_json'),
-
-  /**
-   * 用户提交的答案
-   */
   answerJson: text('answer_json'),
-
   createdAt: integer('created_at').notNull(),
-
   updatedAt: integer('updated_at').notNull(),
 })
 
 export const threadsRelations = relations(threads, ({ many }) => ({
   workflowBlocks: many(threadWorkflowBlocks),
   planners: many(planners),
+  sessionBranches: many(sessionBranches),
 }))
 
 export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ one, many }) => ({
@@ -117,11 +96,39 @@ export const threadWorkflowBlocksRelations = relations(threadWorkflowBlocks, ({ 
     fields: [threadWorkflowBlocks.threadId],
     references: [threads.id],
   }),
-
+  parentBlock: one(threadWorkflowBlocks, {
+    fields: [threadWorkflowBlocks.parentBlockId],
+    references: [threadWorkflowBlocks.id],
+    relationName: 'workflow_block_parent_child',
+  }),
+  childBlocks: many(threadWorkflowBlocks, {
+    relationName: 'workflow_block_parent_child',
+  }),
   threadWorkflowBlockMessages: many(threadWorkflowBlockMessages),
-
-  // user submit 后就是下一个workflow
   askUserQuestions: one(askUserQuestions),
+  sessionBranchesAsHead: many(sessionBranches, {
+    relationName: 'session_branch_head',
+  }),
+  sessionBranchesAsSource: many(sessionBranches, {
+    relationName: 'session_branch_source',
+  }),
+}))
+
+export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => ({
+  thread: one(threads, {
+    fields: [sessionBranches.threadId],
+    references: [threads.id],
+  }),
+  headBlock: one(threadWorkflowBlocks, {
+    fields: [sessionBranches.headBlockId],
+    references: [threadWorkflowBlocks.id],
+    relationName: 'session_branch_head',
+  }),
+  createdFromBlock: one(threadWorkflowBlocks, {
+    fields: [sessionBranches.createdFromBlockId],
+    references: [threadWorkflowBlocks.id],
+    relationName: 'session_branch_source',
+  }),
 }))
 
 export const threadWorkflowBlockMessagesRelations = relations(

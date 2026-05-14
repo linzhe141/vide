@@ -6,6 +6,7 @@ import {
   artifacts,
   askUserQuestions,
   planners,
+  sessionBranches,
   threads,
   threadWorkflowBlockMessages,
   threadWorkflowBlocks,
@@ -19,6 +20,7 @@ export class DevIpcMainService implements IpcMainService {
       await db.delete(threadWorkflowBlockMessages)
       await db.delete(askUserQuestions)
 
+      await db.delete(sessionBranches)
       await db.delete(threadWorkflowBlocks)
 
       await db.delete(planners)

@@ -3,10 +3,15 @@ import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
 const AgentLifecycleEventChannels = {
-  'agent-create-session': null as unknown as { sessionId: string },
+  'agent-create-session': null as unknown as { sessionId: string; activeBranch: string },
   'agent-session-finished': null as unknown as {
     sessionId: string
     userInput: string
+  },
+  'agent-session-forked': null as unknown as {
+    sessionId: string
+    branchName: string
+    sourceWorkflowId: string | null
   },
 }
 export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
@@ -64,7 +69,12 @@ export type ArtifactEvents = {
   [K in ArtifactEventKey]: (data: (typeof ArtifactEventChannels)[K]) => void
 }
 
-export type WorkflowEventCtx = { sessionId: string; workflowId: string }
+export type WorkflowEventCtx = {
+  sessionId: string
+  workflowId: string
+  branchName: string
+  parentWorkflowId: string | null
+}
 const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },

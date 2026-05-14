@@ -1,31 +1,50 @@
+import { v4 as uuid } from 'uuid'
 import { agentEvent } from './event'
 import type { PlanStep } from './tools/planner'
 import type { ChatMessage } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
-import { v4 as uuid } from 'uuid'
 
-// 一个 workflow 为一个 node，因为在中间切换没有任何意义
 export interface SessionWorkflowNode {
-  // 同 workflow
   id: string
   messages: ChatMessage[]
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
+  branchName: string
+}
+
+export type SessionBranchHead = SessionWorkflowNode | null
+
+export interface SessionWorkflowSnapshot {
+  id: string
+  parentWorkflowId: string | null
+  branchName: string
+  messages: ChatMessage[]
+}
+
+export interface SessionBranchSnapshot {
+  name: string
+  headWorkflowId: string | null
+}
+
+export interface SessionSnapshot {
+  sessionId: string
+  activeBranch: string
+  workflows: SessionWorkflowSnapshot[]
+  branches: SessionBranchSnapshot[]
 }
 
 export class Session {
   sessionId: string
-  // branch
-  activeBranch: string = 'main'
-  branchs: Record<string, SessionWorkflowNode> = {}
-  // planners
+  activeBranch = 'main'
+  branchs: Record<string, SessionBranchHead> = {}
   planners: SessionPlaner[] = []
 
-  constructor() {
-    this.sessionId = uuid()
+  constructor(options?: { sessionId?: string; activeBranch?: string }) {
+    this.sessionId = options?.sessionId || uuid()
+    this.activeBranch = options?.activeBranch || 'main'
   }
 
-  async run(userInput: string, branchName: string = 'main') {
+  async run(userInput: string, branchName: string = this.activeBranch) {
     this.activeBranch = branchName
 
     const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
@@ -39,21 +58,25 @@ export class Session {
       currentBranchCommitNode.children.push(workflowCommitNode)
       this.branchs[this.activeBranch] = workflowCommitNode
     }
+
     await workflow.run(userInput)
     agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
   }
 
   createWorkflow(userInput: string) {
+    const parentWorkflowNode = this.branchs[this.activeBranch]
     const workflowRuntimeContext = new WorkflowRuntimeContext({
       session: this,
       userInput,
+      branchName: this.activeBranch,
+      parentWorkflowId: parentWorkflowNode?.id || null,
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
-      // 使用同一个 message, 保证一致性
       messages: workflowRuntimeContext.thread.getMessages(),
       parent: null,
       children: [],
+      branchName: this.activeBranch,
     }
     const workflow = new Workflow(workflowRuntimeContext)
     return {
@@ -65,6 +88,11 @@ export class Session {
   fork(newBranchName: string, targetCommitNode: SessionWorkflowNode) {
     this.activeBranch = newBranchName
     this.branchs[newBranchName] = targetCommitNode
+    agentEvent.emit('agent-session-forked', {
+      sessionId: this.sessionId,
+      branchName: newBranchName,
+      sourceWorkflowId: targetCommitNode?.id || null,
+    })
   }
 
   buildLLMMessages() {
@@ -78,16 +106,57 @@ export class Session {
       }
       return result
     }
+
     return traverse(currentBranchCommitNode)
   }
 
   compact() {
     // TODO 实现 compact 的逻辑，合并 messages，减少Token 数量
   }
+
+  static resume(snapshot: SessionSnapshot) {
+    const session = new Session({
+      sessionId: snapshot.sessionId,
+      activeBranch: snapshot.activeBranch,
+    })
+    const workflowNodeMap = new Map<string, SessionWorkflowNode>()
+
+    for (const workflow of snapshot.workflows) {
+      workflowNodeMap.set(workflow.id, {
+        id: workflow.id,
+        messages: workflow.messages,
+        parent: null,
+        children: [],
+        branchName: workflow.branchName,
+      })
+    }
+
+    for (const workflow of snapshot.workflows) {
+      if (!workflow.parentWorkflowId) continue
+      const node = workflowNodeMap.get(workflow.id)
+      const parentNode = workflowNodeMap.get(workflow.parentWorkflowId)
+      if (!node || !parentNode) continue
+      node.parent = parentNode
+      parentNode.children.push(node)
+    }
+
+    for (const branch of snapshot.branches) {
+      session.branchs[branch.name] = branch.headWorkflowId
+        ? (workflowNodeMap.get(branch.headWorkflowId) ?? null)
+        : null
+    }
+
+    if (!(session.activeBranch in session.branchs)) {
+      session.branchs[session.activeBranch] = null
+    }
+
+    return session
+  }
 }
 
 export class SessionPlaner {
   id: string
+
   constructor(public plans: PlanStep[]) {
     this.id = uuid()
   }

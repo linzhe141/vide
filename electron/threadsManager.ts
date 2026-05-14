@@ -1,4 +1,5 @@
-import type { AppManager } from './appManager'
+import { eq, and } from 'drizzle-orm'
+import { v4 as uuid } from 'uuid'
 import {
   onAgentEvent,
   onArtifactEvent,
@@ -6,20 +7,20 @@ import {
   onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
-import { v4 as uuid } from 'uuid'
-import { db } from './databaseManager'
+import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
+import type { PlanStep } from '@/agent/core/tools/planner'
+import { ThreadMessageRole } from '@/types'
 import {
   artifacts,
   askUserQuestions,
   planners,
+  sessionBranches,
   threads,
   threadWorkflowBlockMessages,
   threadWorkflowBlocks,
 } from '@/db/schema'
-import { eq } from 'drizzle-orm'
-import { ThreadMessageRole } from '@/types'
-import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
-import type { PlanStep } from '@/agent/core/tools/planner'
+import { db } from './databaseManager'
+import type { AppManager } from './appManager'
 
 export class ThreadsManager {
   constructor(private app: AppManager) {}
@@ -28,47 +29,126 @@ export class ThreadsManager {
     this.setupAgentEvents()
   }
 
-  // 只有end后才存入数据库
+  private async upsertSessionBranch(data: {
+    sessionId: string
+    branchName: string
+    headBlockId: string | null
+    createdFromBlockId?: string | null
+  }) {
+    const time = Date.now()
+    const existingRows = await db
+      .select()
+      .from(sessionBranches)
+      .where(
+        and(eq(sessionBranches.threadId, data.sessionId), eq(sessionBranches.name, data.branchName))
+      )
+
+    const existingRow = existingRows[0]
+    if (existingRow) {
+      await db
+        .update(sessionBranches)
+        .set({
+          headBlockId: data.headBlockId,
+          createdFromBlockId:
+            data.createdFromBlockId === undefined
+              ? existingRow.createdFromBlockId
+              : data.createdFromBlockId,
+          updatedAt: time,
+        })
+        .where(eq(sessionBranches.id, existingRow.id))
+      return
+    }
+
+    await db.insert(sessionBranches).values({
+      id: uuid(),
+      threadId: data.sessionId,
+      name: data.branchName,
+      headBlockId: data.headBlockId,
+      createdFromBlockId: data.createdFromBlockId ?? data.headBlockId,
+      createdAt: time,
+      updatedAt: time,
+    })
+  }
+
+  private async updateThreadSessionState(data: { sessionId: string; activeBranch: string }) {
+    await db
+      .update(threads)
+      .set({
+        activeBranch: data.activeBranch,
+        updatedAt: Date.now(),
+      })
+      .where(eq(threads.id, data.sessionId))
+  }
+
   setupAgentEvents() {
     onAgentEvent('agent-create-session', async (data) => {
       const time = Date.now()
       await db.insert(threads).values({
         id: data.sessionId,
         title: '',
+        activeBranch: data.activeBranch,
         createdAt: time,
         updatedAt: time,
       })
+      await this.upsertSessionBranch({
+        sessionId: data.sessionId,
+        branchName: data.activeBranch,
+        headBlockId: null,
+        createdFromBlockId: null,
+      })
     })
 
-    onWorkflowEvent('workflow-start', async ({ input, ctx: { sessionId, workflowId } }) => {
-      const time = Date.now()
+    onAgentEvent('agent-session-forked', async (data) => {
+      await this.updateThreadSessionState({
+        sessionId: data.sessionId,
+        activeBranch: data.branchName,
+      })
+      await this.upsertSessionBranch({
+        sessionId: data.sessionId,
+        branchName: data.branchName,
+        headBlockId: data.sourceWorkflowId,
+        createdFromBlockId: data.sourceWorkflowId,
+      })
+    })
 
-      const rows = await db.select().from(threads).where(eq(threads.id, sessionId))
+    onWorkflowEvent('workflow-start', async ({ input, ctx }) => {
+      const time = Date.now()
+      const rows = await db.select().from(threads).where(eq(threads.id, ctx.sessionId))
       if (rows.length && !rows[0].title) {
-        await db.update(threads).set({ title: input }).where(eq(threads.id, sessionId))
+        await db.update(threads).set({ title: input }).where(eq(threads.id, ctx.sessionId))
       }
 
-      // insert workflow block
+      await this.updateThreadSessionState({
+        sessionId: ctx.sessionId,
+        activeBranch: ctx.branchName,
+      })
+
       await db.insert(threadWorkflowBlocks).values({
-        id: workflowId,
-        threadId: sessionId,
+        id: ctx.workflowId,
+        threadId: ctx.sessionId,
+        parentBlockId: ctx.parentWorkflowId,
+        branchName: ctx.branchName,
         input,
         createdAt: time,
         updatedAt: time,
       })
-      // insert workflow block message
+      await this.upsertSessionBranch({
+        sessionId: ctx.sessionId,
+        branchName: ctx.branchName,
+        headBlockId: ctx.workflowId,
+      })
+
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         role: ThreadMessageRole.User,
-        blockId: workflowId,
+        blockId: ctx.workflowId,
         content: input,
         createdAt: time,
         updatedAt: time,
         payload: '',
       })
-
-      // TODO update title
     })
+
     onWorkflowEvent('workflow-finished', async () => {})
     onWorkflowEvent('workflow-error', async ({ ctx, error }) => {
       console.log('onElectron main get workflow-error', ctx)
@@ -81,28 +161,30 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-reasoning-start', async () => {})
     onWorkflowEvent('workflow-llm-reasoning-delta', async () => {})
     onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId }, content }) => {
+      const time = Date.now()
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantReason,
-        content: content,
+        content,
         payload: '',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: time,
+        updatedAt: time,
       })
     })
 
     onWorkflowEvent('workflow-llm-text-start', async () => {})
     onWorkflowEvent('workflow-llm-text-delta', async () => {})
     onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId }, content }) => {
+      const time = Date.now()
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.AssistantText,
-        content: content,
+        content,
         payload: '',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: time,
+        updatedAt: time,
       })
     })
 
@@ -110,14 +192,15 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-tool-call-name', async () => {})
     onWorkflowEvent('workflow-llm-tool-call-arguments', async () => {})
     onWorkflowEvent('workflow-llm-tool-calls-end', async ({ ctx: { workflowId }, toolCalls }) => {
+      const time = Date.now()
       await db.insert(threadWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
         role: ThreadMessageRole.ToolCalls,
         content: '',
         payload: JSON.stringify(toolCalls),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: time,
+        updatedAt: time,
       })
     })
 
@@ -159,7 +242,6 @@ export class ThreadsManager {
       })
     })
 
-    // runtime
     onPalnnerEvent('planner-end-generate', async ({ sessionId, plannerId, plans }) => {
       const time = Date.now()
       await db.insert(planners).values({
@@ -172,70 +254,61 @@ export class ThreadsManager {
     })
     onPalnnerEvent('planner-execute-item-start', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
-      if (!target.length) {
-        return
-      }
+      if (!target.length) return
       const targetRow = target[0]
       const planJson = JSON.parse(targetRow.planJson ?? '[]') as PlanStep[]
-      const uptated = planJson.map((i) => {
-        if (i.id === plan.id) {
-          i.status = plan.status
+      const updated = planJson.map((item) => {
+        if (item.id === plan.id) {
+          item.status = plan.status
         }
-        return i
+        return item
       })
 
-      const time = Date.now()
       await db
         .update(planners)
         .set({
-          planJson: JSON.stringify(uptated),
-          updatedAt: time,
+          planJson: JSON.stringify(updated),
+          updatedAt: Date.now(),
         })
         .where(eq(planners.id, plannerId))
     })
     onPalnnerEvent('planner-execute-item-success', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
-      if (!target.length) {
-        return
-      }
+      if (!target.length) return
       const targetRow = target[0]
       const planJson = JSON.parse(targetRow.planJson ?? '[]') as PlanStep[]
-      const uptated = planJson.map((i) => {
-        if (i.id === plan.id) {
-          i.status = plan.status
+      const updated = planJson.map((item) => {
+        if (item.id === plan.id) {
+          item.status = plan.status
         }
-        return i
+        return item
       })
 
-      const time = Date.now()
       await db
         .update(planners)
         .set({
-          planJson: JSON.stringify(uptated),
-          updatedAt: time,
+          planJson: JSON.stringify(updated),
+          updatedAt: Date.now(),
         })
         .where(eq(planners.id, plannerId))
     })
     onPalnnerEvent('planner-execute-item-error', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
-      if (!target.length) {
-        return
-      }
+      if (!target.length) return
       const targetRow = target[0]
       const planJson = JSON.parse(targetRow.planJson ?? '[]') as PlanStep[]
-      const uptated = planJson.map((i) => {
-        if (i.id === plan.id) {
-          i.status = plan.status
+      const updated = planJson.map((item) => {
+        if (item.id === plan.id) {
+          item.status = plan.status
         }
-        return i
+        return item
       })
 
-      const time = Date.now()
       await db
         .update(planners)
         .set({
-          planJson: JSON.stringify(uptated),
-          updatedAt: time,
+          planJson: JSON.stringify(updated),
+          updatedAt: Date.now(),
         })
         .where(eq(planners.id, plannerId))
     })
@@ -260,7 +333,6 @@ export class ThreadsManager {
 
     onArtifactEvent('artifacts-created-workspace', async ({ sessionId, workspaceName }) => {
       const time = Date.now()
-
       await db.insert(artifacts).values({
         id: uuid(),
         threadId: sessionId,

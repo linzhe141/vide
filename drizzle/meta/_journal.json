@@ -15,6 +15,13 @@
       "when": 1773902302889,
       "tag": "0001_marvelous_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778771281544,
+      "tag": "0002_aromatic_ronan",
+      "breakpoints": true
     }
   ]
 }
