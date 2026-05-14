@@ -1,23 +1,24 @@
 import { cn } from '@/app/src/lib/utils'
-import { useThreadPlanners, type PlanStep } from '../../store/threadStore'
-import { useChatContext } from '../../components/chat/ChatProvider';
+import { useChatContext } from '../../components/chat/ChatProvider'
+import { useSessionPlanners, type PlanStep } from '../../store/sessionStore'
 
 export function PlannersDisplay({ className }: { className?: string }) {
-  const { threadId } = useChatContext()
+  const { sessionId } = useChatContext()
+  const planners = useSessionPlanners(sessionId)
 
-  const planners = useThreadPlanners(threadId)
-  if (!planners?.length)
+  if (!planners?.length) {
     return (
       <div className={cn('text-text-info flex justify-center p-4', className)}>
-        当前 thread 没有 planner
+        当前 session 没有 planner
       </div>
     )
+  }
 
   return (
     <div className={cn('space-y-4 p-4', className)}>
       {planners.map((planner) => (
         <div key={planner.id} className='bg-background rounded-lg border p-4 shadow-sm'>
-          <Planner planner={planner}></Planner>
+          <Planner planner={planner} />
         </div>
       ))}
     </div>

@@ -2,7 +2,7 @@ import { DatabaseManager } from './databaseManager'
 import { WindowManager } from './windowManager'
 import { setupApplicationMenu } from './menu'
 import { IpcService } from './ipc'
-import { ThreadsManager } from './threadsManager'
+import { SessionsManager } from './sessionsManager'
 import { AgentManager } from './agentManager'
 
 export class AppManager {
@@ -10,14 +10,14 @@ export class AppManager {
   databaseManager: DatabaseManager
   windowManager: WindowManager
   ipcService: IpcService
-  threadsManager: ThreadsManager
+  sessionsManager: SessionsManager
 
   constructor() {
     this.agentManager = new AgentManager(this)
     this.databaseManager = new DatabaseManager(this)
     this.windowManager = new WindowManager(this)
     this.ipcService = new IpcService(this)
-    this.threadsManager = new ThreadsManager(this)
+    this.sessionsManager = new SessionsManager(this)
   }
 
   init() {
@@ -25,7 +25,7 @@ export class AppManager {
     this.databaseManager.init()
     this.windowManager.init()
     this.ipcService.registerIpcMainHandle()
-    this.threadsManager.init()
+    this.sessionsManager.init()
 
     setupApplicationMenu()
   }

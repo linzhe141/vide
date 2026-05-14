@@ -9,7 +9,7 @@ import React, {
   type PropsWithChildren,
 } from 'react'
 import { cn } from '../../lib/utils'
-import { useThreadBlocks, useThreadPlanners } from '../../store/threadStore'
+import { useSessionBlocks, useSessionPlanners } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
 import { ArrowDown, FileText, ListChecks } from 'lucide-react'
@@ -49,7 +49,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
 }
 
 export function ChatLayout({ children }: PropsWithChildren) {
-  const { threadId } = useChatContext()
+  const { sessionId } = useChatContext()
 
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<'Artifacts' | 'Planners'>('Artifacts')
@@ -73,7 +73,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
   }
   return (
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
-      <InitSession threadId={threadId} />
+      <InitSession sessionId={sessionId} />
       <div className='flex h-0 flex-1'>
         {/* 主区域 */}
         <div className='flex min-w-[550px] flex-1 flex-col'>
@@ -107,7 +107,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
           })}
         >
           {type === 'Artifacts' && (
-            <ArtifactsDisplay threadId={threadId} className={cn({ 'whitespace-nowrap': moving })} />
+            <ArtifactsDisplay sessionId={sessionId} className={cn({ 'whitespace-nowrap': moving })} />
           )}
           {type === 'Planners' && (
             <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
@@ -119,8 +119,8 @@ export function ChatLayout({ children }: PropsWithChildren) {
 }
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
-  const { threadId } = useChatContext()
-  const blocks = useThreadBlocks(threadId)
+  const { sessionId } = useChatContext()
+  const blocks = useSessionBlocks(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
   const { scrollContainerRef, scrollToBottom } = useChatLayout()
@@ -168,8 +168,8 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
 }
 
 export function ChatLayoutInput({ children }: PropsWithChildren) {
-  const { threadId } = useChatContext()
-  const planners = useThreadPlanners(threadId)
+  const { sessionId } = useChatContext()
+  const planners = useSessionPlanners(sessionId)
   // const pendingPlanner = planners?.[0] // for test
   const pendingPlanner = planners?.find((i) => i.plan.some((i) => i.status !== 'completed'))
 

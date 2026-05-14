@@ -10,33 +10,33 @@ export type PlanStep = {
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
 
-export interface UserInputThreadMessage {
+export interface UserInputSessionMessage {
   id: string
   role: 'user'
   content: string
 }
 
-export interface AssistantReasonThreadMessage {
+export interface AssistantReasonSessionMessage {
   id: string
   role: 'assistant-reason'
   content: string
   reasoning: string
 }
 
-export interface AssistantTextThreadMessage {
+export interface AssistantTextSessionMessage {
   id: string
   role: 'assistant-text'
   content: string
   reasoning: string
 }
 
-export interface ToolCallThreadMessage {
+export interface ToolCallSessionMessage {
   id: string
   role: 'tool-call'
   toolCalls: ToolCall[]
 }
 
-export interface ToolResultThreadMessage {
+export interface ToolResultSessionMessage {
   id: string
   role: 'tool-result'
   toolCallId: string
@@ -48,7 +48,7 @@ export interface ToolResultThreadMessage {
   durationMs?: number
 }
 
-export interface AskUserThreadMessage {
+export interface AskUserSessionMessage {
   id: string
   role: 'ask-user'
   completed: boolean
@@ -59,20 +59,20 @@ export interface AskUserThreadMessage {
   options: { label: string; value: string; description: string }[]
 }
 
-export interface ErrorThreadMessage {
+export interface ErrorSessionMessage {
   id: string
   role: 'error'
   error: any
 }
 
-export type ThreadMessage =
-  | UserInputThreadMessage
-  | AssistantReasonThreadMessage
-  | AssistantTextThreadMessage
-  | ToolCallThreadMessage
-  | ToolResultThreadMessage
-  | AskUserThreadMessage
-  | ErrorThreadMessage
+export type SessionMessage =
+  | UserInputSessionMessage
+  | AssistantReasonSessionMessage
+  | AssistantTextSessionMessage
+  | ToolCallSessionMessage
+  | ToolResultSessionMessage
+  | AskUserSessionMessage
+  | ErrorSessionMessage
 
 export type ConversationBlock = {
   id: string
@@ -80,7 +80,7 @@ export type ConversationBlock = {
   childBlockIds: string[]
   status: 'running' | 'finished' | 'error'
   input: string
-  messages: ThreadMessage[]
+  messages: SessionMessage[]
   runtime: {
     isStreaming: boolean
     waitingHuman: boolean
@@ -92,11 +92,11 @@ export type SessionBranch = {
   headBlockId: string | null
 }
 
-export type ThreadRuntime = {
+export type SessionRuntime = {
   running: boolean
 }
 
-export type Thread = {
+export type Session = {
   sessionId: string
   activeBranch: string
   branches: SessionBranch[]
@@ -105,32 +105,32 @@ export type Thread = {
   blockOrder: string[]
   currentBlockId?: string
   currentPlannerId?: string
-  runtime: ThreadRuntime
+  runtime: SessionRuntime
   artifacts: {
     id: string
-    threadId: string
+    sessionId: string
     artifactWorkspaceName: string
     createdAt: number
     updatedAt: number
   }[]
 }
 
-export type ThreadState = {
-  threads: Thread[]
+export type SessionState = {
+  sessions: Session[]
 }
 
-type ThreadActions = {
+type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
-    buildFromDatabase: (data: Thread) => void
+    buildFromDatabase: (data: Session) => void
     updateAskUserSubmitValue: (id: string, value: string[]) => void
     switchBranch: (sessionId: string, branchName: string) => void
   }
 }
 
-export const useThreadStore = create<ThreadState & ThreadActions>()(
+export const useSessionStore = create<SessionState & SessionActions>()(
   immer((set) => ({
-    threads: [],
+    sessions: [],
     actions: {
       handleEvent(event) {
         set((state) => {
@@ -139,16 +139,16 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          const target = state.threads.find((item) => item.sessionId === data.sessionId)
+          const target = state.sessions.find((item) => item.sessionId === data.sessionId)
           if (target) return
-          state.threads.push(data)
+          state.sessions.push(data)
         })
       },
       updateAskUserSubmitValue(id, value) {
         set((state) => {
-          for (const thread of state.threads) {
-            for (const blockId of thread.blockOrder) {
-              const block = thread.blockMap[blockId]
+          for (const session of state.sessions) {
+            for (const blockId of session.blockOrder) {
+              const block = session.blockMap[blockId]
               if (!block) continue
               const msg = block.messages.find((message) => message.id === id)
               if (msg && msg.role === 'ask-user') {
@@ -161,39 +161,39 @@ export const useThreadStore = create<ThreadState & ThreadActions>()(
       },
       switchBranch(sessionId, branchName) {
         set((state) => {
-          const thread = state.threads.find((item) => item.sessionId === sessionId)
-          if (!thread) return
-          const targetBranch = thread.branches.find((item) => item.name === branchName)
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const targetBranch = session.branches.find((item) => item.name === branchName)
           if (!targetBranch) return
-          thread.activeBranch = branchName
-          thread.currentBlockId = targetBranch.headBlockId || undefined
+          session.activeBranch = branchName
+          session.currentBlockId = targetBranch.headBlockId || undefined
         })
       },
     },
   }))
 )
 
-export const useThreadStoreActions = () => useThreadStore((state) => state.actions)
+export const useSessionStoreActions = () => useSessionStore((state) => state.actions)
 
-export const useThread = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId))
+export const useSession = (sessionId: string) =>
+  useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId))
 
-export const useThreadBlocks = (threadId: string) => {
-  const thread = useThread(threadId)
-  if (!thread) return undefined
-  return selectBlocksForActiveBranch(thread)
+export const useSessionBlocks = (sessionId: string) => {
+  const session = useSession(sessionId)
+  if (!session) return undefined
+  return selectBlocksForActiveBranch(session)
 }
 
-export const useThreadPlanners = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.planner)
+export const useSessionPlanners = (sessionId: string) =>
+  useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId)?.planner)
 
-export const useThreadRunning = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.runtime.running)
+export const useSessionRunning = (sessionId: string) =>
+  useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId)?.runtime.running)
 
-export function selectBlocksForActiveBranch(thread: Thread) {
-  const activeBranch = thread.branches.find((item) => item.name === thread.activeBranch)
-  const pathIds = buildBlockPath(activeBranch?.headBlockId || null, thread.blockMap)
-  return pathIds.map((blockId) => thread.blockMap[blockId]).filter(Boolean)
+export function selectBlocksForActiveBranch(session: Session) {
+  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+  const pathIds = buildBlockPath(activeBranch?.headBlockId || null, session.blockMap)
+  return pathIds.map((blockId) => session.blockMap[blockId]).filter(Boolean)
 }
 
 export function buildBlockPath(
@@ -225,10 +225,10 @@ export function getBranchPathIds(branch: SessionBranch, blockMap: Record<string,
   return buildBlockPath(branch.headBlockId, blockMap)
 }
 
-export function getBranchSelectorOptions(thread: Thread, blockId: string) {
-  const branchPaths = thread.branches.map((branch) => ({
+export function getBranchSelectorOptions(session: Session, blockId: string) {
+  const branchPaths = session.branches.map((branch) => ({
     branch,
-    pathIds: getBranchPathIds(branch, thread.blockMap),
+    pathIds: getBranchPathIds(branch, session.blockMap),
   }))
   const candidateBranches = branchPaths
     .filter(({ pathIds }) => pathIds.includes(blockId))
@@ -236,7 +236,7 @@ export function getBranchSelectorOptions(thread: Thread, blockId: string) {
       name: branch.name,
       headBlockId: branch.headBlockId,
       nextBlockId: pathIds[pathIds.indexOf(blockId) + 1] ?? null,
-      isActive: branch.name === thread.activeBranch,
+      isActive: branch.name === session.activeBranch,
     }))
 
   const grouped = new Map<string, (typeof candidateBranches)[number]>()

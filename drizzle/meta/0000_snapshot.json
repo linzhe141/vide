@@ -1,9 +1,68 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e73a5b14-901d-47ee-a2b0-3fe2f9c15842",
+  "id": "51c61f3e-657e-4d32-aa5c-0c8de0e588ef",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "artifacts": {
+      "name": "artifacts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "artifact_workspace_name": {
+          "name": "artifact_workspace_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "artifacts_session_id_sessions_id_fk": {
+          "name": "artifacts_session_id_sessions_id_fk",
+          "tableFrom": "artifacts",
+          "tableTo": "sessions",
+          "columnsFrom": [
+            "session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "ask_user_questions": {
       "name": "ask_user_questions",
       "columns": {
@@ -52,10 +111,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "ask_user_questions_block_id_thread_workflow_blocks_id_fk": {
-          "name": "ask_user_questions_block_id_thread_workflow_blocks_id_fk",
+        "ask_user_questions_block_id_session_workflow_blocks_id_fk": {
+          "name": "ask_user_questions_block_id_session_workflow_blocks_id_fk",
           "tableFrom": "ask_user_questions",
-          "tableTo": "thread_workflow_blocks",
+          "tableTo": "session_workflow_blocks",
           "columnsFrom": [
             "block_id"
           ],
@@ -80,8 +139,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "thread_id": {
-          "name": "thread_id",
+        "session_id": {
+          "name": "session_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -111,12 +170,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "planners_thread_id_threads_id_fk": {
-          "name": "planners_thread_id_threads_id_fk",
+        "planners_session_id_sessions_id_fk": {
+          "name": "planners_session_id_sessions_id_fk",
           "tableFrom": "planners",
-          "tableTo": "threads",
+          "tableTo": "sessions",
           "columnsFrom": [
-            "thread_id"
+            "session_id"
           ],
           "columnsTo": [
             "id"
@@ -129,8 +188,96 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "thread_workflow_block_messages": {
-      "name": "thread_workflow_block_messages",
+    "session_branches": {
+      "name": "session_branches",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "head_block_id": {
+          "name": "head_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "session_branches_session_name_unique": {
+          "name": "session_branches_session_name_unique",
+          "columns": [
+            "session_id",
+            "name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "session_branches_session_id_sessions_id_fk": {
+          "name": "session_branches_session_id_sessions_id_fk",
+          "tableFrom": "session_branches",
+          "tableTo": "sessions",
+          "columnsFrom": [
+            "session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "session_branches_head_block_id_session_workflow_blocks_id_fk": {
+          "name": "session_branches_head_block_id_session_workflow_blocks_id_fk",
+          "tableFrom": "session_branches",
+          "tableTo": "session_workflow_blocks",
+          "columnsFrom": [
+            "head_block_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "session_workflow_block_messages": {
+      "name": "session_workflow_block_messages",
       "columns": {
         "id": {
           "name": "id",
@@ -184,10 +331,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "thread_workflow_block_messages_block_id_thread_workflow_blocks_id_fk": {
-          "name": "thread_workflow_block_messages_block_id_thread_workflow_blocks_id_fk",
-          "tableFrom": "thread_workflow_block_messages",
-          "tableTo": "thread_workflow_blocks",
+        "session_workflow_block_messages_block_id_session_workflow_blocks_id_fk": {
+          "name": "session_workflow_block_messages_block_id_session_workflow_blocks_id_fk",
+          "tableFrom": "session_workflow_block_messages",
+          "tableTo": "session_workflow_blocks",
           "columnsFrom": [
             "block_id"
           ],
@@ -202,8 +349,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "thread_workflow_blocks": {
-      "name": "thread_workflow_blocks",
+    "session_workflow_blocks": {
+      "name": "session_workflow_blocks",
       "columns": {
         "id": {
           "name": "id",
@@ -212,11 +359,18 @@
           "notNull": true,
           "autoincrement": false
         },
-        "thread_id": {
-          "name": "thread_id",
+        "session_id": {
+          "name": "session_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "parent_block_id": {
+          "name": "parent_block_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "input": {
@@ -243,12 +397,25 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "thread_workflow_blocks_thread_id_threads_id_fk": {
-          "name": "thread_workflow_blocks_thread_id_threads_id_fk",
-          "tableFrom": "thread_workflow_blocks",
-          "tableTo": "threads",
+        "session_workflow_blocks_session_id_sessions_id_fk": {
+          "name": "session_workflow_blocks_session_id_sessions_id_fk",
+          "tableFrom": "session_workflow_blocks",
+          "tableTo": "sessions",
           "columnsFrom": [
-            "thread_id"
+            "session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "session_workflow_blocks_parent_block_id_session_workflow_blocks_id_fk": {
+          "name": "session_workflow_blocks_parent_block_id_session_workflow_blocks_id_fk",
+          "tableFrom": "session_workflow_blocks",
+          "tableTo": "session_workflow_blocks",
+          "columnsFrom": [
+            "parent_block_id"
           ],
           "columnsTo": [
             "id"
@@ -261,8 +428,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "threads": {
-      "name": "threads",
+    "sessions": {
+      "name": "sessions",
       "columns": {
         "id": {
           "name": "id",
@@ -277,6 +444,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "active_branch": {
+          "name": "active_branch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'main'"
         },
         "created_at": {
           "name": "created_at",

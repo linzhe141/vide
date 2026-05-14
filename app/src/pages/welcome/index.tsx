@@ -1,24 +1,24 @@
 import { useState } from 'react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
-import { useThreads } from '../../hooks/useThreads'
+import { useSessions } from '../../hooks/useSessions'
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import { MoveRight } from 'lucide-react'
 import LOGOIMG from './logo.png'
 
 export function Welcome() {
-  const { createThread } = useThreads()
+  const { createSession } = useSessions()
 
   const [input, setInput] = useState('')
   const navigate = useNavigate()
   const handleSend = async () => {
     if (!input.trim()) return
     context.firstInput = input
-    const threadId = await createThread()
+    const sessionId = await createSession()
 
     setInput('')
-    navigate('/chat/' + threadId)
+    navigate('/chat/' + sessionId)
   }
 
   return (

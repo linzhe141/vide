@@ -71,7 +71,7 @@ export class Workflow {
   }
 
   stateInput(payload: UserInputStepPayload): NextStep {
-    this.runtime.thread.addMessage({ role: 'user', content: payload.input })
+    this.runtime.workflowSession.addMessage({ role: 'user', content: payload.input })
     return {
       state: 'CALL_LLM',
       payload: {
@@ -163,7 +163,7 @@ export class Workflow {
     if (toolCalls.length) {
       assistantMessage.tool_calls = toolCalls
     }
-    this.runtime.thread.addMessage(assistantMessage)
+    this.runtime.workflowSession.addMessage(assistantMessage)
 
     if (toolCalls.length) {
       return { state: 'CALL_TOOLS', payload: { toolCalls } }
@@ -185,7 +185,7 @@ export class Workflow {
     if (!tool) {
       const errorMessage = `Tool not found: ${toolName}`
       const finishedAt = Date.now()
-      this.runtime.thread.addMessage({
+      this.runtime.workflowSession.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
         content: errorMessage,
@@ -216,7 +216,7 @@ export class Workflow {
 Perhaps the [fs_write_file tool] is writing too much content to the file;
 it could be split into modules and written in batches.`
       }
-      this.runtime.thread.addMessage({
+      this.runtime.workflowSession.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
         content: errorMessage,
@@ -248,7 +248,7 @@ it could be split into modules and written in batches.`
     if (toolResult.success) {
       reason = toolResult.result!.reason
       const result = toolResult.result!.result
-      this.runtime.thread.addMessage({
+      this.runtime.workflowSession.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
         content: JSON.stringify(toolResult.result),
@@ -267,7 +267,7 @@ it could be split into modules and written in batches.`
       })
     } else {
       const error = toolResult.error
-      this.runtime.thread.addMessage({
+      this.runtime.workflowSession.addMessage({
         role: 'tool',
         tool_call_id: toolCall.id,
         content: 'An exception occurred while executing toolCall: ' + String(error),
@@ -310,14 +310,14 @@ it could be split into modules and written in batches.`
   }
 
   buildLLMMessages() {
-    return this.runtime.session.buildLLMMessages()
+    return this.runtime.rootSession.buildLLMMessages()
   }
 }
 
 export class WorkflowRuntimeContext {
-  readonly session: Session
+  readonly rootSession: Session
   readonly workflowId: string
-  readonly thread: WorkflowThread
+  readonly workflowSession: WorkflowSession
   readonly branchName: string
   readonly parentWorkflowId: string | null
   userInput: string[] = []
@@ -327,17 +327,17 @@ export class WorkflowRuntimeContext {
     branchName: string
     parentWorkflowId: string | null
   }) {
-    this.session = options.session
+    this.rootSession = options.session
     this.workflowId = uuid()
     this.branchName = options.branchName
     this.parentWorkflowId = options.parentWorkflowId
     // During initialization, `userInput` contains only one element.
     this.userInput.push(options.userInput)
-    this.thread = new WorkflowThread()
+    this.workflowSession = new WorkflowSession()
   }
 
   get sessionId() {
-    return this.session.sessionId
+    return this.rootSession.sessionId
   }
 
   get workflowEventCtx(): WorkflowEventCtx {
@@ -350,7 +350,7 @@ export class WorkflowRuntimeContext {
   }
 }
 
-export class WorkflowThread {
+export class WorkflowSession {
   messages: ChatMessage[] = []
 
   addMessage(message: ChatMessage) {

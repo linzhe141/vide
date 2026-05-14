@@ -29,21 +29,21 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('agent-resume-session', async (data) => {
-      const threadRows = await db
+      const sessionRows = await db
         .select()
-        .from(schema.threads)
-        .where(eq(schema.threads.id, data.sessionId))
-      const threadRow = threadRows[0]
+        .from(schema.sessions)
+        .where(eq(schema.sessions.id, data.sessionId))
+      const sessionRow = sessionRows[0]
 
       const blocks = await db
         .select({
-          id: schema.threadWorkflowBlocks.id,
-          userInput: schema.threadWorkflowBlocks.input,
-          parentBlockId: schema.threadWorkflowBlocks.parentBlockId,
+          id: schema.sessionWorkflowBlocks.id,
+          userInput: schema.sessionWorkflowBlocks.input,
+          parentBlockId: schema.sessionWorkflowBlocks.parentBlockId,
         })
-        .from(schema.threadWorkflowBlocks)
-        .where(eq(schema.threadWorkflowBlocks.threadId, data.sessionId))
-        .orderBy(asc(schema.threadWorkflowBlocks.createdAt))
+        .from(schema.sessionWorkflowBlocks)
+        .where(eq(schema.sessionWorkflowBlocks.sessionId, data.sessionId))
+        .orderBy(asc(schema.sessionWorkflowBlocks.createdAt))
 
       const blockData: (BlockData & {
         parentBlockId: string | null
@@ -53,9 +53,9 @@ export class AgentIpcMainService implements IpcMainService {
       for (const block of blocks) {
         const blockMessageRows = await db
           .select()
-          .from(schema.threadWorkflowBlockMessages)
-          .where(eq(schema.threadWorkflowBlockMessages.blockId, block.id))
-          .orderBy(asc(schema.threadWorkflowBlockMessages.createdAt))
+          .from(schema.sessionWorkflowBlockMessages)
+          .where(eq(schema.sessionWorkflowBlockMessages.blockId, block.id))
+          .orderBy(asc(schema.sessionWorkflowBlockMessages.createdAt))
         const askUserQuestionRows = await db
           .select()
           .from(schema.askUserQuestions)
@@ -81,12 +81,12 @@ export class AgentIpcMainService implements IpcMainService {
           headWorkflowId: schema.sessionBranches.headBlockId,
         })
         .from(schema.sessionBranches)
-        .where(eq(schema.sessionBranches.threadId, data.sessionId))
+        .where(eq(schema.sessionBranches.sessionId, data.sessionId))
         .orderBy(asc(schema.sessionBranches.createdAt))
 
       this.session = this.agent.resumeSession({
         sessionId: data.sessionId,
-        activeBranch: threadRow?.activeBranch || 'main',
+        activeBranch: sessionRow?.activeBranch || 'main',
         branches: branchRows,
         blockData,
       })
@@ -100,15 +100,15 @@ export class AgentIpcMainService implements IpcMainService {
       const plannerRows = await db
         .select()
         .from(schema.planners)
-        .where(eq(schema.planners.threadId, data.sessionId))
+        .where(eq(schema.planners.sessionId, data.sessionId))
 
       const artifactRows = await db
         .select()
         .from(schema.artifacts)
-        .where(eq(schema.artifacts.threadId, data.sessionId))
+        .where(eq(schema.artifacts.sessionId, data.sessionId))
 
       return {
-        activeBranch: threadRow?.activeBranch || 'main',
+        activeBranch: sessionRow?.activeBranch || 'main',
         branches: branchRows,
         planner: plannerRows.map((item) => ({
           id: item.id,

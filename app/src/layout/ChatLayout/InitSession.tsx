@@ -1,18 +1,18 @@
-import { ThreadMessageRole } from '@/types'
+import { SessionMessageRole } from '@/types'
 import {
-  useThreadStoreActions,
+  useSessionStoreActions,
   type ConversationBlock,
-  type ThreadMessage,
-} from '../../store/threadStore'
+  type SessionMessage,
+} from '../../store/sessionStore'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import { useChatContext } from '../../components/chat/ChatProvider'
 
-export function InitSession({ threadId }: { threadId: string }) {
+export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
-  const { buildFromDatabase } = useThreadStoreActions()
+  const { buildFromDatabase } = useSessionStoreActions()
 
   useEffect(() => {
     const firstInput = context.firstInput
@@ -27,7 +27,7 @@ export function InitSession({ threadId }: { threadId: string }) {
       const { blockData, planner, artifacts, activeBranch, branches } = await window.ipcRendererApi.invoke(
         'agent-resume-session',
         {
-          sessionId: threadId,
+          sessionId: sessionId,
         }
       )
 
@@ -60,7 +60,7 @@ export function InitSession({ threadId }: { threadId: string }) {
       const activeHead = branches.find((branch) => branch.name === activeBranch)?.headWorkflowId
 
       buildFromDatabase({
-        sessionId: threadId,
+        sessionId: sessionId,
         activeBranch,
         branches: branches.map((branch) => ({
           name: branch.name,
@@ -79,19 +79,19 @@ export function InitSession({ threadId }: { threadId: string }) {
     }
 
     fetchMessages()
-  }, [threadId, handleSend, buildFromDatabase])
+  }, [sessionId, handleSend, buildFromDatabase])
   return null
 }
 
 function buildBlockMessages(
   messages: BlockData['messages'],
   askUserSubmitValue: string[]
-): ThreadMessage[] {
-  const result: ThreadMessage[] = []
+): SessionMessage[] {
+  const result: SessionMessage[] = []
   const toolCallsById = new Map<string, { function: { name: string } }>()
   for (const message of messages) {
     switch (message.role) {
-      case ThreadMessageRole.User:
+      case SessionMessageRole.User:
         result.push({
           role: 'user',
           id: message.id,
@@ -99,7 +99,7 @@ function buildBlockMessages(
         })
         break
 
-      case ThreadMessageRole.AssistantReason:
+      case SessionMessageRole.AssistantReason:
         result.push({
           role: 'assistant-reason',
           id: message.id,
@@ -108,7 +108,7 @@ function buildBlockMessages(
         })
         break
 
-      case ThreadMessageRole.AssistantText:
+      case SessionMessageRole.AssistantText:
         result.push({
           role: 'assistant-text',
           id: message.id,
@@ -117,7 +117,7 @@ function buildBlockMessages(
         })
         break
 
-      case ThreadMessageRole.ToolCalls:
+      case SessionMessageRole.ToolCalls:
         for (const toolCall of JSON.parse(message.payload || '[]')) {
           toolCallsById.set(toolCall.id, toolCall)
         }
@@ -128,7 +128,7 @@ function buildBlockMessages(
         })
         break
 
-      case ThreadMessageRole.Tool: {
+      case SessionMessageRole.Tool: {
         const data = JSON.parse(message.payload || '{}')
         result.push({
           role: 'tool-result',

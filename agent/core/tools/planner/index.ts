@@ -51,7 +51,7 @@ Returns a plannerId and the created steps (with ids). Use those step ids with ${
       }))
 
       const sessionPlaner = new SessionPlaner(planSteps)
-      this.runtime.session.planners.push(sessionPlaner)
+      this.runtime.rootSession.planners.push(sessionPlaner)
 
       plannerEvent.emit('planner-end-generate', {
         sessionId: this.runtime.sessionId,
@@ -99,14 +99,14 @@ Set "running" before starting a step, "completed" when it finishes, "failed" if 
     },
     executor: async (args) => {
       const { plannerId, id, status } = args
-      const planner = this.runtime.session.planners.find((i) => i.id === plannerId)
+      const planner = this.runtime.rootSession.planners.find((item) => item.id === plannerId)
       if (!planner) {
         return {
           reason: 'call-llm',
           result: { content: `Planner ${plannerId} not found.` },
         }
       }
-      const target = planner.plans.find((i) => i.id === id)
+      const target = planner.plans.find((item) => item.id === id)
       if (!target) {
         return {
           reason: 'call-llm',

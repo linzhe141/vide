@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
-import type { AssistantReasonThreadMessage, ConversationBlock } from '@/app/src/store/threadStore'
+import type { AssistantReasonSessionMessage, ConversationBlock } from '@/app/src/store/sessionStore'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantReasonMessage({
@@ -8,7 +8,7 @@ export function AssistantReasonMessage({
   message,
 }: {
   block: ConversationBlock
-  message: AssistantReasonThreadMessage
+  message: AssistantReasonSessionMessage
 }) {
   const isRunning = block.runtime.isStreaming && block.messages.at(-1)?.id === message.id
   const [open, setOpen] = useState(isRunning)

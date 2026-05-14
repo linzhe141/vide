@@ -2,25 +2,25 @@ import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/electron/databaseManager'
-import { artifacts, threads } from '@/db/schema'
+import { artifacts, sessions } from '@/db/schema'
 import { desc, eq } from 'drizzle-orm'
-import type { FileNode, ThreadRowDto } from '../../api/channels'
+import type { FileNode, SessionRowDto } from '../../api/channels'
 import fs from 'fs/promises'
 import path from 'path'
 import { isBinaryFile } from 'isbinaryfile'
 
-export class ThreadIpcMainService implements IpcMainService {
+export class SessionIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}
 
   registerIpcMainHandle() {
-    ipcMainApi.handle('get-threads-list', async () => {
-      const rows = await db.select().from(threads).orderBy(desc(threads.createdAt))
-      return rows as ThreadRowDto[]
+    ipcMainApi.handle('get-sessions-list', async () => {
+      const rows = await db.select().from(sessions).orderBy(desc(sessions.createdAt))
+      return rows as SessionRowDto[]
     })
 
-    ipcMainApi.handle('get-thread-artifacts', async ({ sessionId }) => {
+    ipcMainApi.handle('get-session-artifacts', async ({ sessionId }) => {
       const ARTIFACT_ROOT = '.vide/artifacts'
-      const rows = await db.select().from(artifacts).where(eq(artifacts.threadId, sessionId))
+      const rows = await db.select().from(artifacts).where(eq(artifacts.sessionId, sessionId))
       const trees: FileNode[] = []
 
       for (const { artifactWorkspaceName } of rows) {

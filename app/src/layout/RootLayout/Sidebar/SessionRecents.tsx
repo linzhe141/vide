@@ -1,18 +1,18 @@
 import { NavLink } from 'react-router'
 import { cn } from '@/app/src/lib/utils'
 import { useCallback, useEffect } from 'react'
-import { useThreadsStore } from '@/app/src/store/threadsStore'
+import { useSessionsStore } from '@/app/src/store/sessionsStore'
 
-export function ThreadRecents() {
-  const { threads, setThreads } = useThreadsStore()
+export function SessionRecents() {
+  const { sessions, setSessions } = useSessionsStore()
 
   const fetchChats = useCallback(
     async function fetchChats() {
-      const res = await window.ipcRendererApi.invoke('get-threads-list')
+      const res = await window.ipcRendererApi.invoke('get-sessions-list')
       const result = res
-      setThreads(result)
+      setSessions(result)
     },
-    [setThreads]
+    [setSessions]
   )
   useEffect(() => {
     fetchChats()
@@ -28,10 +28,10 @@ export function ThreadRecents() {
 
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
-      {threads.map((thread) => (
+      {sessions.map((session) => (
         <NavLink
-          key={thread.id}
-          to={`/chat/${thread.id}`}
+          key={session.id}
+          to={`/chat/${session.id}`}
           onClick={async () => {
             //
           }}
@@ -46,12 +46,12 @@ export function ThreadRecents() {
             )
           }
         >
-          <span className='block truncate'>{thread.title || 'Untitled'}</span>
+          <span className='block truncate'>{session.title || 'Untitled'}</span>
         </NavLink>
       ))}
 
-      {threads.length === 0 && (
-        <div className='text-text-info px-3 py-4 text-sm'>No active threads</div>
+      {sessions.length === 0 && (
+        <div className='text-text-info px-3 py-4 text-sm'>No active sessions</div>
       )}
     </div>
   )

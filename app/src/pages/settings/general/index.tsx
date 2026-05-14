@@ -2,11 +2,11 @@ import { Eraser, Moon, Sun } from 'lucide-react'
 import { useTheme, themeColors, type ThemeColor } from '@/app/src/provider/ThemeProvider'
 import { cn } from '@/app/src/lib/utils'
 import { Button } from '@/app/src/ui/Button'
-import { useThreadsStore } from '@/app/src/store/threadsStore'
+import { useSessionsStore } from '@/app/src/store/sessionsStore'
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
-  const { setThreads } = useThreadsStore()
+  const { setSessions } = useSessionsStore()
   return (
     <div>
       <div className='mx-auto max-w-3xl px-6 py-14'>
@@ -124,7 +124,7 @@ export function GeneralSettings() {
                     try {
                       await window.ipcRendererApi.invoke('dev-delete-database-rows')
                       alert('删除成功！')
-                      setThreads([])
+                      setSessions([])
                     } catch (error) {
                       console.error('Failed to delete database rows:', error)
                       alert('删除失败！' + (error instanceof Error ? error.message : String(error)))

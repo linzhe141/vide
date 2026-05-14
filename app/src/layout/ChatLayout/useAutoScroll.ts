@@ -21,7 +21,7 @@ export function useAutoScroll() {
 
   // streaming 时自动滚动
   // useEffect(() => {
-  //   const unsub = useThreadStore.subscribe((s) => {
+  //   const unsub = useSessionStore.subscribe((s) => {
   //     if (!s.streaming) return
   //     const el = ref.current
   //     if (!el) return

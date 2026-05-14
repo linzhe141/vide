@@ -1,5 +1,5 @@
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import type { ConversationBlock, ToolCallThreadMessage, ToolResultThreadMessage } from '@/app/src/store/threadStore'
+import type { ConversationBlock, ToolCallSessionMessage, ToolResultSessionMessage } from '@/app/src/store/sessionStore'
 import {
   CheckCircle2,
   ChevronDown,
@@ -14,7 +14,7 @@ import { useState } from 'react'
 
 type ToolCallViewProps = {
   block: ConversationBlock
-  message: ToolCallThreadMessage
+  message: ToolCallSessionMessage
 }
 
 export function ToolCallMessage({ block, message }: ToolCallViewProps) {
@@ -39,7 +39,7 @@ export function ToolCallMessage({ block, message }: ToolCallViewProps) {
 
 type ToolCallButtonProps = {
   tool: ToolCall
-  result?: ToolResultThreadMessage
+  result?: ToolResultSessionMessage
 }
 function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   const [open, setOpen] = useState(false)
@@ -137,11 +137,11 @@ function formatDuration(durationMs?: number) {
 function findToolResult(
   block: ConversationBlock,
   toolCallId: string
-): ToolResultThreadMessage | undefined {
+): ToolResultSessionMessage | undefined {
   return [...block.messages]
     .reverse()
     .find(
-      (message): message is ToolResultThreadMessage =>
+      (message): message is ToolResultSessionMessage =>
         message.role === 'tool-result' && message.toolCallId === toolCallId
     )
 }

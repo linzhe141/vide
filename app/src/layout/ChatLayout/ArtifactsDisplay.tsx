@@ -5,17 +5,17 @@ import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
 
 export function ArtifactsDisplay({
-  threadId,
+  sessionId,
   className,
 }: {
-  threadId: string
+  sessionId: string
   className?: string
 }) {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null)
   const [artifacts, setArtifacts] = useState<
     {
       id: string
-      threadId: string
+      sessionId: string
       artifactWorkspaceName: string
       createdAt: number
       file: FileNode
@@ -26,8 +26,8 @@ export function ArtifactsDisplay({
   const timer = useRef<number | null>(null)
   useEffect(() => {
     async function fetchArtifacts() {
-      const res = await window.ipcRendererApi.invoke('get-thread-artifacts', {
-        sessionId: threadId,
+      const res = await window.ipcRendererApi.invoke('get-session-artifacts', {
+        sessionId: sessionId,
       })
       setArtifacts(res)
     }
@@ -38,7 +38,7 @@ export function ArtifactsDisplay({
     return () => {
       window.clearInterval(timer.current!)
     }
-  }, [threadId])
+  }, [sessionId])
   return (
     <div className={cn('flex h-full', className)}>
       {/* Sidebar */}

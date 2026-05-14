@@ -70,7 +70,7 @@ export class Session {
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
-      messages: workflowRuntimeContext.thread.getMessages(),
+      messages: workflowRuntimeContext.workflowSession.getMessages(),
       parent: null,
       children: [],
     }

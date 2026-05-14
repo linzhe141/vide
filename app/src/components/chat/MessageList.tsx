@@ -2,12 +2,12 @@ import { GitBranch, RefreshCcw } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import {
   getBranchSelectorOptions,
-  useThread,
-  useThreadBlocks,
-  useThreadStoreActions,
+  useSession,
+  useSessionBlocks,
+  useSessionStoreActions,
   type ConversationBlock,
-  type ThreadMessage,
-} from '../../store/threadStore'
+  type SessionMessage,
+} from '../../store/sessionStore'
 import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
@@ -16,8 +16,8 @@ import { ToolCallMessage } from './messages/ToolCallMessage'
 import { UserInputMessage } from './messages/UserInputMessage'
 
 export function MessageList() {
-  const { threadId } = useChatContext()
-  const blocks = useThreadBlocks(threadId)
+  const { sessionId } = useChatContext()
+  const blocks = useSessionBlocks(sessionId)
 
   return (
     <div className='flex w-full flex-col gap-12 px-8 py-12'>
@@ -26,7 +26,7 @@ export function MessageList() {
   )
 }
 
-function MessageView({ block, message }: { block: ConversationBlock; message: ThreadMessage }) {
+function MessageView({ block, message }: { block: ConversationBlock; message: SessionMessage }) {
   switch (message.role) {
     case 'user':
       return message.content.startsWith(AskUserQuestionUserSlectedReultPrefix) ? null : (
@@ -60,13 +60,13 @@ function MessageView({ block, message }: { block: ConversationBlock; message: Th
 }
 
 function BranchFeedback({ block }: { block: ConversationBlock }) {
-  const { threadId } = useChatContext()
-  const thread = useThread(threadId)
-  const { switchBranch } = useThreadStoreActions()
+  const { sessionId } = useChatContext()
+  const session = useSession(sessionId)
+  const { switchBranch } = useSessionStoreActions()
 
-  if (!thread) return null
+  if (!session) return null
 
-  const branchOptions = getBranchSelectorOptions(thread, block.id)
+  const branchOptions = getBranchSelectorOptions(session, block.id)
   if (!branchOptions.length) return null
 
   return (
@@ -76,7 +76,7 @@ function BranchFeedback({ block }: { block: ConversationBlock }) {
         <button
           key={option.name}
           type='button'
-          onClick={() => switchBranch(threadId, option.name)}
+          onClick={() => switchBranch(sessionId, option.name)}
           className={`rounded-full border px-2.5 py-1 transition ${
             option.isActive
               ? 'border-foreground/20 bg-foreground/6 text-foreground'

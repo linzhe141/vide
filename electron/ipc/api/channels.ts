@@ -5,7 +5,7 @@ import type {
   PlannerEvents,
   WorkflowEvents,
 } from '@/agent/core/event/channels'
-import type { threadWorkflowBlockMessages } from '@/db/schema'
+import type { sessionWorkflowBlockMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
 export type FileNode = {
@@ -16,7 +16,7 @@ export type FileNode = {
   children?: FileNode[]
 }
 
-export type ThreadRowDto = {
+export type SessionRowDto = {
   id: string
   title: string
   createdAt: number
@@ -27,7 +27,7 @@ export type BlockData = {
   userInput: string
   parentBlockId?: string | null
   askUserSubmitValue?: string[]
-  messages: (typeof threadWorkflowBlockMessages.$inferSelect)[]
+  messages: (typeof sessionWorkflowBlockMessages.$inferSelect)[]
 }
 
 export interface RenderChannel {
@@ -49,7 +49,7 @@ export interface RenderChannel {
     blockData: BlockData[]
     artifacts: {
       id: string
-      threadId: string
+      sessionId: string
       artifactWorkspaceName: string
       createdAt: number
       updatedAt: number
@@ -63,8 +63,8 @@ export interface RenderChannel {
 
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
-  // thread message
-  'get-threads-list': () => Promise<ThreadRowDto[]>
+  // session message
+  'get-sessions-list': () => Promise<SessionRowDto[]>
 
   // submit llm settings
   'submit-llm-seetings': (data: LLMConfig) => void
@@ -74,10 +74,10 @@ export interface RenderChannel {
   // only dev
   'dev-delete-database-rows': () => void
 
-  'get-thread-artifacts': (data: { sessionId: string }) => Promise<
+  'get-session-artifacts': (data: { sessionId: string }) => Promise<
     {
       id: string
-      threadId: string
+      sessionId: string
       artifactWorkspaceName: string
       createdAt: number
       file: FileNode

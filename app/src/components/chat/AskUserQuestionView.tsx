@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useChatContext } from './ChatProvider'
-import { useThreadStoreActions, type ThreadMessage } from '../../store/threadStore'
+import { useSessionStoreActions, type SessionMessage } from '../../store/sessionStore'
 import { cn } from '../../lib/utils'
 
 export const AskUserQuestionUserSlectedReultPrefix = 'AskUserQuestionUserSlectedReult'
@@ -9,12 +9,12 @@ export function AskUserQuestionView({
   message,
 }: {
   blockId: string
-  message: Extract<ThreadMessage, { role: 'ask-user' }>
+  message: Extract<SessionMessage, { role: 'ask-user' }>
 }) {
   const { handleSend } = useChatContext()
   const [selected, setSelected] = useState<string[]>(message.submitValue)
   const [submited, setSubmited] = useState(message.submitValue.length > 0)
-  const { updateAskUserSubmitValue } = useThreadStoreActions()
+  const { updateAskUserSubmitValue } = useSessionStoreActions()
   useEffect(() => {
     setSelected(message.submitValue)
     setSubmited(message.submitValue.length > 0)

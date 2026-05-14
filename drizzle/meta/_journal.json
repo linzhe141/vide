@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1773849302613,
-      "tag": "0000_optimal_colleen_wing",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1773902302889,
-      "tag": "0001_marvelous_thunderball",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1778771281544,
-      "tag": "0002_aromatic_ronan",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1778772866530,
-      "tag": "0003_brown_sphinx",
+      "when": 1778777472483,
+      "tag": "0000_same_starbolt",
       "breakpoints": true
     }
   ]

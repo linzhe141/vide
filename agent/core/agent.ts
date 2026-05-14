@@ -1,4 +1,4 @@
-import { ThreadMessageRole } from '@/types'
+import { SessionMessageRole } from '@/types'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
 import type { BlockData } from '@/electron/ipc/api/channels'
@@ -51,14 +51,14 @@ export class Agent {
     let assistantMessage: AssistantChatMessage | null = null
     for (const message of messages) {
       switch (message.role) {
-        case ThreadMessageRole.User: {
+        case SessionMessageRole.User: {
           chatMessages.push({
             role: 'user',
             content: message.content || '',
           })
           break
         }
-        case ThreadMessageRole.AssistantText: {
+        case SessionMessageRole.AssistantText: {
           assistantMessage = {
             role: 'assistant',
             content: message.content || '',
@@ -66,7 +66,7 @@ export class Agent {
           chatMessages.push(assistantMessage)
           break
         }
-        case ThreadMessageRole.ToolCalls: {
+        case SessionMessageRole.ToolCalls: {
           if (assistantMessage) {
             assistantMessage.tool_calls = JSON.parse(message.payload || '[]')
           } else {
@@ -78,7 +78,7 @@ export class Agent {
           }
           break
         }
-        case ThreadMessageRole.Tool: {
+        case SessionMessageRole.Tool: {
           const toolResult = JSON.parse(message.payload || '{}') as
             | { id: string; toolName: string; result: any }
             | { id: string; toolName: string; error: any }

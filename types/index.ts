@@ -4,7 +4,7 @@ export type Theme = Settings['theme']
 export type ThemeColor = Settings['themeColor']
 export type LLMConfig = Settings['llmConfig']
 
-export const enum ThreadMessageRole {
+export const enum SessionMessageRole {
   System = 'system',
   User = 'user',
   AssistantReason = 'assistant-reason',

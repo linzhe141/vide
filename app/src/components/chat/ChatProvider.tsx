@@ -1,70 +1,70 @@
 import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
-import { getNextBranchName, useThread, useThreadRunning, useThreadStoreActions } from '../../store/threadStore'
-import type { ConversationBlock } from '../../store/threadStore'
+import { getNextBranchName, useSession, useSessionRunning, useSessionStoreActions } from '../../store/sessionStore'
+import type { ConversationBlock } from '../../store/sessionStore'
 
 interface ChatContextType {
   handleSend: (input: string) => Promise<void>
   handleFork: (targetBlockId: string | null, branchName?: string) => Promise<string>
   handleRegenerate: (block: ConversationBlock) => Promise<string>
   running: boolean
-  threadId: string
+  sessionId: string
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
-export function ChatProvider({ threadId, children }: PropsWithChildren<{ threadId: string }>) {
+export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
   const { send, fork, forkAndSend } = useWorkflowStream()
-  const thread = useThread(threadId)
-  const threadRunning = useThreadRunning(threadId) ?? false
-  const { switchBranch } = useThreadStoreActions()
+  const session = useSession(sessionId)
+  const sessionRunning = useSessionRunning(sessionId) ?? false
+  const { switchBranch } = useSessionStoreActions()
 
   const handleSend = useCallback(
     async (input: string) => {
-      if (threadRunning) return
+      if (sessionRunning) return
       await send(input, {
-        sessionId: threadId,
-        branchName: thread?.activeBranch,
+        sessionId: sessionId,
+        branchName: session?.activeBranch,
       })
     },
-    [send, thread?.activeBranch, threadId, threadRunning]
+    [send, session?.activeBranch, sessionId, sessionRunning]
   )
 
   const handleFork = useCallback(
     async (targetBlockId: string | null, branchName?: string) => {
       const nextBranchName =
-        branchName || getNextBranchName(thread?.branches.map((item) => item.name) || [])
-      await fork(threadId, targetBlockId, nextBranchName)
-      switchBranch(threadId, nextBranchName)
+        branchName || getNextBranchName(session?.branches.map((item) => item.name) || [])
+      await fork(sessionId, targetBlockId, nextBranchName)
+      switchBranch(sessionId, nextBranchName)
       return nextBranchName
     },
-    [fork, switchBranch, thread?.branches, threadId]
+    [fork, switchBranch, session?.branches, sessionId]
   )
 
   const handleRegenerate = useCallback(
     async (block: ConversationBlock) => {
-      const nextBranchName = getNextBranchName(thread?.branches.map((item) => item.name) || [], 'regen')
+      const nextBranchName = getNextBranchName(session?.branches.map((item) => item.name) || [], 'regen')
       await forkAndSend({
-        sessionId: threadId,
+        sessionId: sessionId,
         targetBlockId: block.parentBlockId,
         branchName: nextBranchName,
         input: block.input,
       })
-      switchBranch(threadId, nextBranchName)
+      switchBranch(sessionId, nextBranchName)
       return nextBranchName
     },
-    [forkAndSend, switchBranch, thread?.branches, threadId]
+    [forkAndSend, switchBranch, session?.branches, sessionId]
   )
 
   const value: ChatContextType = useMemo(
     () => ({
-      running: threadRunning,
+      running: sessionRunning,
       handleSend,
       handleFork,
       handleRegenerate,
-      threadId,
+      sessionId,
     }),
-    [handleFork, handleRegenerate, handleSend, threadId, threadRunning]
+    [handleFork, handleRegenerate, handleSend, sessionId, sessionRunning]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

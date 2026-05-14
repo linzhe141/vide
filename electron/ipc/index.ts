@@ -2,7 +2,7 @@ import type { AppManager } from '../appManager'
 import { SettingsStoreIpcMainService } from './services/settingsStore'
 import { WindowIpcMainService } from './services/window'
 import { AgentIpcMainService } from './services/agent'
-import { ThreadIpcMainService } from './services/threads'
+import { SessionIpcMainService } from './services/sessions'
 import { LLMSettingsIpcMainService } from './services/llmSettings'
 import { DevIpcMainService } from './services/dev'
 
@@ -23,8 +23,8 @@ export class IpcService {
     const agentIpcMainService = new AgentIpcMainService(this.appManager)
     agentIpcMainService.registerIpcMainHandle()
 
-    const threadIpcMainService = new ThreadIpcMainService(this.appManager)
-    threadIpcMainService.registerIpcMainHandle()
+    const sessionIpcMainService = new SessionIpcMainService(this.appManager)
+    sessionIpcMainService.registerIpcMainHandle()
 
     const llmSettingsIpcMainService = new LLMSettingsIpcMainService(this.appManager)
     llmSettingsIpcMainService.registerIpcMainHandle()

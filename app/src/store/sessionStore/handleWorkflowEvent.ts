@@ -4,61 +4,61 @@ import type {
   ConversationBlock,
   PlanStep,
   SessionBranch,
-  Thread,
-  ThreadMessage,
-  ThreadState,
+  Session,
+  SessionMessage,
+  SessionState,
 } from '.'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 
-type ThreadEventContext = {
-  state: ThreadState
+type SessionEventContext = {
+  state: SessionState
   sessionId?: string
-  thread?: Thread
+  session?: Session
   block?: ConversationBlock
-  planner?: Thread['planner'][number]
+  planner?: Session['planner'][number]
   event: WorkflowState
 }
 
-export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: WorkflowState) {
-  const context = createThreadEventContext(storeState, workflowEvent)
-  const { event, state, thread, block, planner } = context
+export function handleWorkflowEvent(storeState: SessionState, workflowEvent: WorkflowState) {
+  const context = createSessionEventContext(storeState, workflowEvent)
+  const { event, state, session, block, planner } = context
 
   switch (event.type) {
     case 'agent-create-session': {
-      getOrCreateThread(state, event.data.sessionId, event.data.activeBranch)
+      getOrCreateSession(state, event.data.sessionId, event.data.activeBranch)
       return
     }
 
     case 'agent-session-forked': {
-      if (!thread) return
-      upsertBranch(thread, {
+      if (!session) return
+      upsertBranch(session, {
         name: event.data.branchName,
         headBlockId: event.data.sourceWorkflowId,
       })
-      thread.activeBranch = event.data.branchName
-      thread.currentBlockId = event.data.sourceWorkflowId || undefined
+      session.activeBranch = event.data.branchName
+      session.currentBlockId = event.data.sourceWorkflowId || undefined
       return
     }
 
     case 'workflow-start': {
       const { sessionId, workflowId, parentWorkflowId, branchName } = event.data.ctx
-      const targetThread = getOrCreateThread(state, sessionId, branchName)
+      const targetSession = getOrCreateSession(state, sessionId, branchName)
       const createdBlock = createConversationBlock(workflowId, event.data.input, parentWorkflowId)
 
-      targetThread.runtime.running = true
-      targetThread.blockMap[workflowId] = createdBlock
-      if (!targetThread.blockOrder.includes(workflowId)) {
-        targetThread.blockOrder.push(workflowId)
+      targetSession.runtime.running = true
+      targetSession.blockMap[workflowId] = createdBlock
+      if (!targetSession.blockOrder.includes(workflowId)) {
+        targetSession.blockOrder.push(workflowId)
       }
       if (parentWorkflowId) {
-        const parentBlock = targetThread.blockMap[parentWorkflowId]
+        const parentBlock = targetSession.blockMap[parentWorkflowId]
         if (parentBlock && !parentBlock.childBlockIds.includes(workflowId)) {
           parentBlock.childBlockIds.push(workflowId)
         }
       }
-      targetThread.currentBlockId = workflowId
-      targetThread.activeBranch = branchName
-      upsertBranch(targetThread, {
+      targetSession.currentBlockId = workflowId
+      targetSession.activeBranch = branchName
+      upsertBranch(targetSession, {
         name: branchName,
         headBlockId: workflowId,
       })
@@ -66,15 +66,15 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
     }
 
     case 'workflow-finished':
-      if (!block || !thread) return
+      if (!block || !session) return
       block.status = 'finished'
-      thread.runtime.running = false
+      session.runtime.running = false
       return
 
     case 'workflow-error':
-      if (!block || !thread) return
+      if (!block || !session) return
       block.status = 'error'
-      thread.runtime.running = false
+      session.runtime.running = false
       pushMessage(block, {
         id: nanoid(),
         role: 'error',
@@ -160,9 +160,9 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       return
 
     case 'planner-end-generate': {
-      if (!thread) return
-      thread.currentPlannerId = event.data.plannerId
-      thread.planner.push({
+      if (!session) return
+      session.currentPlannerId = event.data.plannerId
+      session.planner.push({
         id: event.data.plannerId,
         plan: event.data.plans,
       })
@@ -183,17 +183,17 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
   }
 }
 
-function createThreadEventContext(state: ThreadState, event: WorkflowState): ThreadEventContext {
+function createSessionEventContext(state: SessionState, event: WorkflowState): SessionEventContext {
   const sessionId = getEventSessionId(event)
-  const thread = sessionId ? state.threads.find((item) => item.sessionId === sessionId) : undefined
+  const session = sessionId ? state.sessions.find((item) => item.sessionId === sessionId) : undefined
   const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
-  const block = workflowId && thread ? thread.blockMap[workflowId] : undefined
-  const planner = thread ? getCurrentPlanner(thread) : undefined
+  const block = workflowId && session ? session.blockMap[workflowId] : undefined
+  const planner = session ? getCurrentPlanner(session) : undefined
 
   return {
     state,
     sessionId,
-    thread,
+    session,
     block,
     planner,
     event,
@@ -225,11 +225,11 @@ function createConversationBlock(
   }
 }
 
-function getOrCreateThread(state: ThreadState, sessionId: string, activeBranch: string) {
-  let thread = state.threads.find((item) => item.sessionId === sessionId)
-  if (thread) return thread
+function getOrCreateSession(state: SessionState, sessionId: string, activeBranch: string) {
+  let session = state.sessions.find((item) => item.sessionId === sessionId)
+  if (session) return session
 
-  thread = {
+  session = {
     sessionId,
     activeBranch,
     branches: [{ name: activeBranch, headBlockId: null }],
@@ -241,21 +241,21 @@ function getOrCreateThread(state: ThreadState, sessionId: string, activeBranch: 
     },
     artifacts: [],
   }
-  state.threads.push(thread)
+  state.sessions.push(session)
 
-  return thread
+  return session
 }
 
-function upsertBranch(thread: Thread, branch: SessionBranch) {
-  const target = thread.branches.find((item) => item.name === branch.name)
+function upsertBranch(session: Session, branch: SessionBranch) {
+  const target = session.branches.find((item) => item.name === branch.name)
   if (target) {
     target.headBlockId = branch.headBlockId
     return
   }
-  thread.branches.push(branch)
+  session.branches.push(branch)
 }
 
-function ensureLastMessage(block: ConversationBlock, role: ThreadMessage['role']) {
+function ensureLastMessage(block: ConversationBlock, role: SessionMessage['role']) {
   const last = block.messages.at(-1)
 
   if (!last || last.role !== role) {
@@ -277,7 +277,7 @@ function ensureLastReasoningMessage(block: ConversationBlock) {
   const last = block.messages.at(-1)
 
   if (!last || last.role !== 'assistant-reason') {
-    const msg: Extract<ThreadMessage, { role: 'assistant-reason' }> = {
+    const msg: Extract<SessionMessage, { role: 'assistant-reason' }> = {
       id: nanoid(),
       role: 'assistant-reason',
       content: '',
@@ -292,11 +292,11 @@ function ensureLastReasoningMessage(block: ConversationBlock) {
   return last
 }
 
-function pushMessage(block: ConversationBlock, message: ThreadMessage) {
+function pushMessage(block: ConversationBlock, message: SessionMessage) {
   block.messages.push(message)
 }
 
-function createAskUserMessage(question: any): Extract<ThreadMessage, { role: 'ask-user' }> {
+function createAskUserMessage(question: any): Extract<SessionMessage, { role: 'ask-user' }> {
   return {
     id: nanoid(),
     role: 'ask-user',
@@ -309,12 +309,12 @@ function createAskUserMessage(question: any): Extract<ThreadMessage, { role: 'as
   }
 }
 
-function getCurrentPlanner(state: Thread) {
+function getCurrentPlanner(state: Session) {
   return state.planner.find((block) => block.id === state.currentPlannerId)
 }
 
 function updatePlannerStepStatus(
-  planner: Thread['planner'][number] | undefined,
+  planner: Session['planner'][number] | undefined,
   planId: string,
   status: PlanStep['status']
 ) {

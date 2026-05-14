@@ -9,20 +9,20 @@ import {
 } from '@/agent/core/apiEvent'
 import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
-import { ThreadMessageRole } from '@/types'
+import { SessionMessageRole } from '@/types'
 import {
   artifacts,
   askUserQuestions,
   planners,
   sessionBranches,
-  threads,
-  threadWorkflowBlockMessages,
-  threadWorkflowBlocks,
+  sessions,
+  sessionWorkflowBlockMessages,
+  sessionWorkflowBlocks,
 } from '@/db/schema'
 import { db } from './databaseManager'
 import type { AppManager } from './appManager'
 
-export class ThreadsManager {
+export class SessionsManager {
   constructor(private app: AppManager) {}
 
   init() {
@@ -39,7 +39,7 @@ export class ThreadsManager {
       .select()
       .from(sessionBranches)
       .where(
-        and(eq(sessionBranches.threadId, data.sessionId), eq(sessionBranches.name, data.branchName))
+        and(eq(sessionBranches.sessionId, data.sessionId), eq(sessionBranches.name, data.branchName))
       )
 
     const existingRow = existingRows[0]
@@ -56,7 +56,7 @@ export class ThreadsManager {
 
     await db.insert(sessionBranches).values({
       id: uuid(),
-      threadId: data.sessionId,
+      sessionId: data.sessionId,
       name: data.branchName,
       headBlockId: data.headBlockId,
       createdAt: time,
@@ -64,20 +64,20 @@ export class ThreadsManager {
     })
   }
 
-  private async updateThreadSessionState(data: { sessionId: string; activeBranch: string }) {
+  private async updateSessionState(data: { sessionId: string; activeBranch: string }) {
     await db
-      .update(threads)
+      .update(sessions)
       .set({
         activeBranch: data.activeBranch,
         updatedAt: Date.now(),
       })
-      .where(eq(threads.id, data.sessionId))
+      .where(eq(sessions.id, data.sessionId))
   }
 
   setupAgentEvents() {
     onAgentEvent('agent-create-session', async (data) => {
       const time = Date.now()
-      await db.insert(threads).values({
+      await db.insert(sessions).values({
         id: data.sessionId,
         title: '',
         activeBranch: data.activeBranch,
@@ -92,7 +92,7 @@ export class ThreadsManager {
     })
 
     onAgentEvent('agent-session-forked', async (data) => {
-      await this.updateThreadSessionState({
+      await this.updateSessionState({
         sessionId: data.sessionId,
         activeBranch: data.branchName,
       })
@@ -105,19 +105,19 @@ export class ThreadsManager {
 
     onWorkflowEvent('workflow-start', async ({ input, ctx }) => {
       const time = Date.now()
-      const rows = await db.select().from(threads).where(eq(threads.id, ctx.sessionId))
+      const rows = await db.select().from(sessions).where(eq(sessions.id, ctx.sessionId))
       if (rows.length && !rows[0].title) {
-        await db.update(threads).set({ title: input }).where(eq(threads.id, ctx.sessionId))
+        await db.update(sessions).set({ title: input }).where(eq(sessions.id, ctx.sessionId))
       }
 
-      await this.updateThreadSessionState({
+      await this.updateSessionState({
         sessionId: ctx.sessionId,
         activeBranch: ctx.branchName,
       })
 
-      await db.insert(threadWorkflowBlocks).values({
+      await db.insert(sessionWorkflowBlocks).values({
         id: ctx.workflowId,
-        threadId: ctx.sessionId,
+        sessionId: ctx.sessionId,
         parentBlockId: ctx.parentWorkflowId,
         input,
         createdAt: time,
@@ -129,9 +129,9 @@ export class ThreadsManager {
         headBlockId: ctx.workflowId,
       })
 
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
-        role: ThreadMessageRole.User,
+        role: SessionMessageRole.User,
         blockId: ctx.workflowId,
         content: input,
         createdAt: time,
@@ -153,10 +153,10 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-reasoning-delta', async () => {})
     onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId }, content }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
-        role: ThreadMessageRole.AssistantReason,
+        role: SessionMessageRole.AssistantReason,
         content,
         payload: '',
         createdAt: time,
@@ -168,10 +168,10 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-text-delta', async () => {})
     onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId }, content }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
-        role: ThreadMessageRole.AssistantText,
+        role: SessionMessageRole.AssistantText,
         content,
         payload: '',
         createdAt: time,
@@ -184,10 +184,10 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-llm-tool-call-arguments', async () => {})
     onWorkflowEvent('workflow-llm-tool-calls-end', async ({ ctx: { workflowId }, toolCalls }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
         blockId: workflowId,
-        role: ThreadMessageRole.ToolCalls,
+        role: SessionMessageRole.ToolCalls,
         content: '',
         payload: JSON.stringify(toolCalls),
         createdAt: time,
@@ -198,9 +198,9 @@ export class ThreadsManager {
     onWorkflowEvent('workflow-tool-call-start', async () => {})
     onWorkflowEvent('workflow-tool-call-success', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
-        role: ThreadMessageRole.Tool,
+        role: SessionMessageRole.Tool,
         blockId: ctx.workflowId,
         content: '',
         createdAt: time,
@@ -210,9 +210,9 @@ export class ThreadsManager {
     })
     onWorkflowEvent('workflow-tool-call-error', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
-        role: ThreadMessageRole.Tool,
+        role: SessionMessageRole.Tool,
         blockId: ctx.workflowId,
         content: '',
         createdAt: time,
@@ -222,9 +222,9 @@ export class ThreadsManager {
     })
     onWorkflowEvent('workflow-tool-call-reject', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(threadWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowBlockMessages).values({
         id: uuid(),
-        role: ThreadMessageRole.Tool,
+        role: SessionMessageRole.Tool,
         blockId: ctx.workflowId,
         content: '',
         payload: JSON.stringify(toolCallResult),
@@ -237,7 +237,7 @@ export class ThreadsManager {
       const time = Date.now()
       await db.insert(planners).values({
         id: plannerId,
-        threadId: sessionId,
+        sessionId: sessionId,
         planJson: JSON.stringify(plans),
         createdAt: time,
         updatedAt: time,
@@ -326,7 +326,7 @@ export class ThreadsManager {
       const time = Date.now()
       await db.insert(artifacts).values({
         id: uuid(),
-        threadId: sessionId,
+        sessionId: sessionId,
         artifactWorkspaceName: workspaceName,
         createdAt: time,
         updatedAt: time,

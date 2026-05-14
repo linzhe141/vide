@@ -5,7 +5,7 @@ This is a concrete example of rows that would be stored for a single session tha
 **Scenario**
 User asks: "帮我写一个 TODO App 的需求拆解". The agent creates a plan, runs step 1, and then asks the user a clarifying question.
 
-## threads
+## sessions
 
 | id | title | created_at | updated_at |
 | --- | --- | --- | --- |

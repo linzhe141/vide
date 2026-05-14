@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { createWorkflowStream } from './createWorkflowStream'
-import { useThreadStoreActions } from '../store/threadStore'
+import { useSessionStoreActions } from '../store/sessionStore'
 import type { WorkflowState } from './createWorkflowStream'
 
 type WorkflowListenersType = { [K in WorkflowState['type']]: Array<(...args: any[]) => any> }
@@ -27,7 +27,7 @@ export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
   const [running, setRunning] = useState(false)
-  const { handleEvent } = useThreadStoreActions()
+  const { handleEvent } = useSessionStoreActions()
 
   const cleanup = () => {
     readerRef.current?.cancel().catch(() => {})

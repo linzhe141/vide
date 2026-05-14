@@ -1,7 +1,7 @@
-import type { AssistantTextThreadMessage } from '@/app/src/store/threadStore'
+import type { AssistantTextSessionMessage } from '@/app/src/store/sessionStore'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
-export function AssistantTextMessage({ message }: { message: AssistantTextThreadMessage }) {
+export function AssistantTextMessage({ message }: { message: AssistantTextSessionMessage }) {
   return (
     <div className='max-w-none'>
       <MarkdownRenderer

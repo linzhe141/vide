@@ -6,7 +6,7 @@ import { ChatLayoutProvider } from '../../layout/ChatLayout'
 export function Chat() {
   const { id } = useParams()
   return (
-    <ChatProvider threadId={id!}>
+    <ChatProvider sessionId={id!}>
       <ChatLayoutProvider>
         <ChatContainer key={id} />
       </ChatLayoutProvider>
