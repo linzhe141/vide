@@ -1,6 +1,6 @@
 import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
-import { getNextBranchName, useThread, useThreadStoreActions } from '../../store/threadStore'
+import { getNextBranchName, useThread, useThreadRunning, useThreadStoreActions } from '../../store/threadStore'
 import type { ConversationBlock } from '../../store/threadStore'
 
 interface ChatContextType {
@@ -14,23 +14,26 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ threadId, children }: PropsWithChildren<{ threadId: string }>) {
-  const { send, fork, forkAndSend, running } = useWorkflowStream()
+  const { send, fork, forkAndSend } = useWorkflowStream()
   const thread = useThread(threadId)
+  const threadRunning = useThreadRunning(threadId) ?? false
   const { switchBranch } = useThreadStoreActions()
 
   const handleSend = useCallback(
     async (input: string) => {
+      if (threadRunning) return
       await send(input, {
         sessionId: threadId,
         branchName: thread?.activeBranch,
       })
     },
-    [send, thread?.activeBranch, threadId]
+    [send, thread?.activeBranch, threadId, threadRunning]
   )
 
   const handleFork = useCallback(
     async (targetBlockId: string | null, branchName?: string) => {
-      const nextBranchName = branchName || getNextBranchName(thread?.branches.map((item) => item.name) || [])
+      const nextBranchName =
+        branchName || getNextBranchName(thread?.branches.map((item) => item.name) || [])
       await fork(threadId, targetBlockId, nextBranchName)
       switchBranch(threadId, nextBranchName)
       return nextBranchName
@@ -55,13 +58,13 @@ export function ChatProvider({ threadId, children }: PropsWithChildren<{ threadI
 
   const value: ChatContextType = useMemo(
     () => ({
-      running,
+      running: threadRunning,
       handleSend,
       handleFork,
       handleRegenerate,
       threadId,
     }),
-    [handleFork, handleRegenerate, handleSend, running, threadId]
+    [handleFork, handleRegenerate, handleSend, threadId, threadRunning]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

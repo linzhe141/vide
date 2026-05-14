@@ -1,9 +1,10 @@
 import { GitBranch, RefreshCcw } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import {
+  getBranchSelectorOptions,
   useThread,
-  useThreadStoreActions,
   useThreadBlocks,
+  useThreadStoreActions,
   type ConversationBlock,
   type ThreadMessage,
 } from '../../store/threadStore'
@@ -16,28 +17,10 @@ import { UserInputMessage } from './messages/UserInputMessage'
 
 export function MessageList() {
   const { threadId } = useChatContext()
-  const thread = useThread(threadId)
   const blocks = useThreadBlocks(threadId)
-  const { switchBranch } = useThreadStoreActions()
 
   return (
     <div className='flex w-full flex-col gap-12 px-8 py-12'>
-      {thread && (
-        <div className='flex flex-wrap items-center gap-2 text-xs'>
-          {thread.branches.map((branch) => (
-            <button
-              key={branch.name}
-              type='button'
-              onClick={() => switchBranch(threadId, branch.name)}
-              className={`rounded-full border px-2 py-1 transition ${
-                branch.name === thread.activeBranch ? 'bg-border/70 text-foreground' : 'text-text-info'
-              }`}
-            >
-              {branch.name}
-            </button>
-          ))}
-        </div>
-      )}
       {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
     </div>
   )
@@ -76,29 +59,64 @@ function MessageView({ block, message }: { block: ConversationBlock; message: Th
   }
 }
 
+function BranchFeedback({ block }: { block: ConversationBlock }) {
+  const { threadId } = useChatContext()
+  const thread = useThread(threadId)
+  const { switchBranch } = useThreadStoreActions()
+
+  if (!thread) return null
+
+  const branchOptions = getBranchSelectorOptions(thread, block.id)
+  if (!branchOptions.length) return null
+
+  return (
+    <div className='text-text-info flex flex-wrap items-center gap-2 text-xs'>
+      <span className='opacity-70'>Branches on this block</span>
+      {branchOptions.map((option) => (
+        <button
+          key={option.name}
+          type='button'
+          onClick={() => switchBranch(threadId, option.name)}
+          className={`rounded-full border px-2.5 py-1 transition ${
+            option.isActive
+              ? 'border-foreground/20 bg-foreground/6 text-foreground'
+              : 'hover:bg-border/60'
+          }`}
+        >
+          {option.name}
+          {option.isActive ? ' current' : ''}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function SessionActions({ block }: { block: ConversationBlock }) {
   const { handleFork, handleRegenerate, running } = useChatContext()
 
   return (
-    <div className='text-text-info flex items-center gap-2 text-xs'>
-      <button
-        type='button'
-        disabled={running}
-        onClick={() => handleFork(block.id)}
-        className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition disabled:cursor-not-allowed disabled:opacity-50'
-      >
-        <GitBranch size={12} />
-        Fork
-      </button>
-      <button
-        type='button'
-        disabled={running}
-        onClick={() => handleRegenerate(block)}
-        className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition disabled:cursor-not-allowed disabled:opacity-50'
-      >
-        <RefreshCcw size={12} />
-        Re-generate
-      </button>
+    <div className='space-y-3'>
+      <BranchFeedback block={block} />
+      {block.status === 'finished' && !running && (
+        <div className='text-text-info flex items-center gap-2 text-xs'>
+          <button
+            type='button'
+            onClick={() => handleFork(block.id)}
+            className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
+          >
+            <GitBranch size={12} />
+            Fork From Here
+          </button>
+          <button
+            type='button'
+            onClick={() => handleRegenerate(block)}
+            className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
+          >
+            <RefreshCcw size={12} />
+            Re-generate From Parent
+          </button>
+        </div>
+      )}
     </div>
   )
 }

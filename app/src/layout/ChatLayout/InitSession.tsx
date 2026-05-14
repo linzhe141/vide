@@ -71,6 +71,9 @@ export function InitSession({ threadId }: { threadId: string }) {
         currentBlockId: activeHead || undefined,
         planner,
         currentPlannerId: pendingPlanner?.id,
+        runtime: {
+          running: false,
+        },
         artifacts,
       })
     }

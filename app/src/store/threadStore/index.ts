@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@/agent/core/types'
@@ -93,6 +92,10 @@ export type SessionBranch = {
   headBlockId: string | null
 }
 
+export type ThreadRuntime = {
+  running: boolean
+}
+
 export type Thread = {
   sessionId: string
   activeBranch: string
@@ -102,6 +105,7 @@ export type Thread = {
   blockOrder: string[]
   currentBlockId?: string
   currentPlannerId?: string
+  runtime: ThreadRuntime
   artifacts: {
     id: string
     threadId: string
@@ -176,19 +180,17 @@ export const useThread = (threadId: string) =>
 
 export const useThreadBlocks = (threadId: string) => {
   const thread = useThread(threadId)
-  return useMemo(() => {
-    if (!thread) return undefined
-    return getBlocksForActiveBranch(thread)
-  }, [thread])
+  if (!thread) return undefined
+  return selectBlocksForActiveBranch(thread)
 }
 
 export const useThreadPlanners = (threadId: string) =>
   useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.planner)
 
-export const useThreadBranches = (threadId: string) =>
-  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.branches)
+export const useThreadRunning = (threadId: string) =>
+  useThreadStore((state) => state.threads.find((item) => item.sessionId === threadId)?.runtime.running)
 
-export function getBlocksForActiveBranch(thread: Thread) {
+export function selectBlocksForActiveBranch(thread: Thread) {
   const activeBranch = thread.branches.find((item) => item.name === thread.activeBranch)
   const pathIds = buildBlockPath(activeBranch?.headBlockId || null, thread.blockMap)
   return pathIds.map((blockId) => thread.blockMap[blockId]).filter(Boolean)
@@ -217,4 +219,33 @@ export function getNextBranchName(existingBranchNames: string[], prefix = 'branc
     candidate = `${prefix}-${index}`
   }
   return candidate
+}
+
+export function getBranchPathIds(branch: SessionBranch, blockMap: Record<string, ConversationBlock>) {
+  return buildBlockPath(branch.headBlockId, blockMap)
+}
+
+export function getBranchSelectorOptions(thread: Thread, blockId: string) {
+  const branchPaths = thread.branches.map((branch) => ({
+    branch,
+    pathIds: getBranchPathIds(branch, thread.blockMap),
+  }))
+  const candidateBranches = branchPaths
+    .filter(({ pathIds }) => pathIds.includes(blockId))
+    .map(({ branch, pathIds }) => ({
+      name: branch.name,
+      headBlockId: branch.headBlockId,
+      nextBlockId: pathIds[pathIds.indexOf(blockId) + 1] ?? null,
+      isActive: branch.name === thread.activeBranch,
+    }))
+
+  const grouped = new Map<string, (typeof candidateBranches)[number]>()
+  for (const candidate of candidateBranches) {
+    const key = candidate.nextBlockId ?? `head:${candidate.headBlockId ?? 'root'}`
+    if (!grouped.has(key)) {
+      grouped.set(key, candidate)
+    }
+  }
+
+  return Array.from(grouped.values())
 }

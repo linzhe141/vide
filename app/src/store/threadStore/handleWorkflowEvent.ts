@@ -45,6 +45,7 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
       const targetThread = getOrCreateThread(state, sessionId, branchName)
       const createdBlock = createConversationBlock(workflowId, event.data.input, parentWorkflowId)
 
+      targetThread.runtime.running = true
       targetThread.blockMap[workflowId] = createdBlock
       if (!targetThread.blockOrder.includes(workflowId)) {
         targetThread.blockOrder.push(workflowId)
@@ -65,13 +66,15 @@ export function handleWorkflowEvent(storeState: ThreadState, workflowEvent: Work
     }
 
     case 'workflow-finished':
-      if (!block) return
+      if (!block || !thread) return
       block.status = 'finished'
+      thread.runtime.running = false
       return
 
     case 'workflow-error':
-      if (!block) return
+      if (!block || !thread) return
       block.status = 'error'
+      thread.runtime.running = false
       pushMessage(block, {
         id: nanoid(),
         role: 'error',
@@ -233,6 +236,9 @@ function getOrCreateThread(state: ThreadState, sessionId: string, activeBranch: 
     planner: [],
     blockMap: {},
     blockOrder: [],
+    runtime: {
+      running: false,
+    },
     artifacts: [],
   }
   state.threads.push(thread)
