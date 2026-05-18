@@ -1,7 +1,7 @@
 import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
-import { getNextBranchName, useSession, useSessionRunning, useSessionStoreActions } from '../../store/sessionStore'
-import type { ConversationBlock } from '../../store/sessionStore'
+import { useSession, useSessionRunning, useSessionStoreActions } from '../../store/sessionStore'
+import type { ConversationBlock } from '../../store/sessionStore/types'
 
 interface ChatContextType {
   handleSend: (input: string) => Promise<void>
@@ -43,7 +43,10 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
 
   const handleRegenerate = useCallback(
     async (block: ConversationBlock) => {
-      const nextBranchName = getNextBranchName(session?.branches.map((item) => item.name) || [], 'regen')
+      const nextBranchName = getNextBranchName(
+        session?.branches.map((item) => item.name) || [],
+        'regen'
+      )
       await forkAndSend({
         sessionId: sessionId,
         targetBlockId: block.parentBlockId,

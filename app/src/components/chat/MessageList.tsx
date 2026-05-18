@@ -1,13 +1,7 @@
 import { GitBranch, RefreshCcw } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
-import {
-  getBranchSelectorOptions,
-  useSession,
-  useSessionBlocks,
-  useSessionStoreActions,
-  type ConversationBlock,
-  type SessionMessage,
-} from '../../store/sessionStore'
+import { useSession, useSessionBlocks, useSessionStoreActions } from '../../store/sessionStore'
+import { type ConversationBlock, type SessionMessage } from '../../store/sessionStore/types'
 import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
@@ -97,7 +91,7 @@ function SessionActions({ block }: { block: ConversationBlock }) {
   return (
     <div className='space-y-3'>
       <BranchFeedback block={block} />
-      {block.status === 'finished' && !running && (
+      {block.runtime.status === 'finished' && !running && (
         <div className='text-text-info flex items-center gap-2 text-xs'>
           <button
             type='button'

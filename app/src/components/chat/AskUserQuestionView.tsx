@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useChatContext } from './ChatProvider'
-import { useSessionStoreActions, type SessionMessage } from '../../store/sessionStore'
+import { useSessionStoreActions } from '../../store/sessionStore'
 import { cn } from '../../lib/utils'
+import type { SessionMessage } from '../../store/sessionStore/types'
 
 export const AskUserQuestionUserSlectedReultPrefix = 'AskUserQuestionUserSlectedReult'
 export function AskUserQuestionView({
