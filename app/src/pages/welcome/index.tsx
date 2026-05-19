@@ -6,9 +6,11 @@ import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import { MoveRight } from 'lucide-react'
 import LOGOIMG from './logo.png'
+import { useSessionStoreActions } from '../../store/sessionStore'
 
 export function Welcome() {
   const { createSession } = useSessions()
+  const actions = useSessionStoreActions()
 
   const [input, setInput] = useState('')
   const navigate = useNavigate()
@@ -16,7 +18,7 @@ export function Welcome() {
     if (!input.trim()) return
     context.firstInput = input
     const sessionId = await createSession()
-
+    actions.createSession({ sessionId })
     setInput('')
     navigate('/chat/' + sessionId)
   }

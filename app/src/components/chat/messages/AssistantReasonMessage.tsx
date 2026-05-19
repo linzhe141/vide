@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
-import type { AssistantReasonSessionMessage, ConversationBlock } from '@/app/src/store/sessionStore'
+import type {
+  AssistantReasonSessionMessage,
+  ConversationBlock,
+} from '@/app/src/store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantReasonMessage({
@@ -10,11 +13,8 @@ export function AssistantReasonMessage({
   block: ConversationBlock
   message: AssistantReasonSessionMessage
 }) {
-  const isRunning = block.runtime.isStreaming && block.messages.at(-1)?.id === message.id
-  const [open, setOpen] = useState(isRunning)
-
-  if (!message.reasoning.trim()) return null
-
+  const [open, setOpen] = useState(true)
+  const isReasoning = message.reasoning === true
   return (
     <div className='space-y-4 text-xs'>
       <button
@@ -22,7 +22,7 @@ export function AssistantReasonMessage({
         className='text-text-secondary flex items-center gap-3 font-medium'
       >
         <Brain size={16} strokeWidth={2} />
-        <span>{isRunning ? 'Thinking' : 'Reason'}</span>
+        <span>{isReasoning ? 'Thinking' : 'Reason'}</span>
         {open ? (
           <ChevronDown size={16} strokeWidth={2} />
         ) : (
@@ -34,10 +34,10 @@ export function AssistantReasonMessage({
         <div className='space-y-4 pl-2'>
           <div className='border-border border-l pl-5'>
             <MarkdownRenderer
-              animation={isRunning}
+              animation={isReasoning}
               className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[12px] leading-7'
             >
-              {message.reasoning}
+              {message.content}
             </MarkdownRenderer>
           </div>
         </div>

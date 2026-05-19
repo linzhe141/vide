@@ -1,6 +1,7 @@
 import { cn } from '@/app/src/lib/utils'
 import { useChatContext } from '../../components/chat/ChatProvider'
-import { useSessionPlanners, type PlanStep } from '../../store/sessionStore'
+import { useSessionPlanners } from '../../store/sessionStore'
+import { type PlanStep } from '../../store/sessionStore/types'
 
 export function PlannersDisplay({ className }: { className?: string }) {
   const { sessionId } = useChatContext()

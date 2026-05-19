@@ -6,77 +6,29 @@ import type {
   Session,
   AssistantReasonSessionMessage,
   AssistantTextSessionMessage,
-  SessionBranch,
-  BlockNode,
 } from '../types'
 import type { WorkflowState } from '../../../hooks/createWorkflowStream'
 import { createSessionEventContext } from './utils'
-import { sessionBlocksMap } from '..'
 
-export function handleAgentEvent(
+export function handleWorkflowEvent(
   storeState: { sessions: Session[] },
   workflowEvent: WorkflowState
 ) {
   const context = createSessionEventContext(storeState, workflowEvent)
-  const { event, session, planner, currentBranch } = context
+  const { event, session, planner } = context
 
   switch (event.type) {
-    case 'agent-create-session': {
-      const { activeBranch, sessionId } = event.data
-      context.pushSession({
-        sessionId,
-        activeBranch,
-        branches: [{ name: activeBranch, headBlock: null }],
-        runtime: {
-          running: false,
-        },
-        planner: [],
-        artifacts: [],
-      })
-      return
-    }
-
-    case 'agent-session-forked': {
-      const targetBlock = sessionBlocksMap.get(session!.sessionId)?.[event.data.sourceWorkflowId!]
-      const parentBlockNode = currentBranch!.headBlock!.parent
-      const newBranch: SessionBranch = {
-        name: event.data.branchName,
-        headBlock: {
-          workflowNode: targetBlock!,
-          children: [],
-          parent: parentBlockNode,
-        },
-      }
-      if (parentBlockNode) {
-        parentBlockNode.children.push(newBranch.headBlock!)
-      }
-      context.createBranch(newBranch)
-      context.switchBranch(newBranch.name)
-      return
-    }
-
     case 'workflow-start': {
-      const { workflowId, parentWorkflowId, branchName } = event.data.ctx
-      const newBlock = createConversationBlock(workflowId, event.data.input)
-      context.pushBlock(newBlock)
-      context.updateBlockRuntime((runtime) => {
-        runtime.status = 'running'
-      })
+      // main old: null
+      // main new: a
 
-      const newBlockNode: BlockNode = {
-        workflowNode: newBlock,
-        children: [],
-        parent: null,
-      }
-      if (parentWorkflowId) {
-        const parentBlockNode = currentBranch!.headBlock!.parent
-        if (parentBlockNode) {
-          newBlockNode.parent = parentBlockNode
-          parentBlockNode.children.push(newBlockNode)
-        }
-      }
-      context.switchBranch(branchName)
-      context.commitBranch(newBlockNode)
+      // main old: a
+      // main new: a -> b
+      const { workflowId } = event.data.ctx
+      const newBlock = createConversationBlock(workflowId, event.data.input)
+      newBlock.runtime.status = 'running'
+      context.pushBlock(newBlock)
+      context.commitBranch(workflowId)
       return
     }
 

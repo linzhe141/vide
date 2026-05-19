@@ -12,7 +12,7 @@ export function AskUserQuestionView({
   blockId: string
   message: Extract<SessionMessage, { role: 'ask-user' }>
 }) {
-  const { handleSend } = useChatContext()
+  const { handleSend, sessionId } = useChatContext()
   const [selected, setSelected] = useState<string[]>(message.submitValue)
   const [submited, setSubmited] = useState(message.submitValue.length > 0)
   const { updateAskUserSubmitValue } = useSessionStoreActions()
@@ -35,7 +35,7 @@ export function AskUserQuestionView({
 
   const submit = () => {
     setSubmited(true)
-    updateAskUserSubmitValue(message.id, selected)
+    updateAskUserSubmitValue(sessionId, blockId, message.id, selected)
 
     const selectedOptions = message.options.filter((option) => selected.includes(option.value))
 

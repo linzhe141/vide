@@ -85,19 +85,21 @@ export type PlanStep = {
 
 export type BlockNode = {
   workflowNode: ConversationBlock
-  children: BlockNode[]
-  parent: BlockNode | null
+  children: string[]
+  parent: string | null
 }
 
 export type SessionBranch = {
   name: string
-  headBlock: BlockNode | null
+  headBlockId: string | null
+  sourceBlockId: string | null
 }
 
 export type Session = {
   sessionId: string
   activeBranch: string
   branches: SessionBranch[]
+  blockNodesMap: Record<string, BlockNode>
   runtime: SessionRuntime
   planner: { id: string; plan: PlanStep[] }[]
   artifacts: {

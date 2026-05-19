@@ -1,9 +1,6 @@
 import { SessionMessageRole } from '@/types'
-import {
-  useSessionStoreActions,
-  type ConversationBlock,
-  type SessionMessage,
-} from '../../store/sessionStore'
+import { useSessionStoreActions } from '../../store/sessionStore'
+import { type ConversationBlock, type SessionMessage } from '../../store/sessionStore/types'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { BlockData } from '@/electron/ipc/api/channels'
@@ -24,58 +21,52 @@ export function InitSession({ sessionId }: { sessionId: string }) {
     }
 
     async function fetchMessages() {
-      const { blockData, planner, artifacts, activeBranch, branches } = await window.ipcRendererApi.invoke(
-        'agent-resume-session',
-        {
-          sessionId: sessionId,
-        }
-      )
-
-      const conversationBlockMap: Record<string, ConversationBlock> = Object.fromEntries(
-        blockData.map((block) => [
-          block.id,
-          {
-            id: block.id,
-            parentBlockId: block.parentBlockId ?? null,
-            childBlockIds: [],
-            input: block.userInput,
-            status: 'finished',
-            runtime: {
-              isStreaming: false,
-              waitingHuman: false,
-            },
-            messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
-          } satisfies ConversationBlock,
-        ])
-      )
-
-      for (const block of Object.values(conversationBlockMap)) {
-        if (!block.parentBlockId) continue
-        const parentBlock = conversationBlockMap[block.parentBlockId]
-        if (!parentBlock) continue
-        parentBlock.childBlockIds.push(block.id)
-      }
-
-      const pendingPlanner = planner.find((p) => p.plan.some((i) => i.status !== 'completed'))
-      const activeHead = branches.find((branch) => branch.name === activeBranch)?.headWorkflowId
-
-      buildFromDatabase({
-        sessionId: sessionId,
-        activeBranch,
-        branches: branches.map((branch) => ({
-          name: branch.name,
-          headBlockId: branch.headWorkflowId,
-        })),
-        blockMap: conversationBlockMap,
-        blockOrder: blockData.map((block) => block.id),
-        currentBlockId: activeHead || undefined,
-        planner,
-        currentPlannerId: pendingPlanner?.id,
-        runtime: {
-          running: false,
-        },
-        artifacts,
-      })
+      // const { blockData, planner, artifacts, activeBranch, branches } =
+      //   await window.ipcRendererApi.invoke('agent-resume-session', {
+      //     sessionId: sessionId,
+      //   })
+      // const conversationBlockMap: Record<string, ConversationBlock> = Object.fromEntries(
+      //   blockData.map((block) => [
+      //     block.id,
+      //     {
+      //       id: block.id,
+      //       parentBlockId: block.parentBlockId ?? null,
+      //       childBlockIds: [],
+      //       input: block.userInput,
+      //       status: 'finished',
+      //       runtime: {
+      //         status: 'finished',
+      //         waitingHuman: false,
+      //       },
+      //       messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
+      //     } satisfies ConversationBlock,
+      //   ])
+      // )
+      // for (const block of Object.values(conversationBlockMap)) {
+      //   if (!block.parentBlockId) continue
+      //   const parentBlock = conversationBlockMap[block.parentBlockId]
+      //   if (!parentBlock) continue
+      //   parentBlock.childBlockIds.push(block.id)
+      // }
+      // const pendingPlanner = planner.find((p) => p.plan.some((i) => i.status !== 'completed'))
+      // const activeHead = branches.find((branch) => branch.name === activeBranch)?.headWorkflowId
+      // buildFromDatabase({
+      //   sessionId: sessionId,
+      //   activeBranch,
+      //   branches: branches.map((branch) => ({
+      //     name: branch.name,
+      //     headBlockId: branch.headWorkflowId,
+      //   })),
+      //   blockMap: conversationBlockMap,
+      //   blockOrder: blockData.map((block) => block.id),
+      //   currentBlockId: activeHead || undefined,
+      //   planner,
+      //   currentPlannerId: pendingPlanner?.id,
+      //   runtime: {
+      //     running: false,
+      //   },
+      //   artifacts,
+      // })
     }
 
     fetchMessages()
@@ -104,7 +95,7 @@ function buildBlockMessages(
           role: 'assistant-reason',
           id: message.id,
           content: message.content || '',
-          reasoning: message.content || '',
+          reasoning: false
         })
         break
 
@@ -113,7 +104,6 @@ function buildBlockMessages(
           role: 'assistant-text',
           id: message.id,
           content: message.content || '',
-          reasoning: message.content || '',
         })
         break
 

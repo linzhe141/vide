@@ -1,6 +1,12 @@
 import { GitBranch, RefreshCcw } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
-import { useSession, useSessionBlocks, useSessionStoreActions } from '../../store/sessionStore'
+import {
+  useBlockBranches,
+  useSession,
+  useSessionBlocks,
+  useSessionStore,
+  useSessionStoreActions,
+} from '../../store/sessionStore'
 import { type ConversationBlock, type SessionMessage } from '../../store/sessionStore/types'
 import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
@@ -12,9 +18,20 @@ import { UserInputMessage } from './messages/UserInputMessage'
 export function MessageList() {
   const { sessionId } = useChatContext()
   const blocks = useSessionBlocks(sessionId)
-
+  const sessionWorkflowTree = useSessionStore((s) => s.sessionWorkflowTree)
+  const { buildSessionWorkflowTree } = useSessionStoreActions()
   return (
     <div className='flex w-full flex-col gap-12 px-8 py-12'>
+      <button
+        onClick={() => {
+          buildSessionWorkflowTree(sessionId)
+          setTimeout(() => {
+            console.log('sessionWorkflowTree', sessionWorkflowTree)
+          }, 100)
+        }}
+      >
+        refresh
+      </button>
       {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
     </div>
   )
@@ -57,28 +74,32 @@ function BranchFeedback({ block }: { block: ConversationBlock }) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { switchBranch } = useSessionStoreActions()
-
+  const branchOptions = useBlockBranches(sessionId, block.id)
   if (!session) return null
 
-  const branchOptions = getBranchSelectorOptions(session, block.id)
-  if (!branchOptions.length) return null
-
+  function getBranchNameLabel(branchName: string) {
+    try {
+      const { branchName: label } = JSON.parse(branchName)
+      return label
+    } catch (_e) {
+      return branchName
+    }
+  }
   return (
     <div className='text-text-info flex flex-wrap items-center gap-2 text-xs'>
       <span className='opacity-70'>Branches on this block</span>
       {branchOptions.map((option) => (
         <button
-          key={option.name}
+          key={option.branchName}
           type='button'
-          onClick={() => switchBranch(sessionId, option.name)}
+          onClick={() => switchBranch(sessionId, option.branchName)}
           className={`rounded-full border px-2.5 py-1 transition ${
-            option.isActive
-              ? 'border-foreground/20 bg-foreground/6 text-foreground'
+            session.activeBranch === option.branchName
+              ? 'bg-foreground/6 text-foreground border-primary'
               : 'hover:bg-border/60'
           }`}
         >
-          {option.name}
-          {option.isActive ? ' current' : ''}
+          {getBranchNameLabel(option.branchName)}
         </button>
       ))}
     </div>
@@ -86,29 +107,37 @@ function BranchFeedback({ block }: { block: ConversationBlock }) {
 }
 
 function SessionActions({ block }: { block: ConversationBlock }) {
-  const { handleFork, handleRegenerate, running } = useChatContext()
+  const { handleFork, running, sessionId } = useChatContext()
+  const branchOptions = useBlockBranches(sessionId, block.id)
 
+  const firstBranch = branchOptions[0]
+  let forkBranchName = ''
+  if (firstBranch.branchName === 'main') {
+    forkBranchName = JSON.stringify({
+      branchName: `v-${branchOptions.length}`,
+      blockId: block.id,
+    })
+  } else {
+    forkBranchName = JSON.stringify({
+      branchName: `[${JSON.parse(firstBranch.branchName).branchName}]-${branchOptions.length}`,
+      blockId: block.id,
+    })
+  }
   return (
     <div className='space-y-3'>
-      <BranchFeedback block={block} />
       {block.runtime.status === 'finished' && !running && (
-        <div className='text-text-info flex items-center gap-2 text-xs'>
-          <button
-            type='button'
-            onClick={() => handleFork(block.id)}
-            className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
-          >
-            <GitBranch size={12} />
-            Fork From Here
-          </button>
-          <button
-            type='button'
-            onClick={() => handleRegenerate(block)}
-            className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
-          >
-            <RefreshCcw size={12} />
-            Re-generate From Parent
-          </button>
+        <div>
+          <BranchFeedback block={block} />
+          <div className='text-text-info my-2 flex items-center gap-2 text-xs'>
+            <button
+              type='button'
+              onClick={() => handleFork(block.id, forkBranchName)}
+              className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
+            >
+              <GitBranch size={12} />
+              Fork From Here
+            </button>
+          </div>
         </div>
       )}
     </div>

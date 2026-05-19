@@ -1,5 +1,5 @@
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import type { ConversationBlock, ToolCallSessionMessage, ToolResultSessionMessage } from '@/app/src/store/sessionStore'
+import type { ConversationBlock, ToolCallSessionMessage, ToolResultSessionMessage } from '@/app/src/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,

@@ -9,7 +9,6 @@ import type {
   SessionMessage,
 } from '../types'
 import { nanoid } from 'nanoid'
-import { sessionBlocksMap, sessionBlockNodeMap } from '..'
 
 type SessionEventContext = {
   state: { sessions: Session[] }
@@ -21,16 +20,13 @@ type SessionEventContext = {
   event: WorkflowState
 
   // operates
-  pushSession(session: Session): void
   pushBlock(block: ConversationBlock): void
   pushMessage(message: SessionMessage): void
   ensureLastMessage(
     role: 'assistant-reason' | 'assistant-text'
   ): AssistantReasonSessionMessage | AssistantTextSessionMessage
 
-  createBranch(branch: SessionBranch): void
-  switchBranch(branchName: string): void
-  commitBranch(blockNode: BlockNode): void
+  commitBranch(blockNodeId: string): void
   updateBlockRuntime(dispatch: (runtime: ConversationBlock['runtime']) => void): void
 }
 
@@ -44,7 +40,7 @@ export function createSessionEventContext(
     ? session.branches.find((item) => item.name === session.activeBranch)
     : undefined
   const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
-  const block = sessionId && workflowId ? sessionBlocksMap.get(sessionId)?.[workflowId] : undefined
+  const block = session && workflowId ? session.blockNodesMap[workflowId]?.workflowNode : undefined
   const plannerId = 'plannerId' in event.data ? event.data.plannerId : undefined
   const planner = session?.planner.find((p) => p.id === plannerId)
 
@@ -59,41 +55,26 @@ export function createSessionEventContext(
     // operates
     pushBlock(block) {
       if (!session) throw new Error('No session found for this event, this is a internal error')
-
-      const targetSessionBlocks = sessionBlocksMap.get(session.sessionId)
-      if (targetSessionBlocks) {
-        targetSessionBlocks[block.id] = block
-      } else {
-        sessionBlocksMap.set(session.sessionId, {
-          [block.id]: block,
-        })
+      if (!currentBranch)
+        throw new Error('No branch found for this event, this is a internal error')
+      const newBlockNode: BlockNode = {
+        workflowNode: block,
+        children: [],
+        parent: null,
       }
-
-      const targetBaranch = session.branches.find((item) => item.name === session.activeBranch)
-      if (targetBaranch) {
-        const newBlockNode: BlockNode = {
-          workflowNode: block,
-          children: [],
-          parent: targetBaranch.headBlock,
-        }
-        const existingMap = sessionBlockNodeMap.get(session.sessionId)!
-        if (!existingMap) {
-          sessionBlockNodeMap.set(session.sessionId, {
-            [block.id]: newBlockNode,
-          })
-        } else {
-          existingMap[block.id] = newBlockNode
-        }
-
-        const parentBlockNode = targetBaranch.headBlock
-        targetBaranch.headBlock = newBlockNode
-        if (parentBlockNode) {
-          parentBlockNode.children.push(newBlockNode)
-        }
+      session.blockNodesMap[block.id] = newBlockNode
+      const parentBlockNode = session.blockNodesMap[currentBranch.headBlockId!]
+      const headBlockId = currentBranch.headBlockId
+      // headBlockId === null 表示 main分支的第一个节点
+      if (headBlockId === null) {
+        // 第一个workflow node 作为 main分支的sourceBlock
+        currentBranch.sourceBlockId = block.id
       }
-    },
-    pushSession(session) {
-      state.sessions.push(session)
+      currentBranch.headBlockId = block.id
+      if (parentBlockNode) {
+        parentBlockNode.children.push(block.id)
+        newBlockNode.parent = parentBlockNode.workflowNode.id
+      }
     },
     pushMessage(message: SessionMessage) {
       if (!block) throw new Error('No block found for this event, this is a internal error')
@@ -128,19 +109,11 @@ export function createSessionEventContext(
       }
       return last
     },
-    createBranch(branch) {
+    commitBranch(blockNodeId) {
       if (!session) throw new Error('No session found for this event, this is a internal error')
-      session.branches.push(branch)
-    },
-    switchBranch(branchName) {
-      if (!session) throw new Error('No session found for this event, this is a internal error')
-      session.activeBranch = branchName
-    },
-    commitBranch(blockNode) {
-      if (!session) throw new Error('No session found for this event, this is a internal error')
-      const branch = session.branches.find((item) => item.name === session.activeBranch)
-      if (!branch) throw new Error('No branch found for this event')
-      branch.headBlock = blockNode
+      if (!currentBranch)
+        throw new Error('No branch found for this event, this is a internal error')
+      currentBranch.headBlockId = blockNodeId
     },
     updateBlockRuntime(dispatch) {
       if (!block) throw new Error('No block found for this event, this is a internal error')

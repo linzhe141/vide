@@ -89,40 +89,6 @@ export function useWorkflowStream() {
     [consumeStream]
   )
 
-  const fork = useCallback(
-    async (sessionId: string, targetBlockId: string | null, branchName: string) => {
-      await consumeStream(
-        async () => {
-          await window.ipcRendererApi.invoke('agent-session-fork', {
-            targetBlockId,
-            branchName,
-          })
-        },
-        {
-          sessionId,
-          closeOn: ['agent-session-forked'],
-        }
-      )
-    },
-    [consumeStream]
-  )
-
-  const forkAndSend = useCallback(
-    async (options: {
-      sessionId: string
-      targetBlockId: string | null
-      branchName: string
-      input: string
-    }) => {
-      await fork(options.sessionId, options.targetBlockId, options.branchName)
-      await send(options.input, {
-        sessionId: options.sessionId,
-        branchName: options.branchName,
-      })
-    },
-    [fork, send]
-  )
-
   const abort = useCallback(() => {
     abortControllerRef.current?.abort()
     cleanup()
@@ -130,8 +96,6 @@ export function useWorkflowStream() {
 
   return {
     send,
-    fork,
-    forkAndSend,
     abort,
     running,
   }

@@ -1,4 +1,4 @@
-import type { UserInputSessionMessage } from '@/app/src/store/sessionStore'
+import type { UserInputSessionMessage } from '@/app/src/store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function UserInputMessage({ message }: { message: UserInputSessionMessage }) {
