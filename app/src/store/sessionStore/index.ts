@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
+import { parseBranchMeta } from '../../lib/branching'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import type { Workflow, Session, SessionBranch } from './types'
+import type { Workflow, Session, SessionBranch, WorkflowBranchOption } from './types'
 
 type TreeNode = {
   workflow: Workflow
@@ -193,6 +194,19 @@ export const useSessionWorkflows = (sessionId: string) => {
 export const useWorkflowBranches = (sessionId: string, workflowId: string) => {
   const session = useSession(sessionId)
   if (!session) return []
+  const activeBranch = session.branches.find((branch) => branch.name === session.activeBranch)
+  const activeBranchMeta = activeBranch ? parseBranchMeta(activeBranch.name) : null
+  const currentNode = session.workflowNodesMap[workflowId]
+  const isRegeneratedEntryWorkflow =
+    !!activeBranch &&
+    !!activeBranchMeta &&
+    activeBranchMeta.type === 'regenerate' &&
+    !!activeBranchMeta.workflowId &&
+    currentNode?.parent === activeBranch.sourceWorkflowId
+  const variantWorkflowId =
+    isRegeneratedEntryWorkflow && activeBranchMeta?.workflowId
+      ? activeBranchMeta.workflowId
+      : workflowId
 
   const branchPath: { path: string[]; branchName: string }[] = []
 
@@ -219,10 +233,23 @@ export const useWorkflowBranches = (sessionId: string, workflowId: string) => {
     }
     branchPath.push({ path, branchName: branch.name })
   }
-  const result: { branchName: string }[] = []
+  const result: WorkflowBranchOption[] = []
   for (const { path, branchName } of branchPath) {
-    if (path.includes(workflowId)) {
-      result.push({ branchName })
+    const meta = parseBranchMeta(branchName)
+    const isCurrentRegenerateBranch =
+      isRegeneratedEntryWorkflow && branchName === session.activeBranch
+
+    if (
+      path.includes(variantWorkflowId) ||
+      meta.workflowId === variantWorkflowId ||
+      isCurrentRegenerateBranch
+    ) {
+      result.push({
+        branchName,
+        label: meta.label,
+        workflowId: meta.workflowId,
+        type: meta.type,
+      })
     }
   }
   return result

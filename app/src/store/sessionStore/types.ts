@@ -95,6 +95,13 @@ export type SessionBranch = {
   sourceWorkflowId: string | null
 }
 
+export type WorkflowBranchOption = {
+  branchName: string
+  label: string
+  workflowId: string | null
+  type: 'main' | 'fork' | 'regenerate'
+}
+
 export type Session = {
   sessionId: string
   activeBranch: string

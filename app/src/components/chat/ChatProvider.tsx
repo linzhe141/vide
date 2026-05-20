@@ -49,10 +49,10 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
       regenerateWorkflow({ sessionId, sourceWorkflowId: regenerateWorkflowId, branchName })
       await send(input, {
         sessionId: sessionId,
-        branchName: session?.activeBranch,
+        branchName,
       })
     },
-    [regenerateWorkflow, send, session?.activeBranch, sessionId]
+    [regenerateWorkflow, send, sessionId]
   )
 
   const value: ChatContextType = useMemo(
