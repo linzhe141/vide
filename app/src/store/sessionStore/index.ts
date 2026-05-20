@@ -27,6 +27,11 @@ type SessionActions = {
     switchBranch: (sessionId: string, branchName: string) => void
     createSession: (data: { sessionId: string }) => void
     forkSession: (data: { sessionId: string; sourceWorkflowId: string; branchName: string }) => void
+    regenerateWorkflow: (data: {
+      sessionId: string
+      sourceWorkflowId: string
+      branchName: string
+    }) => void
     // for debugger
     buildSessionWorkflowTree: (sessionId: string) => any
   }
@@ -110,6 +115,22 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             name: branchName,
             headWorkflowId: sourceWorkflowId,
             sourceWorkflowId: sourceWorkflowId,
+          }
+          session.branches.push(newBranch)
+          session.activeBranch = branchName
+        })
+      },
+      regenerateWorkflow({ sessionId, sourceWorkflowId, branchName }) {
+        set((state) => {
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const regenerateWorkflowNode = session.workflowNodesMap[sourceWorkflowId]
+          if (!regenerateWorkflowNode) return
+          const parentId = regenerateWorkflowNode.parent
+          const newBranch: SessionBranch = {
+            name: branchName,
+            headWorkflowId: parentId,
+            sourceWorkflowId: parentId,
           }
           session.branches.push(newBranch)
           session.activeBranch = branchName

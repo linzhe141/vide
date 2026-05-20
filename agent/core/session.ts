@@ -106,6 +106,25 @@ export class Session {
     })
   }
 
+  regenerateWorkflow(
+    branchName: string,
+    regenerateWorkflowNode: SessionWorkflowNode,
+    input?: string
+  ) {
+    this.activeBranch = branchName
+    const parentNode = regenerateWorkflowNode.parent
+    this.branchs[branchName] = {
+      head: parentNode,
+      source: parentNode,
+    }
+    agentEvent.emit('agent-workflow-regenerated', {
+      sessionId: this.sessionId,
+      branchName,
+      sourceWorkflowId: parentNode?.id || null,
+      input,
+    })
+  }
+
   buildLLMMessages() {
     const currentHead = this.currentBranch?.head ?? null
     if (!currentHead) return []

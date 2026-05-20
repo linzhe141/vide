@@ -131,6 +131,16 @@ export class AgentIpcMainService implements IpcMainService {
       this.session.fork(branchName, targetNode)
     })
 
+    ipcMainApi.handle(
+      'agent-workflow-regenerate',
+      async ({ targetWorkflowId, branchName, input }) => {
+        logger.info('agent-workflow-regenerate ', branchName, targetWorkflowId, input)
+        const targetNode = this.session.getWorkflowNode(targetWorkflowId)
+        if (!targetNode) return
+        this.session.regenerateWorkflow(branchName, targetNode, input)
+      }
+    )
+
     ipcMainApi.handle('ask-user-question-submit', async (data) => {
       await db
         .update(schema.askUserQuestions)

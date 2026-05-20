@@ -107,7 +107,7 @@ function BranchFeedback({ workflow }: { workflow: Workflow }) {
 }
 
 function SessionActions({ workflow }: { workflow: Workflow }) {
-  const { handleFork, running, sessionId } = useChatContext()
+  const { handleFork, running, sessionId, handleRegenerate } = useChatContext()
   const branchOptions = useWorkflowBranches(sessionId, workflow.id)
 
   const firstBranch = branchOptions[0]
@@ -123,6 +123,15 @@ function SessionActions({ workflow }: { workflow: Workflow }) {
       workflowId: workflow.id,
     })
   }
+
+  function onClickRegenerate() {
+    const input = workflow.input
+    const regenerateBranchName = JSON.stringify({
+      branchName: `regenerate-${Date.now()}`,
+      workflowId: workflow.id,
+    })
+    handleRegenerate(workflow.id, regenerateBranchName, input)
+  }
   return (
     <div className='space-y-3'>
       {workflow.runtime.status === 'finished' && !running && (
@@ -136,6 +145,15 @@ function SessionActions({ workflow }: { workflow: Workflow }) {
             >
               <GitBranch size={12} />
               Fork From Here
+            </button>
+
+            <button
+              type='button'
+              onClick={onClickRegenerate}
+              className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
+            >
+              <RefreshCcw size={12} />
+              Regenerate
             </button>
           </div>
         </div>

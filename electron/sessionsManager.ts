@@ -116,6 +116,19 @@ export class SessionsManager {
       })
     })
 
+    onAgentEvent('agent-workflow-regenerated', async (data) => {
+      await this.updateSessionState({
+        sessionId: data.sessionId,
+        activeBranch: data.branchName,
+      })
+      await this.upsertSessionBranch({
+        sessionId: data.sessionId,
+        branchName: data.branchName,
+        headWorkflowId: data.sourceWorkflowId,
+        sourceWorkflowId: data.sourceWorkflowId,
+      })
+    })
+
     onWorkflowEvent('workflow-start', async ({ input, ctx }) => {
       const time = Date.now()
       const rows = await db.select().from(sessions).where(eq(sessions.id, ctx.sessionId))

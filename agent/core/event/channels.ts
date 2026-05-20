@@ -13,6 +13,12 @@ const AgentLifecycleEventChannels = {
     branchName: string
     sourceWorkflowId: string | null
   },
+  'agent-workflow-regenerated': null as unknown as {
+    sessionId: string
+    branchName: string
+    sourceWorkflowId: string | null
+    input?: string
+  },
 }
 export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
 export type AgentLifecycleEvents = {

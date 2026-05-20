@@ -57,6 +57,11 @@ export interface RenderChannel {
   }>
   'agent-session-send': (data: { input: string }) => void
   'agent-session-fork': (data: { targetWorkflowId: string | null; branchName: string }) => void
+  'agent-workflow-regenerate': (data: {
+    targetWorkflowId: string
+    branchName: string
+    input?: string
+  }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
