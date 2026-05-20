@@ -2,10 +2,10 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import type { ConversationBlock, Session, SessionBranch } from './types'
+import type { Workflow, Session, SessionBranch } from './types'
 
 type TreeNode = {
-  workflowNode: ConversationBlock
+  workflow: Workflow
   children: TreeNode[]
   parent: string | null
 }
@@ -20,7 +20,7 @@ type SessionActions = {
     buildFromDatabase: (data: Session) => void
     updateAskUserSubmitValue: (
       sessionId: string,
-      blockId: string,
+      workflowId: string,
       messageId: string,
       value: string[]
     ) => void
@@ -50,13 +50,13 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           state.sessions.push(data)
         })
       },
-      updateAskUserSubmitValue(sessionId, blockId, messageId, value) {
+      updateAskUserSubmitValue(sessionId, workflowId, messageId, value) {
         set((state) => {
           const session = state.sessions.find((item) => item.sessionId === sessionId)
           if (!session) return
-          const blockNode = session.blockNodesMap[blockId]
-          if (!blockNode) return
-          const message = blockNode.workflowNode.messages.find((item) => item.id === messageId)
+          const workflowNode = session.workflowNodesMap[workflowId]
+          if (!workflowNode) return
+          const message = workflowNode.workflow.messages.find((item) => item.id === messageId)
           if (!message || message.role !== 'ask-user') return
           message.submitValue = value
         })
@@ -79,12 +79,12 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             branches: [
               {
                 name: activeBranch,
-                headBlockId: null,
-                // main 分支的 sourceBlockId 永远为 null，因为 main 分支是从无到有创建的
-                sourceBlockId: null,
+                headWorkflowId: null,
+                // main 分支的 sourceWorkflowId 永远为 null，因为 main 分支是从无到有创建的
+                sourceWorkflowId: null,
               },
             ],
-            blockNodesMap: {},
+            workflowNodesMap: {},
             runtime: {
               running: false,
             },
@@ -110,8 +110,8 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           if (!session) return
           const newBranch: SessionBranch = {
             name: branchName,
-            headBlockId: sourceWorkflowId,
-            sourceBlockId: sourceWorkflowId,
+            headWorkflowId: sourceWorkflowId,
+            sourceWorkflowId: sourceWorkflowId,
           }
           session.branches.push(newBranch)
           session.activeBranch = branchName
@@ -123,18 +123,18 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const session = state.sessions.find((s) => s.sessionId === sessionId)
           if (!session) return
 
-          const blockNodesMap = session.blockNodesMap
+          const workflowNodesMap = session.workflowNodesMap
 
           function buildNode(id: string): TreeNode {
-            const node = blockNodesMap[id]
+            const node = workflowNodesMap[id]
             return {
-              workflowNode: node.workflowNode,
+              workflow: node.workflow,
               children: node.children.map((childId) => buildNode(childId)),
               parent: node.parent ?? null,
             }
           }
 
-          const rootId = Object.values(blockNodesMap).find((n) => !n.parent)?.workflowNode.id
+          const rootId = Object.values(workflowNodesMap).find((n) => !n.parent)?.workflow.id
           if (!rootId) {
             state.sessionWorkflowTree = null
             return
@@ -152,26 +152,26 @@ export const useSessionStoreActions = () => useSessionStore((state) => state.act
 export const useSession = (sessionId: string) =>
   useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId))
 
-export const useSessionBlocks = (sessionId: string) => {
+export const useSessionWorkflows = (sessionId: string) => {
   const session = useSession(sessionId)
   if (!session) return undefined
 
   const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-  if (!activeBranch || !activeBranch.headBlockId) return undefined
+  if (!activeBranch || !activeBranch.headWorkflowId) return undefined
 
-  function traverse(nodeId: string, result: ConversationBlock[] = []) {
-    const node = session!.blockNodesMap[nodeId]
-    result.unshift(node.workflowNode)
+  function traverse(nodeId: string, result: Workflow[] = []) {
+    const node = session!.workflowNodesMap[nodeId]
+    result.unshift(node.workflow)
     if (node.parent) {
       traverse(node.parent, result)
     }
     return result
   }
 
-  return traverse(activeBranch.headBlockId)
+  return traverse(activeBranch.headWorkflowId)
 }
 
-export const useBlockBranches = (sessionId: string, blockId: string) => {
+export const useWorkflowBranches = (sessionId: string, workflowId: string) => {
   const session = useSession(sessionId)
   if (!session) return []
 
@@ -179,21 +179,21 @@ export const useBlockBranches = (sessionId: string, blockId: string) => {
 
   for (const branch of session.branches) {
     const path: string[] = []
-    let currentBlockId = branch.headBlockId
+    let currentWorkflowId = branch.headWorkflowId
 
-    while (currentBlockId) {
-      path.unshift(currentBlockId) // 从头部插入，保持从上到下的顺序
+    while (currentWorkflowId) {
+      path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
 
-      const currentNode = session.blockNodesMap[currentBlockId]
+      const currentNode = session.workflowNodesMap[currentWorkflowId]
 
-      // 如果当前节点是 sourceBlockId，停止收集（不包含 sourceBlockId 本身）
-      if (branch.sourceBlockId && currentNode.workflowNode.id === branch.sourceBlockId) {
+      // 如果当前节点是 sourceWorkflowId，停止收集（不包含 sourceWorkflowId 本身）
+      if (branch.sourceWorkflowId && currentNode.workflow.id === branch.sourceWorkflowId) {
         break
       }
 
       // 继续向上遍历父节点
       if (currentNode.parent) {
-        currentBlockId = currentNode.parent
+        currentWorkflowId = currentNode.parent
       } else {
         break
       }
@@ -202,7 +202,7 @@ export const useBlockBranches = (sessionId: string, blockId: string) => {
   }
   const result: { branchName: string }[] = []
   for (const { path, branchName } of branchPath) {
-    if (path.includes(blockId)) {
+    if (path.includes(workflowId)) {
       result.push({ branchName })
     }
   }

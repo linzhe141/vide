@@ -9,7 +9,7 @@ import { db } from '@/electron/databaseManager'
 import { logger } from '@/electron/logger'
 import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
-import type { BlockData } from '../../api/channels'
+import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
 
 export class AgentIpcMainService implements IpcMainService {
@@ -35,50 +35,50 @@ export class AgentIpcMainService implements IpcMainService {
         .where(eq(schema.sessions.id, data.sessionId))
       const sessionRow = sessionRows[0]
 
-      const blocks = await db
+      const workflows = await db
         .select({
-          id: schema.sessionWorkflowBlocks.id,
-          userInput: schema.sessionWorkflowBlocks.input,
-          parentBlockId: schema.sessionWorkflowBlocks.parentBlockId,
+          id: schema.sessionWorkflows.id,
+          userInput: schema.sessionWorkflows.input,
+          parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
         })
-        .from(schema.sessionWorkflowBlocks)
-        .where(eq(schema.sessionWorkflowBlocks.sessionId, data.sessionId))
-        .orderBy(asc(schema.sessionWorkflowBlocks.createdAt))
+        .from(schema.sessionWorkflows)
+        .where(eq(schema.sessionWorkflows.sessionId, data.sessionId))
+        .orderBy(asc(schema.sessionWorkflows.createdAt))
 
-      const blockData: (BlockData & {
-        parentBlockId: string | null
+      const workflowData: (WorkflowData & {
+        parentWorkflowId: string | null
       })[] = []
       const askUserSubmitValues = new Map<string, string[]>()
 
-      for (const block of blocks) {
-        const blockMessageRows = await db
+      for (const workflow of workflows) {
+        const workflowMessageRows = await db
           .select()
-          .from(schema.sessionWorkflowBlockMessages)
-          .where(eq(schema.sessionWorkflowBlockMessages.blockId, block.id))
-          .orderBy(asc(schema.sessionWorkflowBlockMessages.createdAt))
+          .from(schema.sessionWorkflowMessages)
+          .where(eq(schema.sessionWorkflowMessages.workflowId, workflow.id))
+          .orderBy(asc(schema.sessionWorkflowMessages.createdAt))
         const askUserQuestionRows = await db
           .select()
           .from(schema.askUserQuestions)
-          .where(eq(schema.askUserQuestions.blockId, block.id))
+          .where(eq(schema.askUserQuestions.workflowId, workflow.id))
           .orderBy(asc(schema.askUserQuestions.createdAt))
         const askUserQuestion = askUserQuestionRows[0]
 
         if (askUserQuestion?.answerJson) {
-          askUserSubmitValues.set(block.id, JSON.parse(askUserQuestion.answerJson))
+          askUserSubmitValues.set(workflow.id, JSON.parse(askUserQuestion.answerJson))
         }
 
-        blockData.push({
-          id: block.id,
-          userInput: block.userInput,
-          parentBlockId: block.parentBlockId,
-          messages: blockMessageRows,
+        workflowData.push({
+          id: workflow.id,
+          userInput: workflow.userInput,
+          parentWorkflowId: workflow.parentWorkflowId,
+          messages: workflowMessageRows,
         })
       }
 
       const branchRows = await db
         .select({
           name: schema.sessionBranches.name,
-          headWorkflowId: schema.sessionBranches.headBlockId,
+          headWorkflowId: schema.sessionBranches.headWorkflowId,
         })
         .from(schema.sessionBranches)
         .where(eq(schema.sessionBranches.sessionId, data.sessionId))
@@ -88,13 +88,13 @@ export class AgentIpcMainService implements IpcMainService {
         sessionId: data.sessionId,
         activeBranch: sessionRow?.activeBranch || 'main',
         branches: branchRows,
-        blockData,
+        workflowData,
       })
 
-      const uiBlockData = blockData.map((block) => ({
-        ...block,
-        parentBlockId: block.parentBlockId,
-        askUserSubmitValue: askUserSubmitValues.get(block.id),
+      const uiWorkflowData = workflowData.map((workflow) => ({
+        ...workflow,
+        parentWorkflowId: workflow.parentWorkflowId,
+        askUserSubmitValue: askUserSubmitValues.get(workflow.id),
       }))
 
       const plannerRows = await db
@@ -114,7 +114,7 @@ export class AgentIpcMainService implements IpcMainService {
           id: item.id,
           plan: JSON.parse(item.planJson || '[]') as PlanStep[],
         })),
-        blockData: uiBlockData,
+        workflowData: uiWorkflowData,
         artifacts: artifactRows,
       }
     })
@@ -124,9 +124,9 @@ export class AgentIpcMainService implements IpcMainService {
       this.session.run(input, branchName)
     })
 
-    ipcMainApi.handle('agent-session-fork', async ({ targetBlockId, branchName }) => {
-      logger.info('agent-session-fork ', branchName, targetBlockId)
-      const targetNode = targetBlockId ? this.session.getWorkflowNode(targetBlockId) : null
+    ipcMainApi.handle('agent-session-fork', async ({ targetWorkflowId, branchName }) => {
+      logger.info('agent-session-fork ', branchName, targetWorkflowId)
+      const targetNode = targetWorkflowId ? this.session.getWorkflowNode(targetWorkflowId) : null
       this.session.fork(branchName, targetNode)
     })
 
@@ -136,7 +136,7 @@ export class AgentIpcMainService implements IpcMainService {
         .set({
           answerJson: JSON.stringify(data.submitValue),
         })
-        .where(eq(schema.askUserQuestions.blockId, data.workflowId))
+        .where(eq(schema.askUserQuestions.workflowId, data.workflowId))
     })
   }
 

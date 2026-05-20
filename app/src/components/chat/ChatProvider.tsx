@@ -4,7 +4,7 @@ import { useSession, useSessionRuntime, useSessionStoreActions } from '../../sto
 
 interface ChatContextType {
   handleSend: (input: string) => Promise<void>
-  handleFork: (targetBlockId: string, branchName: string) => void
+  handleFork: (targetWorkflowId: string, branchName: string) => void
   running: boolean
   sessionId: string
 }
@@ -29,12 +29,12 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
   )
 
   const handleFork = useCallback(
-    async (targetBlockId: string, nextBranchName: string) => {
+    async (targetWorkflowId: string, nextBranchName: string) => {
       await window.ipcRendererApi.invoke('agent-session-fork', {
-        targetBlockId,
+        targetWorkflowId,
         branchName: nextBranchName,
       })
-      forkSession({ sessionId, sourceWorkflowId: targetBlockId, branchName: nextBranchName })
+      forkSession({ sessionId, sourceWorkflowId: targetWorkflowId, branchName: nextBranchName })
     },
     [forkSession, sessionId]
   )

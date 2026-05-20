@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import type {
-  ConversationBlock,
+  Workflow,
   PlanStep,
   Session,
   AssistantReasonSessionMessage,
@@ -25,21 +25,21 @@ export function handleWorkflowEvent(
       // main old: a
       // main new: a -> b
       const { workflowId } = event.data.ctx
-      const newBlock = createConversationBlock(workflowId, event.data.input)
-      newBlock.runtime.status = 'running'
-      context.pushBlock(newBlock)
+      const newWorkflow = createWorkflow(workflowId, event.data.input)
+      newWorkflow.runtime.status = 'running'
+      context.pushWorkflow(newWorkflow)
       context.commitBranch(workflowId)
       return
     }
 
     case 'workflow-finished':
-      context.updateBlockRuntime((runtime) => {
+      context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'finished'
       })
       return
 
     case 'workflow-error':
-      context.updateBlockRuntime((runtime) => {
+      context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'error'
       })
       context.pushMessage({
@@ -50,7 +50,7 @@ export function handleWorkflowEvent(
       return
 
     case 'workflow-wait-human-approve':
-      context.updateBlockRuntime((runtime) => {
+      context.updateWorkflowRuntime((runtime) => {
         runtime.waitingHuman = true
       })
       return
@@ -182,7 +182,7 @@ export function handleWorkflowEvent(
   }
 }
 
-function createConversationBlock(workflowId: string, input: string): ConversationBlock {
+function createWorkflow(workflowId: string, input: string): Workflow {
   return {
     id: workflowId,
     input,

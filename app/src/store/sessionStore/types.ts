@@ -63,7 +63,7 @@ export type SessionMessage =
   | AskUserSessionMessage
   | ErrorSessionMessage
 
-export type ConversationBlock = {
+export type Workflow = {
   id: string
   input: string
   messages: SessionMessage[]
@@ -83,23 +83,23 @@ export type PlanStep = {
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
 
-export type BlockNode = {
-  workflowNode: ConversationBlock
+export type WorkflowNode = {
+  workflow: Workflow
   children: string[]
   parent: string | null
 }
 
 export type SessionBranch = {
   name: string
-  headBlockId: string | null
-  sourceBlockId: string | null
+  headWorkflowId: string | null
+  sourceWorkflowId: string | null
 }
 
 export type Session = {
   sessionId: string
   activeBranch: string
   branches: SessionBranch[]
-  blockNodesMap: Record<string, BlockNode>
+  workflowNodesMap: Record<string, WorkflowNode>
   runtime: SessionRuntime
   planner: { id: string; plan: PlanStep[] }[]
   artifacts: {

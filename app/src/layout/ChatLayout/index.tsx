@@ -9,7 +9,7 @@ import React, {
   type PropsWithChildren,
 } from 'react'
 import { cn } from '../../lib/utils'
-import { useSessionBlocks, useSessionPlanners } from '../../store/sessionStore'
+import { useSessionWorkflows, useSessionPlanners } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
 import { ArrowDown, FileText, ListChecks } from 'lucide-react'
@@ -107,7 +107,10 @@ export function ChatLayout({ children }: PropsWithChildren) {
           })}
         >
           {type === 'Artifacts' && (
-            <ArtifactsDisplay sessionId={sessionId} className={cn({ 'whitespace-nowrap': moving })} />
+            <ArtifactsDisplay
+              sessionId={sessionId}
+              className={cn({ 'whitespace-nowrap': moving })}
+            />
           )}
           {type === 'Planners' && (
             <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
@@ -120,7 +123,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
-  const blocks = useSessionBlocks(sessionId)
+  const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
   const { scrollContainerRef, scrollToBottom } = useChatLayout()
@@ -142,9 +145,9 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
   return (
     <div ref={scrollContainerRef} className='h-0 flex-1 overflow-auto'>
       <div className='mx-auto max-w-[920px]'>{children}</div>
-      {blocks && (
+      {workflows && (
         <MessageNavigator
-          items={blocks.map((i, index) => {
+          items={workflows.map((i, index) => {
             return {
               index,
               id: i.id,

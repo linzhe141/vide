@@ -1,9 +1,9 @@
 import { SessionMessageRole } from '@/types'
 import { useSessionStoreActions } from '../../store/sessionStore'
-import { type ConversationBlock, type SessionMessage } from '../../store/sessionStore/types'
+import { type Workflow, type SessionMessage } from '../../store/sessionStore/types'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
-import type { BlockData } from '@/electron/ipc/api/channels'
+import type { WorkflowData } from '@/electron/ipc/api/channels'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import { useChatContext } from '../../components/chat/ChatProvider'
 
@@ -75,7 +75,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
 }
 
 function buildBlockMessages(
-  messages: BlockData['messages'],
+  messages: WorkflowData['messages'],
   askUserSubmitValue: string[]
 ): SessionMessage[] {
   const result: SessionMessage[] = []
@@ -95,7 +95,7 @@ function buildBlockMessages(
           role: 'assistant-reason',
           id: message.id,
           content: message.content || '',
-          reasoning: false
+          reasoning: false,
         })
         break
 

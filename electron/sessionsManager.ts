@@ -16,8 +16,8 @@ import {
   planners,
   sessionBranches,
   sessions,
-  sessionWorkflowBlockMessages,
-  sessionWorkflowBlocks,
+  sessionWorkflowMessages,
+  sessionWorkflows,
 } from '@/db/schema'
 import { db } from './databaseManager'
 import type { AppManager } from './appManager'
@@ -32,14 +32,17 @@ export class SessionsManager {
   private async upsertSessionBranch(data: {
     sessionId: string
     branchName: string
-    headBlockId: string | null
+    headWorkflowId: string | null
   }) {
     const time = Date.now()
     const existingRows = await db
       .select()
       .from(sessionBranches)
       .where(
-        and(eq(sessionBranches.sessionId, data.sessionId), eq(sessionBranches.name, data.branchName))
+        and(
+          eq(sessionBranches.sessionId, data.sessionId),
+          eq(sessionBranches.name, data.branchName)
+        )
       )
 
     const existingRow = existingRows[0]
@@ -47,7 +50,7 @@ export class SessionsManager {
       await db
         .update(sessionBranches)
         .set({
-          headBlockId: data.headBlockId,
+          headWorkflowId: data.headWorkflowId,
           updatedAt: time,
         })
         .where(eq(sessionBranches.id, existingRow.id))
@@ -58,7 +61,7 @@ export class SessionsManager {
       id: uuid(),
       sessionId: data.sessionId,
       name: data.branchName,
-      headBlockId: data.headBlockId,
+      headWorkflowId: data.headWorkflowId,
       createdAt: time,
       updatedAt: time,
     })
@@ -87,7 +90,7 @@ export class SessionsManager {
       await this.upsertSessionBranch({
         sessionId: data.sessionId,
         branchName: data.activeBranch,
-        headBlockId: null,
+        headWorkflowId: null,
       })
     })
 
@@ -99,7 +102,7 @@ export class SessionsManager {
       await this.upsertSessionBranch({
         sessionId: data.sessionId,
         branchName: data.branchName,
-        headBlockId: data.sourceWorkflowId,
+        headWorkflowId: data.sourceWorkflowId,
       })
     })
 
@@ -115,10 +118,10 @@ export class SessionsManager {
         activeBranch: ctx.branchName,
       })
 
-      await db.insert(sessionWorkflowBlocks).values({
+      await db.insert(sessionWorkflows).values({
         id: ctx.workflowId,
         sessionId: ctx.sessionId,
-        parentBlockId: ctx.parentWorkflowId,
+        parentWorkflowId: ctx.parentWorkflowId,
         input,
         createdAt: time,
         updatedAt: time,
@@ -126,13 +129,13 @@ export class SessionsManager {
       await this.upsertSessionBranch({
         sessionId: ctx.sessionId,
         branchName: ctx.branchName,
-        headBlockId: ctx.workflowId,
+        headWorkflowId: ctx.workflowId,
       })
 
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         role: SessionMessageRole.User,
-        blockId: ctx.workflowId,
+        workflowId: ctx.workflowId,
         content: input,
         createdAt: time,
         updatedAt: time,
@@ -153,9 +156,9 @@ export class SessionsManager {
     onWorkflowEvent('workflow-llm-reasoning-delta', async () => {})
     onWorkflowEvent('workflow-llm-reasoning-end', async ({ ctx: { workflowId }, content }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        blockId: workflowId,
+        workflowId,
         role: SessionMessageRole.AssistantReason,
         content,
         payload: '',
@@ -168,9 +171,9 @@ export class SessionsManager {
     onWorkflowEvent('workflow-llm-text-delta', async () => {})
     onWorkflowEvent('workflow-llm-text-end', async ({ ctx: { workflowId }, content }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        blockId: workflowId,
+        workflowId,
         role: SessionMessageRole.AssistantText,
         content,
         payload: '',
@@ -184,9 +187,9 @@ export class SessionsManager {
     onWorkflowEvent('workflow-llm-tool-call-arguments', async () => {})
     onWorkflowEvent('workflow-llm-tool-calls-end', async ({ ctx: { workflowId }, toolCalls }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        blockId: workflowId,
+        workflowId,
         role: SessionMessageRole.ToolCalls,
         content: '',
         payload: JSON.stringify(toolCalls),
@@ -198,10 +201,10 @@ export class SessionsManager {
     onWorkflowEvent('workflow-tool-call-start', async () => {})
     onWorkflowEvent('workflow-tool-call-success', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         role: SessionMessageRole.Tool,
-        blockId: ctx.workflowId,
+        workflowId: ctx.workflowId,
         content: '',
         createdAt: time,
         updatedAt: time,
@@ -210,10 +213,10 @@ export class SessionsManager {
     })
     onWorkflowEvent('workflow-tool-call-error', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         role: SessionMessageRole.Tool,
-        blockId: ctx.workflowId,
+        workflowId: ctx.workflowId,
         content: '',
         createdAt: time,
         updatedAt: time,
@@ -222,10 +225,10 @@ export class SessionsManager {
     })
     onWorkflowEvent('workflow-tool-call-reject', async ({ ctx, toolCallResult }) => {
       const time = Date.now()
-      await db.insert(sessionWorkflowBlockMessages).values({
+      await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         role: SessionMessageRole.Tool,
-        blockId: ctx.workflowId,
+        workflowId: ctx.workflowId,
         content: '',
         payload: JSON.stringify(toolCallResult),
         createdAt: time,
@@ -315,7 +318,7 @@ export class SessionsManager {
 
       await db.insert(askUserQuestions).values({
         id: uuid(),
-        blockId: workflowId,
+        workflowId,
         draftJson: JSON.stringify(normalizedQuestion),
         createdAt: time,
         updatedAt: time,

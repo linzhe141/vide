@@ -8,8 +8,8 @@ import {
   planners,
   sessionBranches,
   sessions,
-  sessionWorkflowBlockMessages,
-  sessionWorkflowBlocks,
+  sessionWorkflowMessages,
+  sessionWorkflows,
 } from '@/db/schema'
 
 export class DevIpcMainService implements IpcMainService {
@@ -17,11 +17,11 @@ export class DevIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('dev-delete-database-rows', async () => {
-      await db.delete(sessionWorkflowBlockMessages)
+      await db.delete(sessionWorkflowMessages)
       await db.delete(askUserQuestions)
 
       await db.delete(sessionBranches)
-      await db.delete(sessionWorkflowBlocks)
+      await db.delete(sessionWorkflows)
 
       await db.delete(planners)
       await db.delete(artifacts)

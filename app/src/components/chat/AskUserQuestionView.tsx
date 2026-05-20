@@ -6,10 +6,10 @@ import type { SessionMessage } from '../../store/sessionStore/types'
 
 export const AskUserQuestionUserSlectedReultPrefix = 'AskUserQuestionUserSlectedReult'
 export function AskUserQuestionView({
-  blockId,
+  workflowId,
   message,
 }: {
-  blockId: string
+  workflowId: string
   message: Extract<SessionMessage, { role: 'ask-user' }>
 }) {
   const { handleSend, sessionId } = useChatContext()
@@ -35,7 +35,7 @@ export function AskUserQuestionView({
 
   const submit = () => {
     setSubmited(true)
-    updateAskUserSubmitValue(sessionId, blockId, message.id, selected)
+    updateAskUserSubmitValue(sessionId, workflowId, message.id, selected)
 
     const selectedOptions = message.options.filter((option) => selected.includes(option.value))
 
@@ -51,7 +51,7 @@ ${JSON.stringify(selectedOptions.map((option) => option.value))}
 
     window.ipcRendererApi.invoke('ask-user-question-submit', {
       submitValue: selected,
-      workflowId: blockId,
+      workflowId: workflowId,
     })
   }
 

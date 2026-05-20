@@ -1,7 +1,7 @@
 import { SessionMessageRole } from '@/types'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
-import type { BlockData } from '@/electron/ipc/api/channels'
+import type { WorkflowData } from '@/electron/ipc/api/channels'
 import {
   Session,
   type SessionBranchSnapshot,
@@ -26,14 +26,14 @@ export class Agent {
     sessionId: string
     activeBranch: string
     branches: SessionBranchSnapshot[]
-    blockData: (BlockData & {
-      parentBlockId: string | null
+    workflowData: (WorkflowData & {
+      parentWorkflowId: string | null
     })[]
   }) {
-    const workflows: SessionWorkflowSnapshot[] = data.blockData.map((block) => ({
-      id: block.id,
-      parentWorkflowId: block.parentBlockId,
-      messages: this.buildChatMessages(block.messages),
+    const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
+      id: workflow.id,
+      parentWorkflowId: workflow.parentWorkflowId,
+      messages: this.buildChatMessages(workflow.messages),
     }))
 
     const snapshot: SessionSnapshot = {
@@ -46,7 +46,7 @@ export class Agent {
     return Session.resume(snapshot)
   }
 
-  buildChatMessages(messages: BlockData['messages']) {
+  buildChatMessages(messages: WorkflowData['messages']) {
     const chatMessages: ChatMessage[] = []
     let assistantMessage: AssistantChatMessage | null = null
     for (const message of messages) {

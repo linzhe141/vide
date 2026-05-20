@@ -1,13 +1,13 @@
 import { GitBranch, RefreshCcw } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import {
-  useBlockBranches,
+  useWorkflowBranches,
   useSession,
-  useSessionBlocks,
+  useSessionWorkflows,
   useSessionStore,
   useSessionStoreActions,
 } from '../../store/sessionStore'
-import { type ConversationBlock, type SessionMessage } from '../../store/sessionStore/types'
+import { type Workflow, type SessionMessage } from '../../store/sessionStore/types'
 import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
 import { useChatContext } from './ChatProvider'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
@@ -17,7 +17,7 @@ import { UserInputMessage } from './messages/UserInputMessage'
 
 export function MessageList() {
   const { sessionId } = useChatContext()
-  const blocks = useSessionBlocks(sessionId)
+  const workflows = useSessionWorkflows(sessionId)
   const sessionWorkflowTree = useSessionStore((s) => s.sessionWorkflowTree)
   const { buildSessionWorkflowTree } = useSessionStoreActions()
   return (
@@ -32,12 +32,12 @@ export function MessageList() {
       >
         refresh
       </button>
-      {blocks?.map((block) => <BlockView key={block.id} block={block} />)}
+      {workflows?.map((workflow) => <WorkflowView key={workflow.id} workflow={workflow} />)}
     </div>
   )
 }
 
-function MessageView({ block, message }: { block: ConversationBlock; message: SessionMessage }) {
+function MessageView({ workflow, message }: { workflow: Workflow; message: SessionMessage }) {
   switch (message.role) {
     case 'user':
       return message.content.startsWith(AskUserQuestionUserSlectedReultPrefix) ? null : (
@@ -48,16 +48,16 @@ function MessageView({ block, message }: { block: ConversationBlock; message: Se
       return <AssistantTextMessage message={message} />
 
     case 'assistant-reason':
-      return <AssistantReasonMessage message={message} block={block} />
+      return <AssistantReasonMessage message={message} workflow={workflow} />
 
     case 'tool-call':
-      return <ToolCallMessage block={block} message={message} />
+      return <ToolCallMessage workflow={workflow} message={message} />
 
     case 'tool-result':
       return null
 
     case 'ask-user':
-      return <AskUserQuestionView blockId={block.id} message={message} />
+      return <AskUserQuestionView workflowId={workflow.id} message={message} />
 
     case 'error':
       return (
@@ -70,11 +70,11 @@ function MessageView({ block, message }: { block: ConversationBlock; message: Se
   }
 }
 
-function BranchFeedback({ block }: { block: ConversationBlock }) {
+function BranchFeedback({ workflow }: { workflow: Workflow }) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { switchBranch } = useSessionStoreActions()
-  const branchOptions = useBlockBranches(sessionId, block.id)
+  const branchOptions = useWorkflowBranches(sessionId, workflow.id)
   if (!session) return null
 
   function getBranchNameLabel(branchName: string) {
@@ -87,7 +87,7 @@ function BranchFeedback({ block }: { block: ConversationBlock }) {
   }
   return (
     <div className='text-text-info flex flex-wrap items-center gap-2 text-xs'>
-      <span className='opacity-70'>Branches on this block</span>
+      <span className='opacity-70'>Branches on this workflow</span>
       {branchOptions.map((option) => (
         <button
           key={option.branchName}
@@ -106,32 +106,32 @@ function BranchFeedback({ block }: { block: ConversationBlock }) {
   )
 }
 
-function SessionActions({ block }: { block: ConversationBlock }) {
+function SessionActions({ workflow }: { workflow: Workflow }) {
   const { handleFork, running, sessionId } = useChatContext()
-  const branchOptions = useBlockBranches(sessionId, block.id)
+  const branchOptions = useWorkflowBranches(sessionId, workflow.id)
 
   const firstBranch = branchOptions[0]
   let forkBranchName = ''
   if (firstBranch.branchName === 'main') {
     forkBranchName = JSON.stringify({
       branchName: `v-${branchOptions.length}`,
-      blockId: block.id,
+      workflowId: workflow.id,
     })
   } else {
     forkBranchName = JSON.stringify({
       branchName: `[${JSON.parse(firstBranch.branchName).branchName}]-${branchOptions.length}`,
-      blockId: block.id,
+      workflowId: workflow.id,
     })
   }
   return (
     <div className='space-y-3'>
-      {block.runtime.status === 'finished' && !running && (
+      {workflow.runtime.status === 'finished' && !running && (
         <div>
-          <BranchFeedback block={block} />
+          <BranchFeedback workflow={workflow} />
           <div className='text-text-info my-2 flex items-center gap-2 text-xs'>
             <button
               type='button'
-              onClick={() => handleFork(block.id, forkBranchName)}
+              onClick={() => handleFork(workflow.id, forkBranchName)}
               className='hover:bg-border/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition'
             >
               <GitBranch size={12} />
@@ -144,13 +144,13 @@ function SessionActions({ block }: { block: ConversationBlock }) {
   )
 }
 
-function BlockView({ block }: { block: ConversationBlock }) {
+function WorkflowView({ workflow }: { workflow: Workflow }) {
   return (
-    <div className='space-y-6' id={block.id}>
-      {block.messages.map((message) => (
-        <MessageView key={message.id} block={block} message={message} />
+    <div className='space-y-6' id={workflow.id}>
+      {workflow.messages.map((message) => (
+        <MessageView key={message.id} workflow={workflow} message={message} />
       ))}
-      <SessionActions block={block} />
+      <SessionActions workflow={workflow} />
     </div>
   )
 }

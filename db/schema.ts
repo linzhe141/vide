@@ -1,5 +1,11 @@
 import { relations } from 'drizzle-orm'
-import { integer, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
+import {
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+  type AnySQLiteColumn,
+} from 'drizzle-orm/sqlite-core'
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
@@ -9,12 +15,14 @@ export const sessions = sqliteTable('sessions', {
   updatedAt: integer('updated_at').notNull(),
 })
 
-export const sessionWorkflowBlocks = sqliteTable('session_workflow_blocks', {
+export const sessionWorkflows = sqliteTable('session_workflows', {
   id: text('id').primaryKey(),
   sessionId: text('session_id')
     .notNull()
     .references(() => sessions.id),
-  parentBlockId: text('parent_block_id').references((): AnySQLiteColumn => sessionWorkflowBlocks.id),
+  parentWorkflowId: text('parent_workflow_id').references(
+    (): AnySQLiteColumn => sessionWorkflows.id
+  ),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
@@ -28,7 +36,7 @@ export const sessionBranches = sqliteTable(
       .notNull()
       .references(() => sessions.id),
     name: text('name').notNull(),
-    headBlockId: text('head_block_id').references(() => sessionWorkflowBlocks.id),
+    headWorkflowId: text('head_workflow_id').references(() => sessionWorkflows.id),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
@@ -40,11 +48,11 @@ export const sessionBranches = sqliteTable(
   })
 )
 
-export const sessionWorkflowBlockMessages = sqliteTable('session_workflow_block_messages', {
+export const sessionWorkflowMessages = sqliteTable('session_workflow_messages', {
   id: text('id').primaryKey(),
-  blockId: text('block_id')
+  workflowId: text('workflow_id')
     .notNull()
-    .references(() => sessionWorkflowBlocks.id),
+    .references(() => sessionWorkflows.id),
   role: text('role').notNull(),
   content: text('content'),
   payload: text('payload'),
@@ -74,9 +82,9 @@ export const planners = sqliteTable('planners', {
 
 export const askUserQuestions = sqliteTable('ask_user_questions', {
   id: text('id').primaryKey(),
-  blockId: text('block_id')
+  workflowId: text('workflow_id')
     .notNull()
-    .references(() => sessionWorkflowBlocks.id),
+    .references(() => sessionWorkflows.id),
   draftJson: text('draft_json'),
   answerJson: text('answer_json'),
   createdAt: integer('created_at').notNull(),
@@ -84,25 +92,25 @@ export const askUserQuestions = sqliteTable('ask_user_questions', {
 })
 
 export const sessionsRelations = relations(sessions, ({ many }) => ({
-  workflowBlocks: many(sessionWorkflowBlocks),
+  workflows: many(sessionWorkflows),
   planners: many(planners),
   sessionBranches: many(sessionBranches),
 }))
 
-export const sessionWorkflowBlocksRelations = relations(sessionWorkflowBlocks, ({ one, many }) => ({
+export const sessionWorkflowsRelations = relations(sessionWorkflows, ({ one, many }) => ({
   session: one(sessions, {
-    fields: [sessionWorkflowBlocks.sessionId],
+    fields: [sessionWorkflows.sessionId],
     references: [sessions.id],
   }),
-  parentBlock: one(sessionWorkflowBlocks, {
-    fields: [sessionWorkflowBlocks.parentBlockId],
-    references: [sessionWorkflowBlocks.id],
-    relationName: 'workflow_block_parent_child',
+  parentWorkflow: one(sessionWorkflows, {
+    fields: [sessionWorkflows.parentWorkflowId],
+    references: [sessionWorkflows.id],
+    relationName: 'workflow_parent_child',
   }),
-  childBlocks: many(sessionWorkflowBlocks, {
-    relationName: 'workflow_block_parent_child',
+  childWorkflows: many(sessionWorkflows, {
+    relationName: 'workflow_parent_child',
   }),
-  sessionWorkflowBlockMessages: many(sessionWorkflowBlockMessages),
+  sessionWorkflowMessages: many(sessionWorkflowMessages),
   askUserQuestions: one(askUserQuestions),
   sessionBranchesAsHead: many(sessionBranches),
 }))
@@ -112,21 +120,18 @@ export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => 
     fields: [sessionBranches.sessionId],
     references: [sessions.id],
   }),
-  headBlock: one(sessionWorkflowBlocks, {
-    fields: [sessionBranches.headBlockId],
-    references: [sessionWorkflowBlocks.id],
+  headWorkflow: one(sessionWorkflows, {
+    fields: [sessionBranches.headWorkflowId],
+    references: [sessionWorkflows.id],
   }),
 }))
 
-export const sessionWorkflowBlockMessagesRelations = relations(
-  sessionWorkflowBlockMessages,
-  ({ one }) => ({
-    sessionWorkflowBlock: one(sessionWorkflowBlocks, {
-      fields: [sessionWorkflowBlockMessages.blockId],
-      references: [sessionWorkflowBlocks.id],
-    }),
-  })
-)
+export const sessionWorkflowMessagesRelations = relations(sessionWorkflowMessages, ({ one }) => ({
+  sessionWorkflow: one(sessionWorkflows, {
+    fields: [sessionWorkflowMessages.workflowId],
+    references: [sessionWorkflows.id],
+  }),
+}))
 
 export const plannersRelations = relations(planners, ({ one }) => ({
   sessions: one(sessions, {
@@ -143,8 +148,8 @@ export const artifactsRelations = relations(artifacts, ({ one }) => ({
 }))
 
 export const askUserQuestionsRelations = relations(askUserQuestions, ({ one }) => ({
-  sessionWorkflowBlock: one(sessionWorkflowBlocks, {
-    fields: [askUserQuestions.blockId],
-    references: [sessionWorkflowBlocks.id],
+  sessionWorkflow: one(sessionWorkflows, {
+    fields: [askUserQuestions.workflowId],
+    references: [sessionWorkflows.id],
   }),
 }))

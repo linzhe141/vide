@@ -1,5 +1,9 @@
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
-import type { ConversationBlock, ToolCallSessionMessage, ToolResultSessionMessage } from '@/app/src/store/sessionStore/types'
+import type {
+  Workflow,
+  ToolCallSessionMessage,
+  ToolResultSessionMessage,
+} from '@/app/src/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -13,11 +17,11 @@ import type { ToolCall } from '@/agent/core/types'
 import { useState } from 'react'
 
 type ToolCallViewProps = {
-  block: ConversationBlock
+  workflow: Workflow
   message: ToolCallSessionMessage
 }
 
-export function ToolCallMessage({ block, message }: ToolCallViewProps) {
+export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
   const visibleTools = message.toolCalls.filter(
     (tool) => tool.function.name !== ASK_USER_TOOL_NAMES.GENERATE
   )
@@ -27,7 +31,7 @@ export function ToolCallMessage({ block, message }: ToolCallViewProps) {
   return (
     <div className='space-y-3'>
       {visibleTools.map((tool) => (
-        <ToolCallButton key={tool.id} tool={tool} result={findToolResult(block, tool.id)} />
+        <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
       ))}
       {/* <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
         <Wrench size={15} />
@@ -135,10 +139,10 @@ function formatDuration(durationMs?: number) {
 }
 
 function findToolResult(
-  block: ConversationBlock,
+  workflow: Workflow,
   toolCallId: string
 ): ToolResultSessionMessage | undefined {
-  return [...block.messages]
+  return [...workflow.messages]
     .reverse()
     .find(
       (message): message is ToolResultSessionMessage =>

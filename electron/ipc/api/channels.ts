@@ -5,7 +5,7 @@ import type {
   PlannerEvents,
   WorkflowEvents,
 } from '@/agent/core/event/channels'
-import type { sessionWorkflowBlockMessages } from '@/db/schema'
+import type { sessionWorkflowMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
 
 export type FileNode = {
@@ -22,12 +22,12 @@ export type SessionRowDto = {
   createdAt: number
   updatedAt: number
 }
-export type BlockData = {
+export type WorkflowData = {
   id: string
   userInput: string
-  parentBlockId?: string | null
+  parentWorkflowId?: string | null
   askUserSubmitValue?: string[]
-  messages: (typeof sessionWorkflowBlockMessages.$inferSelect)[]
+  messages: (typeof sessionWorkflowMessages.$inferSelect)[]
 }
 
 export interface RenderChannel {
@@ -46,7 +46,7 @@ export interface RenderChannel {
     activeBranch: string
     branches: { name: string; headWorkflowId: string | null }[]
     planner: { id: string; plan: PlanStep[] }[]
-    blockData: BlockData[]
+    workflowData: WorkflowData[]
     artifacts: {
       id: string
       sessionId: string
@@ -56,7 +56,7 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { input: string; branchName?: string }) => void
-  'agent-session-fork': (data: { targetBlockId: string | null; branchName: string }) => void
+  'agent-session-fork': (data: { targetWorkflowId: string | null; branchName: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void
   'agent-workflow-abort': () => void
