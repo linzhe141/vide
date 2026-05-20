@@ -45,8 +45,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          const target = state.sessions.find((item) => item.sessionId === data.sessionId)
-          if (target) return
           state.sessions.push(data)
         })
       },

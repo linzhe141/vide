@@ -79,6 +79,7 @@ export class AgentIpcMainService implements IpcMainService {
         .select({
           name: schema.sessionBranches.name,
           headWorkflowId: schema.sessionBranches.headWorkflowId,
+          sourceWorkflowId: schema.sessionBranches.sourceWorkflowId,
         })
         .from(schema.sessionBranches)
         .where(eq(schema.sessionBranches.sessionId, data.sessionId))
@@ -119,9 +120,9 @@ export class AgentIpcMainService implements IpcMainService {
       }
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ input, branchName }) => {
-      logger.info('agent-session-send ', input, branchName)
-      this.session.run(input, branchName)
+    ipcMainApi.handle('agent-session-send', async ({ input }) => {
+      logger.info('agent-session-send ', input)
+      this.session.run(input)
     })
 
     ipcMainApi.handle('agent-session-fork', async ({ targetWorkflowId, branchName }) => {

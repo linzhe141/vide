@@ -44,7 +44,7 @@ export interface RenderChannel {
   'agent-create-session': () => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
     activeBranch: string
-    branches: { name: string; headWorkflowId: string | null }[]
+    branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
     planner: { id: string; plan: PlanStep[] }[]
     workflowData: WorkflowData[]
     artifacts: {
@@ -55,7 +55,7 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   }>
-  'agent-session-send': (data: { input: string; branchName?: string }) => void
+  'agent-session-send': (data: { input: string }) => void
   'agent-session-fork': (data: { targetWorkflowId: string | null; branchName: string }) => void
   'agent-human-approved': () => void
   'agent-human-rejected': () => void

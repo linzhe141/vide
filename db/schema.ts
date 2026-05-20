@@ -37,6 +37,7 @@ export const sessionBranches = sqliteTable(
       .references(() => sessions.id),
     name: text('name').notNull(),
     headWorkflowId: text('head_workflow_id').references(() => sessionWorkflows.id),
+    sourceWorkflowId: text('source_workflow_id').references(() => sessionWorkflows.id),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
@@ -123,6 +124,12 @@ export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => 
   headWorkflow: one(sessionWorkflows, {
     fields: [sessionBranches.headWorkflowId],
     references: [sessionWorkflows.id],
+    relationName: 'branch_head_workflow',
+  }),
+  sourceWorkflow: one(sessionWorkflows, {
+    fields: [sessionBranches.sourceWorkflowId],
+    references: [sessionWorkflows.id],
+    relationName: 'branch_source_workflow',
   }),
 }))
 

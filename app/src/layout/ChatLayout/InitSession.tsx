@@ -1,6 +1,11 @@
 import { SessionMessageRole } from '@/types'
-import { useSessionStoreActions } from '../../store/sessionStore'
-import { type Workflow, type SessionMessage } from '../../store/sessionStore/types'
+import { useSession, useSessionStoreActions } from '../../store/sessionStore'
+import {
+  type Workflow,
+  type WorkflowNode,
+  type SessionMessage,
+  type Session,
+} from '../../store/sessionStore/types'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import type { WorkflowData } from '@/electron/ipc/api/channels'
@@ -10,7 +15,7 @@ import { useChatContext } from '../../components/chat/ChatProvider'
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useSessionStoreActions()
-
+  const session = useSession(sessionId)
   useEffect(() => {
     const firstInput = context.firstInput
 
@@ -21,60 +26,60 @@ export function InitSession({ sessionId }: { sessionId: string }) {
     }
 
     async function fetchMessages() {
-      // const { blockData, planner, artifacts, activeBranch, branches } =
-      //   await window.ipcRendererApi.invoke('agent-resume-session', {
-      //     sessionId: sessionId,
-      //   })
-      // const conversationBlockMap: Record<string, ConversationBlock> = Object.fromEntries(
-      //   blockData.map((block) => [
-      //     block.id,
-      //     {
-      //       id: block.id,
-      //       parentBlockId: block.parentBlockId ?? null,
-      //       childBlockIds: [],
-      //       input: block.userInput,
-      //       status: 'finished',
-      //       runtime: {
-      //         status: 'finished',
-      //         waitingHuman: false,
-      //       },
-      //       messages: buildBlockMessages(block.messages, block.askUserSubmitValue ?? []),
-      //     } satisfies ConversationBlock,
-      //   ])
-      // )
-      // for (const block of Object.values(conversationBlockMap)) {
-      //   if (!block.parentBlockId) continue
-      //   const parentBlock = conversationBlockMap[block.parentBlockId]
-      //   if (!parentBlock) continue
-      //   parentBlock.childBlockIds.push(block.id)
-      // }
-      // const pendingPlanner = planner.find((p) => p.plan.some((i) => i.status !== 'completed'))
-      // const activeHead = branches.find((branch) => branch.name === activeBranch)?.headWorkflowId
-      // buildFromDatabase({
-      //   sessionId: sessionId,
-      //   activeBranch,
-      //   branches: branches.map((branch) => ({
-      //     name: branch.name,
-      //     headBlockId: branch.headWorkflowId,
-      //   })),
-      //   blockMap: conversationBlockMap,
-      //   blockOrder: blockData.map((block) => block.id),
-      //   currentBlockId: activeHead || undefined,
-      //   planner,
-      //   currentPlannerId: pendingPlanner?.id,
-      //   runtime: {
-      //     running: false,
-      //   },
-      //   artifacts,
-      // })
+      const { workflowData, planner, artifacts, activeBranch, branches } =
+        await window.ipcRendererApi.invoke('agent-resume-session', {
+          sessionId,
+        })
+
+      const workflowNodesMap: Record<string, WorkflowNode> = {}
+      for (const data of workflowData) {
+        const workflow: Workflow = {
+          id: data.id,
+          input: data.userInput,
+          messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
+          runtime: {
+            status: 'finished',
+            waitingHuman: false,
+          },
+        }
+        workflowNodesMap[data.id] = {
+          workflow,
+          children: [],
+          parent: data.parentWorkflowId ?? null,
+        }
+      }
+      for (const node of Object.values(workflowNodesMap)) {
+        if (!node.parent) continue
+        const parentNode = workflowNodesMap[node.parent]
+        if (!parentNode) continue
+        parentNode.children.push(node.workflow.id)
+      }
+
+      const session: Session = {
+        sessionId,
+        activeBranch,
+        branches: branches.map((branch) => ({
+          name: branch.name,
+          headWorkflowId: branch.headWorkflowId,
+          sourceWorkflowId: branch.sourceWorkflowId,
+        })),
+        workflowNodesMap,
+        runtime: {
+          running: false,
+        },
+        planner,
+        artifacts,
+      }
+
+      buildFromDatabase(session)
     }
 
-    fetchMessages()
-  }, [sessionId, handleSend, buildFromDatabase])
+    if (!session) fetchMessages()
+  }, [sessionId, handleSend, buildFromDatabase, session])
   return null
 }
 
-function buildBlockMessages(
+function buildWorkflowMessages(
   messages: WorkflowData['messages'],
   askUserSubmitValue: string[]
 ): SessionMessage[] {

@@ -78,7 +78,6 @@ export function useWorkflowStream() {
         async () => {
           await window.ipcRendererApi.invoke('agent-session-send', {
             input,
-            branchName: options?.branchName,
           })
         },
         {

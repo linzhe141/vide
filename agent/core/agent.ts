@@ -14,7 +14,7 @@ export class Agent {
 
   createSession() {
     const session = new Session()
-    session.branchs[session.activeBranch] = null
+    session.branchs[session.activeBranch] = { head: null, source: null }
     agentEvent.emit('agent-create-session', {
       sessionId: session.sessionId,
       activeBranch: session.activeBranch,

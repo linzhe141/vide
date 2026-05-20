@@ -11,7 +11,10 @@ export interface SessionWorkflowNode {
   children: SessionWorkflowNode[]
 }
 
-export type SessionBranchHead = SessionWorkflowNode | null
+export interface SessionBranch {
+  head: SessionWorkflowNode | null
+  source: SessionWorkflowNode | null
+}
 
 export interface SessionWorkflowSnapshot {
   id: string
@@ -22,6 +25,7 @@ export interface SessionWorkflowSnapshot {
 export interface SessionBranchSnapshot {
   name: string
   headWorkflowId: string | null
+  sourceWorkflowId: string | null
 }
 
 export interface SessionSnapshot {
@@ -34,7 +38,7 @@ export interface SessionSnapshot {
 export class Session {
   sessionId: string
   activeBranch = 'main'
-  branchs: Record<string, SessionBranchHead> = {}
+  branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
   planners: SessionPlaner[] = []
 
@@ -43,17 +47,24 @@ export class Session {
     this.activeBranch = options?.activeBranch || 'main'
   }
 
-  async run(userInput: string, branchName: string = this.activeBranch) {
-    this.activeBranch = branchName
+  get currentBranch() {
+    return this.branchs[this.activeBranch]
+  }
 
+  async run(userInput: string) {
     const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
-    const currentBranchCommitNode = this.branchs[this.activeBranch]
-    if (!currentBranchCommitNode) {
-      this.branchs[this.activeBranch] = workflowCommitNode
+    const currentHead = this.currentBranch.head
+    // 表示这是main分支第一个workflow
+    if (!currentHead) {
+      this.currentBranch.head = workflowCommitNode
+      // main 分支的第一个 workflow 作为 sourceWorkflow
+      if (!this.currentBranch.source) {
+        this.currentBranch.source = workflowCommitNode
+      }
     } else {
-      workflowCommitNode.parent = currentBranchCommitNode
-      currentBranchCommitNode.children.push(workflowCommitNode)
-      this.branchs[this.activeBranch] = workflowCommitNode
+      workflowCommitNode.parent = currentHead
+      currentHead.children.push(workflowCommitNode)
+      this.currentBranch.head = workflowCommitNode
     }
 
     await workflow.run(userInput)
@@ -61,7 +72,7 @@ export class Session {
   }
 
   createWorkflow(userInput: string) {
-    const parentWorkflowNode = this.branchs[this.activeBranch]
+    const parentWorkflowNode = this.currentBranch?.head ?? null
     const workflowRuntimeContext = new WorkflowRuntimeContext({
       session: this,
       userInput,
@@ -84,7 +95,10 @@ export class Session {
 
   fork(newBranchName: string, targetCommitNode: SessionWorkflowNode | null) {
     this.activeBranch = newBranchName
-    this.branchs[newBranchName] = targetCommitNode
+    this.branchs[newBranchName] = {
+      head: targetCommitNode,
+      source: targetCommitNode,
+    }
     agentEvent.emit('agent-session-forked', {
       sessionId: this.sessionId,
       branchName: newBranchName,
@@ -93,8 +107,8 @@ export class Session {
   }
 
   buildLLMMessages() {
-    const currentBranchCommitNode = this.branchs[this.activeBranch]
-    if (!currentBranchCommitNode) return []
+    const currentHead = this.currentBranch?.head ?? null
+    if (!currentHead) return []
 
     function traverse(node: SessionWorkflowNode, result: ChatMessage[] = []): ChatMessage[] {
       result.unshift(...node.messages)
@@ -104,7 +118,7 @@ export class Session {
       return result
     }
 
-    return traverse(currentBranchCommitNode)
+    return traverse(currentHead)
   }
 
   compact() {
@@ -143,13 +157,16 @@ export class Session {
     }
 
     for (const branch of snapshot.branches) {
-      session.branchs[branch.name] = branch.headWorkflowId
-        ? (workflowNodeMap.get(branch.headWorkflowId) ?? null)
-        : null
+      session.branchs[branch.name] = {
+        head: branch.headWorkflowId ? (workflowNodeMap.get(branch.headWorkflowId) ?? null) : null,
+        source: branch.sourceWorkflowId
+          ? (workflowNodeMap.get(branch.sourceWorkflowId) ?? null)
+          : null,
+      }
     }
 
     if (!(session.activeBranch in session.branchs)) {
-      session.branchs[session.activeBranch] = null
+      session.branchs[session.activeBranch] = { head: null, source: null }
     }
 
     return session
