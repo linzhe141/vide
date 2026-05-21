@@ -1,14 +1,7 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  GitBranch,
-  RefreshCcw,
-  Sparkles,
-  Split,
-} from 'lucide-react'
+import { ChevronLeft, ChevronRight, GitBranch, RefreshCcw, Sparkles } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
-import { createBranchPayload } from '../../lib/branching'
 import {
+  useActiveBranchPath,
   useSession,
   useSessionStoreActions,
   useSessionWorkflows,
@@ -66,131 +59,95 @@ function MessageView({ workflow, message }: { workflow: Workflow; message: Sessi
   }
 }
 
-function BranchFeedback({ workflow }: { workflow: Workflow }) {
+function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { switchBranch } = useSessionStoreActions()
-  const branchOptions = useWorkflowBranches(sessionId, workflow.id)
+  const parentNodeId = session?.workflowNodesMap[workflow.id].parent ?? null
+  const branchOptions = useWorkflowBranches(sessionId, parentNodeId)
+  const activeBranchPath = useActiveBranchPath(sessionId)
+  if (!session || branchOptions.length <= 1) return null
 
-  if (!session || branchOptions.length === 0) return null
-
-  const currentBranchIndex = branchOptions.findIndex((option) => option.branchName === session.activeBranch)
-  const currentBranch =
-    currentBranchIndex >= 0 ? branchOptions[currentBranchIndex] : branchOptions[0] ?? null
-  const regenerateOptions = branchOptions.filter((option) => option.type === 'regenerate')
-  const forkOptions = branchOptions.filter((option) => option.type === 'fork')
-  const regenerateVariants = branchOptions.filter(
-    (option) =>
-      option.branchName === session.activeBranch ||
-      option.type === 'regenerate' ||
-      option.type === 'main'
-  )
-  const currentVariantIndex = Math.max(
-    regenerateVariants.findIndex((option) => option.branchName === session.activeBranch),
-    0
-  )
-  const showRegenerateSwitcher =
-    !!currentBranch &&
-    regenerateVariants.length > 1 &&
-    (currentBranch.type === 'regenerate' || regenerateOptions.length > 0)
-
-  function switchVariant(offset: -1 | 1) {
-    if (regenerateVariants.length < 2) return
-    const nextIndex =
-      (currentVariantIndex + offset + regenerateVariants.length) % regenerateVariants.length
-    switchBranch(sessionId, regenerateVariants[nextIndex].branchName)
-  }
-
-  function getVariantLabel() {
-    if (!currentBranch) return ''
-    if (currentBranch.type === 'regenerate') {
-      const regenerateIndex =
-        regenerateOptions.findIndex((option) => option.branchName === currentBranch.branchName) + 1
-      return `Alternative ${regenerateIndex}`
+  const filteredBranchOptions = branchOptions.filter((option) => {
+    if (option.name === 'main') return true
+    try {
+      const payload = JSON.parse(option.name)
+      if (payload.type === 'regenerate') {
+        return true
+      }
+    } catch (_e) {
+      //
     }
-    return 'Original'
+  })
+
+  const currentVariantIndex = filteredBranchOptions.findIndex((option) => {
+    // return
+    return activeBranchPath?.includes(option.path[0])
+  })
+
+  function switchVariant(direction: number) {
+    if (currentVariantIndex === -1) return
+    const nextIndex =
+      (currentVariantIndex + direction + filteredBranchOptions.length) %
+      filteredBranchOptions.length
+    const nextBranch = filteredBranchOptions[nextIndex]
+    switchBranch(session!.sessionId, nextBranch.name)
   }
 
   return (
     <div className='space-y-3'>
-      {showRegenerateSwitcher ? (
-        <div className='rounded-2xl border border-foreground/10 bg-gradient-to-r from-foreground/[0.03] via-transparent to-primary/8 px-3 py-2.5'>
-          <div className='flex items-center justify-between gap-3'>
-            <div className='flex min-w-0 items-center gap-3'>
-              <div className='flex h-8 w-8 items-center justify-center rounded-full bg-primary/12 text-primary'>
-                <Sparkles size={14} />
-              </div>
-              <div className='min-w-0'>
-                <div className='text-foreground text-sm font-medium'>Response variants</div>
-                <div className='text-text-info text-xs'>
-                  {getVariantLabel()} / {currentVariantIndex + 1} of {regenerateVariants.length}
-                </div>
+      <div className='border-foreground/10 from-foreground/[0.03] to-primary/8 rounded-2xl border bg-gradient-to-r via-transparent px-3 py-2.5'>
+        <div className='flex items-center justify-between gap-3'>
+          <div className='flex min-w-0 items-center gap-3'>
+            <div className='bg-primary/12 text-primary flex h-8 w-8 items-center justify-center rounded-full'>
+              <Sparkles size={14} />
+            </div>
+            <div className='min-w-0'>
+              <div className='text-foreground text-sm font-medium'>Response variants</div>
+              <div className='text-text-info text-xs'>
+                {currentVariantIndex + 1} of {filteredBranchOptions.length}
               </div>
             </div>
-
-            <div className='flex items-center gap-1.5'>
-              <button
-                type='button'
-                onClick={() => switchVariant(-1)}
-                className='hover:bg-foreground/8 inline-flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 transition'
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                type='button'
-                onClick={() => switchVariant(1)}
-                className='hover:bg-foreground/8 inline-flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 transition'
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
           </div>
-        </div>
-      ) : null}
 
-      {forkOptions.length > 0 ? (
-        <div className='flex flex-wrap items-center gap-2'>
-          <div className='text-text-info inline-flex items-center gap-1 text-xs'>
-            <Split size={12} />
-            Split branches
-          </div>
-          {forkOptions.map((option, index) => (
+          <div className='flex items-center gap-1.5'>
             <button
-              key={option.branchName}
               type='button'
-              onClick={() => switchBranch(sessionId, option.branchName)}
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition ${
-                session.activeBranch === option.branchName
-                  ? 'border-primary bg-primary/10 text-foreground'
-                  : 'hover:bg-foreground/5 border-foreground/10 text-text-info'
-              }`}
+              onClick={() => switchVariant(-1)}
+              className='hover:bg-foreground/8 border-foreground/10 inline-flex h-8 w-8 items-center justify-center rounded-full border transition'
             >
-              <GitBranch size={12} />
-              {`Fork ${index + 1}`}
+              <ChevronLeft size={14} />
             </button>
-          ))}
+            <button
+              type='button'
+              onClick={() => switchVariant(1)}
+              className='hover:bg-foreground/8 border-foreground/10 inline-flex h-8 w-8 items-center justify-center rounded-full border transition'
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   )
 }
 
 function SessionActions({ workflow }: { workflow: Workflow }) {
-  const { handleFork, handleRegenerate, running, sessionId } = useChatContext()
-  const branchOptions = useWorkflowBranches(sessionId, workflow.id)
-  const forkCount = branchOptions.filter((option) => option.type === 'fork').length
-  const regenerateCount = branchOptions.filter((option) => option.type === 'regenerate').length
+  const { handleFork, handleRegenerate, running } = useChatContext()
 
-  const forkBranchName = createBranchPayload({
-    type: 'fork',
-    branchName: `fork-${forkCount + 1}`,
-    workflowId: workflow.id,
-  })
+  function onClickFork() {
+    const forkBranchName = createBranchPayload({
+      type: 'fork',
+      branchName: `fork-${Date.now()}`,
+      workflowId: workflow.id,
+    })
+    handleFork(workflow.id, forkBranchName)
+  }
 
   function onClickRegenerate() {
     const regenerateBranchName = createBranchPayload({
       type: 'regenerate',
-      branchName: `regenerate-${regenerateCount + 1}`,
+      branchName: `regenerate-${Date.now()}`,
       workflowId: workflow.id,
     })
     handleRegenerate(workflow.id, regenerateBranchName, workflow.input)
@@ -200,12 +157,12 @@ function SessionActions({ workflow }: { workflow: Workflow }) {
     <div className='space-y-3'>
       {workflow.runtime.status === 'finished' && !running ? (
         <div className='space-y-3'>
-          <BranchFeedback workflow={workflow} />
+          <RegeneratedBranchSwitcher workflow={workflow} />
           <div className='flex flex-wrap items-center gap-2'>
             <button
               type='button'
-              onClick={() => handleFork(workflow.id, forkBranchName)}
-              className='inline-flex items-center gap-2 rounded-full border border-foreground/10 bg-foreground/[0.03] px-3.5 py-2 text-xs font-medium transition hover:bg-foreground/[0.06]'
+              onClick={onClickFork}
+              className='border-foreground/10 bg-foreground/[0.03] hover:bg-foreground/[0.06] inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
             >
               <GitBranch size={13} />
               Fork here
@@ -214,7 +171,7 @@ function SessionActions({ workflow }: { workflow: Workflow }) {
             <button
               type='button'
               onClick={onClickRegenerate}
-              className='inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-2 text-xs font-medium text-foreground transition hover:bg-primary/14'
+              className='border-primary/20 bg-primary/10 text-foreground hover:bg-primary/14 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
             >
               <RefreshCcw size={13} />
               Regenerate
@@ -235,4 +192,12 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
       <SessionActions workflow={workflow} />
     </div>
   )
+}
+
+function createBranchPayload(payload: {
+  branchName: string
+  workflowId: string
+  type: 'fork' | 'regenerate'
+}) {
+  return JSON.stringify(payload)
 }

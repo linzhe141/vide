@@ -65,12 +65,12 @@ export function createSessionEventContext(
       }
       session.workflowNodesMap[workflow.id] = newWorkflowNode
       const parentWorkflowNode = session.workflowNodesMap[currentBranch.headWorkflowId!]
-      const headWorkflowId = currentBranch.headWorkflowId
+      // const headWorkflowId = currentBranch.headWorkflowId
       // headWorkflowId === null 表示 main分支的第一个节点
-      if (headWorkflowId === null) {
-        // 第一个workflow node 作为 main分支的sourceWorkflow
-        currentBranch.sourceWorkflowId = workflow.id
-      }
+      // if (headWorkflowId === null) {
+      //   // 第一个workflow node 作为 main分支的sourceWorkflow
+      //   currentBranch.sourceWorkflowId = workflow.id
+      // }
       currentBranch.headWorkflowId = workflow.id
       if (parentWorkflowNode) {
         parentWorkflowNode.children.push(workflow.id)

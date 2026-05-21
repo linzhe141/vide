@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
-import { parseBranchMeta } from '../../lib/branching'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import type { Workflow, Session, SessionBranch, WorkflowBranchOption } from './types'
+import type { Workflow, Session, SessionBranch } from './types'
 
 type TreeNode = {
   workflow: Workflow
@@ -191,22 +190,9 @@ export const useSessionWorkflows = (sessionId: string) => {
   return traverse(activeBranch.headWorkflowId)
 }
 
-export const useWorkflowBranches = (sessionId: string, workflowId: string) => {
+export const useWorkflowBranches = (sessionId: string, workflowId: string | null) => {
   const session = useSession(sessionId)
   if (!session) return []
-  const activeBranch = session.branches.find((branch) => branch.name === session.activeBranch)
-  const activeBranchMeta = activeBranch ? parseBranchMeta(activeBranch.name) : null
-  const currentNode = session.workflowNodesMap[workflowId]
-  const isRegeneratedEntryWorkflow =
-    !!activeBranch &&
-    !!activeBranchMeta &&
-    activeBranchMeta.type === 'regenerate' &&
-    !!activeBranchMeta.workflowId &&
-    currentNode?.parent === activeBranch.sourceWorkflowId
-  const variantWorkflowId =
-    isRegeneratedEntryWorkflow && activeBranchMeta?.workflowId
-      ? activeBranchMeta.workflowId
-      : workflowId
 
   const branchPath: { path: string[]; branchName: string }[] = []
 
@@ -219,40 +205,72 @@ export const useWorkflowBranches = (sessionId: string, workflowId: string) => {
 
       const currentNode = session.workflowNodesMap[currentWorkflowId]
 
-      // 如果当前节点是 sourceWorkflowId，停止收集（不包含 sourceWorkflowId 本身）
+      // 如果当前节点是 sourceWorkflowId，停止收集
       if (branch.sourceWorkflowId && currentNode.workflow.id === branch.sourceWorkflowId) {
         break
       }
-
-      // 继续向上遍历父节点
-      if (currentNode.parent) {
-        currentWorkflowId = currentNode.parent
-      } else {
+      // 如果当前节点没有父节点了，停止收集
+      if (!currentNode.parent) {
         break
       }
+      // 继续向上遍历父节点
+      currentWorkflowId = currentNode.parent
     }
     branchPath.push({ path, branchName: branch.name })
   }
-  const result: WorkflowBranchOption[] = []
+  if (!workflowId) {
+    // 收集所有的root 级别的 branch
+    return session.branches
+      .filter((i) => i.sourceWorkflowId === null)
+      .map((i) => ({
+        path: branchPath.find((b) => b.branchName === i.name)?.path || [],
+        ...i,
+      }))
+  }
+  const targetBranches: string[] = []
   for (const { path, branchName } of branchPath) {
-    const meta = parseBranchMeta(branchName)
-    const isCurrentRegenerateBranch =
-      isRegeneratedEntryWorkflow && branchName === session.activeBranch
-
-    if (
-      path.includes(variantWorkflowId) ||
-      meta.workflowId === variantWorkflowId ||
-      isCurrentRegenerateBranch
-    ) {
-      result.push({
-        branchName,
-        label: meta.label,
-        workflowId: meta.workflowId,
-        type: meta.type,
-      })
+    if (path.includes(workflowId)) {
+      targetBranches.push(branchName)
     }
   }
-  return result
+  return session.branches
+    .filter((branch) => targetBranches.includes(branch.name))
+    .map((i) => ({
+      path: branchPath.find((b) => b.branchName === i.name)?.path || [],
+      ...i,
+    }))
+}
+
+export const useActiveBranchPath = (sessionId: string) => {
+  const session = useSession(sessionId)
+  if (!session) return []
+
+  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+  if (!activeBranch) return []
+
+  const path: string[] = []
+  let currentWorkflowId = activeBranch.headWorkflowId
+
+  while (currentWorkflowId) {
+    path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
+
+    const currentNode = session.workflowNodesMap[currentWorkflowId]
+
+    // 如果当前节点是 sourceWorkflowId，停止收集
+    if (
+      activeBranch.sourceWorkflowId &&
+      currentNode.workflow.id === activeBranch.sourceWorkflowId
+    ) {
+      break
+    }
+    // 如果当前节点没有父节点了，停止收集
+    if (!currentNode.parent) {
+      break
+    }
+    // 继续向上遍历父节点
+    currentWorkflowId = currentNode.parent
+  }
+  return path
 }
 
 export const useSessionPlanners = (sessionId: string) =>

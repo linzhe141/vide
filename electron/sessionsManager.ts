@@ -48,16 +48,10 @@ export class SessionsManager {
 
     const existingRow = existingRows[0]
     if (existingRow) {
-      // source 一旦设置就保持不变；调用方未显式传入时不覆盖
-      const nextSource =
-        data.sourceWorkflowId !== undefined
-          ? data.sourceWorkflowId
-          : (existingRow.sourceWorkflowId ?? data.headWorkflowId)
       await db
         .update(sessionBranches)
         .set({
           headWorkflowId: data.headWorkflowId,
-          sourceWorkflowId: nextSource,
           updatedAt: time,
         })
         .where(eq(sessionBranches.id, existingRow.id))
@@ -69,7 +63,7 @@ export class SessionsManager {
       sessionId: data.sessionId,
       name: data.branchName,
       headWorkflowId: data.headWorkflowId,
-      sourceWorkflowId: data.sourceWorkflowId ?? data.headWorkflowId ?? null,
+      sourceWorkflowId: data.sourceWorkflowId,
       createdAt: time,
       updatedAt: time,
     })
@@ -136,10 +130,10 @@ export class SessionsManager {
         await db.update(sessions).set({ title: input }).where(eq(sessions.id, ctx.sessionId))
       }
 
-      await this.updateSessionState({
-        sessionId: ctx.sessionId,
-        activeBranch: ctx.branchName,
-      })
+      // await this.updateSessionState({
+      //   sessionId: ctx.sessionId,
+      //   activeBranch: ctx.branchName,
+      // })
 
       await db.insert(sessionWorkflows).values({
         id: ctx.workflowId,
