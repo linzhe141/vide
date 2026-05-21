@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight, GitBranch, RefreshCcw, Sparkles } from 'lucide-react'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import {
-  useActiveBranchPath,
   useSession,
   useSessionStoreActions,
   useSessionWorkflows,
@@ -65,25 +64,45 @@ function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
   const { switchBranch } = useSessionStoreActions()
   const parentNodeId = session?.workflowNodesMap[workflow.id].parent ?? null
   const branchOptions = useWorkflowBranches(sessionId, parentNodeId)
-  const activeBranchPath = useActiveBranchPath(sessionId)
   if (!session || branchOptions.length <= 1) return null
 
-  const filteredBranchOptions = branchOptions.filter((option) => {
-    if (option.name === 'main') return true
-    try {
-      const payload = JSON.parse(option.name)
-      if (payload.type === 'regenerate') {
-        return true
+  const filteredBranchOptions = branchOptions
+    .filter((option) => {
+      if (option.name === 'main') return true
+      try {
+        const payload = JSON.parse(option.name)
+        if (payload.type === 'regenerate') {
+          return true
+        }
+      } catch (_e) {
+        //
       }
-    } catch (_e) {
-      //
-    }
-  })
+      return false
+    })
+    .reduce<typeof branchOptions>((result, option) => {
+      const childWorkflowId = getVariantChildWorkflowId(option.path, parentNodeId)
+      if (!childWorkflowId) return result
 
-  const currentVariantIndex = filteredBranchOptions.findIndex((option) => {
-    // return
-    return activeBranchPath?.includes(option.path[0])
-  })
+      const duplicatedIndex = result.findIndex(
+        (item) => getVariantChildWorkflowId(item.path, parentNodeId) === childWorkflowId
+      )
+
+      if (duplicatedIndex === -1) {
+        result.push(option)
+        return result
+      }
+
+      const duplicatedOption = result[duplicatedIndex]
+      if (option.path.length < duplicatedOption.path.length) {
+        result[duplicatedIndex] = option
+      }
+
+      return result
+    }, [])
+
+  const currentVariantIndex = filteredBranchOptions.findIndex(
+    (option) => getVariantChildWorkflowId(option.path, parentNodeId) === workflow.id
+  )
 
   function switchVariant(direction: number) {
     if (currentVariantIndex === -1) return
@@ -200,4 +219,14 @@ function createBranchPayload(payload: {
   type: 'fork' | 'regenerate'
 }) {
   return JSON.stringify(payload)
+}
+
+function getVariantChildWorkflowId(path: string[], parentNodeId: string | null) {
+  if (!path.length) return null
+  if (!parentNodeId) return path[0] ?? null
+
+  const parentIndex = path.indexOf(parentNodeId)
+  if (parentIndex === -1) return null
+
+  return path[parentIndex + 1] ?? null
 }
