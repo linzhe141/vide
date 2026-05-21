@@ -17,49 +17,16 @@ import { UserInputMessage } from './messages/UserInputMessage'
 
 export function MessageList() {
   const { sessionId } = useChatContext()
-  const session = useSession(sessionId)
   const workflows = useSessionWorkflows(sessionId)
 
   return (
     <div className='mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-10'>
       {workflows?.map((workflow) => <WorkflowView key={workflow.id} workflow={workflow} />)}
-      {session?.sessionType === 'fork' && session.origin ? (
-        <ForkOriginFooter
-          originSessionId={session.origin.sessionId}
-          originWorkflowId={session.origin.workflowId}
-        />
-      ) : null}
     </div>
   )
 }
 
-function ForkOriginFooter(props: { originSessionId: string; originWorkflowId: string | null }) {
-  const navigate = useNavigate()
-  const target = props.originWorkflowId
-    ? `/chat/${props.originSessionId}#${props.originWorkflowId}`
-    : `/chat/${props.originSessionId}`
 
-  return (
-    <div className='border-primary/20 bg-primary/6 rounded-3xl border px-5 py-4'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div>
-          <div className='text-foreground text-sm font-medium'>Forked session</div>
-          <div className='text-text-info text-xs'>
-            This conversation was forked from an earlier session point.
-          </div>
-        </div>
-        <button
-          type='button'
-          onClick={() => navigate(target)}
-          className='border-primary/20 bg-background hover:bg-primary/10 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
-        >
-          <GitBranch size={13} />
-          Back to original
-        </button>
-      </div>
-    </div>
-  )
-}
 
 function MessageView({ workflow, message }: { workflow: Workflow; message: SessionMessage }) {
   switch (message.role) {
@@ -212,7 +179,11 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
   )
 }
 
-function createBranchPayload(payload: { branchName: string; workflowId: string; type: 'regenerate' }) {
+function createBranchPayload(payload: {
+  branchName: string
+  workflowId: string
+  type: 'regenerate'
+}) {
   return JSON.stringify(payload)
 }
 

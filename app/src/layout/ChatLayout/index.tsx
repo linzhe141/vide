@@ -9,13 +9,14 @@ import React, {
   type PropsWithChildren,
 } from 'react'
 import { cn } from '../../lib/utils'
-import { useSessionWorkflows, useSessionPlanners } from '../../store/sessionStore'
+import { useSessionWorkflows, useSessionPlanners, useSession } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
-import { ArrowDown, FileText, ListChecks } from 'lucide-react'
+import { ArrowDown, FileText, GitBranch, ListChecks } from 'lucide-react'
 import { ArtifactsDisplay } from './ArtifactsDisplay'
 import { Planner, PlannersDisplay } from './PlannersDisplay'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
+import { useNavigate } from 'react-router'
 
 interface ChatLayoutContextType {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
@@ -123,6 +124,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
+  const session = useSession(sessionId)
   const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
@@ -144,6 +146,12 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
   }, [])
   return (
     <div ref={scrollContainerRef} className='h-0 flex-1 overflow-auto'>
+      {session?.sessionType === 'fork' && session.origin ? (
+        <ForkOriginFooter
+          originSessionId={session.origin.sessionId}
+          originWorkflowId={session.origin.workflowId}
+        />
+      ) : null}
       <div className='mx-auto max-w-[920px]'>{children}</div>
       {workflows && (
         <MessageNavigator
@@ -201,6 +209,34 @@ export function ChatLayoutInput({ children }: PropsWithChildren) {
         <kbd className='bg-border/50 rounded px-1.5 py-0.5 font-mono text-[10px]'>Shift+Enter</kbd>
         for new line
       </p>
+    </div>
+  )
+}
+
+function ForkOriginFooter(props: { originSessionId: string; originWorkflowId: string | null }) {
+  const navigate = useNavigate()
+  const target = props.originWorkflowId
+    ? `/chat/${props.originSessionId}#${props.originWorkflowId}`
+    : `/chat/${props.originSessionId}`
+
+  return (
+    <div className='border-primary/20 bg-background sticky top-0 z-10 mx-auto max-w-[920px] rounded-3xl border px-5 py-4'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div>
+          <div className='text-foreground text-sm font-medium'>Forked session</div>
+          <div className='text-text-info text-xs'>
+            This conversation was forked from an earlier session point.
+          </div>
+        </div>
+        <button
+          type='button'
+          onClick={() => navigate(target)}
+          className='border-primary/20 bg-background hover:bg-primary/10 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
+        >
+          <GitBranch size={13} />
+          Back to original
+        </button>
+      </div>
     </div>
   )
 }
