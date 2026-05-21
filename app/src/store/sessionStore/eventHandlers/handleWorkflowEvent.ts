@@ -27,18 +27,27 @@ export function handleWorkflowEvent(
       const { workflowId } = event.data.ctx
       const newWorkflow = createWorkflow(workflowId, event.data.input)
       newWorkflow.runtime.status = 'running'
+      if (session) {
+        session.runtime.running = true
+      }
       context.pushWorkflow(newWorkflow)
       context.commitBranch(workflowId)
       return
     }
 
     case 'workflow-finished':
+      if (session) {
+        session.runtime.running = false
+      }
       context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'finished'
       })
       return
 
     case 'workflow-error':
+      if (session) {
+        session.runtime.running = false
+      }
       context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'error'
       })

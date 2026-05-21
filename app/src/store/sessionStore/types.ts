@@ -102,6 +102,9 @@ export type SessionOrigin = {
 
 export type Session = {
   sessionId: string
+  title?: string
+  createdAt?: number
+  updatedAt?: number
   sessionType: 'normal' | 'fork'
   origin: SessionOrigin | null
   activeBranch: string

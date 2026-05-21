@@ -18,6 +18,18 @@ type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
     buildFromDatabase: (data: Session) => void
+    mergeSessionsList: (
+      data: {
+        id: string
+        title: string
+        type: Session['sessionType']
+        originSessionId: string | null
+        originWorkflowId: string | null
+        createdAt: number
+        updatedAt: number
+      }[]
+    ) => void
+    clearSessions: () => void
     updateAskUserSubmitValue: (
       sessionId: string,
       workflowId: string,
@@ -55,10 +67,78 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         set((state) => {
           const existingIndex = state.sessions.findIndex((item) => item.sessionId === data.sessionId)
           if (existingIndex >= 0) {
-            state.sessions[existingIndex] = data
+            const existing = state.sessions[existingIndex]
+            state.sessions[existingIndex] = {
+              ...existing,
+              ...data,
+              runtime: data.runtime,
+              workflowNodesMap: data.workflowNodesMap,
+              branches: data.branches,
+              planner: data.planner,
+              artifacts: data.artifacts,
+            }
             return
           }
           state.sessions.push(data)
+        })
+      },
+      mergeSessionsList(data) {
+        set((state) => {
+          const nextSessions: Session[] = []
+
+          for (const item of data) {
+            const existing = state.sessions.find((session) => session.sessionId === item.id)
+            if (existing) {
+              existing.title = item.title
+              existing.sessionType = item.type
+              existing.origin = item.originSessionId
+                ? {
+                    sessionId: item.originSessionId,
+                    workflowId: item.originWorkflowId,
+                  }
+                : null
+              existing.createdAt = item.createdAt
+              existing.updatedAt = item.updatedAt
+              nextSessions.push(existing)
+              continue
+            }
+
+            nextSessions.push({
+              sessionId: item.id,
+              title: item.title,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+              sessionType: item.type,
+              origin: item.originSessionId
+                ? {
+                    sessionId: item.originSessionId,
+                    workflowId: item.originWorkflowId,
+                  }
+                : null,
+              activeBranch: 'main',
+              branches: [
+                {
+                  name: 'main',
+                  headWorkflowId: null,
+                  sourceWorkflowId: null,
+                },
+              ],
+              workflowNodesMap: {},
+              runtime: {
+                running: false,
+              },
+              planner: [],
+              artifacts: [],
+            })
+          }
+
+          state.sessions = nextSessions
+        })
+      },
+      clearSessions() {
+        set((state) => {
+          state.sessions = []
+          state.sessionWorkflowTree = null
         })
       },
       updateAskUserSubmitValue(sessionId, workflowId, messageId, value) {
@@ -86,6 +166,9 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const activeBranch = 'main'
           const newSession: Session = {
             sessionId,
+            title: '',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
             sessionType,
             origin,
             activeBranch,

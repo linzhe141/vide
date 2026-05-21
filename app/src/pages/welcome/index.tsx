@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '../../ui/Button'
-import { useSessions } from '../../hooks/useSessions'
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import { MoveRight } from 'lucide-react'
@@ -9,16 +8,15 @@ import LOGOIMG from './logo.png'
 import { useSessionStoreActions } from '../../store/sessionStore'
 
 export function Welcome() {
-  const { createSession } = useSessions()
-  const actions = useSessionStoreActions()
+  const { createSession } = useSessionStoreActions()
 
   const [input, setInput] = useState('')
   const navigate = useNavigate()
   const handleSend = async () => {
     if (!input.trim()) return
     context.firstInput = input
-    const sessionId = await createSession()
-    actions.createSession({ sessionId })
+    const sessionId = await window.ipcRendererApi.invoke('agent-create-session')
+    createSession({ sessionId })
     setInput('')
     navigate('/chat/' + sessionId)
   }

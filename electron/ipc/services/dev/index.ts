@@ -17,16 +17,21 @@ export class DevIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('dev-delete-database-rows', async () => {
-      await db.delete(sessionWorkflowMessages)
-      await db.delete(askUserQuestions)
+      await this.appManager.databaseManager.execute('PRAGMA foreign_keys = OFF', [], 'run')
+      try {
+        await db.delete(sessionWorkflowMessages)
+        await db.delete(askUserQuestions)
 
-      await db.delete(sessionBranches)
-      await db.delete(sessionWorkflows)
+        await db.delete(sessionBranches)
+        await db.delete(sessionWorkflows)
 
-      await db.delete(planners)
-      await db.delete(artifacts)
+        await db.delete(planners)
+        await db.delete(artifacts)
 
-      await db.delete(sessions)
+        await db.delete(sessions)
+      } finally {
+        await this.appManager.databaseManager.execute('PRAGMA foreign_keys = ON', [], 'run')
+      }
     })
   }
 }

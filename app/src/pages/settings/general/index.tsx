@@ -2,21 +2,20 @@ import { Eraser, Moon, Sun } from 'lucide-react'
 import { useTheme, themeColors, type ThemeColor } from '@/app/src/provider/ThemeProvider'
 import { cn } from '@/app/src/lib/utils'
 import { Button } from '@/app/src/ui/Button'
-import { useSessionsStore } from '@/app/src/store/sessionsStore'
+import { useSessionStoreActions } from '@/app/src/store/sessionStore'
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
-  const { setSessions } = useSessionsStore()
+  const { clearSessions } = useSessionStoreActions()
+
   return (
     <div>
       <div className='mx-auto max-w-3xl px-6 py-14'>
-        {/* Header */}
         <header className='mb-10'>
           <h1 className='text-foreground text-2xl font-semibold'>General</h1>
           <p className='text-text-secondary mt-1 text-sm'>Appearance and personalization</p>
         </header>
 
-        {/* Settings Card */}
         <section
           className={cn(
             'border-border rounded-2xl border',
@@ -25,7 +24,6 @@ export function GeneralSettings() {
             'space-y-10'
           )}
         >
-          {/* Theme mode */}
           <div className='flex items-center justify-between'>
             <div>
               <div className='text-foreground font-medium'>Theme</div>
@@ -67,10 +65,8 @@ export function GeneralSettings() {
             </div>
           </div>
 
-          {/* Divider */}
           <div className='bg-border h-px' />
 
-          {/* Theme color */}
           <div className='flex items-start justify-between'>
             <div>
               <div className='text-foreground font-medium'>Accent color</div>
@@ -106,10 +102,8 @@ export function GeneralSettings() {
             </div>
           </div>
 
-          {/* Divider */}
           <div className='bg-border h-px' />
 
-          {/* clear database */}
           <div className='flex items-center justify-between'>
             <div>
               <div className='text-foreground font-medium'>Clear database</div>
@@ -119,21 +113,24 @@ export function GeneralSettings() {
             <div>
               <Button
                 onClick={async () => {
-                  const res = confirm('删除所有的 dababase 数据')
-                  if (res) {
-                    try {
-                      await window.ipcRendererApi.invoke('dev-delete-database-rows')
-                      alert('删除成功！')
-                      setSessions([])
-                    } catch (error) {
-                      console.error('Failed to delete database rows:', error)
-                      alert('删除失败！' + (error instanceof Error ? error.message : String(error)))
-                    }
+                  const confirmed = confirm('Delete all database records?')
+                  if (!confirmed) return
+
+                  try {
+                    await window.ipcRendererApi.invoke('dev-delete-database-rows')
+                    clearSessions()
+                    alert('Database cleared successfully.')
+                  } catch (error) {
+                    console.error('Failed to delete database rows:', error)
+                    alert(
+                      'Failed to clear database: ' +
+                        (error instanceof Error ? error.message : String(error))
+                    )
                   }
                 }}
               >
                 <div className='flex items-center gap-2'>
-                  <Eraser size={14}></Eraser>
+                  <Eraser size={14} />
                   <div>Clear !</div>
                 </div>
               </Button>
