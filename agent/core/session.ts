@@ -4,6 +4,13 @@ import type { PlanStep } from './tools/planner'
 import type { ChatMessage } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
 
+export type SessionType = 'normal' | 'fork'
+
+export interface SessionOrigin {
+  sessionId: string
+  workflowId: string | null
+}
+
 export interface SessionWorkflowNode {
   id: string
   messages: ChatMessage[]
@@ -30,6 +37,8 @@ export interface SessionBranchSnapshot {
 
 export interface SessionSnapshot {
   sessionId: string
+  sessionType: SessionType
+  origin: SessionOrigin | null
   activeBranch: string
   workflows: SessionWorkflowSnapshot[]
   branches: SessionBranchSnapshot[]
@@ -37,14 +46,23 @@ export interface SessionSnapshot {
 
 export class Session {
   sessionId: string
+  sessionType: SessionType
+  origin: SessionOrigin | null
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
   planners: SessionPlaner[] = []
 
-  constructor(options?: { sessionId?: string; activeBranch?: string }) {
+  constructor(options?: {
+    sessionId?: string
+    activeBranch?: string
+    sessionType?: SessionType
+    origin?: SessionOrigin | null
+  }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
+    this.sessionType = options?.sessionType || 'normal'
+    this.origin = options?.origin || null
   }
 
   get currentBranch() {
@@ -54,10 +72,8 @@ export class Session {
   async run(userInput: string) {
     const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
     const currentHead = this.currentBranch.head
-    // 表示这是main分支第一个workflow
     if (!currentHead) {
       this.currentBranch.head = workflowCommitNode
-      // main 分支的第一个 workflow 作为 sourceWorkflow
       if (!this.currentBranch.source) {
         this.currentBranch.source = workflowCommitNode
       }
@@ -93,17 +109,44 @@ export class Session {
     }
   }
 
-  fork(newBranchName: string, targetCommitNode: SessionWorkflowNode | null) {
-    this.activeBranch = newBranchName
-    this.branchs[newBranchName] = {
-      head: targetCommitNode,
-      source: targetCommitNode,
-    }
-    agentEvent.emit('agent-session-forked', {
-      sessionId: this.sessionId,
-      branchName: newBranchName,
-      sourceWorkflowId: targetCommitNode?.id || null,
+  fork(targetCommitNode: SessionWorkflowNode | null) {
+    const forkedSession = new Session({
+      sessionType: 'fork',
+      origin: {
+        sessionId: this.sessionId,
+        workflowId: targetCommitNode?.id || null,
+      },
     })
+    forkedSession.branchs[forkedSession.activeBranch] = { head: null, source: null }
+
+    if (!targetCommitNode) {
+      return forkedSession
+    }
+
+    const lineage: SessionWorkflowNode[] = []
+    let current: SessionWorkflowNode | null = targetCommitNode
+    while (current) {
+      lineage.unshift(current)
+      current = current.parent
+    }
+
+    let previousClonedNode: SessionWorkflowNode | null = null
+    for (const sourceNode of lineage) {
+      const clonedNode: SessionWorkflowNode = {
+        id: uuid(),
+        messages: deepCloneMessages(sourceNode.messages),
+        parent: previousClonedNode,
+        children: [],
+      }
+      if (previousClonedNode) {
+        previousClonedNode.children.push(clonedNode)
+      }
+      forkedSession.workflowNodeMap.set(clonedNode.id, clonedNode)
+      previousClonedNode = clonedNode
+    }
+
+    forkedSession.currentBranch.head = previousClonedNode
+    return forkedSession
   }
 
   regenerateWorkflow(
@@ -148,10 +191,38 @@ export class Session {
     return this.workflowNodeMap.get(workflowId) ?? null
   }
 
+  toSnapshot(): SessionSnapshot {
+    const workflows: SessionWorkflowSnapshot[] = []
+    for (const node of this.workflowNodeMap.values()) {
+      workflows.push({
+        id: node.id,
+        parentWorkflowId: node.parent?.id || null,
+        messages: deepCloneMessages(node.messages),
+      })
+    }
+
+    const branches: SessionBranchSnapshot[] = Object.entries(this.branchs).map(([name, branch]) => ({
+      name,
+      headWorkflowId: branch.head?.id || null,
+      sourceWorkflowId: branch.source?.id || null,
+    }))
+
+    return {
+      sessionId: this.sessionId,
+      sessionType: this.sessionType,
+      origin: this.origin,
+      activeBranch: this.activeBranch,
+      workflows,
+      branches,
+    }
+  }
+
   static resume(snapshot: SessionSnapshot) {
     const session = new Session({
       sessionId: snapshot.sessionId,
       activeBranch: snapshot.activeBranch,
+      sessionType: snapshot.sessionType,
+      origin: snapshot.origin,
     })
     const workflowNodeMap = new Map<string, SessionWorkflowNode>()
 
@@ -198,4 +269,8 @@ export class SessionPlaner {
   constructor(public plans: PlanStep[]) {
     this.id = uuid()
   }
+}
+
+function deepCloneMessages(messages: ChatMessage[]) {
+  return JSON.parse(JSON.stringify(messages)) as ChatMessage[]
 }

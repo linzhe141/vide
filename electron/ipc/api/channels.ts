@@ -19,6 +19,9 @@ export type FileNode = {
 export type SessionRowDto = {
   id: string
   title: string
+  type: 'normal' | 'fork'
+  originSessionId: string | null
+  originWorkflowId: string | null
   createdAt: number
   updatedAt: number
 }
@@ -43,6 +46,8 @@ export interface RenderChannel {
   // agent
   'agent-create-session': () => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
+    sessionType: 'normal' | 'fork'
+    origin: { sessionId: string; workflowId: string | null } | null
     activeBranch: string
     branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
     planner: { id: string; plan: PlanStep[] }[]
@@ -56,7 +61,22 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { input: string }) => void
-  'agent-session-fork': (data: { targetWorkflowId: string | null; branchName: string }) => void
+  'agent-session-fork': (data: { targetWorkflowId: string | null }) => Promise<{
+    sessionId: string
+    sessionType: 'normal' | 'fork'
+    origin: { sessionId: string; workflowId: string | null } | null
+    activeBranch: string
+    branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
+    planner: { id: string; plan: PlanStep[] }[]
+    workflowData: WorkflowData[]
+    artifacts: {
+      id: string
+      sessionId: string
+      artifactWorkspaceName: string
+      createdAt: number
+      updatedAt: number
+    }[]
+  }>
   'agent-workflow-regenerate': (data: {
     targetWorkflowId: string
     branchName: string

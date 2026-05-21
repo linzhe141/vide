@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import {
   onAgentEvent,
@@ -7,6 +7,7 @@ import {
   onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
+import type { SessionSnapshot, SessionType } from '@/agent/core/session'
 import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
 import { SessionMessageRole } from '@/types'
@@ -52,6 +53,8 @@ export class SessionsManager {
         .update(sessionBranches)
         .set({
           headWorkflowId: data.headWorkflowId,
+          sourceWorkflowId:
+            data.sourceWorkflowId === undefined ? existingRow.sourceWorkflowId : data.sourceWorkflowId,
           updatedAt: time,
         })
         .where(eq(sessionBranches.id, existingRow.id))
@@ -79,37 +82,197 @@ export class SessionsManager {
       .where(eq(sessions.id, data.sessionId))
   }
 
-  setupAgentEvents() {
-    onAgentEvent('agent-create-session', async (data) => {
-      const time = Date.now()
-      await db.insert(sessions).values({
-        id: data.sessionId,
-        title: '',
-        activeBranch: data.activeBranch,
+  async createSessionRecord(data: {
+    sessionId: string
+    sessionType: SessionType
+    activeBranch: string
+    originSessionId: string | null
+    originWorkflowId: string | null
+    title?: string
+  }) {
+    const time = Date.now()
+    await db.insert(sessions).values({
+      id: data.sessionId,
+      title: data.title || '',
+      type: data.sessionType,
+      originSessionId: data.originSessionId,
+      originWorkflowId: data.originWorkflowId,
+      activeBranch: data.activeBranch,
+      createdAt: time,
+      updatedAt: time,
+    })
+    await this.upsertSessionBranch({
+      sessionId: data.sessionId,
+      branchName: data.activeBranch,
+      headWorkflowId: null,
+      sourceWorkflowId: null,
+    })
+  }
+
+  async hydrateSessionSnapshot(snapshot: SessionSnapshot) {
+    const workflowTimeBase = Date.now()
+
+    for (const workflow of snapshot.workflows) {
+      await db.insert(sessionWorkflows).values({
+        id: workflow.id,
+        sessionId: snapshot.sessionId,
+        parentWorkflowId: workflow.parentWorkflowId,
+        input: getWorkflowInput(workflow.messages),
+        createdAt: workflowTimeBase,
+        updatedAt: workflowTimeBase,
+      })
+
+      let messageOffset = 0
+      for (const message of workflow.messages) {
+        const normalizedRows = toWorkflowMessageRows(message)
+        for (const normalized of normalizedRows) {
+          await db.insert(sessionWorkflowMessages).values({
+            id: uuid(),
+            workflowId: workflow.id,
+            role: normalized.role,
+            content: normalized.content,
+            payload: normalized.payload,
+            createdAt: workflowTimeBase + messageOffset,
+            updatedAt: workflowTimeBase + messageOffset,
+          })
+          messageOffset += 1
+        }
+      }
+    }
+
+    for (const branch of snapshot.branches) {
+      await this.upsertSessionBranch({
+        sessionId: snapshot.sessionId,
+        branchName: branch.name,
+        headWorkflowId: branch.headWorkflowId,
+        sourceWorkflowId: branch.sourceWorkflowId,
+      })
+    }
+  }
+
+  async cloneSessionResources(sourceSessionId: string, targetSessionId: string) {
+    const time = Date.now()
+    const sourcePlanners = await db.select().from(planners).where(eq(planners.sessionId, sourceSessionId))
+    const sourceArtifacts = await db
+      .select()
+      .from(artifacts)
+      .where(eq(artifacts.sessionId, sourceSessionId))
+
+    for (const planner of sourcePlanners) {
+      await db.insert(planners).values({
+        id: uuid(),
+        sessionId: targetSessionId,
+        planJson: planner.planJson,
         createdAt: time,
         updatedAt: time,
       })
-      await this.upsertSessionBranch({
-        sessionId: data.sessionId,
-        branchName: data.activeBranch,
-        headWorkflowId: null,
-        sourceWorkflowId: null,
-      })
-    })
+    }
 
-    onAgentEvent('agent-session-forked', async (data) => {
-      await this.updateSessionState({
-        sessionId: data.sessionId,
-        activeBranch: data.branchName,
+    for (const artifact of sourceArtifacts) {
+      await db.insert(artifacts).values({
+        id: uuid(),
+        sessionId: targetSessionId,
+        artifactWorkspaceName: artifact.artifactWorkspaceName,
+        createdAt: time,
+        updatedAt: time,
       })
-      await this.upsertSessionBranch({
-        sessionId: data.sessionId,
-        branchName: data.branchName,
-        headWorkflowId: data.sourceWorkflowId,
-        sourceWorkflowId: data.sourceWorkflowId,
-      })
-    })
+    }
+  }
 
+  async cloneForkedSessionHistory(data: {
+    sourceSessionId: string
+    targetSessionId: string
+    targetWorkflowId: string | null
+  }) {
+    if (!data.targetWorkflowId) return
+
+    const workflows = await db
+      .select()
+      .from(sessionWorkflows)
+      .where(eq(sessionWorkflows.sessionId, data.sourceSessionId))
+      .orderBy(asc(sessionWorkflows.createdAt))
+
+    const workflowMap = new Map(workflows.map((workflow) => [workflow.id, workflow]))
+    const lineage: (typeof workflows)[number][] = []
+    let currentWorkflow = workflowMap.get(data.targetWorkflowId) || null
+
+    while (currentWorkflow) {
+      lineage.unshift(currentWorkflow)
+      currentWorkflow = currentWorkflow.parentWorkflowId
+        ? (workflowMap.get(currentWorkflow.parentWorkflowId) ?? null)
+        : null
+    }
+
+    const workflowIdMap = new Map<string, string>()
+    const clonedHeadWorkflowId = lineage.at(-1)?.id ? uuid() : null
+
+    for (const [index, workflow] of lineage.entries()) {
+      const clonedWorkflowId =
+        index === lineage.length - 1 && clonedHeadWorkflowId ? clonedHeadWorkflowId : uuid()
+      workflowIdMap.set(workflow.id, clonedWorkflowId)
+    }
+
+    const timeBase = Date.now()
+    for (const [index, workflow] of lineage.entries()) {
+      const clonedWorkflowId = workflowIdMap.get(workflow.id)!
+      const clonedParentWorkflowId = workflow.parentWorkflowId
+        ? (workflowIdMap.get(workflow.parentWorkflowId) ?? null)
+        : null
+
+      await db.insert(sessionWorkflows).values({
+        id: clonedWorkflowId,
+        sessionId: data.targetSessionId,
+        parentWorkflowId: clonedParentWorkflowId,
+        input: workflow.input,
+        createdAt: timeBase + index,
+        updatedAt: timeBase + index,
+      })
+
+      const workflowMessages = await db
+        .select()
+        .from(sessionWorkflowMessages)
+        .where(eq(sessionWorkflowMessages.workflowId, workflow.id))
+        .orderBy(asc(sessionWorkflowMessages.createdAt))
+
+      for (const [messageIndex, message] of workflowMessages.entries()) {
+        await db.insert(sessionWorkflowMessages).values({
+          id: uuid(),
+          workflowId: clonedWorkflowId,
+          role: message.role,
+          content: message.content,
+          payload: message.payload,
+          createdAt: timeBase + index * 1000 + messageIndex,
+          updatedAt: timeBase + index * 1000 + messageIndex,
+        })
+      }
+
+      const askUserRows = await db
+        .select()
+        .from(askUserQuestions)
+        .where(eq(askUserQuestions.workflowId, workflow.id))
+        .orderBy(asc(askUserQuestions.createdAt))
+
+      for (const askUserRow of askUserRows) {
+        await db.insert(askUserQuestions).values({
+          id: uuid(),
+          workflowId: clonedWorkflowId,
+          draftJson: askUserRow.draftJson,
+          answerJson: askUserRow.answerJson,
+          createdAt: timeBase + index,
+          updatedAt: timeBase + index,
+        })
+      }
+    }
+
+    await this.upsertSessionBranch({
+      sessionId: data.targetSessionId,
+      branchName: 'main',
+      headWorkflowId: workflowIdMap.get(data.targetWorkflowId) ?? null,
+      sourceWorkflowId: null,
+    })
+  }
+
+  setupAgentEvents() {
     onAgentEvent('agent-workflow-regenerated', async (data) => {
       await this.updateSessionState({
         sessionId: data.sessionId,
@@ -353,4 +516,64 @@ export class SessionsManager {
       })
     })
   }
+}
+
+function getWorkflowInput(messages: SessionSnapshot['workflows'][number]['messages']) {
+  const firstUserMessage = messages.find((message) => message.role === 'user')
+  return normalizeMessageContent(firstUserMessage?.content)
+}
+
+function toWorkflowMessageRows(message: SessionSnapshot['workflows'][number]['messages'][number]) {
+  switch (message.role) {
+    case 'user':
+      return [{
+        role: SessionMessageRole.User,
+        content: normalizeMessageContent(message.content),
+        payload: '',
+      }]
+    case 'assistant':
+      return [
+        {
+          role: SessionMessageRole.AssistantText,
+          content: normalizeMessageContent(message.content),
+          payload: '',
+        },
+        ...(message.tool_calls?.length
+          ? [
+              {
+                role: SessionMessageRole.ToolCalls,
+                content: '',
+                payload: JSON.stringify(message.tool_calls),
+              },
+            ]
+          : []),
+      ]
+    case 'tool':
+      return [{
+        role: SessionMessageRole.Tool,
+        content: '',
+        payload: JSON.stringify({
+          id: message.tool_call_id,
+          toolName: '',
+          result: safeJsonParse(message.content),
+        }),
+      }]
+    default:
+      return []
+  }
+}
+
+function safeJsonParse(input: unknown) {
+  if (typeof input !== 'string') return input
+  try {
+    return JSON.parse(input)
+  } catch (_error) {
+    return input
+  }
+}
+
+function normalizeMessageContent(content: unknown) {
+  if (typeof content === 'string') return content
+  if (content == null) return ''
+  return JSON.stringify(content)
 }

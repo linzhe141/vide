@@ -25,8 +25,11 @@ type SessionActions = {
       value: string[]
     ) => void
     switchBranch: (sessionId: string, branchName: string) => void
-    createSession: (data: { sessionId: string }) => void
-    forkSession: (data: { sessionId: string; sourceWorkflowId: string; branchName: string }) => void
+    createSession: (data: {
+      sessionId: string
+      sessionType?: Session['sessionType']
+      origin?: Session['origin']
+    }) => void
     regenerateWorkflow: (data: {
       sessionId: string
       sourceWorkflowId: string
@@ -50,6 +53,11 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
+          const existingIndex = state.sessions.findIndex((item) => item.sessionId === data.sessionId)
+          if (existingIndex >= 0) {
+            state.sessions[existingIndex] = data
+            return
+          }
           state.sessions.push(data)
         })
       },
@@ -73,11 +81,13 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           session.activeBranch = branchName
         })
       },
-      createSession({ sessionId }) {
+      createSession({ sessionId, sessionType = 'normal', origin = null }) {
         set((state) => {
           const activeBranch = 'main'
           const newSession: Session = {
             sessionId,
+            sessionType,
+            origin,
             activeBranch,
             branches: [
               {
@@ -94,30 +104,12 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             planner: [],
             artifacts: [],
           }
-          state.sessions.push(newSession)
-        })
-      },
-      forkSession({ sessionId, sourceWorkflowId, branchName }) {
-        // forked === create branch and switch to it, do not commit node
-
-        // a-> b(main)
-        //     b(forked)
-
-        // after commit
-        // a-> b(main) -> c
-        //     b(forked) - > d
-        //  a-> b -> c:main
-        //       \-> d:forked
-        set((state) => {
-          const session = state.sessions.find((item) => item.sessionId === sessionId)
-          if (!session) return
-          const newBranch: SessionBranch = {
-            name: branchName,
-            headWorkflowId: sourceWorkflowId,
-            sourceWorkflowId: sourceWorkflowId,
+          const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
+          if (existingIndex >= 0) {
+            state.sessions[existingIndex] = newSession
+            return
           }
-          session.branches.push(newBranch)
-          session.activeBranch = branchName
+          state.sessions.push(newSession)
         })
       },
       regenerateWorkflow({ sessionId, sourceWorkflowId, branchName }) {

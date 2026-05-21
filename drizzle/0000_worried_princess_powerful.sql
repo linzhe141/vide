@@ -65,7 +65,12 @@ CREATE TABLE `session_workflows` (
 CREATE TABLE `sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text,
+	`type` text DEFAULT 'normal' NOT NULL,
+	`origin_session_id` text,
+	`origin_workflow_id` text,
 	`active_branch` text DEFAULT 'main' NOT NULL,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`origin_session_id`) REFERENCES `sessions`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`origin_workflow_id`) REFERENCES `session_workflows`(`id`) ON UPDATE no action ON DELETE no action
 );

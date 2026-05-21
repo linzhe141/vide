@@ -3,14 +3,20 @@ import type { PlanStep } from '../tools/planner'
 import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
 
 const AgentLifecycleEventChannels = {
-  'agent-create-session': null as unknown as { sessionId: string; activeBranch: string },
+  'agent-create-session': null as unknown as {
+    sessionId: string
+    activeBranch: string
+    sessionType: 'normal' | 'fork'
+    originSessionId: string | null
+    originWorkflowId: string | null
+  },
   'agent-session-finished': null as unknown as {
     sessionId: string
     userInput: string
   },
   'agent-session-forked': null as unknown as {
-    sessionId: string
-    branchName: string
+    sourceSessionId: string
+    forkedSessionId: string
     sourceWorkflowId: string | null
   },
   'agent-workflow-regenerated': null as unknown as {

@@ -24,100 +24,28 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainHandle() {
     ipcMainApi.handle('agent-create-session', async () => {
       this.session = this.agent.createSession()
+      await this.appManager.sessionsManager.createSessionRecord({
+        sessionId: this.session.sessionId,
+        sessionType: this.session.sessionType,
+        activeBranch: this.session.activeBranch,
+        originSessionId: this.session.origin?.sessionId || null,
+        originWorkflowId: this.session.origin?.workflowId || null,
+      })
       logger.info('agent-create-session ', this.session.sessionId)
       return this.session.sessionId
     })
 
     ipcMainApi.handle('agent-resume-session', async (data) => {
-      const sessionRows = await db
-        .select()
-        .from(schema.sessions)
-        .where(eq(schema.sessions.id, data.sessionId))
-      const sessionRow = sessionRows[0]
-
-      const workflows = await db
-        .select({
-          id: schema.sessionWorkflows.id,
-          userInput: schema.sessionWorkflows.input,
-          parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
-        })
-        .from(schema.sessionWorkflows)
-        .where(eq(schema.sessionWorkflows.sessionId, data.sessionId))
-        .orderBy(asc(schema.sessionWorkflows.createdAt))
-
-      const workflowData: (WorkflowData & {
-        parentWorkflowId: string | null
-      })[] = []
-      const askUserSubmitValues = new Map<string, string[]>()
-
-      for (const workflow of workflows) {
-        const workflowMessageRows = await db
-          .select()
-          .from(schema.sessionWorkflowMessages)
-          .where(eq(schema.sessionWorkflowMessages.workflowId, workflow.id))
-          .orderBy(asc(schema.sessionWorkflowMessages.createdAt))
-        const askUserQuestionRows = await db
-          .select()
-          .from(schema.askUserQuestions)
-          .where(eq(schema.askUserQuestions.workflowId, workflow.id))
-          .orderBy(asc(schema.askUserQuestions.createdAt))
-        const askUserQuestion = askUserQuestionRows[0]
-
-        if (askUserQuestion?.answerJson) {
-          askUserSubmitValues.set(workflow.id, JSON.parse(askUserQuestion.answerJson))
-        }
-
-        workflowData.push({
-          id: workflow.id,
-          userInput: workflow.userInput,
-          parentWorkflowId: workflow.parentWorkflowId,
-          messages: workflowMessageRows,
-        })
-      }
-
-      const branchRows = await db
-        .select({
-          name: schema.sessionBranches.name,
-          headWorkflowId: schema.sessionBranches.headWorkflowId,
-          sourceWorkflowId: schema.sessionBranches.sourceWorkflowId,
-        })
-        .from(schema.sessionBranches)
-        .where(eq(schema.sessionBranches.sessionId, data.sessionId))
-        .orderBy(asc(schema.sessionBranches.createdAt))
-
+      const payload = await this.loadSessionPayload(data.sessionId)
       this.session = this.agent.resumeSession({
         sessionId: data.sessionId,
-        activeBranch: sessionRow?.activeBranch || 'main',
-        branches: branchRows,
-        workflowData,
+        sessionType: payload.sessionType,
+        origin: payload.origin,
+        activeBranch: payload.activeBranch,
+        branches: payload.branches,
+        workflowData: payload.workflowData,
       })
-
-      const uiWorkflowData = workflowData.map((workflow) => ({
-        ...workflow,
-        parentWorkflowId: workflow.parentWorkflowId,
-        askUserSubmitValue: askUserSubmitValues.get(workflow.id),
-      }))
-
-      const plannerRows = await db
-        .select()
-        .from(schema.planners)
-        .where(eq(schema.planners.sessionId, data.sessionId))
-
-      const artifactRows = await db
-        .select()
-        .from(schema.artifacts)
-        .where(eq(schema.artifacts.sessionId, data.sessionId))
-
-      return {
-        activeBranch: sessionRow?.activeBranch || 'main',
-        branches: branchRows,
-        planner: plannerRows.map((item) => ({
-          id: item.id,
-          plan: JSON.parse(item.planJson || '[]') as PlanStep[],
-        })),
-        workflowData: uiWorkflowData,
-        artifacts: artifactRows,
-      }
+      return payload
     })
 
     ipcMainApi.handle('agent-session-send', async ({ input }) => {
@@ -125,10 +53,43 @@ export class AgentIpcMainService implements IpcMainService {
       this.session.run(input)
     })
 
-    ipcMainApi.handle('agent-session-fork', async ({ targetWorkflowId, branchName }) => {
-      logger.info('agent-session-fork ', branchName, targetWorkflowId)
-      const targetNode = targetWorkflowId ? this.session.getWorkflowNode(targetWorkflowId) : null
-      this.session.fork(branchName, targetNode)
+    ipcMainApi.handle('agent-session-fork', async ({ targetWorkflowId }) => {
+      logger.info('agent-session-fork ', targetWorkflowId)
+      const sourceSessionId = this.session.sessionId
+      const sourceSessionRows = await db
+        .select()
+        .from(schema.sessions)
+        .where(eq(schema.sessions.id, sourceSessionId))
+      const sourceSessionRow = sourceSessionRows[0]
+      const forkedSession = this.agent.forkSession(this.session, targetWorkflowId)
+      const snapshot = forkedSession.toSnapshot()
+
+      await this.appManager.sessionsManager.createSessionRecord({
+        sessionId: snapshot.sessionId,
+        sessionType: snapshot.sessionType,
+        activeBranch: snapshot.activeBranch,
+        originSessionId: snapshot.origin?.sessionId || null,
+        originWorkflowId: snapshot.origin?.workflowId || null,
+        title: sourceSessionRow?.title || '',
+      })
+      await this.appManager.sessionsManager.cloneForkedSessionHistory({
+        sourceSessionId,
+        targetSessionId: snapshot.sessionId,
+        targetWorkflowId,
+      })
+      await this.appManager.sessionsManager.cloneSessionResources(sourceSessionId, snapshot.sessionId)
+
+      const payload = await this.loadSessionPayload(snapshot.sessionId)
+      this.session = this.agent.resumeSession({
+        sessionId: snapshot.sessionId,
+        sessionType: payload.sessionType,
+        origin: payload.origin,
+        activeBranch: payload.activeBranch,
+        branches: payload.branches,
+        workflowData: payload.workflowData,
+      })
+
+      return payload
     })
 
     ipcMainApi.handle(
@@ -149,6 +110,94 @@ export class AgentIpcMainService implements IpcMainService {
         })
         .where(eq(schema.askUserQuestions.workflowId, data.workflowId))
     })
+  }
+
+  private async loadSessionPayload(sessionId: string) {
+    const sessionRows = await db.select().from(schema.sessions).where(eq(schema.sessions.id, sessionId))
+    const sessionRow = sessionRows[0]
+
+    const workflows = await db
+      .select({
+        id: schema.sessionWorkflows.id,
+        userInput: schema.sessionWorkflows.input,
+        parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
+      })
+      .from(schema.sessionWorkflows)
+      .where(eq(schema.sessionWorkflows.sessionId, sessionId))
+      .orderBy(asc(schema.sessionWorkflows.createdAt))
+
+    const workflowData: (WorkflowData & {
+      parentWorkflowId: string | null
+    })[] = []
+    const askUserSubmitValues = new Map<string, string[]>()
+
+    for (const workflow of workflows) {
+      const workflowMessageRows = await db
+        .select()
+        .from(schema.sessionWorkflowMessages)
+        .where(eq(schema.sessionWorkflowMessages.workflowId, workflow.id))
+        .orderBy(asc(schema.sessionWorkflowMessages.createdAt))
+      const askUserQuestionRows = await db
+        .select()
+        .from(schema.askUserQuestions)
+        .where(eq(schema.askUserQuestions.workflowId, workflow.id))
+        .orderBy(asc(schema.askUserQuestions.createdAt))
+      const askUserQuestion = askUserQuestionRows[0]
+
+      if (askUserQuestion?.answerJson) {
+        askUserSubmitValues.set(workflow.id, JSON.parse(askUserQuestion.answerJson))
+      }
+
+      workflowData.push({
+        id: workflow.id,
+        userInput: workflow.userInput,
+        parentWorkflowId: workflow.parentWorkflowId,
+        messages: workflowMessageRows,
+      })
+    }
+
+    const branchRows = await db
+      .select({
+        name: schema.sessionBranches.name,
+        headWorkflowId: schema.sessionBranches.headWorkflowId,
+        sourceWorkflowId: schema.sessionBranches.sourceWorkflowId,
+      })
+      .from(schema.sessionBranches)
+      .where(eq(schema.sessionBranches.sessionId, sessionId))
+      .orderBy(asc(schema.sessionBranches.createdAt))
+
+    const plannerRows = await db
+      .select()
+      .from(schema.planners)
+      .where(eq(schema.planners.sessionId, sessionId))
+
+    const artifactRows = await db
+      .select()
+      .from(schema.artifacts)
+      .where(eq(schema.artifacts.sessionId, sessionId))
+
+    return {
+      sessionId,
+      sessionType: sessionRow?.type || 'normal',
+      origin: sessionRow?.originSessionId
+        ? {
+            sessionId: sessionRow.originSessionId,
+            workflowId: sessionRow.originWorkflowId,
+          }
+        : null,
+      activeBranch: sessionRow?.activeBranch || 'main',
+      branches: branchRows,
+      planner: plannerRows.map((item) => ({
+        id: item.id,
+        plan: JSON.parse(item.planJson || '[]') as PlanStep[],
+      })),
+      workflowData: workflowData.map((workflow) => ({
+        ...workflow,
+        parentWorkflowId: workflow.parentWorkflowId,
+        askUserSubmitValue: askUserSubmitValues.get(workflow.id),
+      })),
+      artifacts: artifactRows,
+    }
   }
 
   registerIpcMainSenders() {

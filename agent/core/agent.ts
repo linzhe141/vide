@@ -4,26 +4,36 @@ import type { AssistantChatMessage, ChatMessage } from './types'
 import type { WorkflowData } from '@/electron/ipc/api/channels'
 import {
   Session,
+  type SessionOrigin,
   type SessionBranchSnapshot,
   type SessionSnapshot,
+  type SessionType,
   type SessionWorkflowSnapshot,
 } from './session'
 
 export class Agent {
   constructor() {}
 
-  createSession() {
-    const session = new Session()
+  createSession(options?: { sessionType?: SessionType; origin?: SessionOrigin | null }) {
+    const session = new Session({
+      sessionType: options?.sessionType,
+      origin: options?.origin,
+    })
     session.branchs[session.activeBranch] = { head: null, source: null }
     agentEvent.emit('agent-create-session', {
       sessionId: session.sessionId,
       activeBranch: session.activeBranch,
+      sessionType: session.sessionType,
+      originSessionId: session.origin?.sessionId || null,
+      originWorkflowId: session.origin?.workflowId || null,
     })
     return session
   }
 
   resumeSession(data: {
     sessionId: string
+    sessionType: SessionType
+    origin: SessionOrigin | null
     activeBranch: string
     branches: SessionBranchSnapshot[]
     workflowData: (WorkflowData & {
@@ -38,12 +48,32 @@ export class Agent {
 
     const snapshot: SessionSnapshot = {
       sessionId: data.sessionId,
+      sessionType: data.sessionType,
+      origin: data.origin,
       activeBranch: data.activeBranch,
       workflows,
       branches: data.branches,
     }
 
     return Session.resume(snapshot)
+  }
+
+  forkSession(session: Session, targetWorkflowId: string | null) {
+    const targetNode = targetWorkflowId ? session.getWorkflowNode(targetWorkflowId) : null
+    const forkedSession = session.fork(targetNode)
+    agentEvent.emit('agent-create-session', {
+      sessionId: forkedSession.sessionId,
+      activeBranch: forkedSession.activeBranch,
+      sessionType: forkedSession.sessionType,
+      originSessionId: forkedSession.origin?.sessionId || null,
+      originWorkflowId: forkedSession.origin?.workflowId || null,
+    })
+    agentEvent.emit('agent-session-forked', {
+      sourceSessionId: session.sessionId,
+      forkedSessionId: forkedSession.sessionId,
+      sourceWorkflowId: targetWorkflowId,
+    })
+    return forkedSession
   }
 
   buildChatMessages(messages: WorkflowData['messages']) {

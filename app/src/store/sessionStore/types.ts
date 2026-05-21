@@ -95,8 +95,15 @@ export type SessionBranch = {
   sourceWorkflowId: string | null
 }
 
+export type SessionOrigin = {
+  sessionId: string
+  workflowId: string | null
+}
+
 export type Session = {
   sessionId: string
+  sessionType: 'normal' | 'fork'
+  origin: SessionOrigin | null
   activeBranch: string
   branches: SessionBranch[]
   workflowNodesMap: Record<string, WorkflowNode>

@@ -1,30 +1,38 @@
+import { useCallback, useEffect } from 'react'
+import { GitBranch } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { cn } from '@/app/src/lib/utils'
-import { useCallback, useEffect } from 'react'
 import { useSessionsStore } from '@/app/src/store/sessionsStore'
 
 export function SessionRecents() {
   const { sessions, setSessions } = useSessionsStore()
 
-  const fetchChats = useCallback(
-    async function fetchChats() {
-      const res = await window.ipcRendererApi.invoke('get-sessions-list')
-      const result = res
-      setSessions(result)
-    },
-    [setSessions]
-  )
+  const fetchChats = useCallback(async () => {
+    const result = await window.ipcRendererApi.invoke('get-sessions-list')
+    setSessions(result)
+  }, [setSessions])
+
   useEffect(() => {
     fetchChats()
   }, [fetchChats])
 
   useEffect(() => {
-    const remove = window.ipcRendererApi.on('workflow-llm-start', () => {
-      // 等写入数据库
-      setTimeout(fetchChats, 250)
-    })
-    return remove
-  })
+    const disposers = [
+      window.ipcRendererApi.on('workflow-llm-start', () => {
+        setTimeout(fetchChats, 250)
+      }),
+      window.ipcRendererApi.on('agent-create-session', () => {
+        setTimeout(fetchChats, 50)
+      }),
+      window.ipcRendererApi.on('agent-session-forked', () => {
+        setTimeout(fetchChats, 50)
+      }),
+    ]
+
+    return () => {
+      disposers.forEach((dispose) => dispose())
+    }
+  }, [fetchChats])
 
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
@@ -32,9 +40,6 @@ export function SessionRecents() {
         <NavLink
           key={session.id}
           to={`/chat/${session.id}`}
-          onClick={async () => {
-            //
-          }}
           className={({ isActive }) =>
             cn(
               'rounded-md px-3 py-1.5',
@@ -46,7 +51,14 @@ export function SessionRecents() {
             )
           }
         >
-          <span className='block truncate'>{session.title || 'Untitled'}</span>
+          <div className='flex items-center gap-2'>
+            {session.type === 'fork' ? (
+              <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
+                <GitBranch size={11} />
+              </span>
+            ) : null}
+            <span className='block truncate'>{session.title || 'Untitled'}</span>
+          </div>
         </NavLink>
       ))}
 

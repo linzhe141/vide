@@ -26,7 +26,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
     }
 
     async function fetchMessages() {
-      const { workflowData, planner, artifacts, activeBranch, branches } =
+      const { workflowData, planner, artifacts, activeBranch, branches, sessionType, origin } =
         await window.ipcRendererApi.invoke('agent-resume-session', {
           sessionId,
         })
@@ -57,6 +57,8 @@ export function InitSession({ sessionId }: { sessionId: string }) {
 
       const session: Session = {
         sessionId,
+        sessionType,
+        origin,
         activeBranch,
         branches: branches.map((branch) => ({
           name: branch.name,
