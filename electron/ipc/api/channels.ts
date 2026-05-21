@@ -60,8 +60,8 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   }>
-  'agent-session-send': (data: { input: string }) => void
-  'agent-session-fork': (data: { targetWorkflowId: string | null }) => Promise<{
+  'agent-session-send': (data: { sessionId: string; input: string }) => void
+  'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string | null }) => Promise<{
     sessionId: string
     sessionType: 'normal' | 'fork'
     origin: { sessionId: string; workflowId: string | null } | null
@@ -78,6 +78,7 @@ export interface RenderChannel {
     }[]
   }>
   'agent-workflow-regenerate': (data: {
+    sessionId: string
     targetWorkflowId: string
     branchName: string
     input?: string

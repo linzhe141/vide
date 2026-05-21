@@ -15,7 +15,7 @@ import { useChatContext } from '../../components/chat/ChatProvider'
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useSessionStoreActions()
-  const session = useSession(sessionId)
+  const currentSession = useSession(sessionId)
   useEffect(() => {
     const firstInput = context.firstInput
 
@@ -57,6 +57,10 @@ export function InitSession({ sessionId }: { sessionId: string }) {
 
       const session: Session = {
         sessionId,
+        title: currentSession?.title,
+        createdAt: currentSession?.createdAt,
+        updatedAt: currentSession?.updatedAt,
+        hydrated: true,
         sessionType,
         origin,
         activeBranch,
@@ -76,8 +80,8 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       buildFromDatabase(session)
     }
 
-    if (!session) fetchMessages()
-  }, [sessionId, handleSend, buildFromDatabase, session])
+    if (!currentSession || !currentSession.hydrated) fetchMessages()
+  }, [sessionId, handleSend, buildFromDatabase, currentSession])
   return null
 }
 

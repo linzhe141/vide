@@ -32,16 +32,18 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
   const handleFork = useCallback(
     async (targetWorkflowId: string) => {
       const nextSession = await window.ipcRendererApi.invoke('agent-session-fork', {
+        sessionId,
         targetWorkflowId,
       })
       return nextSession.sessionId
     },
-    []
+    [sessionId]
   )
 
   const handleRegenerate = useCallback(
     async (regenerateWorkflowId: string, branchName: string, input: string) => {
       await window.ipcRendererApi.invoke('agent-workflow-regenerate', {
+        sessionId,
         targetWorkflowId: regenerateWorkflowId,
         branchName,
       })

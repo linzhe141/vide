@@ -14,7 +14,7 @@ import { ipcMainApi } from '../../api/ipcMain'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
-  session: Session = null!
+  sessions = new Map<string, Session>()
 
   constructor(private appManager: AppManager) {
     this.registerIpcMainSenders()
@@ -23,21 +23,22 @@ export class AgentIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('agent-create-session', async () => {
-      this.session = this.agent.createSession()
+      const session = this.agent.createSession()
+      this.sessions.set(session.sessionId, session)
       await this.appManager.sessionsManager.createSessionRecord({
-        sessionId: this.session.sessionId,
-        sessionType: this.session.sessionType,
-        activeBranch: this.session.activeBranch,
-        originSessionId: this.session.origin?.sessionId || null,
-        originWorkflowId: this.session.origin?.workflowId || null,
+        sessionId: session.sessionId,
+        sessionType: session.sessionType,
+        activeBranch: session.activeBranch,
+        originSessionId: session.origin?.sessionId || null,
+        originWorkflowId: session.origin?.workflowId || null,
       })
-      logger.info('agent-create-session ', this.session.sessionId)
-      return this.session.sessionId
+      logger.info('agent-create-session ', session.sessionId)
+      return session.sessionId
     })
 
     ipcMainApi.handle('agent-resume-session', async (data) => {
       const payload = await this.loadSessionPayload(data.sessionId)
-      this.session = this.agent.resumeSession({
+      const session = this.agent.resumeSession({
         sessionId: data.sessionId,
         sessionType: payload.sessionType,
         origin: payload.origin,
@@ -45,23 +46,26 @@ export class AgentIpcMainService implements IpcMainService {
         branches: payload.branches,
         workflowData: payload.workflowData,
       })
+      this.sessions.set(data.sessionId, session)
       return payload
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ input }) => {
-      logger.info('agent-session-send ', input)
-      this.session.run(input)
+    ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
+      logger.info('agent-session-send ', sessionId, input)
+      const session = await this.getSession(sessionId)
+      session.run(input)
     })
 
-    ipcMainApi.handle('agent-session-fork', async ({ targetWorkflowId }) => {
-      logger.info('agent-session-fork ', targetWorkflowId)
-      const sourceSessionId = this.session.sessionId
+    ipcMainApi.handle('agent-session-fork', async ({ sessionId, targetWorkflowId }) => {
+      logger.info('agent-session-fork ', sessionId, targetWorkflowId)
+      const sourceSession = await this.getSession(sessionId)
+      const sourceSessionId = sourceSession.sessionId
       const sourceSessionRows = await db
         .select()
         .from(schema.sessions)
         .where(eq(schema.sessions.id, sourceSessionId))
       const sourceSessionRow = sourceSessionRows[0]
-      const forkedSession = this.agent.forkSession(this.session, targetWorkflowId)
+      const forkedSession = this.agent.forkSession(sourceSession, targetWorkflowId)
       const snapshot = forkedSession.toSnapshot()
 
       await this.appManager.sessionsManager.createSessionRecord({
@@ -80,7 +84,7 @@ export class AgentIpcMainService implements IpcMainService {
       await this.appManager.sessionsManager.cloneSessionResources(sourceSessionId, snapshot.sessionId)
 
       const payload = await this.loadSessionPayload(snapshot.sessionId)
-      this.session = this.agent.resumeSession({
+      const resumedForkedSession = this.agent.resumeSession({
         sessionId: snapshot.sessionId,
         sessionType: payload.sessionType,
         origin: payload.origin,
@@ -88,17 +92,19 @@ export class AgentIpcMainService implements IpcMainService {
         branches: payload.branches,
         workflowData: payload.workflowData,
       })
+      this.sessions.set(snapshot.sessionId, resumedForkedSession)
 
       return payload
     })
 
     ipcMainApi.handle(
       'agent-workflow-regenerate',
-      async ({ targetWorkflowId, branchName, input }) => {
-        logger.info('agent-workflow-regenerate ', branchName, targetWorkflowId, input)
-        const targetNode = this.session.getWorkflowNode(targetWorkflowId)
+      async ({ sessionId, targetWorkflowId, branchName, input }) => {
+        logger.info('agent-workflow-regenerate ', sessionId, branchName, targetWorkflowId, input)
+        const session = await this.getSession(sessionId)
+        const targetNode = session.getWorkflowNode(targetWorkflowId)
         if (!targetNode) return
-        this.session.regenerateWorkflow(branchName, targetNode, input)
+        session.regenerateWorkflow(branchName, targetNode, input)
       }
     )
 
@@ -110,6 +116,23 @@ export class AgentIpcMainService implements IpcMainService {
         })
         .where(eq(schema.askUserQuestions.workflowId, data.workflowId))
     })
+  }
+
+  private async getSession(sessionId: string) {
+    const existing = this.sessions.get(sessionId)
+    if (existing) return existing
+
+    const payload = await this.loadSessionPayload(sessionId)
+    const session = this.agent.resumeSession({
+      sessionId,
+      sessionType: payload.sessionType,
+      origin: payload.origin,
+      activeBranch: payload.activeBranch,
+      branches: payload.branches,
+      workflowData: payload.workflowData,
+    })
+    this.sessions.set(sessionId, session)
+    return session
   }
 
   private async loadSessionPayload(sessionId: string) {

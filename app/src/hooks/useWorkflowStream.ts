@@ -77,6 +77,7 @@ export function useWorkflowStream() {
       await consumeStream(
         async () => {
           await window.ipcRendererApi.invoke('agent-session-send', {
+            sessionId: options?.sessionId || '',
             input,
           })
         },

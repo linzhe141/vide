@@ -105,6 +105,7 @@ export type Session = {
   title?: string
   createdAt?: number
   updatedAt?: number
+  hydrated: boolean
   sessionType: 'normal' | 'fork'
   origin: SessionOrigin | null
   activeBranch: string

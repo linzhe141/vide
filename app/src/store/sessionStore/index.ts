@@ -71,6 +71,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             state.sessions[existingIndex] = {
               ...existing,
               ...data,
+              hydrated: true,
               runtime: data.runtime,
               workflowNodesMap: data.workflowNodesMap,
               branches: data.branches,
@@ -108,6 +109,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
               title: item.title,
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
+              hydrated: false,
               sessionType: item.type,
               origin: item.originSessionId
                 ? {
@@ -169,6 +171,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             title: '',
             createdAt: Date.now(),
             updatedAt: Date.now(),
+            hydrated: true,
             sessionType,
             origin,
             activeBranch,
