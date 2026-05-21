@@ -66,50 +66,16 @@ function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
   const branchOptions = useWorkflowBranches(sessionId, parentNodeId)
   if (!session || branchOptions.length <= 1) return null
 
-  const filteredBranchOptions = branchOptions
-    .filter((option) => {
-      if (option.name === 'main') return true
-      try {
-        const payload = JSON.parse(option.name)
-        if (payload.type === 'regenerate') {
-          return true
-        }
-      } catch (_e) {
-        //
-      }
-      return false
-    })
-    .reduce<typeof branchOptions>((result, option) => {
-      const childWorkflowId = getVariantChildWorkflowId(option.path, parentNodeId)
-      if (!childWorkflowId) return result
-
-      const duplicatedIndex = result.findIndex(
-        (item) => getVariantChildWorkflowId(item.path, parentNodeId) === childWorkflowId
-      )
-
-      if (duplicatedIndex === -1) {
-        result.push(option)
-        return result
-      }
-
-      const duplicatedOption = result[duplicatedIndex]
-      if (option.path.length < duplicatedOption.path.length) {
-        result[duplicatedIndex] = option
-      }
-
-      return result
-    }, [])
-
-  const currentVariantIndex = filteredBranchOptions.findIndex(
-    (option) => getVariantChildWorkflowId(option.path, parentNodeId) === workflow.id
-  )
+  const siblingVariants = getSiblingVariants(branchOptions, parentNodeId)
+  const currentVariantIndex = siblingVariants.findIndex((option) => {
+    return getDirectChildId(option.path, parentNodeId) === workflow.id
+  })
 
   function switchVariant(direction: number) {
     if (currentVariantIndex === -1) return
     const nextIndex =
-      (currentVariantIndex + direction + filteredBranchOptions.length) %
-      filteredBranchOptions.length
-    const nextBranch = filteredBranchOptions[nextIndex]
+      (currentVariantIndex + direction + siblingVariants.length) % siblingVariants.length
+    const nextBranch = siblingVariants[nextIndex]
     switchBranch(session!.sessionId, nextBranch.name)
   }
 
@@ -124,7 +90,7 @@ function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
             <div className='min-w-0'>
               <div className='text-foreground text-sm font-medium'>Response variants</div>
               <div className='text-text-info text-xs'>
-                {currentVariantIndex + 1} of {filteredBranchOptions.length}
+                {currentVariantIndex + 1} of {siblingVariants.length}
               </div>
             </div>
           </div>
@@ -221,7 +187,46 @@ function createBranchPayload(payload: {
   return JSON.stringify(payload)
 }
 
-function getVariantChildWorkflowId(path: string[], parentNodeId: string | null) {
+function getSiblingVariants<
+  T extends {
+    name: string
+    path: string[]
+  },
+>(branchOptions: T[], parentNodeId: string | null) {
+  const variantsByChildId = new Map<string, T>()
+
+  for (const option of branchOptions) {
+    if (!isRegenerateVariant(option.name)) continue
+
+    const childId = getDirectChildId(option.path, parentNodeId)
+    if (!childId) continue
+
+    const existingOption = variantsByChildId.get(childId)
+    if (!existingOption) {
+      variantsByChildId.set(childId, option)
+      continue
+    }
+
+    if (option.path.length < existingOption.path.length) {
+      variantsByChildId.set(childId, option)
+    }
+  }
+
+  return [...variantsByChildId.values()]
+}
+
+function isRegenerateVariant(branchName: string) {
+  if (branchName === 'main') return true
+
+  try {
+    const payload = JSON.parse(branchName)
+    return payload.type === 'regenerate'
+  } catch (_e) {
+    return false
+  }
+}
+
+function getDirectChildId(path: string[], parentNodeId: string | null) {
   if (!path.length) return null
   if (!parentNodeId) return path[0] ?? null
 
