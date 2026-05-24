@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import type { ToolCall } from '@/agent/core/types'
 import { useState } from 'react'
+import { Image_TOOL_NAMES } from '@/agent/core/tools/image'
+import ImageToolCall from '../ImageToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -30,9 +32,14 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 
   return (
     <div className='space-y-3'>
-      {visibleTools.map((tool) => (
-        <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
-      ))}
+      {visibleTools.map((tool) => {
+        if (tool.function.name === Image_TOOL_NAMES.GENERATE_IMAGE) {
+          return <ImageToolCall key={tool.id} result={findToolResult(workflow, tool.id)} />
+        }
+        return (
+          <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
+        )
+      })}
       {/* <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
         <Wrench size={15} />
         <span>{visibleTools.length} tools</span>
