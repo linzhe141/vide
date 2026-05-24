@@ -7,8 +7,9 @@ import { Welcome } from '../pages/welcome'
 
 import { Layout as SettingsLayout } from '../pages/settings/layout'
 import { GeneralSettings } from '../pages/settings/general'
-import { LlmSettings } from '../pages/settings/llm'
+import { GenerateImageSettings } from '../pages/settings/generateImage'
 import { Chat } from '../pages/chat'
+import { LlmSettings } from '../pages/settings/llm'
 
 export const router = createHashRouter([
   {
@@ -31,6 +32,10 @@ export const router = createHashRouter([
           {
             path: 'llm',
             Component: LlmSettings,
+          },
+          {
+            path: 'generateImage',
+            Component: GenerateImageSettings,
           },
         ],
       },

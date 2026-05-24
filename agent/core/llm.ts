@@ -6,9 +6,7 @@ import { buildSkillsChatMessage } from './tools/skill'
 
 let model: string = null!
 export let llmClient: OpenAI = null!
-export function getModel() {
-  return model
-}
+
 export function createLLMClient(options: { apiKey: string; baseURL: string; model: string }) {
   llmClient = new OpenAI({
     apiKey: options.apiKey,

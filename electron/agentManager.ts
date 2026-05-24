@@ -1,17 +1,13 @@
-import OpenAI from 'openai'
+import { createGenerateImageClient } from '@/agent/core/image';
 import type { AppManager } from './appManager'
 import { settingsStore } from './store/settingsStore'
 import { createLLMClient } from '@/agent/core/llm'
 export class AgentManager {
-  protected llmClient: OpenAI = null!
   constructor(private app: AppManager) {}
 
   init() {
     this.createLLMClient()
-  }
-
-  getLLMClient() {
-    return this.llmClient
+    this.createGenerateImageClient()
   }
 
   createLLMClient(config?: { apiKey: string; baseUrl: string; model: string }) {
@@ -20,5 +16,13 @@ export class AgentManager {
     const model = config ? config.model : settingsStore.get('llmConfig').model
 
     createLLMClient({ apiKey, baseURL, model })
+  }
+
+  createGenerateImageClient(config?: { apiKey: string; baseUrl: string; model: string }) {
+    const apiKey = config ? config.apiKey : settingsStore.get('generateImageConfig').apiKey
+    const baseURL = config ? config.baseUrl : settingsStore.get('generateImageConfig').baseUrl
+    const model = config ? config.model : settingsStore.get('generateImageConfig').model
+
+    createGenerateImageClient({ apiKey, baseURL, model })
   }
 }

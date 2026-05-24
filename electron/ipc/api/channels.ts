@@ -1,5 +1,5 @@
 import type { Settings } from '@/electron/store/settingsStore'
-import type { LLMConfig } from '@/types'
+import type { GenerateImageConfig, LLMConfig } from '@/types'
 import type {
   AgentLifecycleEvents,
   PlannerEvents,
@@ -97,6 +97,7 @@ export interface RenderChannel {
   'verify-llm-settings-connection': (
     data: LLMConfig
   ) => Promise<{ success: true } | { success: false; error: any }>
+  'submit-generate-image-settings': (data: GenerateImageConfig) => void
   // only dev
   'dev-delete-database-rows': () => void
 

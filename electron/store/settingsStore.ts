@@ -14,6 +14,12 @@ export type Settings = {
     baseUrl: string
     model: string
   }
+
+  generateImageConfig: {
+    apiKey: string
+    baseUrl: string
+    model: string
+  }
 }
 export const settingsStore = new ElectronStore<Settings>({
   defaults: {
@@ -22,6 +28,11 @@ export const settingsStore = new ElectronStore<Settings>({
 
     windowState: null,
     llmConfig: {
+      apiKey: '',
+      baseUrl: '',
+      model: '',
+    },
+    generateImageConfig: {
       apiKey: '',
       baseUrl: '',
       model: '',

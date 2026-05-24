@@ -17,6 +17,7 @@ export function Layout() {
           <LinkMenu defaultLink={currentLink}>
             <LinkMenuItem label='Preferences settings' link='/settings'></LinkMenuItem>
             <LinkMenuItem label='LLM settings' link='/settings/llm'></LinkMenuItem>
+            <LinkMenuItem label='Generate Image' link='/settings/generateImage'></LinkMenuItem>
           </LinkMenu>
         </div>
       </div>
