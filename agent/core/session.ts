@@ -109,19 +109,15 @@ export class Session {
     }
   }
 
-  fork(targetCommitNode: SessionWorkflowNode | null) {
+  fork(targetCommitNode: SessionWorkflowNode) {
     const forkedSession = new Session({
       sessionType: 'fork',
       origin: {
         sessionId: this.sessionId,
-        workflowId: targetCommitNode?.id || null,
+        workflowId: targetCommitNode.id,
       },
     })
     forkedSession.branchs[forkedSession.activeBranch] = { head: null, source: null }
-
-    if (!targetCommitNode) {
-      return forkedSession
-    }
 
     const lineage: SessionWorkflowNode[] = []
     let current: SessionWorkflowNode | null = targetCommitNode
@@ -189,32 +185,6 @@ export class Session {
 
   getWorkflowNode(workflowId: string) {
     return this.workflowNodeMap.get(workflowId) ?? null
-  }
-
-  toSnapshot(): SessionSnapshot {
-    const workflows: SessionWorkflowSnapshot[] = []
-    for (const node of this.workflowNodeMap.values()) {
-      workflows.push({
-        id: node.id,
-        parentWorkflowId: node.parent?.id || null,
-        messages: deepCloneMessages(node.messages),
-      })
-    }
-
-    const branches: SessionBranchSnapshot[] = Object.entries(this.branchs).map(([name, branch]) => ({
-      name,
-      headWorkflowId: branch.head?.id || null,
-      sourceWorkflowId: branch.source?.id || null,
-    }))
-
-    return {
-      sessionId: this.sessionId,
-      sessionType: this.sessionType,
-      origin: this.origin,
-      activeBranch: this.activeBranch,
-      workflows,
-      branches,
-    }
   }
 
   static resume(snapshot: SessionSnapshot) {

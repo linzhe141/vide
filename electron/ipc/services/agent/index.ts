@@ -66,33 +66,35 @@ export class AgentIpcMainService implements IpcMainService {
         .where(eq(schema.sessions.id, sourceSessionId))
       const sourceSessionRow = sourceSessionRows[0]
       const forkedSession = this.agent.forkSession(sourceSession, targetWorkflowId)
-      const snapshot = forkedSession.toSnapshot()
 
       await this.appManager.sessionsManager.createSessionRecord({
-        sessionId: snapshot.sessionId,
-        sessionType: snapshot.sessionType,
-        activeBranch: snapshot.activeBranch,
-        originSessionId: snapshot.origin?.sessionId || null,
-        originWorkflowId: snapshot.origin?.workflowId || null,
+        sessionId: forkedSession.sessionId,
+        sessionType: forkedSession.sessionType,
+        activeBranch: forkedSession.activeBranch,
+        originSessionId: forkedSession.origin?.sessionId || null,
+        originWorkflowId: forkedSession.origin?.workflowId || null,
         title: sourceSessionRow?.title || '',
       })
       await this.appManager.sessionsManager.cloneForkedSessionHistory({
         sourceSessionId,
-        targetSessionId: snapshot.sessionId,
+        targetSessionId: forkedSession.sessionId,
         targetWorkflowId,
       })
-      await this.appManager.sessionsManager.cloneSessionResources(sourceSessionId, snapshot.sessionId)
+      await this.appManager.sessionsManager.cloneSessionResources(
+        sourceSessionId,
+        forkedSession.sessionId
+      )
 
-      const payload = await this.loadSessionPayload(snapshot.sessionId)
+      const payload = await this.loadSessionPayload(forkedSession.sessionId)
       const resumedForkedSession = this.agent.resumeSession({
-        sessionId: snapshot.sessionId,
+        sessionId: forkedSession.sessionId,
         sessionType: payload.sessionType,
         origin: payload.origin,
         activeBranch: payload.activeBranch,
         branches: payload.branches,
         workflowData: payload.workflowData,
       })
-      this.sessions.set(snapshot.sessionId, resumedForkedSession)
+      this.sessions.set(forkedSession.sessionId, resumedForkedSession)
 
       return payload
     })
@@ -136,7 +138,10 @@ export class AgentIpcMainService implements IpcMainService {
   }
 
   private async loadSessionPayload(sessionId: string) {
-    const sessionRows = await db.select().from(schema.sessions).where(eq(schema.sessions.id, sessionId))
+    const sessionRows = await db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.id, sessionId))
     const sessionRow = sessionRows[0]
 
     const workflows = await db
@@ -149,9 +154,7 @@ export class AgentIpcMainService implements IpcMainService {
       .where(eq(schema.sessionWorkflows.sessionId, sessionId))
       .orderBy(asc(schema.sessionWorkflows.createdAt))
 
-    const workflowData: (WorkflowData & {
-      parentWorkflowId: string | null
-    })[] = []
+    const workflowData: WorkflowData[] = []
     const askUserSubmitValues = new Map<string, string[]>()
 
     for (const workflow of workflows) {
@@ -216,7 +219,6 @@ export class AgentIpcMainService implements IpcMainService {
       })),
       workflowData: workflowData.map((workflow) => ({
         ...workflow,
-        parentWorkflowId: workflow.parentWorkflowId,
         askUserSubmitValue: askUserSubmitValues.get(workflow.id),
       })),
       artifacts: artifactRows,

@@ -28,7 +28,7 @@ export type SessionRowDto = {
 export type WorkflowData = {
   id: string
   userInput: string
-  parentWorkflowId?: string | null
+  parentWorkflowId: string | null
   askUserSubmitValue?: string[]
   messages: (typeof sessionWorkflowMessages.$inferSelect)[]
 }
@@ -61,7 +61,7 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { sessionId: string; input: string }) => void
-  'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string | null }) => Promise<{
+  'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string }) => Promise<{
     sessionId: string
     sessionType: 'normal' | 'fork'
     origin: { sessionId: string; workflowId: string | null } | null

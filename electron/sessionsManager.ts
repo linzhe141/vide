@@ -7,7 +7,7 @@ import {
   onPalnnerEvent,
   onWorkflowEvent,
 } from '@/agent/core/apiEvent'
-import type { SessionSnapshot, SessionType } from '@/agent/core/session'
+import type { SessionType } from '@/agent/core/session'
 import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
 import type { PlanStep } from '@/agent/core/tools/planner'
 import { SessionMessageRole } from '@/types'
@@ -54,7 +54,9 @@ export class SessionsManager {
         .set({
           headWorkflowId: data.headWorkflowId,
           sourceWorkflowId:
-            data.sourceWorkflowId === undefined ? existingRow.sourceWorkflowId : data.sourceWorkflowId,
+            data.sourceWorkflowId === undefined
+              ? existingRow.sourceWorkflowId
+              : data.sourceWorkflowId,
           updatedAt: time,
         })
         .where(eq(sessionBranches.id, existingRow.id))
@@ -109,50 +111,12 @@ export class SessionsManager {
     })
   }
 
-  async hydrateSessionSnapshot(snapshot: SessionSnapshot) {
-    const workflowTimeBase = Date.now()
-
-    for (const workflow of snapshot.workflows) {
-      await db.insert(sessionWorkflows).values({
-        id: workflow.id,
-        sessionId: snapshot.sessionId,
-        parentWorkflowId: workflow.parentWorkflowId,
-        input: getWorkflowInput(workflow.messages),
-        createdAt: workflowTimeBase,
-        updatedAt: workflowTimeBase,
-      })
-
-      let messageOffset = 0
-      for (const message of workflow.messages) {
-        const normalizedRows = toWorkflowMessageRows(message)
-        for (const normalized of normalizedRows) {
-          await db.insert(sessionWorkflowMessages).values({
-            id: uuid(),
-            workflowId: workflow.id,
-            role: normalized.role,
-            content: normalized.content,
-            payload: normalized.payload,
-            createdAt: workflowTimeBase + messageOffset,
-            updatedAt: workflowTimeBase + messageOffset,
-          })
-          messageOffset += 1
-        }
-      }
-    }
-
-    for (const branch of snapshot.branches) {
-      await this.upsertSessionBranch({
-        sessionId: snapshot.sessionId,
-        branchName: branch.name,
-        headWorkflowId: branch.headWorkflowId,
-        sourceWorkflowId: branch.sourceWorkflowId,
-      })
-    }
-  }
-
   async cloneSessionResources(sourceSessionId: string, targetSessionId: string) {
     const time = Date.now()
-    const sourcePlanners = await db.select().from(planners).where(eq(planners.sessionId, sourceSessionId))
+    const sourcePlanners = await db
+      .select()
+      .from(planners)
+      .where(eq(planners.sessionId, sourceSessionId))
     const sourceArtifacts = await db
       .select()
       .from(artifacts)
@@ -182,10 +146,8 @@ export class SessionsManager {
   async cloneForkedSessionHistory(data: {
     sourceSessionId: string
     targetSessionId: string
-    targetWorkflowId: string | null
+    targetWorkflowId: string
   }) {
-    if (!data.targetWorkflowId) return
-
     const workflows = await db
       .select()
       .from(sessionWorkflows)
@@ -516,64 +478,4 @@ export class SessionsManager {
       })
     })
   }
-}
-
-function getWorkflowInput(messages: SessionSnapshot['workflows'][number]['messages']) {
-  const firstUserMessage = messages.find((message) => message.role === 'user')
-  return normalizeMessageContent(firstUserMessage?.content)
-}
-
-function toWorkflowMessageRows(message: SessionSnapshot['workflows'][number]['messages'][number]) {
-  switch (message.role) {
-    case 'user':
-      return [{
-        role: SessionMessageRole.User,
-        content: normalizeMessageContent(message.content),
-        payload: '',
-      }]
-    case 'assistant':
-      return [
-        {
-          role: SessionMessageRole.AssistantText,
-          content: normalizeMessageContent(message.content),
-          payload: '',
-        },
-        ...(message.tool_calls?.length
-          ? [
-              {
-                role: SessionMessageRole.ToolCalls,
-                content: '',
-                payload: JSON.stringify(message.tool_calls),
-              },
-            ]
-          : []),
-      ]
-    case 'tool':
-      return [{
-        role: SessionMessageRole.Tool,
-        content: '',
-        payload: JSON.stringify({
-          id: message.tool_call_id,
-          toolName: '',
-          result: safeJsonParse(message.content),
-        }),
-      }]
-    default:
-      return []
-  }
-}
-
-function safeJsonParse(input: unknown) {
-  if (typeof input !== 'string') return input
-  try {
-    return JSON.parse(input)
-  } catch (_error) {
-    return input
-  }
-}
-
-function normalizeMessageContent(content: unknown) {
-  if (typeof content === 'string') return content
-  if (content == null) return ''
-  return JSON.stringify(content)
 }

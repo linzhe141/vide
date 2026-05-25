@@ -36,9 +36,7 @@ export class Agent {
     origin: SessionOrigin | null
     activeBranch: string
     branches: SessionBranchSnapshot[]
-    workflowData: (WorkflowData & {
-      parentWorkflowId: string | null
-    })[]
+    workflowData: WorkflowData[]
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
       id: workflow.id,
@@ -58,8 +56,11 @@ export class Agent {
     return Session.resume(snapshot)
   }
 
-  forkSession(session: Session, targetWorkflowId: string | null) {
-    const targetNode = targetWorkflowId ? session.getWorkflowNode(targetWorkflowId) : null
+  forkSession(session: Session, targetWorkflowId: string) {
+    const targetNode = session.getWorkflowNode(targetWorkflowId)
+    if (!targetNode) {
+      throw new Error('Target workflow node not found: ' + targetWorkflowId)
+    }
     const forkedSession = session.fork(targetNode)
     agentEvent.emit('agent-create-session', {
       sessionId: forkedSession.sessionId,
