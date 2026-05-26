@@ -90,18 +90,22 @@ export function handleWorkflowEvent(
       return
     }
 
-    case 'workflow-llm-text-start':
-      // nothing to do
+    case 'workflow-llm-text-start': {
+      const textMessage = context.ensureLastMessage('assistant-text') as AssistantTextSessionMessage
+      textMessage.streaming = true
       return
+    }
 
     case 'workflow-llm-text-delta': {
       const textMessage = context.ensureLastMessage('assistant-text') as AssistantTextSessionMessage
       textMessage.content += event.data.chunk.delta
       return
     }
-    case 'workflow-llm-text-end':
-      // nothing to do
+    case 'workflow-llm-text-end': {
+      const textMessage = context.ensureLastMessage('assistant-text') as AssistantTextSessionMessage
+      textMessage.streaming = false
       return
+    }
 
     case 'workflow-llm-tool-calls-start':
       // nothing to do

@@ -115,6 +115,7 @@ function buildWorkflowMessages(
           role: 'assistant-text',
           id: message.id,
           content: message.content || '',
+          streaming: false,
         })
         break
 

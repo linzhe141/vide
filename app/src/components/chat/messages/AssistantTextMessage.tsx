@@ -5,7 +5,7 @@ export function AssistantTextMessage({ message }: { message: AssistantTextSessio
   return (
     <div className='max-w-none'>
       <MarkdownRenderer
-        animation
+        animation={message.streaming}
         className='text-foreground prose prose-sm dark:prose-invert max-w-none leading-8'
       >
         {message.content}

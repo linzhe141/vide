@@ -17,6 +17,7 @@ export interface AssistantTextSessionMessage {
   id: string
   role: 'assistant-text'
   content: string
+  streaming: boolean
 }
 
 export interface ToolCallSessionMessage {
