@@ -1,15 +1,9 @@
 import { useState } from 'react'
 import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
-import type { AssistantReasonSessionMessage, Workflow } from '@/app/src/store/sessionStore/types'
+import type { AssistantReasonSessionMessage } from '@/app/src/store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
-export function AssistantReasonMessage({
-  workflow,
-  message,
-}: {
-  workflow: Workflow
-  message: AssistantReasonSessionMessage
-}) {
+export function AssistantReasonMessage({ message }: { message: AssistantReasonSessionMessage }) {
   const [open, setOpen] = useState(true)
   const isReasoning = message.reasoning === true
   return (

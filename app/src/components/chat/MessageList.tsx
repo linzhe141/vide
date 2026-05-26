@@ -31,7 +31,7 @@ function MessageView({ workflow, message }: { workflow: Workflow; message: Sessi
       return <AssistantTextMessage message={message} />
 
     case 'assistant-reason':
-      return <AssistantReasonMessage message={message} workflow={workflow} />
+      return <AssistantReasonMessage message={message} />
 
     case 'tool-call':
       return <ToolCallMessage workflow={workflow} message={message} />
@@ -59,7 +59,30 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
       {workflow.messages.map((message) => (
         <MessageView key={message.id} workflow={workflow} message={message} />
       ))}
+      {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
       {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
+    </div>
+  )
+}
+
+function LoadingStatusCircle() {
+  return (
+    <div className='flex items-center gap-1.5 px-1'>
+      <div
+        className='bg-primary h-2 w-2 animate-[typing_1.1s_infinite] rounded-full opacity-90'
+        style={{
+          animationDelay: '-0.32s',
+        }}
+      />
+
+      <div
+        className='bg-primary h-2 w-2 animate-[typing_1.1s_infinite] rounded-full opacity-75'
+        style={{
+          animationDelay: '-0.16s',
+        }}
+      />
+
+      <div className='bg-primary h-2 w-2 animate-[typing_1.1s_infinite] rounded-full opacity-60' />
     </div>
   )
 }

@@ -1,9 +1,15 @@
-import { Send } from 'lucide-react'
+import { LoaderCircle, Send } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '@/app/src/ui/Textarea'
 import { Button } from '@/app/src/ui/Button'
 
-export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: string) => void }) {
+export const ChatInput = memo(function ChatInput({
+  onSend,
+  running,
+}: {
+  onSend: (input: string) => void
+  running: boolean
+}) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -37,7 +43,6 @@ export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: s
               handleSubmit()
             }
           }}
-          disabled={false}
           className='text-foreground placeholder:text-text-info w-full resize-none rounded-2xl border-0 bg-transparent px-4 focus:ring-0 focus:outline-none disabled:opacity-50'
           rows={1}
           style={{ minHeight: '52px', maxHeight: '200px' }}
@@ -49,10 +54,14 @@ export const ChatInput = memo(function ChatInput({ onSend }: { onSend: (input: s
         <div>
           <Button
             onClick={handleSubmit}
-            disabled={!input.trim()}
+            disabled={!input.trim() || running}
             className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
           >
-            <Send className='h-4 w-4' />
+            {running ? (
+              <LoaderCircle className='size-5 animate-spin' />
+            ) : (
+              <Send className='size-5' />
+            )}
             <span>Send</span>
           </Button>
         </div>

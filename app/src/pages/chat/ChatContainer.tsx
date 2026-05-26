@@ -10,7 +10,7 @@ import {
 } from '../../layout/ChatLayout'
 
 export function ChatContainer() {
-  const { handleSend } = useChatContext()
+  const { handleSend, running } = useChatContext()
   const { scrollToBottom } = useChatLayout()
   const onSend = useCallback(
     (text: string) => {
@@ -26,7 +26,7 @@ export function ChatContainer() {
         <MessageList />
       </ChatLayoutMessage>
       <ChatLayoutInput>
-        <ChatInput onSend={onSend} />
+        <ChatInput onSend={onSend} running={running} />
       </ChatLayoutInput>
     </ChatLayout>
   )
