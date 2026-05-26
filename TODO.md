@@ -1,0 +1,7 @@
+- [ ] 所有的http:// 或者 https:// 都使用外部浏览器打开
+- [ ] 完善 electron builder 配置（保持当前基础配置也可以）
+- [ ] 支持 electron updater（github workflow？）
+- [ ] 支持 protocol 等electron基础功能
+- [ ] 支持 workspace 选择（默认在 ~/.vide），当选择了workspace 在workspace下生成.vide目录
+- [ ] 支持更多的 buildin skills，都放在~/.vide/skills下面，并且有一个展示页面
+- [ ] artifacts 能通过 explorer 快速打开
