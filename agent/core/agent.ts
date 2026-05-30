@@ -47,6 +47,7 @@ export class Agent {
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
       id: workflow.id,
+      status: workflow.status,
       parentWorkflowId: workflow.parentWorkflowId,
       messages: this.buildChatMessages(workflow.messages),
     }))

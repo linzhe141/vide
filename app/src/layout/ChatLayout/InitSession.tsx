@@ -38,7 +38,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
           input: data.userInput,
           messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
           runtime: {
-            status: 'finished',
+            status: data.status,
             waitingHuman: false,
           },
         }

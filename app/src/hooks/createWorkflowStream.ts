@@ -34,7 +34,9 @@ export function createWorkflowStream(
       // 监听 abort 信号
       if (abortSignal) {
         abortSignal.addEventListener('abort', () => {
-          window.ipcRendererApi.invoke('agent-workflow-abort')
+          if (currentSessionId) {
+            window.ipcRendererApi.invoke('agent-workflow-abort', { sessionId: currentSessionId })
+          }
           controller.close()
           cleanUp()
         })
@@ -77,7 +79,9 @@ export function createWorkflowStream(
 
           if (
             currentSessionId === data.ctx.sessionId &&
-            (eventName === 'workflow-error' || closeOn.has(eventName))
+            (eventName === 'workflow-error' ||
+              eventName === 'workflow-aborted' ||
+              closeOn.has(eventName))
           ) {
             controller.close()
             cleanUp()

@@ -54,10 +54,25 @@ export class AgentIpcMainService implements IpcMainService {
       return payload
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
+    ipcMainApi.handle('agent-session-send', async ({ sessionId, input, autoApprove }) => {
       logger.info('agent-session-send ', sessionId, input)
       const session = await this.getSession(sessionId)
-      session.run(input)
+      session.run(input, { autoApprove })
+    })
+
+    ipcMainApi.handle('agent-workflow-abort', async ({ sessionId }) => {
+      const session = await this.getSession(sessionId)
+      session.abortActiveWorkflow()
+    })
+
+    ipcMainApi.handle('agent-human-approved', async ({ sessionId }) => {
+      const session = await this.getSession(sessionId)
+      session.approveActiveWorkflow()
+    })
+
+    ipcMainApi.handle('agent-human-rejected', async ({ sessionId }) => {
+      const session = await this.getSession(sessionId)
+      session.rejectActiveWorkflow()
     })
 
     ipcMainApi.handle('agent-session-fork', async ({ sessionId, targetWorkflowId }) => {
@@ -156,6 +171,8 @@ export class AgentIpcMainService implements IpcMainService {
         id: schema.sessionWorkflows.id,
         userInput: schema.sessionWorkflows.input,
         parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
+        status: schema.sessionWorkflows.status,
+        autoApprove: schema.sessionWorkflows.autoApprove,
       })
       .from(schema.sessionWorkflows)
       .where(eq(schema.sessionWorkflows.sessionId, sessionId))
@@ -185,6 +202,8 @@ export class AgentIpcMainService implements IpcMainService {
         id: workflow.id,
         userInput: workflow.userInput,
         parentWorkflowId: workflow.parentWorkflowId,
+        status: workflow.status,
+        autoApprove: workflow.autoApprove,
         messages: workflowMessageRows,
       })
     }

@@ -30,6 +30,8 @@ export type WorkflowData = {
   id: string
   userInput: string
   parentWorkflowId: string | null
+  status: 'running' | 'finished' | 'error' | 'aborted'
+  autoApprove: boolean
   askUserSubmitValue?: string[]
   messages: (typeof sessionWorkflowMessages.$inferSelect)[]
 }
@@ -61,7 +63,7 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   }>
-  'agent-session-send': (data: { sessionId: string; input: string }) => void
+  'agent-session-send': (data: { sessionId: string; input: string; autoApprove?: boolean }) => void
   'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string }) => Promise<{
     sessionId: string
     sessionType: 'normal' | 'fork'
@@ -84,9 +86,9 @@ export interface RenderChannel {
     branchName: string
     input?: string
   }) => void
-  'agent-human-approved': () => void
-  'agent-human-rejected': () => void
-  'agent-workflow-abort': () => void
+  'agent-human-approved': (data: { sessionId: string }) => void
+  'agent-human-rejected': (data: { sessionId: string }) => void
+  'agent-workflow-abort': (data: { sessionId: string }) => void
 
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 

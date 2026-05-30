@@ -1,4 +1,4 @@
-import { FolderOpen, LoaderCircle, Send, X } from 'lucide-react'
+import { FolderOpen, LoaderCircle, Send, Square, X, Zap } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '@/app/src/ui/Textarea'
 import { Button } from '@/app/src/ui/Button'
@@ -6,17 +6,20 @@ import { Button } from '@/app/src/ui/Button'
 export const ChatInput = memo(function ChatInput({
   onSend,
   running,
+  onAbort,
   workspacePath,
   onSelectWorkspace,
   onClearWorkspace,
 }: {
-  onSend: (input: string) => void
+  onSend: (input: string, options?: { autoApprove?: boolean }) => void
   running: boolean
+  onAbort?: () => void
   workspacePath?: string | null
   onSelectWorkspace?: () => void
   onClearWorkspace?: () => void
 }) {
   const [input, setInput] = useState('')
+  const [autoApprove, setAutoApprove] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 自动调整 textarea 高度
@@ -30,7 +33,7 @@ export const ChatInput = memo(function ChatInput({
 
   const handleSubmit = () => {
     if (input.trim()) {
-      onSend(input)
+      onSend(input, { autoApprove })
       setInput('')
     }
   }
@@ -85,19 +88,43 @@ export const ChatInput = memo(function ChatInput({
             </div>
           )}
         </div>
-        <div>
-          <Button
-            onClick={handleSubmit}
-            disabled={!input.trim() || running}
-            className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
+        <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => setAutoApprove((value) => !value)}
+            className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
+              autoApprove
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-text-secondary hover:text-foreground'
+            }`}
+            title='Auto approve bash commands for this workflow'
           >
-            {running ? (
-              <LoaderCircle className='size-5 animate-spin' />
-            ) : (
-              <Send className='size-5' />
-            )}
-            <span>Send</span>
-          </Button>
+            <Zap className='size-4' />
+            <span>Auto approve</span>
+          </button>
+          {running && onAbort ? (
+            <Button
+              onClick={onAbort}
+              className='flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-red-600'
+              title='Abort workflow'
+            >
+              <Square className='size-4 fill-current' />
+              <span>Abort</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={!input.trim() || running}
+              className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
+            >
+              {running ? (
+                <LoaderCircle className='size-5 animate-spin' />
+              ) : (
+                <Send className='size-5' />
+              )}
+              <span>Send</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

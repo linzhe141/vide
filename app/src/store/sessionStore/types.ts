@@ -69,7 +69,7 @@ export type Workflow = {
   input: string
   messages: SessionMessage[]
   runtime: {
-    status: 'running' | 'finished' | 'error'
+    status: 'running' | 'finished' | 'error' | 'aborted'
     waitingHuman: boolean
   }
 }

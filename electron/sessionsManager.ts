@@ -187,6 +187,8 @@ export class SessionsManager {
         id: clonedWorkflowId,
         sessionId: data.targetSessionId,
         parentWorkflowId: clonedParentWorkflowId,
+        status: workflow.status,
+        autoApprove: workflow.autoApprove,
         input: workflow.input,
         createdAt: timeBase + index,
         updatedAt: timeBase + index,
@@ -266,6 +268,8 @@ export class SessionsManager {
         id: ctx.workflowId,
         sessionId: ctx.sessionId,
         parentWorkflowId: ctx.parentWorkflowId,
+        status: 'running',
+        autoApprove: ctx.autoApprove,
         input,
         createdAt: time,
         updatedAt: time,
@@ -287,8 +291,32 @@ export class SessionsManager {
       })
     })
 
-    onWorkflowEvent('workflow-finished', async () => {})
+    onWorkflowEvent('workflow-finished', async ({ ctx }) => {
+      await db
+        .update(sessionWorkflows)
+        .set({
+          status: 'finished',
+          updatedAt: Date.now(),
+        })
+        .where(eq(sessionWorkflows.id, ctx.workflowId))
+    })
+    onWorkflowEvent('workflow-aborted', async ({ ctx }) => {
+      await db
+        .update(sessionWorkflows)
+        .set({
+          status: 'aborted',
+          updatedAt: Date.now(),
+        })
+        .where(eq(sessionWorkflows.id, ctx.workflowId))
+    })
     onWorkflowEvent('workflow-error', async ({ ctx, error }) => {
+      await db
+        .update(sessionWorkflows)
+        .set({
+          status: 'error',
+          updatedAt: Date.now(),
+        })
+        .where(eq(sessionWorkflows.id, ctx.workflowId))
       console.log('onElectron main get workflow-error', ctx)
       console.log(error)
     })

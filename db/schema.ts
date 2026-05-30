@@ -31,6 +31,10 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
   parentWorkflowId: text('parent_workflow_id').references(
     (): AnySQLiteColumn => sessionWorkflows.id
   ),
+  status: text('status', { enum: ['running', 'finished', 'error', 'aborted'] })
+    .notNull()
+    .default('running'),
+  autoApprove: integer('auto_approve', { mode: 'boolean' }).notNull().default(false),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),

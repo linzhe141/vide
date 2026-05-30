@@ -41,6 +41,17 @@ export function handleWorkflowEvent(
       }
       context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'finished'
+        runtime.waitingHuman = false
+      })
+      return
+
+    case 'workflow-aborted':
+      if (session) {
+        session.runtime.running = false
+      }
+      context.updateWorkflowRuntime((runtime) => {
+        runtime.status = 'aborted'
+        runtime.waitingHuman = false
       })
       return
 
@@ -50,6 +61,7 @@ export function handleWorkflowEvent(
       }
       context.updateWorkflowRuntime((runtime) => {
         runtime.status = 'error'
+        runtime.waitingHuman = false
       })
       context.pushMessage({
         id: nanoid(),
@@ -132,6 +144,9 @@ export function handleWorkflowEvent(
       return
 
     case 'workflow-tool-call-success':
+      context.updateWorkflowRuntime((runtime) => {
+        runtime.waitingHuman = false
+      })
       context.pushMessage({
         id: nanoid(),
         role: 'tool-result',
@@ -160,6 +175,9 @@ export function handleWorkflowEvent(
       return
 
     case 'workflow-tool-call-error':
+      context.updateWorkflowRuntime((runtime) => {
+        runtime.waitingHuman = false
+      })
       context.pushMessage({
         id: nanoid(),
         role: 'tool-result',

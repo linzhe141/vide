@@ -18,8 +18,14 @@ export type ChatMessage =
   | AssistantChatMessage
   | ToolChatMessage
 
+export type ToolApproval = {
+  required?: boolean
+  summary?: (args: any) => string
+}
+
 export type Tool = ChatCompletionTool & {
   name: string
+  approval?: ToolApproval
   executor: (args: any) => Promise<ToolResult>
 }
 
@@ -44,16 +50,15 @@ export type CallToolsStepPayload = {
 }
 
 export type WaitHumanApprovePayload = {
-  nextStep: {
-    state: WorkflowState
-    payload: StepPayload
-  }
+  toolCall: ToolCall
+  args: any
+  index: number
+  toolCalls: ToolCall[]
 }
 
 export type CallToolStepPayload = {
   index: number
   toolCalls: ToolCall[]
-  approved: boolean
 }
 
 export type FinishedStepPayload = {

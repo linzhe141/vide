@@ -15,6 +15,13 @@
       "when": 1780109347443,
       "tag": "0001_overjoyed_tattoo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780141982358,
+      "tag": "0002_minor_silver_sable",
+      "breakpoints": true
     }
   ]
 }

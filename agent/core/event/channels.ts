@@ -1,6 +1,6 @@
 import type { AskUserQuestion } from '../tools/askUserQuestion'
 import type { PlanStep } from '../tools/planner'
-import type { AssistantChatMessage, CallToolStepPayload, ChatMessage, ToolCall } from '../types'
+import type { AssistantChatMessage, ChatMessage, ToolCall } from '../types'
 
 const AgentLifecycleEventChannels = {
   'agent-create-session': null as unknown as {
@@ -87,12 +87,14 @@ export type WorkflowEventCtx = {
   workflowId: string
   branchName: string
   parentWorkflowId: string | null
+  autoApprove: boolean
 }
 const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-aborted': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-wait-human-approve': null as unknown as {
-    payload: CallToolStepPayload
+    toolCall: { id: string; toolName: string; args: any; summary: string }
     ctx: WorkflowEventCtx
   },
   'workflow-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
