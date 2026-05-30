@@ -22,8 +22,10 @@ export class AgentIpcMainService implements IpcMainService {
   }
 
   registerIpcMainHandle() {
-    ipcMainApi.handle('agent-create-session', async () => {
-      const session = this.agent.createSession()
+    ipcMainApi.handle('agent-create-session', async (data) => {
+      const workspacePath = data?.workspacePath ?? null
+      await this.appManager.workspaceManager.ensureVideHome(workspacePath)
+      const session = this.agent.createSession({ workspacePath })
       this.sessions.set(session.sessionId, session)
       await this.appManager.sessionsManager.createSessionRecord({
         sessionId: session.sessionId,
@@ -31,6 +33,7 @@ export class AgentIpcMainService implements IpcMainService {
         activeBranch: session.activeBranch,
         originSessionId: session.origin?.sessionId || null,
         originWorkflowId: session.origin?.workflowId || null,
+        workspacePath: session.workspacePath,
       })
       logger.info('agent-create-session ', session.sessionId)
       return session.sessionId
@@ -42,6 +45,7 @@ export class AgentIpcMainService implements IpcMainService {
         sessionId: data.sessionId,
         sessionType: payload.sessionType,
         origin: payload.origin,
+        workspacePath: payload.workspacePath,
         activeBranch: payload.activeBranch,
         branches: payload.branches,
         workflowData: payload.workflowData,
@@ -73,6 +77,7 @@ export class AgentIpcMainService implements IpcMainService {
         activeBranch: forkedSession.activeBranch,
         originSessionId: forkedSession.origin?.sessionId || null,
         originWorkflowId: forkedSession.origin?.workflowId || null,
+        workspacePath: forkedSession.workspacePath,
         title: sourceSessionRow?.title || '',
       })
       await this.appManager.sessionsManager.cloneForkedSessionHistory({
@@ -90,6 +95,7 @@ export class AgentIpcMainService implements IpcMainService {
         sessionId: forkedSession.sessionId,
         sessionType: payload.sessionType,
         origin: payload.origin,
+        workspacePath: payload.workspacePath,
         activeBranch: payload.activeBranch,
         branches: payload.branches,
         workflowData: payload.workflowData,
@@ -129,6 +135,7 @@ export class AgentIpcMainService implements IpcMainService {
       sessionId,
       sessionType: payload.sessionType,
       origin: payload.origin,
+      workspacePath: payload.workspacePath,
       activeBranch: payload.activeBranch,
       branches: payload.branches,
       workflowData: payload.workflowData,
@@ -211,6 +218,7 @@ export class AgentIpcMainService implements IpcMainService {
             workflowId: sessionRow.originWorkflowId,
           }
         : null,
+      workspacePath: sessionRow?.workspacePath ?? null,
       activeBranch: sessionRow?.activeBranch || 'main',
       branches: branchRows,
       planner: plannerRows.map((item) => ({

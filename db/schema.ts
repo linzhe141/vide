@@ -10,9 +10,14 @@ import {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   title: text('title'),
-  type: text('type', { enum: ['normal', 'fork'] }).notNull().default('normal'),
+  type: text('type', { enum: ['normal', 'fork'] })
+    .notNull()
+    .default('normal'),
   originSessionId: text('origin_session_id').references((): AnySQLiteColumn => sessions.id),
-  originWorkflowId: text('origin_workflow_id').references((): AnySQLiteColumn => sessionWorkflows.id),
+  originWorkflowId: text('origin_workflow_id').references(
+    (): AnySQLiteColumn => sessionWorkflows.id
+  ),
+  workspacePath: text('workspace_path'),
   activeBranch: text('active_branch').notNull().default('main'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),

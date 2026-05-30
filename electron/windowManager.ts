@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { IS_DEV } from './utils'
@@ -33,6 +33,7 @@ export class WindowManager {
     })
 
     this.mainWindow = mainWindow
+    this.setupExternalNavigation(mainWindow)
 
     if (IS_DEV) {
       mainWindow.loadURL('http://localhost:1412')
@@ -72,6 +73,28 @@ export class WindowManager {
     mainWindow.on('resize', () => {
       const isMaximized = mainWindow.isMaximized() ?? false
       ipcMainApi.send('changed-window-size', isMaximized)
+    })
+  }
+
+  private setupExternalNavigation(mainWindow: BrowserWindow) {
+    const openExternal = (url: string) => {
+      if (!/^https?:\/\//i.test(url)) return false
+      shell.openExternal(url)
+      return true
+    }
+
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (openExternal(url)) {
+        return { action: 'deny' }
+      }
+      return { action: 'allow' }
+    })
+
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+      const currentUrl = mainWindow.webContents.getURL()
+      if (url !== currentUrl && openExternal(url)) {
+        event.preventDefault()
+      }
     })
   }
 }

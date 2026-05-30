@@ -1,7 +1,7 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import fs from 'fs/promises'
-import path from 'path'
 import * as Diff from 'diff'
+import { resolveWorkspacePath } from '../../workspace'
 
 export const EDIT_TOOL_NAMES = {
   EDIT_FILE: `edit-file`,
@@ -20,14 +20,14 @@ export class Edit extends ToolProvider {
       name: EDIT_TOOL_NAMES.EDIT_FILE,
       description: `
   Edit a file by performing one or more exact text replacements.
-  
-  Each edit replaces oldText with newText in the file. All edits are matched 
-  against the original file content (not incrementally). The text must match 
+
+  Each edit replaces oldText with newText in the file. All edits are matched
+  against the original file content (not incrementally). The text must match
   exactly including all whitespace, indentation, and newlines.
-  
+
   Multiple edits must not overlap - if they do, merge them into one edit instead.
   Each oldText must be unique in the file.
-  
+
   The path can be either absolute or relative.
   Returns a unified diff showing the changes made.
   `,
@@ -61,7 +61,7 @@ export class Edit extends ToolProvider {
       },
     },
 
-    async executor(args: any = {}) {
+    executor: async (args: any = {}) => {
       const { path: filePath, edits } = args
 
       if (!filePath) {
@@ -82,7 +82,7 @@ export class Edit extends ToolProvider {
       }
 
       try {
-        const fullPath = path.resolve(filePath)
+        const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)
 
         // Read file
         const content = await fs.readFile(fullPath, 'utf8')

@@ -3,8 +3,7 @@ import path from 'path'
 import { randomUUID } from 'crypto'
 import { artifactEvent } from '../../event'
 import { defineTool, ToolProvider } from '../toolProvider'
-
-const ARTIFACT_ROOT = '.vide/artifacts'
+import { getArtifactsRoot } from '../../workspace'
 
 export const ARTIFACT_TOOL_NAMES = {
   CREATE_WORKSPACE: `create-workspace`,
@@ -51,7 +50,7 @@ All generated files MUST be written inside the returned artifactDir.
 
       const workspaceName = `${name}-${uuid}`
 
-      const artifactDir = path.join(ARTIFACT_ROOT, workspaceName)
+      const artifactDir = path.join(getArtifactsRoot(this.runtime.workspacePath), workspaceName)
       await fs.mkdir(artifactDir, { recursive: true })
       artifactEvent.emit('artifacts-created-workspace', {
         sessionId: this.runtime.sessionId,

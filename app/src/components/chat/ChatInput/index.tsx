@@ -1,4 +1,4 @@
-import { LoaderCircle, Send } from 'lucide-react'
+import { FolderOpen, LoaderCircle, Send, X } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '@/app/src/ui/Textarea'
 import { Button } from '@/app/src/ui/Button'
@@ -6,9 +6,15 @@ import { Button } from '@/app/src/ui/Button'
 export const ChatInput = memo(function ChatInput({
   onSend,
   running,
+  workspacePath,
+  onSelectWorkspace,
+  onClearWorkspace,
 }: {
   onSend: (input: string) => void
   running: boolean
+  workspacePath?: string | null
+  onSelectWorkspace?: () => void
+  onClearWorkspace?: () => void
 }) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -50,7 +56,35 @@ export const ChatInput = memo(function ChatInput({
       </div>
 
       <div className='flex items-center justify-between gap-2 px-4 py-2'>
-        <div>{/* 可以放一些快捷输入的按钮或者功能提示 */}</div>
+        <div className='min-w-0'>
+          {onSelectWorkspace && (
+            <div className='flex min-w-0 items-center gap-2'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onClick={onSelectWorkspace}
+                className='text-text-secondary hover:text-foreground gap-1.5 px-2'
+                title='Select workspace'
+              >
+                <FolderOpen className='size-4' />
+                <span className='max-w-60 truncate text-xs'>
+                  {workspacePath || 'Default workspace'}
+                </span>
+              </Button>
+              {workspacePath && onClearWorkspace && (
+                <button
+                  type='button'
+                  onClick={onClearWorkspace}
+                  className='text-text-secondary hover:text-foreground rounded p-1 transition'
+                  title='Use default workspace'
+                >
+                  <X className='size-3.5' />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <div>
           <Button
             onClick={handleSubmit}

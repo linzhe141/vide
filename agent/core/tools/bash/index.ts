@@ -1,5 +1,6 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
+import { DEFAULT_VIDE_HOME } from '../../workspace'
 
 export const BASH_TOOL_NAMES = {
   EXECUTE_BASH_COMMAND: `execute-bash-command`,
@@ -16,10 +17,6 @@ export class Bash extends ToolProvider {
       parameters: {
         type: 'object',
         properties: {
-          timeout: {
-            type: 'number',
-            description: 'Timeout in milliseconds (default: 30000)',
-          },
           command: {
             type: 'string',
             description: 'The bash command to execute',
@@ -32,12 +29,13 @@ export class Bash extends ToolProvider {
       },
     },
 
-    async executor(args: any = {}) {
-      const { command, timeout = 30000 } = args
-
+    executor: async (args: any = {}) => {
+      const { command } = args
+      const timeout = 30000
       return new Promise((resolve) => {
         const proc = spawn('bash', ['-c', command], {
           env: { ...process.env },
+          cwd: this.runtime.workspacePath || DEFAULT_VIDE_HOME,
         })
 
         let stdout = ''

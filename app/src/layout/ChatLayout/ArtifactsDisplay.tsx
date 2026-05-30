@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Folder, FileText, ChevronRight, ChevronDown } from 'lucide-react'
+import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink } from 'lucide-react'
 import type { FileNode } from '@/electron/ipc/api/channels'
 import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
@@ -56,8 +56,22 @@ export function ArtifactsDisplay({
       <div className='bg-background w-0 flex-1'>
         <div className='flex h-full flex-col'>
           {/* header */}
-          <div className='border-border text-text-secondary border-b px-4 py-2 text-sm'>
-            {selectedFile?.name || 'No file selected'}
+          <div className='border-border text-text-secondary flex items-center justify-between gap-3 border-b px-4 py-2 text-sm'>
+            <span className='min-w-0 truncate'>{selectedFile?.name || 'No file selected'}</span>
+            {selectedFile && (
+              <button
+                type='button'
+                onClick={() =>
+                  window.ipcRendererApi.invoke('reveal-path-in-explorer', {
+                    path: selectedFile.path,
+                  })
+                }
+                className='hover:text-foreground rounded p-1 transition'
+                title='Open in Explorer'
+              >
+                <ExternalLink className='size-4' />
+              </button>
+            )}
           </div>
 
           {/* content */}
@@ -104,6 +118,7 @@ function TreeNode({
         onClick={() => {
           if (!isFolder) onSelect(node)
           else {
+            onSelect(node)
             setOpen(!open)
           }
         }}

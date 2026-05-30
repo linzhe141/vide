@@ -3,16 +3,27 @@ import { context } from '../../hooks/chatContenxt'
 import LOGOIMG from './logo.png'
 import { useSessionStoreActions } from '../../store/sessionStore'
 import { ChatInput } from '../../components/chat/ChatInput'
+import { useState } from 'react'
 
 export function Welcome() {
   const { createSession } = useSessionStoreActions()
+  const [workspacePath, setWorkspacePath] = useState<string | null>(null)
 
   const navigate = useNavigate()
   const handleSend = async (input: string) => {
     context.firstInput = input
-    const sessionId = await window.ipcRendererApi.invoke('agent-create-session')
-    createSession({ sessionId })
+    const sessionId = await window.ipcRendererApi.invoke('agent-create-session', {
+      workspacePath,
+    })
+    createSession({ sessionId, workspacePath })
     navigate('/chat/' + sessionId)
+  }
+
+  const handleSelectWorkspace = async () => {
+    const workspace = await window.ipcRendererApi.invoke('workspace-select-directory')
+    if (workspace) {
+      setWorkspacePath(workspace.workspacePath)
+    }
   }
 
   return (
@@ -28,7 +39,13 @@ export function Welcome() {
 
       {/* 输入区域 */}
       <div className='w-full max-w-3xl'>
-        <ChatInput onSend={handleSend} running={false} />
+        <ChatInput
+          onSend={handleSend}
+          running={false}
+          workspacePath={workspacePath}
+          onSelectWorkspace={handleSelectWorkspace}
+          onClearWorkspace={() => setWorkspacePath(null)}
+        />
 
         {/* 提示建议 */}
         <div className='mt-8 grid grid-cols-1 gap-3 md:grid-cols-3'>

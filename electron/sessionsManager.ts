@@ -90,6 +90,7 @@ export class SessionsManager {
     activeBranch: string
     originSessionId: string | null
     originWorkflowId: string | null
+    workspacePath?: string | null
     title?: string
   }) {
     const time = Date.now()
@@ -99,6 +100,7 @@ export class SessionsManager {
       type: data.sessionType,
       originSessionId: data.originSessionId,
       originWorkflowId: data.originWorkflowId,
+      workspacePath: data.workspacePath ?? null,
       activeBranch: data.activeBranch,
       createdAt: time,
       updatedAt: time,

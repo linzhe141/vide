@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.45.1",
     "electron-log": "^5.4.3",
     "electron-store": "^10.0.1",
+    "electron-updater": "^6.8.3",
     "gray-matter": "^4.0.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "immer": "^11.1.4",

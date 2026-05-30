@@ -340,6 +340,10 @@ export class WorkflowRuntimeContext {
     return this.rootSession.sessionId
   }
 
+  get workspacePath() {
+    return this.rootSession.workspacePath
+  }
+
   get workflowEventCtx(): WorkflowEventCtx {
     return {
       sessionId: this.sessionId,

@@ -9,6 +9,7 @@ const AgentLifecycleEventChannels = {
     sessionType: 'normal' | 'fork'
     originSessionId: string | null
     originWorkflowId: string | null
+    workspacePath: string | null
   },
   'agent-session-finished': null as unknown as {
     sessionId: string

@@ -5,6 +5,7 @@ import { AgentIpcMainService } from './services/agent'
 import { SessionIpcMainService } from './services/sessions'
 import { LLMSettingsIpcMainService } from './services/llmSettings'
 import { DevIpcMainService } from './services/dev'
+import { WorkspaceIpcMainService } from './services/workspace'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -31,5 +32,8 @@ export class IpcService {
 
     const devIpcMainService = new DevIpcMainService(this.appManager)
     devIpcMainService.registerIpcMainHandle()
+
+    const workspaceIpcMainService = new WorkspaceIpcMainService(this.appManager)
+    workspaceIpcMainService.registerIpcMainHandle()
   }
 }

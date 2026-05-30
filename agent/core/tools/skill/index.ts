@@ -3,6 +3,7 @@ import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineTool, ToolProvider } from '../toolProvider'
+import { getSkillsRoot } from '../../workspace'
 
 async function isDirectoryExists(dirPath: string) {
   try {
@@ -29,7 +30,7 @@ const SkillsMap: Record<
   }
 > = {}
 
-export const skillsPath = '.vide/skills'
+export const skillsPath = getSkillsRoot()
 
 export class SkillTool extends ToolProvider {
   loadSkill = defineTool({
@@ -101,8 +102,8 @@ async function readSkill(filePath: string): Promise<SkillMeta | null> {
   }
 }
 
-async function scanSkills(): Promise<SkillMeta[]> {
-  const result: SkillMeta[] = []
+export async function scanSkills(): Promise<(SkillMeta & { filePath: string })[]> {
+  const result: (SkillMeta & { filePath: string })[] = []
 
   const skillsDirExists = await isDirectoryExists(skillsPath)
   if (!skillsDirExists) return []
@@ -116,7 +117,7 @@ async function scanSkills(): Promise<SkillMeta[]> {
     const meta = await readSkill(skillFile)
 
     if (meta) {
-      result.push(meta)
+      result.push({ ...meta, filePath: skillFile })
     }
   }
 
@@ -125,9 +126,6 @@ async function scanSkills(): Promise<SkillMeta[]> {
 
 export async function buildSkillsChatMessage(): Promise<ChatMessage | null> {
   const skills = await scanSkills()
-  console.log('skills-->')
-  console.log(Object.keys(SkillsMap))
-  console.log()
   if (skills.length === 0) return null
 
   const skillList = skills

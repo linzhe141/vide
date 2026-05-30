@@ -109,6 +109,7 @@ export type Session = {
   hydrated: boolean
   sessionType: 'normal' | 'fork'
   origin: SessionOrigin | null
+  workspacePath?: string | null
   activeBranch: string
   branches: SessionBranch[]
   workflowNodesMap: Record<string, WorkflowNode>

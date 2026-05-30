@@ -12,11 +12,18 @@ export default {
   files: ['dist/app/**/*', 'dist/electron/**/*', 'package.json', 'resources/**'],
   asar: true,
   asarUnpack: ['node_modules/**'],
+  publish: [
+    {
+      provider: 'github',
+      owner: 'linzhe141',
+      repo: 'vide',
+    },
+  ],
 
   protocols: [
     {
-      name: 'VSXD', // vite starter x demo
-      schemes: ['vsxd'],
+      name: 'vide',
+      schemes: ['vide'],
     },
   ],
 

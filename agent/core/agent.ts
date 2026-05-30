@@ -14,10 +14,15 @@ import {
 export class Agent {
   constructor() {}
 
-  createSession(options?: { sessionType?: SessionType; origin?: SessionOrigin | null }) {
+  createSession(options?: {
+    sessionType?: SessionType
+    origin?: SessionOrigin | null
+    workspacePath?: string | null
+  }) {
     const session = new Session({
       sessionType: options?.sessionType,
       origin: options?.origin,
+      workspacePath: options?.workspacePath,
     })
     session.branchs[session.activeBranch] = { head: null, source: null }
     agentEvent.emit('agent-create-session', {
@@ -26,6 +31,7 @@ export class Agent {
       sessionType: session.sessionType,
       originSessionId: session.origin?.sessionId || null,
       originWorkflowId: session.origin?.workflowId || null,
+      workspacePath: session.workspacePath,
     })
     return session
   }
@@ -34,6 +40,7 @@ export class Agent {
     sessionId: string
     sessionType: SessionType
     origin: SessionOrigin | null
+    workspacePath: string | null
     activeBranch: string
     branches: SessionBranchSnapshot[]
     workflowData: WorkflowData[]
@@ -48,6 +55,7 @@ export class Agent {
       sessionId: data.sessionId,
       sessionType: data.sessionType,
       origin: data.origin,
+      workspacePath: data.workspacePath,
       activeBranch: data.activeBranch,
       workflows,
       branches: data.branches,
@@ -68,6 +76,7 @@ export class Agent {
       sessionType: forkedSession.sessionType,
       originSessionId: forkedSession.origin?.sessionId || null,
       originWorkflowId: forkedSession.origin?.workflowId || null,
+      workspacePath: forkedSession.workspacePath,
     })
     agentEvent.emit('agent-session-forked', {
       sourceSessionId: session.sessionId,

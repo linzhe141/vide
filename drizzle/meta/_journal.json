@@ -8,6 +8,13 @@
       "when": 1779262297089,
       "tag": "0000_worried_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780109347443,
+      "tag": "0001_overjoyed_tattoo",
+      "breakpoints": true
     }
   ]
 }

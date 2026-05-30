@@ -39,6 +39,7 @@ export interface SessionSnapshot {
   sessionId: string
   sessionType: SessionType
   origin: SessionOrigin | null
+  workspacePath: string | null
   activeBranch: string
   workflows: SessionWorkflowSnapshot[]
   branches: SessionBranchSnapshot[]
@@ -48,6 +49,7 @@ export class Session {
   sessionId: string
   sessionType: SessionType
   origin: SessionOrigin | null
+  workspacePath: string | null
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
@@ -58,11 +60,13 @@ export class Session {
     activeBranch?: string
     sessionType?: SessionType
     origin?: SessionOrigin | null
+    workspacePath?: string | null
   }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
     this.sessionType = options?.sessionType || 'normal'
     this.origin = options?.origin || null
+    this.workspacePath = options?.workspacePath || null
   }
 
   get currentBranch() {
@@ -116,6 +120,7 @@ export class Session {
         sessionId: this.sessionId,
         workflowId: targetCommitNode.id,
       },
+      workspacePath: this.workspacePath,
     })
     forkedSession.branchs[forkedSession.activeBranch] = { head: null, source: null }
 
@@ -193,6 +198,7 @@ export class Session {
       activeBranch: snapshot.activeBranch,
       sessionType: snapshot.sessionType,
       origin: snapshot.origin,
+      workspacePath: snapshot.workspacePath,
     })
     const workflowNodeMap = new Map<string, SessionWorkflowNode>()
 

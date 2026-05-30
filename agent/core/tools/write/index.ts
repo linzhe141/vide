@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { defineTool, ToolProvider } from '../toolProvider'
+import { resolveWorkspacePath } from '../../workspace'
 
 export const WRITE_TOOL_NAMES = {
   WRITE_FILE: `write-file`,
@@ -14,9 +15,9 @@ export class Write extends ToolProvider {
       name: WRITE_TOOL_NAMES.WRITE_FILE,
       description: `
   Write content to a file.
-  
+
   If the file exists it will be overwritten, otherwise a new file will be created.
-  
+
   The path can be either absolute or relative.
   If the parent directory does not exist it will be created automatically.
   `,
@@ -36,7 +37,7 @@ export class Write extends ToolProvider {
       },
     },
 
-    async executor(args: any = {}) {
+    executor: async (args: any = {}) => {
       const { path: filePath, content } = args
 
       if (!filePath) {
@@ -47,7 +48,7 @@ export class Write extends ToolProvider {
       }
 
       try {
-        const fullPath = path.resolve(filePath)
+        const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)
 
         await fs.mkdir(path.dirname(fullPath), { recursive: true })
         await fs.writeFile(fullPath, content, 'utf8')

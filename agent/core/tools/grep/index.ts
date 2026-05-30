@@ -1,5 +1,6 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
+import { DEFAULT_VIDE_HOME } from '../../workspace'
 
 export const GREP_TOOL_NAMES = {
   SEARCH: `rg-content-search`,
@@ -49,7 +50,7 @@ export class Grep extends ToolProvider {
       },
     },
 
-    async executor(args: any = {}) {
+    executor: async (args: any = {}) => {
       const { pattern, path = '.', glob, ignoreCase, literal, context, limit = 100 } = args
 
       return new Promise((resolve) => {
@@ -64,6 +65,7 @@ export class Grep extends ToolProvider {
 
         const proc = spawn('rg', rgArgs, {
           env: { ...process.env },
+          cwd: this.runtime.workspacePath || DEFAULT_VIDE_HOME,
         })
 
         let stdout = ''

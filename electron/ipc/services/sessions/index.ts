@@ -8,6 +8,8 @@ import type { FileNode, SessionRowDto } from '../../api/channels'
 import fs from 'fs/promises'
 import path from 'path'
 import { isBinaryFile } from 'isbinaryfile'
+import { getArtifactsRoot } from '@/agent/core/workspace'
+import { scanSkills } from '@/agent/core/tools/skill'
 
 export class SessionIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}
@@ -19,30 +21,30 @@ export class SessionIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('get-session-artifacts', async ({ sessionId }) => {
-      const ARTIFACT_ROOT = '.vide/artifacts'
+      const sessionRows = await db.select().from(sessions).where(eq(sessions.id, sessionId))
+      const workspacePath = sessionRows[0]?.workspacePath ?? null
+      const artifactRoot = getArtifactsRoot(workspacePath)
       const rows = await db.select().from(artifacts).where(eq(artifacts.sessionId, sessionId))
-      const trees: FileNode[] = []
+      const result = []
 
-      for (const { artifactWorkspaceName } of rows) {
-        const targetDir = path.join(ARTIFACT_ROOT, artifactWorkspaceName)
-
+      for (const item of rows) {
+        const targetDir = path.join(artifactRoot, item.artifactWorkspaceName)
         try {
-          const tree = await buildFileTree(targetDir)
-          trees.push(tree)
+          const file = await buildFileTree(targetDir)
+          result.push({
+            ...item,
+            file,
+          })
         } catch (_err) {
           console.warn('skip missing dir:', targetDir)
         }
       }
-      return Promise.all(
-        rows.map(async (i) => {
-          const targetDir = path.join(ARTIFACT_ROOT, i.artifactWorkspaceName)
-          const file = await buildFileTree(targetDir)
-          return {
-            ...i,
-            file,
-          }
-        })
-      )
+
+      return result
+    })
+
+    ipcMainApi.handle('get-skills-list', async () => {
+      return scanSkills()
     })
   }
 }

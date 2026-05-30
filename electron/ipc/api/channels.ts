@@ -22,6 +22,7 @@ export type SessionRowDto = {
   type: 'normal' | 'fork'
   originSessionId: string | null
   originWorkflowId: string | null
+  workspacePath: string | null
   createdAt: number
   updatedAt: number
 }
@@ -44,7 +45,7 @@ export interface RenderChannel {
   'close-window': () => void
 
   // agent
-  'agent-create-session': () => Promise<string>
+  'agent-create-session': (data?: { workspacePath?: string | null }) => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
     sessionType: 'normal' | 'fork'
     origin: { sessionId: string; workflowId: string | null } | null
@@ -100,6 +101,27 @@ export interface RenderChannel {
   'submit-generate-image-settings': (data: GenerateImageConfig) => void
   // only dev
   'dev-delete-database-rows': () => void
+
+  'workspace-get-info': (data?: { workspacePath?: string | null }) => Promise<{
+    workspacePath: string | null
+    videHome: string
+    artifactsPath: string
+    skillsPath: string
+  }>
+  'workspace-select-directory': () => Promise<{
+    workspacePath: string | null
+    videHome: string
+    artifactsPath: string
+    skillsPath: string
+  } | null>
+  'reveal-path-in-explorer': (data: { path: string }) => Promise<void>
+  'get-skills-list': () => Promise<
+    {
+      name: string
+      description: string
+      filePath: string
+    }[]
+  >
 
   'get-session-artifacts': (data: { sessionId: string }) => Promise<
     {

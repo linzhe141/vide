@@ -25,6 +25,7 @@ type SessionActions = {
         type: Session['sessionType']
         originSessionId: string | null
         originWorkflowId: string | null
+        workspacePath?: string | null
         createdAt: number
         updatedAt: number
       }[]
@@ -41,6 +42,7 @@ type SessionActions = {
       sessionId: string
       sessionType?: Session['sessionType']
       origin?: Session['origin']
+      workspacePath?: string | null
     }) => void
     regenerateWorkflow: (data: {
       sessionId: string
@@ -65,7 +67,9 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       buildFromDatabase(data) {
         set((state) => {
-          const existingIndex = state.sessions.findIndex((item) => item.sessionId === data.sessionId)
+          const existingIndex = state.sessions.findIndex(
+            (item) => item.sessionId === data.sessionId
+          )
           if (existingIndex >= 0) {
             const existing = state.sessions[existingIndex]
             state.sessions[existingIndex] = {
@@ -100,6 +104,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                 : null
               existing.createdAt = item.createdAt
               existing.updatedAt = item.updatedAt
+              existing.workspacePath = item.workspacePath ?? null
               nextSessions.push(existing)
               continue
             }
@@ -117,6 +122,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                     workflowId: item.originWorkflowId,
                   }
                 : null,
+              workspacePath: item.workspacePath ?? null,
               activeBranch: 'main',
               branches: [
                 {
@@ -163,7 +169,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           session.activeBranch = branchName
         })
       },
-      createSession({ sessionId, sessionType = 'normal', origin = null }) {
+      createSession({ sessionId, sessionType = 'normal', origin = null, workspacePath = null }) {
         set((state) => {
           const activeBranch = 'main'
           const newSession: Session = {
@@ -174,6 +180,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             hydrated: true,
             sessionType,
             origin,
+            workspacePath,
             activeBranch,
             branches: [
               {

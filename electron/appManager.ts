@@ -4,6 +4,8 @@ import { setupApplicationMenu } from './menu'
 import { IpcService } from './ipc'
 import { SessionsManager } from './sessionsManager'
 import { AgentManager } from './agentManager'
+import { WorkspaceManager } from './workspaceManager'
+import { UpdaterManager } from './updaterManager'
 
 export class AppManager {
   agentManager: AgentManager
@@ -11,6 +13,8 @@ export class AppManager {
   windowManager: WindowManager
   ipcService: IpcService
   sessionsManager: SessionsManager
+  workspaceManager: WorkspaceManager
+  updaterManager: UpdaterManager
 
   constructor() {
     this.agentManager = new AgentManager(this)
@@ -18,6 +22,8 @@ export class AppManager {
     this.windowManager = new WindowManager(this)
     this.ipcService = new IpcService(this)
     this.sessionsManager = new SessionsManager(this)
+    this.workspaceManager = new WorkspaceManager(this)
+    this.updaterManager = new UpdaterManager(this)
   }
 
   init() {
@@ -26,6 +32,8 @@ export class AppManager {
     this.windowManager.init()
     this.ipcService.registerIpcMainHandle()
     this.sessionsManager.init()
+    this.workspaceManager.init()
+    this.updaterManager.init()
 
     setupApplicationMenu()
   }
