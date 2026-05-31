@@ -7,6 +7,7 @@ import type {
 } from '@/agent/core/event/channels'
 import type { sessionWorkflowMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
+import type { WaitHumanApprovePayload } from '@/agent/core/types'
 
 export type FileNode = {
   name: string
@@ -86,7 +87,11 @@ export interface RenderChannel {
     branchName: string
     input?: string
   }) => void
-  'agent-human-approved': (data: { sessionId: string }) => void
+  'agent-human-approved': (data: {
+    sessionId: string
+    workflowId: string
+    payload: WaitHumanApprovePayload
+  }) => void
   'agent-human-rejected': (data: { sessionId: string }) => void
   'agent-workflow-abort': (data: { sessionId: string }) => void
 

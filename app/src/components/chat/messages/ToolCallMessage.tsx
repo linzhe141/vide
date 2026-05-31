@@ -5,6 +5,7 @@ import type {
   ToolResultSessionMessage,
 } from '@/app/src/store/sessionStore/types'
 import {
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -17,6 +18,7 @@ import type { ToolCall } from '@/agent/core/types'
 import { useState } from 'react'
 import { Image_TOOL_NAMES } from '@/agent/core/tools/image'
 import ImageToolCall from '../ImageToolCall'
+import { useChatContext } from '../ChatProvider'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -37,7 +39,14 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
           return <ImageToolCall key={tool.id} result={findToolResult(workflow, tool.id)} />
         }
         return (
-          <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
+          <ToolCallButton
+            key={tool.id}
+            tool={tool}
+            result={findToolResult(workflow, tool.id)}
+            waitHumanApprove={workflow.runtime.waitingHuman}
+            originToolCalls={message.toolCalls}
+            workflow={workflow}
+          />
         )
       })}
       {/* <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
@@ -51,13 +60,35 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 type ToolCallButtonProps = {
   tool: ToolCall
   result?: ToolResultSessionMessage
+  originToolCalls: ToolCall[]
+  waitHumanApprove: boolean
+  workflow: Workflow
 }
-function ToolCallButton({ tool, result }: ToolCallButtonProps) {
+function ToolCallButton({
+  tool,
+  result,
+  waitHumanApprove,
+  workflow,
+  originToolCalls,
+}: ToolCallButtonProps) {
+  const { sessionId } = useChatContext()
   const [open, setOpen] = useState(false)
-  const isRunning = !result
+  const isRunning = !waitHumanApprove && !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
+
+  const humanApproveToolCall = () => {
+    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    window.ipcRendererApi.invoke('agent-human-approved', {
+      sessionId,
+      workflowId: workflow.id,
+      payload: {
+        index: originIndex,
+        toolCalls: originToolCalls,
+      },
+    })
+  }
 
   return (
     <div className='space-y-2'>
@@ -73,6 +104,19 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
             <span className='text-foreground truncate text-[15px] font-medium'>
               {tool.function.name}
             </span>
+            {waitHumanApprove && (
+              <span className='flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-0.5 text-[12px] font-medium text-yellow-600 dark:bg-yellow-950/50 dark:text-yellow-300'>
+                Waiting for Approval
+                <Check
+                  size={12}
+                  className='ml-1 text-yellow-500 dark:text-yellow-300'
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    humanApproveToolCall()
+                  }}
+                />
+              </span>
+            )}
             {isSuccess && (
               <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
                 Success

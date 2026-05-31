@@ -50,8 +50,6 @@ export type CallToolsStepPayload = {
 }
 
 export type WaitHumanApprovePayload = {
-  toolCall: ToolCall
-  args: any
   index: number
   toolCalls: ToolCall[]
 }
@@ -59,6 +57,8 @@ export type WaitHumanApprovePayload = {
 export type CallToolStepPayload = {
   index: number
   toolCalls: ToolCall[]
+  // 
+  hasApproval: boolean
 }
 
 export type FinishedStepPayload = {

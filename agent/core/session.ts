@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { agentEvent } from './event'
 import type { PlanStep } from './tools/planner'
-import type { ChatMessage } from './types'
+import type { ChatMessage, WaitHumanApprovePayload } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
 
 export type SessionType = 'normal' | 'fork'
@@ -55,7 +55,8 @@ export class Session {
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
-  activeWorkflow: Workflow | null = null
+
+  watiHumanWorkflow: Workflow | null = null
   planners: SessionPlaner[] = []
 
   constructor(options?: {
@@ -78,7 +79,6 @@ export class Session {
 
   async run(userInput: string, options?: { autoApprove?: boolean }) {
     const { workflow, workflowCommitNode } = this.createWorkflow(userInput, options)
-    this.activeWorkflow = workflow
     const currentHead = this.currentBranch.head
     if (!currentHead) {
       this.currentBranch.head = workflowCommitNode
@@ -91,15 +91,11 @@ export class Session {
       this.currentBranch.head = workflowCommitNode
     }
 
-    try {
-      await workflow.run(userInput)
-      if (!workflow.runtime.aborted) {
-        agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
-      }
-    } finally {
-      if (this.activeWorkflow === workflow) {
-        this.activeWorkflow = null
-      }
+    const result = await workflow.run(userInput)
+    if (result === 'COMPLETED') {
+      agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
+    } else if (result === 'WAIT_HUMAN_APPROVE') {
+      this.watiHumanWorkflow = workflow
     }
   }
 
@@ -110,11 +106,11 @@ export class Session {
       userInput,
       branchName: this.activeBranch,
       parentWorkflowId: parentWorkflowNode?.id || null,
-      autoApprove: options?.autoApprove,
+      autoApprove: options?.autoApprove || false,
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
-      status: 'running',
+      status: '' as any,
       messages: workflowRuntimeContext.workflowSession.getMessages(),
       parent: null,
       children: [],
@@ -210,15 +206,25 @@ export class Session {
   }
 
   abortActiveWorkflow() {
-    this.activeWorkflow?.runtime.abort()
+    // todo
   }
 
-  approveActiveWorkflow() {
-    this.activeWorkflow?.runtime.approve()
+  async humanApprove(workflowId: string, payload: WaitHumanApprovePayload) {
+    console.log('humanApprove', workflowId, payload)
+    const targetWorkflow = this.watiHumanWorkflow
+    if (!targetWorkflow) return
+    this.watiHumanWorkflow = null
+    const result = await targetWorkflow?.approveHumanApprove(payload)
+    if (result === 'COMPLETED') {
+      agentEvent.emit('agent-session-finished', {
+        sessionId: this.sessionId,
+        userInput: targetWorkflow.runtime.userInput.at(-1) || '',
+      })
+    }
   }
 
   rejectActiveWorkflow() {
-    this.activeWorkflow?.runtime.reject()
+    // this.activeWorkflow?.rejectHumanApprove()
   }
 
   static resume(snapshot: SessionSnapshot) {

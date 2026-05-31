@@ -37,25 +37,26 @@ export function useWorkflowStream() {
     sessionIdRef.current = null
   }
 
-  const consumeStream = useCallback(
+  const send = useCallback(
     async (
-      operation: () => Promise<void>,
-      options?: {
-        sessionId?: string
-        closeOn?: WorkflowState['type'][]
-      }
+      input: string,
+      options?: { branchName?: string; sessionId?: string; autoApprove?: boolean }
     ) => {
       setRunning(true)
       const abortController = new AbortController()
       abortControllerRef.current = abortController
       sessionIdRef.current = options?.sessionId || null
 
-      const stream = createWorkflowStream(abortController.signal, options)
+      const stream = createWorkflowStream(abortController.signal)
       const reader = stream.getReader()
       readerRef.current = reader
 
       try {
-        await operation()
+        await window.ipcRendererApi.invoke('agent-session-send', {
+          sessionId: options?.sessionId || '',
+          input,
+          autoApprove: options?.autoApprove,
+        })
         while (true) {
           const { value, done } = await reader.read()
           if (done) break
@@ -73,27 +74,6 @@ export function useWorkflowStream() {
       }
     },
     [handleEvent]
-  )
-
-  const send = useCallback(
-    async (
-      input: string,
-      options?: { branchName?: string; sessionId?: string; autoApprove?: boolean }
-    ) => {
-      await consumeStream(
-        async () => {
-          await window.ipcRendererApi.invoke('agent-session-send', {
-            sessionId: options?.sessionId || '',
-            input,
-            autoApprove: options?.autoApprove,
-          })
-        },
-        {
-          sessionId: options?.sessionId,
-        }
-      )
-    },
-    [consumeStream]
   )
 
   const abort = useCallback(async () => {

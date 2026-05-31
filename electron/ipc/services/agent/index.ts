@@ -65,9 +65,9 @@ export class AgentIpcMainService implements IpcMainService {
       session.abortActiveWorkflow()
     })
 
-    ipcMainApi.handle('agent-human-approved', async ({ sessionId }) => {
+    ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId, payload }) => {
       const session = await this.getSession(sessionId)
-      session.approveActiveWorkflow()
+      session.humanApprove(workflowId, payload)
     })
 
     ipcMainApi.handle('agent-human-rejected', async ({ sessionId }) => {

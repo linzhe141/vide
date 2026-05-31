@@ -94,8 +94,8 @@ const WorkflowEventChannels = {
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-aborted': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-wait-human-approve': null as unknown as {
-    toolCall: { id: string; toolName: string; args: any; summary: string }
     ctx: WorkflowEventCtx
+    data: { index: number; toolCalls: ToolCall[] }
   },
   'workflow-error': null as unknown as { ctx: WorkflowEventCtx; error: any },
 
