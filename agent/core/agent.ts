@@ -47,6 +47,7 @@ export class Agent {
     activeBranch: string
     branches: SessionBranchSnapshot[]
     workflowData: WorkflowData[]
+    autoApprove: boolean
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
       id: workflow.id,
@@ -63,6 +64,7 @@ export class Agent {
       activeBranch: data.activeBranch,
       workflows,
       branches: data.branches,
+      autoApprove: data.autoApprove,
     }
 
     return Session.resume(snapshot)

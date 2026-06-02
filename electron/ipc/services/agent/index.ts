@@ -53,6 +53,7 @@ export class AgentIpcMainService implements IpcMainService {
         activeBranch: payload.activeBranch,
         branches: payload.branches,
         workflowData: payload.workflowData,
+        autoApprove: payload.autoApprove,
       })
       this.sessions.set(data.sessionId, session)
       return payload
@@ -131,6 +132,7 @@ export class AgentIpcMainService implements IpcMainService {
         activeBranch: payload.activeBranch,
         branches: payload.branches,
         workflowData: payload.workflowData,
+        autoApprove: payload.autoApprove,
       })
       this.sessions.set(forkedSession.sessionId, resumedForkedSession)
 
@@ -171,6 +173,7 @@ export class AgentIpcMainService implements IpcMainService {
       activeBranch: payload.activeBranch,
       branches: payload.branches,
       workflowData: payload.workflowData,
+      autoApprove: payload.autoApprove,
     })
     this.sessions.set(sessionId, session)
     return session
@@ -246,6 +249,7 @@ export class AgentIpcMainService implements IpcMainService {
     return {
       sessionId,
       sessionType: sessionRow?.type || 'normal',
+      autoApprove: sessionRow?.autoApprove || false,
       origin: sessionRow?.originSessionId
         ? {
             sessionId: sessionRow.originSessionId,

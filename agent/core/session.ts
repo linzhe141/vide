@@ -43,6 +43,7 @@ export interface SessionSnapshot {
   origin: SessionOrigin | null
   workspacePath: string | null
   activeBranch: string
+  autoApprove: boolean
   workflows: SessionWorkflowSnapshot[]
   branches: SessionBranchSnapshot[]
 }
@@ -235,6 +236,7 @@ export class Session {
       sessionType: snapshot.sessionType,
       origin: snapshot.origin,
       workspacePath: snapshot.workspacePath,
+      autoApprove: snapshot.autoApprove,
     })
     const workflowNodeMap = new Map<string, SessionWorkflowNode>()
 

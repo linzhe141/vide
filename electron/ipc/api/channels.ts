@@ -58,6 +58,7 @@ export interface RenderChannel {
     branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
     planner: { id: string; plan: PlanStep[] }[]
     workflowData: WorkflowData[]
+    autoApprove: boolean
     artifacts: {
       id: string
       sessionId: string
