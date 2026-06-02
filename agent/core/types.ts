@@ -57,7 +57,7 @@ export type WaitHumanApprovePayload = {
 export type CallToolStepPayload = {
   index: number
   toolCalls: ToolCall[]
-  // 
+  //
   hasApproval: boolean
 }
 

@@ -23,9 +23,12 @@ export class AgentIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('agent-create-session', async (data) => {
-      const workspacePath = data?.workspacePath ?? null
+      const workspacePath = data.workspacePath ?? null
       await this.appManager.workspaceManager.ensureVideHome(workspacePath)
-      const session = this.agent.createSession({ workspacePath })
+      const session = this.agent.createSession({
+        workspacePath,
+        autoApprove: data.autoApprove,
+      })
       this.sessions.set(session.sessionId, session)
       await this.appManager.sessionsManager.createSessionRecord({
         sessionId: session.sessionId,
@@ -34,6 +37,7 @@ export class AgentIpcMainService implements IpcMainService {
         originSessionId: session.origin?.sessionId || null,
         originWorkflowId: session.origin?.workflowId || null,
         workspacePath: session.workspacePath,
+        autoApprove: session.autoApprove,
       })
       logger.info('agent-create-session ', session.sessionId)
       return session.sessionId
@@ -54,12 +58,24 @@ export class AgentIpcMainService implements IpcMainService {
       return payload
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ sessionId, input, autoApprove }) => {
+    ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
       logger.info('agent-session-send ', sessionId, input)
       const session = await this.getSession(sessionId)
-      session.run(input, { autoApprove })
+      session.run(input)
     })
 
+    ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
+      logger.info('agent-session-switch-auto-approve ', sessionId, autoApprove)
+      const session = await this.getSession(sessionId)
+      session.autoApprove = autoApprove
+      // DB update
+      await db
+        .update(schema.sessions)
+        .set({
+          autoApprove,
+        })
+        .where(eq(schema.sessions.id, sessionId))
+    })
     ipcMainApi.handle('agent-workflow-abort', async ({ sessionId }) => {
       const session = await this.getSession(sessionId)
       session.abortActiveWorkflow()
@@ -93,6 +109,7 @@ export class AgentIpcMainService implements IpcMainService {
         originSessionId: forkedSession.origin?.sessionId || null,
         originWorkflowId: forkedSession.origin?.workflowId || null,
         workspacePath: forkedSession.workspacePath,
+        autoApprove: forkedSession.autoApprove,
         title: sourceSessionRow?.title || '',
       })
       await this.appManager.sessionsManager.cloneForkedSessionHistory({
@@ -171,8 +188,7 @@ export class AgentIpcMainService implements IpcMainService {
         id: schema.sessionWorkflows.id,
         userInput: schema.sessionWorkflows.input,
         parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
-        status: schema.sessionWorkflows.status,
-        autoApprove: schema.sessionWorkflows.autoApprove,
+        stopStatus: schema.sessionWorkflows.stopStatus,
       })
       .from(schema.sessionWorkflows)
       .where(eq(schema.sessionWorkflows.sessionId, sessionId))
@@ -202,8 +218,7 @@ export class AgentIpcMainService implements IpcMainService {
         id: workflow.id,
         userInput: workflow.userInput,
         parentWorkflowId: workflow.parentWorkflowId,
-        status: workflow.status,
-        autoApprove: workflow.autoApprove,
+        stopStatus: workflow.stopStatus ?? 'finished',
         messages: workflowMessageRows,
       })
     }

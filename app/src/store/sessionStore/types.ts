@@ -104,6 +104,7 @@ export type SessionOrigin = {
 export type Session = {
   sessionId: string
   title?: string
+  autoApprove: boolean
   createdAt?: number
   updatedAt?: number
   hydrated: boolean

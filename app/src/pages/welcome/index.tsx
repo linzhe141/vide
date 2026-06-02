@@ -8,14 +8,16 @@ import { useState } from 'react'
 export function Welcome() {
   const { createSession } = useSessionStoreActions()
   const [workspacePath, setWorkspacePath] = useState<string | null>(null)
-
+  const [autoApprove, setAutoApprove] = useState(false)
   const navigate = useNavigate()
   const handleSend = async (input: string) => {
     context.firstInput = input
+    context.firstInputAutoApprove = autoApprove
     const sessionId = await window.ipcRendererApi.invoke('agent-create-session', {
       workspacePath,
+      autoApprove,
     })
-    createSession({ sessionId, workspacePath })
+    createSession({ sessionId, workspacePath, autoApprove })
     navigate('/chat/' + sessionId)
   }
 
@@ -30,7 +32,7 @@ export function Welcome() {
     <div className='flex h-full w-full flex-col items-center justify-center gap-12 px-6'>
       {/* 标题和描述 */}
       <div className='flex flex-col items-center text-center'>
-        <img className='size-80' src={LOGOIMG}></img>
+        {/* <img className='size-80' src={LOGOIMG}></img> */}
         <p className='text-text-secondary -mt-10 max-w-md text-lg'>
           Start a conversation with your AI assistant. Ask anything, explore ideas, or get help with
           your tasks.
@@ -40,11 +42,13 @@ export function Welcome() {
       {/* 输入区域 */}
       <div className='w-full max-w-3xl'>
         <ChatInput
-          onSend={handleSend}
           running={false}
+          onSend={handleSend}
           workspacePath={workspacePath}
           onSelectWorkspace={handleSelectWorkspace}
           onClearWorkspace={() => setWorkspacePath(null)}
+          autoApprove={autoApprove}
+          onChangeAutoApprove={setAutoApprove}
         />
 
         {/* 提示建议 */}

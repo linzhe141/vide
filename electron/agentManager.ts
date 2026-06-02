@@ -1,4 +1,4 @@
-import { createGenerateImageClient } from '@/agent/core/image';
+import { createGenerateImageClient } from '@/agent/core/image'
 import type { AppManager } from './appManager'
 import { settingsStore } from './store/settingsStore'
 import { createLLMClient } from '@/agent/core/llm'

@@ -4,22 +4,25 @@ import { Textarea } from '@/app/src/ui/Textarea'
 import { Button } from '@/app/src/ui/Button'
 
 export const ChatInput = memo(function ChatInput({
-  onSend,
   running,
+  onSend,
   onAbort,
   workspacePath,
   onSelectWorkspace,
   onClearWorkspace,
+  autoApprove,
+  onChangeAutoApprove,
 }: {
-  onSend: (input: string, options?: { autoApprove?: boolean }) => void
   running: boolean
+  onSend: (input: string) => void
   onAbort?: () => void
   workspacePath?: string | null
   onSelectWorkspace?: () => void
   onClearWorkspace?: () => void
+  autoApprove: boolean
+  onChangeAutoApprove: (value: boolean) => void
 }) {
   const [input, setInput] = useState('')
-  const [autoApprove, setAutoApprove] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 自动调整 textarea 高度
@@ -33,7 +36,7 @@ export const ChatInput = memo(function ChatInput({
 
   const handleSubmit = () => {
     if (input.trim()) {
-      onSend(input, { autoApprove })
+      onSend(input)
       setInput('')
     }
   }
@@ -91,7 +94,7 @@ export const ChatInput = memo(function ChatInput({
         <div className='flex items-center gap-2'>
           <button
             type='button'
-            onClick={() => setAutoApprove((value) => !value)}
+            onClick={() => onChangeAutoApprove?.(!autoApprove)}
             className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
               autoApprove
                 ? 'border-primary bg-primary/10 text-primary'

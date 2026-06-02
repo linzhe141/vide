@@ -26,7 +26,6 @@ export function emitWorkflowEvent(event: WorkflowState['type'], ...args: any[]) 
 export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
-  const sessionIdRef = useRef<string | null>(null)
   const [running, setRunning] = useState(false)
   const { handleEvent } = useSessionStoreActions()
 
@@ -34,18 +33,13 @@ export function useWorkflowStream() {
     readerRef.current?.cancel().catch(() => {})
     readerRef.current = null
     abortControllerRef.current = null
-    sessionIdRef.current = null
   }
 
   const send = useCallback(
-    async (
-      input: string,
-      options?: { branchName?: string; sessionId?: string; autoApprove?: boolean }
-    ) => {
+    async (sessionId: string, input: string) => {
       setRunning(true)
       const abortController = new AbortController()
       abortControllerRef.current = abortController
-      sessionIdRef.current = options?.sessionId || null
 
       const stream = createWorkflowStream(abortController.signal)
       const reader = stream.getReader()
@@ -53,9 +47,8 @@ export function useWorkflowStream() {
 
       try {
         await window.ipcRendererApi.invoke('agent-session-send', {
-          sessionId: options?.sessionId || '',
+          sessionId,
           input,
-          autoApprove: options?.autoApprove,
         })
         while (true) {
           const { value, done } = await reader.read()
@@ -76,9 +69,8 @@ export function useWorkflowStream() {
     [handleEvent]
   )
 
-  const abort = useCallback(async () => {
-    if (!sessionIdRef.current) return
-    await window.ipcRendererApi.invoke('agent-workflow-abort', { sessionId: sessionIdRef.current })
+  const abort = useCallback(async ({ sessionId }: { sessionId: string }) => {
+    await window.ipcRendererApi.invoke('agent-workflow-abort', { sessionId })
   }, [])
 
   return {

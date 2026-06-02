@@ -19,6 +19,7 @@ export const sessions = sqliteTable('sessions', {
   ),
   workspacePath: text('workspace_path'),
   activeBranch: text('active_branch').notNull().default('main'),
+  autoApprove: integer('auto_approve', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 })
@@ -31,10 +32,7 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
   parentWorkflowId: text('parent_workflow_id').references(
     (): AnySQLiteColumn => sessionWorkflows.id
   ),
-  status: text('status', { enum: ['running', 'finished', 'error', 'aborted'] })
-    .notNull()
-    .default('running'),
-  autoApprove: integer('auto_approve', { mode: 'boolean' }).notNull().default(false),
+  stopStatus: text('stop_status', { enum: ['finished', 'error', 'aborted'] }),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),

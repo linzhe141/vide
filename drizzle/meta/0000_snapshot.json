@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d15ff387-a207-4ffe-86b3-457ad6661a11",
+  "id": "d72bb6bd-7eb6-420b-a1a2-08567ae044bb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "artifacts": {
@@ -49,12 +49,8 @@
           "name": "artifacts_session_id_sessions_id_fk",
           "tableFrom": "artifacts",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -115,12 +111,8 @@
           "name": "ask_user_questions_workflow_id_session_workflows_id_fk",
           "tableFrom": "ask_user_questions",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -174,12 +166,8 @@
           "name": "planners_session_id_sessions_id_fk",
           "tableFrom": "planners",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -244,10 +232,7 @@
       "indexes": {
         "session_branches_session_name_unique": {
           "name": "session_branches_session_name_unique",
-          "columns": [
-            "session_id",
-            "name"
-          ],
+          "columns": ["session_id", "name"],
           "isUnique": true
         }
       },
@@ -256,12 +241,8 @@
           "name": "session_branches_session_id_sessions_id_fk",
           "tableFrom": "session_branches",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -269,12 +250,8 @@
           "name": "session_branches_head_workflow_id_session_workflows_id_fk",
           "tableFrom": "session_branches",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "head_workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["head_workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -282,12 +259,8 @@
           "name": "session_branches_source_workflow_id_session_workflows_id_fk",
           "tableFrom": "session_branches",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "source_workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -355,12 +328,8 @@
           "name": "session_workflow_messages_workflow_id_session_workflows_id_fk",
           "tableFrom": "session_workflow_messages",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -388,6 +357,13 @@
         },
         "parent_workflow_id": {
           "name": "parent_workflow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stop_status": {
+          "name": "stop_status",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -421,12 +397,8 @@
           "name": "session_workflows_session_id_sessions_id_fk",
           "tableFrom": "session_workflows",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -434,12 +406,8 @@
           "name": "session_workflows_parent_workflow_id_session_workflows_id_fk",
           "tableFrom": "session_workflows",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "parent_workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -487,6 +455,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "workspace_path": {
+          "name": "workspace_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "active_branch": {
           "name": "active_branch",
           "type": "text",
@@ -494,6 +469,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'main'"
+        },
+        "auto_approve": {
+          "name": "auto_approve",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -516,12 +499,8 @@
           "name": "sessions_origin_session_id_sessions_id_fk",
           "tableFrom": "sessions",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "origin_session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["origin_session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -529,12 +508,8 @@
           "name": "sessions_origin_workflow_id_session_workflows_id_fk",
           "tableFrom": "sessions",
           "tableTo": "session_workflows",
-          "columnsFrom": [
-            "origin_workflow_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["origin_workflow_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

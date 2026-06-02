@@ -38,7 +38,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
           input: data.userInput,
           messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
           runtime: {
-            status: data.status,
+            status: data.stopStatus === 'finished' ? 'finished' : 'running',
             waitingHuman: false,
           },
         }
@@ -58,6 +58,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       const session: Session = {
         sessionId,
         title: currentSession?.title,
+        autoApprove: currentSession?.autoApprove ?? false,
         createdAt: currentSession?.createdAt,
         updatedAt: currentSession?.updatedAt,
         hydrated: true,

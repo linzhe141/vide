@@ -43,7 +43,9 @@ type SessionActions = {
       sessionType?: Session['sessionType']
       origin?: Session['origin']
       workspacePath?: string | null
+      autoApprove?: boolean
     }) => void
+    switchSessionAutoApprove: (sessionId: string, newValue: boolean) => void
     regenerateWorkflow: (data: {
       sessionId: string
       sourceWorkflowId: string
@@ -111,6 +113,8 @@ export const useSessionStore = create<SessionState & SessionActions>()(
 
             nextSessions.push({
               sessionId: item.id,
+              // TODO
+              autoApprove: false,
               title: item.title,
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
@@ -169,11 +173,18 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           session.activeBranch = branchName
         })
       },
-      createSession({ sessionId, sessionType = 'normal', origin = null, workspacePath = null }) {
+      createSession({
+        sessionId,
+        sessionType = 'normal',
+        origin = null,
+        workspacePath = null,
+        autoApprove = false,
+      }) {
         set((state) => {
           const activeBranch = 'main'
           const newSession: Session = {
             sessionId,
+            autoApprove,
             title: '',
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -203,6 +214,13 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             return
           }
           state.sessions.push(newSession)
+        })
+      },
+      switchSessionAutoApprove(sessionId, newValue) {
+        set((state) => {
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          session.autoApprove = newValue
         })
       },
       regenerateWorkflow({ sessionId, sourceWorkflowId, branchName }) {

@@ -90,7 +90,8 @@ export class SessionsManager {
     activeBranch: string
     originSessionId: string | null
     originWorkflowId: string | null
-    workspacePath?: string | null
+    workspacePath: string | null
+    autoApprove: boolean
     title?: string
   }) {
     const time = Date.now()
@@ -102,6 +103,7 @@ export class SessionsManager {
       originWorkflowId: data.originWorkflowId,
       workspacePath: data.workspacePath ?? null,
       activeBranch: data.activeBranch,
+      autoApprove: data.autoApprove,
       createdAt: time,
       updatedAt: time,
     })
@@ -187,8 +189,7 @@ export class SessionsManager {
         id: clonedWorkflowId,
         sessionId: data.targetSessionId,
         parentWorkflowId: clonedParentWorkflowId,
-        status: workflow.status,
-        autoApprove: workflow.autoApprove,
+        stopStatus: workflow.stopStatus,
         input: workflow.input,
         createdAt: timeBase + index,
         updatedAt: timeBase + index,
@@ -268,8 +269,6 @@ export class SessionsManager {
         id: ctx.workflowId,
         sessionId: ctx.sessionId,
         parentWorkflowId: ctx.parentWorkflowId,
-        status: 'running',
-        autoApprove: ctx.autoApprove,
         input,
         createdAt: time,
         updatedAt: time,
@@ -295,16 +294,27 @@ export class SessionsManager {
       await db
         .update(sessionWorkflows)
         .set({
-          status: 'finished',
+          stopStatus: 'finished',
           updatedAt: Date.now(),
         })
         .where(eq(sessionWorkflows.id, ctx.workflowId))
     })
+    // TODO 是否需要持久化 waiting-human-approve 状态
+    // workflow-wait-human-approve 更新 stopStatus 为 waiting-human-approve 状态
+    // onWorkflowEvent('workflow-wait-human-approve', async ({ ctx }) => {
+    //   await db
+    //     .update(sessionWorkflows)
+    //     .set({
+    //       stopStatus: 'waiting-human-approve',
+    //       updatedAt: Date.now(),
+    //     })
+    //     .where(eq(sessionWorkflows.id, ctx.workflowId))
+    // })
     onWorkflowEvent('workflow-aborted', async ({ ctx }) => {
       await db
         .update(sessionWorkflows)
         .set({
-          status: 'aborted',
+          stopStatus: 'aborted',
           updatedAt: Date.now(),
         })
         .where(eq(sessionWorkflows.id, ctx.workflowId))
@@ -313,7 +323,7 @@ export class SessionsManager {
       await db
         .update(sessionWorkflows)
         .set({
-          status: 'error',
+          stopStatus: 'error',
           updatedAt: Date.now(),
         })
         .where(eq(sessionWorkflows.id, ctx.workflowId))

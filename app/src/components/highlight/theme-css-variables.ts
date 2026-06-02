@@ -38,14 +38,8 @@ export interface CssVariablesThemeOptions {
  * @experimental This API is experimental and may change without following semver
  * @see https://shiki.style/guide/theme-colors#css-variables-theme
  */
-export function createCssVariablesTheme(
-  options: CssVariablesThemeOptions = {}
-): ThemeRegistration {
-  const {
-    name = 'css-variables',
-    variablePrefix = '--shiki-',
-    fontStyle = true,
-  } = options
+export function createCssVariablesTheme(options: CssVariablesThemeOptions = {}): ThemeRegistration {
+  const { name = 'css-variables', variablePrefix = '--shiki-', fontStyle = true } = options
 
   const variable = (name: string) => {
     if (options.variableDefaults?.[name])
@@ -213,10 +207,7 @@ export function createCssVariablesTheme(
       },
       {
         // [Custom] Markdown links
-        scope: [
-          'markup.underline.link',
-          'punctuation.definition.metadata.markdown',
-        ],
+        scope: ['markup.underline.link', 'punctuation.definition.metadata.markdown'],
         settings: {
           foreground: variable('token-link'),
         },
@@ -241,11 +232,7 @@ export function createCssVariablesTheme(
         },
       },
       {
-        scope: [
-          'constant.numeric.decimal',
-          'constant.language.boolean',
-          'meta.var.exp.ts',
-        ],
+        scope: ['constant.numeric.decimal', 'constant.language.boolean', 'meta.var.exp.ts'],
         settings: { foreground: variable('token-number') },
       },
       {

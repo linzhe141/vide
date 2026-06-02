@@ -17,6 +17,7 @@ import { registorTools } from './tools/registor'
 import type { WorkflowEventCtx } from './event/channels'
 import type { Session } from './session'
 import { v4 as uuid } from 'uuid'
+import { BASH_TOOL_NAMES } from './tools/bash'
 
 export type WorkflowState =
   | 'INPUT'
@@ -320,10 +321,10 @@ it could be split into modules and written in batches.`
     const toolCalls = payload.toolCalls
     const index = payload.index
     const toolCall = toolCalls[index]
-    // waiting for human approval if needed
-    // TODO implement needWaitHumanApprove logic
-    const needWaitHumanApprove = true
-    if (!payload.hasApproval && needWaitHumanApprove) {
+    const needWaitHumanApprove =
+      toolCall.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
+      this.runtime.rootSession.autoApprove === false
+    if (needWaitHumanApprove && !payload.hasApproval) {
       return {
         state: 'WAIT_HUMAN_APPROVE',
         payload: {
@@ -376,21 +377,18 @@ export class WorkflowRuntimeContext {
   readonly workflowSession: WorkflowSession
   readonly branchName: string
   readonly parentWorkflowId: string | null
-  readonly autoApprove: boolean
   userInput: string[] = []
   constructor(options: {
     session: Session
     userInput: string
     branchName: string
     parentWorkflowId: string | null
-    autoApprove: boolean
   }) {
     this.rootSession = options.session
     this.workflowId = uuid()
     this.branchName = options.branchName
     this.parentWorkflowId = options.parentWorkflowId
     // During initialization, `userInput` contains only one element.
-    this.autoApprove = options.autoApprove ?? false
     this.userInput.push(options.userInput)
     this.workflowSession = new WorkflowSession()
   }
@@ -409,7 +407,6 @@ export class WorkflowRuntimeContext {
       workflowId: this.workflowId,
       branchName: this.branchName,
       parentWorkflowId: this.parentWorkflowId,
-      autoApprove: this.autoApprove,
     }
   }
 

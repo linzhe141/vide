@@ -1,1 +1,0 @@
-ALTER TABLE `sessions` ADD `workspace_path` text;

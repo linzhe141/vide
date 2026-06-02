@@ -31,8 +31,7 @@ export type WorkflowData = {
   id: string
   userInput: string
   parentWorkflowId: string | null
-  status: 'running' | 'finished' | 'error' | 'aborted'
-  autoApprove: boolean
+  stopStatus: 'finished' | 'error' | 'aborted'
   askUserSubmitValue?: string[]
   messages: (typeof sessionWorkflowMessages.$inferSelect)[]
 }
@@ -48,7 +47,10 @@ export interface RenderChannel {
   'close-window': () => void
 
   // agent
-  'agent-create-session': (data?: { workspacePath?: string | null }) => Promise<string>
+  'agent-create-session': (data: {
+    workspacePath: string | null
+    autoApprove: boolean
+  }) => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
     sessionType: 'normal' | 'fork'
     origin: { sessionId: string; workflowId: string | null } | null
@@ -64,7 +66,7 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   }>
-  'agent-session-send': (data: { sessionId: string; input: string; autoApprove?: boolean }) => void
+  'agent-session-send': (data: { sessionId: string; input: string }) => void
   'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string }) => Promise<{
     sessionId: string
     sessionType: 'normal' | 'fork'
@@ -94,7 +96,7 @@ export interface RenderChannel {
   }) => void
   'agent-human-rejected': (data: { sessionId: string }) => void
   'agent-workflow-abort': (data: { sessionId: string }) => void
-
+  'agent-session-switch-auto-approve': (data: { sessionId: string; autoApprove: boolean }) => void
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
   // session message

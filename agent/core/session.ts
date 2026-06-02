@@ -13,7 +13,7 @@ export interface SessionOrigin {
 
 export interface SessionWorkflowNode {
   id: string
-  status: 'running' | 'finished' | 'error' | 'aborted'
+  stopStatus: 'finished' | 'error' | 'aborted'
   messages: ChatMessage[]
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
@@ -26,7 +26,7 @@ export interface SessionBranch {
 
 export interface SessionWorkflowSnapshot {
   id: string
-  status: 'running' | 'finished' | 'error' | 'aborted'
+  stopStatus: 'finished' | 'error' | 'aborted'
   parentWorkflowId: string | null
   messages: ChatMessage[]
 }
@@ -55,7 +55,7 @@ export class Session {
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
-
+  autoApprove: boolean
   watiHumanWorkflow: Workflow | null = null
   planners: SessionPlaner[] = []
 
@@ -65,20 +65,22 @@ export class Session {
     sessionType?: SessionType
     origin?: SessionOrigin | null
     workspacePath?: string | null
+    autoApprove?: boolean
   }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
     this.sessionType = options?.sessionType || 'normal'
     this.origin = options?.origin || null
     this.workspacePath = options?.workspacePath || null
+    this.autoApprove = options?.autoApprove || false
   }
 
   get currentBranch() {
     return this.branchs[this.activeBranch]
   }
 
-  async run(userInput: string, options?: { autoApprove?: boolean }) {
-    const { workflow, workflowCommitNode } = this.createWorkflow(userInput, options)
+  async run(userInput: string) {
+    const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
     const currentHead = this.currentBranch.head
     if (!currentHead) {
       this.currentBranch.head = workflowCommitNode
@@ -99,18 +101,17 @@ export class Session {
     }
   }
 
-  createWorkflow(userInput: string, options?: { autoApprove?: boolean }) {
+  createWorkflow(userInput: string) {
     const parentWorkflowNode = this.currentBranch?.head ?? null
     const workflowRuntimeContext = new WorkflowRuntimeContext({
       session: this,
       userInput,
       branchName: this.activeBranch,
       parentWorkflowId: parentWorkflowNode?.id || null,
-      autoApprove: options?.autoApprove || false,
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
-      status: '' as any,
+      stopStatus: null as any,
       messages: workflowRuntimeContext.workflowSession.getMessages(),
       parent: null,
       children: [],
@@ -145,7 +146,7 @@ export class Session {
     for (const sourceNode of lineage) {
       const clonedNode: SessionWorkflowNode = {
         id: uuid(),
-        status: sourceNode.status,
+        stopStatus: sourceNode.stopStatus,
         messages: deepCloneMessages(sourceNode.messages),
         parent: previousClonedNode,
         children: [],
@@ -185,7 +186,7 @@ export class Session {
     if (!currentHead) return []
 
     function traverse(node: SessionWorkflowNode, result: ChatMessage[] = []): ChatMessage[] {
-      if (node.status !== 'aborted') {
+      if (node.stopStatus !== 'aborted' && node.stopStatus !== 'error') {
         result.unshift(...node.messages)
       }
       if (node.parent) {
@@ -240,7 +241,7 @@ export class Session {
     for (const workflow of snapshot.workflows) {
       const node = {
         id: workflow.id,
-        status: workflow.status,
+        stopStatus: workflow.stopStatus,
         messages: workflow.messages,
         parent: null,
         children: [],

@@ -1,4 +1,4 @@
 export const context = {
   firstInput: '',
-  isRuning: false,
+  firstInputAutoApprove: false,
 }

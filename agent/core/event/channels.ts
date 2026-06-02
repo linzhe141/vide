@@ -10,6 +10,7 @@ const AgentLifecycleEventChannels = {
     originSessionId: string | null
     originWorkflowId: string | null
     workspacePath: string | null
+    autoApprove: boolean
   },
   'agent-session-finished': null as unknown as {
     sessionId: string
@@ -87,7 +88,6 @@ export type WorkflowEventCtx = {
   workflowId: string
   branchName: string
   parentWorkflowId: string | null
-  autoApprove: boolean
 }
 const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },

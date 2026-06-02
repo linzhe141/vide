@@ -18,11 +18,13 @@ export class Agent {
     sessionType?: SessionType
     origin?: SessionOrigin | null
     workspacePath?: string | null
+    autoApprove?: boolean
   }) {
     const session = new Session({
       sessionType: options?.sessionType,
       origin: options?.origin,
       workspacePath: options?.workspacePath,
+      autoApprove: options?.autoApprove,
     })
     session.branchs[session.activeBranch] = { head: null, source: null }
     agentEvent.emit('agent-create-session', {
@@ -32,6 +34,7 @@ export class Agent {
       originSessionId: session.origin?.sessionId || null,
       originWorkflowId: session.origin?.workflowId || null,
       workspacePath: session.workspacePath,
+      autoApprove: session.autoApprove,
     })
     return session
   }
@@ -47,7 +50,7 @@ export class Agent {
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
       id: workflow.id,
-      status: workflow.status,
+      stopStatus: workflow.stopStatus,
       parentWorkflowId: workflow.parentWorkflowId,
       messages: this.buildChatMessages(workflow.messages),
     }))
@@ -78,6 +81,7 @@ export class Agent {
       originSessionId: forkedSession.origin?.sessionId || null,
       originWorkflowId: forkedSession.origin?.workflowId || null,
       workspacePath: forkedSession.workspacePath,
+      autoApprove: forkedSession.autoApprove,
     })
     agentEvent.emit('agent-session-forked', {
       sourceSessionId: session.sessionId,
