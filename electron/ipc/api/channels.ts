@@ -53,6 +53,7 @@ export interface RenderChannel {
   }) => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
     sessionType: 'normal' | 'fork'
+    title: string
     origin: { sessionId: string; workflowId: string | null } | null
     activeBranch: string
     branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]

@@ -1,10 +1,14 @@
 import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import type { ToolResultSessionMessage } from '../../store/sessionStore/types'
+import type { Workflow } from '../../store/sessionStore/types'
+import type { ToolCall } from '@/agent/core/types'
 
-function ImageToolCall({ result }: ToolResultSessionMessage['result']) {
+import { findToolResult } from './messages/ToolCallMessage'
+import { CodeBlock } from '../codeblock'
+function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: ToolCall }) {
   const [imageLoaded, setImageLoaded] = useState(false)
 
+  const result = findToolResult(workflow, toolCall.id)
   const isRunning = !result
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
@@ -35,16 +39,21 @@ function ImageToolCall({ result }: ToolResultSessionMessage['result']) {
   if (isError) {
     return (
       <div className='rounded-xl border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent p-4'>
-        <div className='flex items-start gap-3'>
-          <div className='flex-shrink-0 rounded-full bg-red-500/10 p-2'>
+        <div>
+          <p className='flex items-center gap-1 text-sm font-semibold text-red-500'>
             <XCircle className='h-4 w-4 text-red-500' />
-          </div>
-          <div className='flex-1'>
-            <p className='text-sm font-semibold text-red-500'>Generation Failed</p>
-            <p className='text-text-secondary mt-1 text-xs'>
-              {result?.error?.message || 'An unknown error occurred while generating the image'}
-            </p>
-          </div>
+            Generation Failed
+          </p>
+          <p className='text-text-secondary mt-1 text-xs'>
+            <CodeBlock
+              code={JSON.stringify(
+                result?.error instanceof Error ? result.error.message : result?.error,
+                null,
+                2
+              )}
+              lang='text'
+            ></CodeBlock>
+          </p>
         </div>
       </div>
     )

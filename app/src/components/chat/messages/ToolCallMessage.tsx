@@ -36,7 +36,7 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
     <div className='space-y-3'>
       {visibleTools.map((tool) => {
         if (tool.function.name === Image_TOOL_NAMES.GENERATE_IMAGE) {
-          return <ImageToolCall key={tool.id} result={findToolResult(workflow, tool.id)} />
+          return <ImageToolCall key={tool.id} workflow={workflow} toolCall={tool} />
         }
         return (
           <ToolCallButton
@@ -73,6 +73,7 @@ function ToolCallButton({
 }: ToolCallButtonProps) {
   const { sessionId } = useChatContext()
   const [open, setOpen] = useState(false)
+  const isBashTool = tool.function.name === 'execute-bash-command'
   const isRunning = !waitHumanApprove && !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
@@ -104,7 +105,7 @@ function ToolCallButton({
             <span className='text-foreground truncate text-[15px] font-medium'>
               {tool.function.name}
             </span>
-            {waitHumanApprove && (
+            {waitHumanApprove && isBashTool && !result && (
               <span className='flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-0.5 text-[12px] font-medium text-yellow-600 dark:bg-yellow-950/50 dark:text-yellow-300'>
                 Waiting for Approval
                 <Check
@@ -189,7 +190,7 @@ function formatDuration(durationMs?: number) {
   return `${Math.round(seconds)}s`
 }
 
-function findToolResult(
+export function findToolResult(
   workflow: Workflow,
   toolCallId: string
 ): ToolResultSessionMessage | undefined {

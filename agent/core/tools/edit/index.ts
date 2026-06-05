@@ -121,13 +121,7 @@ export class Edit extends ToolProvider {
         }
       } catch (error: any) {
         console.log('edit_file error', error)
-        return {
-          reason: 'call-llm',
-          result: {
-            success: false,
-            error: error.message,
-          },
-        }
+        throw error
       }
     },
   })

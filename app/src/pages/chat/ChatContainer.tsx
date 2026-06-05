@@ -41,13 +41,15 @@ export function ChatContainer() {
         <MessageList />
       </ChatLayoutMessage>
       <ChatLayoutInput>
-        <ChatInput
-          onSend={onSend}
-          running={running}
-          workspacePath={session.workspacePath}
-          autoApprove={session.autoApprove}
-          onChangeAutoApprove={onChangeAutoApprove}
-        />
+        <div className='px-10'>
+          <ChatInput
+            onSend={onSend}
+            running={running}
+            workspacePath={session.workspacePath}
+            autoApprove={session.autoApprove}
+            onChangeAutoApprove={onChangeAutoApprove}
+          />
+        </div>
       </ChatLayoutInput>
     </ChatLayout>
   )

@@ -96,7 +96,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
             />
           </div>
 
-          <div className='flex h-0 flex-1 flex-col overflow-hidden'>{children}</div>
+          <div className='relative flex h-0 flex-1 flex-col overflow-hidden'>{children}</div>
         </div>
 
         {/* side pane */}
@@ -123,7 +123,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
 }
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
-  const { sessionId } = useChatContext()
+  const { sessionId, running } = useChatContext()
   const session = useSession(sessionId)
   const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
@@ -145,14 +145,19 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
     return () => observer.disconnect()
   }, [])
   return (
-    <div ref={scrollContainerRef} className='h-0 flex-1 overflow-auto'>
-      {session?.sessionType === 'fork' && session.origin ? (
-        <ForkOriginFooter
-          originSessionId={session.origin.sessionId}
-          originWorkflowId={session.origin.workflowId}
-        />
-      ) : null}
-      <div className='mx-auto max-w-[920px]'>{children}</div>
+    <>
+      <div ref={scrollContainerRef} className='relative h-0 flex-1 overflow-auto'>
+        {session?.sessionType === 'fork' && session.origin ? (
+          <ForkOriginFooter
+            originSessionId={session.origin.sessionId}
+            originWorkflowId={session.origin.workflowId}
+          />
+        ) : null}
+        <div className='mx-auto max-w-[920px]'>{children}</div>
+
+        <div className='h-[200px]' ref={placeholderRef} />
+      </div>
+
       {workflows && (
         <MessageNavigator
           items={workflows.map((i, index) => {
@@ -164,17 +169,20 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
           })}
         />
       )}
+
       {showToBottomButton && (
         <button
           onClick={scrollToBottom}
-          className='bg-background border-border fixed bottom-60 left-1/2 z-50 -translate-x-1/2 rounded-full border p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl'
+          className={`bg-background absolute bottom-[240px] left-1/2 -translate-x-1/2 overflow-hidden rounded-full p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${running ? 'border-0' : 'border-border border'} `}
           aria-label='Scroll to bottom'
         >
-          <ArrowDown size={18} className='text-foreground' />
+          {running && <span className='spin-ring absolute inset-0 rounded-full'></span>}
+          <span className='relative z-[2]'>
+            <ArrowDown size={18} className='text-foreground' />
+          </span>
         </button>
       )}
-      <div className='h-[200px]' ref={placeholderRef} />
-    </div>
+    </>
   )
 }
 

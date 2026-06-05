@@ -33,21 +33,14 @@ Example prompt: "A serene landscape with mountains in the background, a clear bl
       if (!prompt) {
         return {
           reason: 'call-llm',
-          result: { success: false, error: 'Prompt is required' },
+          result: { error: 'Prompt is required' },
         }
       }
 
-      try {
-        const imageUrl = await generateImage(prompt)
-        return {
-          reason: 'call-llm',
-          result: { success: true, url: imageUrl },
-        }
-      } catch (error: any) {
-        return {
-          reason: 'call-llm',
-          result: { success: false, error: error.message },
-        }
+      const imageUrl = await generateImage(prompt)
+      return {
+        reason: 'call-llm',
+        result: { url: imageUrl },
       }
     },
   })

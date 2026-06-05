@@ -248,6 +248,7 @@ export class AgentIpcMainService implements IpcMainService {
 
     return {
       sessionId,
+      title: sessionRow?.title || '',
       sessionType: sessionRow?.type || 'normal',
       autoApprove: sessionRow?.autoApprove || false,
       origin: sessionRow?.originSessionId
@@ -274,7 +275,6 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainSenders() {
     agentEventNames.forEach((eventName) => {
       onAgentEvent(eventName, (data: any) => {
-        console.log('abc', eventName, data)
         ipcMainApi.send(eventName, data)
       })
     })
