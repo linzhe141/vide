@@ -1,11 +1,9 @@
-import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import type {
   Workflow,
   ToolCallSessionMessage,
   ToolResultSessionMessage,
 } from '@/app/src/store/sessionStore/types'
 import {
-  Check,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -16,9 +14,8 @@ import {
 } from 'lucide-react'
 import type { ToolCall } from '@/agent/core/types'
 import { useState } from 'react'
-import { Image_TOOL_NAMES } from '@/agent/core/tools/image'
 import ImageToolCall from './ImageToolCall'
-import { useChatContext } from '../../ChatProvider'
+import BashToolCall from './BashToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -26,82 +23,58 @@ type ToolCallViewProps = {
 }
 
 export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
-  const visibleTools = message.toolCalls.filter(
-    (tool) => tool.function.name !== ASK_USER_TOOL_NAMES.GENERATE
-  )
+  const visibleTools = message.toolCalls.filter(shouldShowToolCall)
 
   if (!visibleTools.length) return null
 
   return (
     <div className='space-y-3'>
       {visibleTools.map((tool) => {
-        if (tool.function.name === Image_TOOL_NAMES.GENERATE_IMAGE) {
+        if (tool.function.name === 'generate-image') {
           return <ImageToolCall key={tool.id} workflow={workflow} toolCall={tool} />
         }
+
+        if (tool.function.name === 'execute-bash-command') {
+          return (
+            <BashToolCall
+              key={tool.id}
+              tool={tool}
+              result={findToolResult(workflow, tool.id)}
+              waitHumanApprove={workflow.runtime.waitingHuman}
+              originToolCalls={message.toolCalls}
+              workflow={workflow}
+            />
+          )
+        }
+
         return (
-          <ToolCallButton
-            key={tool.id}
-            tool={tool}
-            result={findToolResult(workflow, tool.id)}
-            waitHumanApprove={workflow.runtime.waitingHuman}
-            originToolCalls={message.toolCalls}
-            workflow={workflow}
-          />
+          <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
         )
       })}
-      {/* <div className='text-primary flex items-center gap-2 pt-1 text-[15px] font-medium'>
-        <Wrench size={15} />
-        <span>{visibleTools.length} tools</span>
-      </div> */}
     </div>
   )
+}
+
+const HIDDEN_TOOL_NAMES = new Set<string>([
+  'ask-user-question-generate',
+  'submit-plan',
+  'update-plan-step',
+])
+
+function shouldShowToolCall(tool: ToolCall) {
+  return !HIDDEN_TOOL_NAMES.has(tool.function.name)
 }
 
 type ToolCallButtonProps = {
   tool: ToolCall
   result?: ToolResultSessionMessage
-  originToolCalls: ToolCall[]
-  waitHumanApprove: boolean
-  workflow: Workflow
 }
-function ToolCallButton({
-  tool,
-  result,
-  waitHumanApprove,
-  workflow,
-  originToolCalls,
-}: ToolCallButtonProps) {
-  const { sessionId } = useChatContext()
+function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   const [open, setOpen] = useState(false)
-  const isBashTool = tool.function.name === 'execute-bash-command'
-  const isRunning = !waitHumanApprove && !result
+  const isRunning = !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-
-  const humanApproveToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
-    window.ipcRendererApi.invoke('agent-human-approved', {
-      sessionId,
-      workflowId: workflow.id,
-      payload: {
-        index: originIndex,
-        toolCalls: originToolCalls,
-      },
-    })
-  }
-
-  const humanRejectToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
-    window.ipcRendererApi.invoke('agent-human-rejected', {
-      sessionId,
-      workflowId: workflow.id,
-      payload: {
-        index: originIndex,
-        toolCalls: originToolCalls,
-      },
-    })
-  }
 
   return (
     <div className='space-y-2'>
@@ -117,27 +90,6 @@ function ToolCallButton({
             <span className='text-foreground truncate text-[15px] font-medium'>
               {tool.function.name}
             </span>
-            {waitHumanApprove && isBashTool && !result && (
-              <span className='flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-0.5 text-[12px] font-medium text-yellow-600 dark:bg-yellow-950/50 dark:text-yellow-300'>
-                Waiting for Approval
-                <Check
-                  size={12}
-                  className='ml-1 text-yellow-500 dark:text-yellow-300'
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    humanApproveToolCall()
-                  }}
-                />
-                <XCircle
-                  size={12}
-                  className='ml-1 text-red-500 dark:text-red-300'
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    humanRejectToolCall()
-                  }}
-                />
-              </span>
-            )}
             {isSuccess && (
               <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
                 Success
