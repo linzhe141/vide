@@ -24,7 +24,7 @@ function MessageView({ workflow, message }: { workflow: Workflow; message: Sessi
   switch (message.role) {
     case 'user':
       return message.content.startsWith(AskUserQuestionUserSlectedReultPrefix) ? null : (
-        <UserInputMessage message={message} />
+        <UserInputMessage message={message} workflow={workflow} />
       )
 
     case 'assistant-text':

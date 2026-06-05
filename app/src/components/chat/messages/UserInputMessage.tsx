@@ -1,11 +1,23 @@
-import type { UserInputSessionMessage } from '@/app/src/store/sessionStore/types'
+import type { UserInputSessionMessage, Workflow } from '@/app/src/store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 import { Check, Copy, Pen, X } from 'lucide-react'
 import { useEffect, useState, type PropsWithChildren } from 'react'
+import { createBranchPayload } from '../SessionActions'
+import { useChatContext } from '../ChatProvider'
+import { useSessionStoreActions } from '@/app/src/store/sessionStore'
 
-export function UserInputMessage({ message }: { message: UserInputSessionMessage }) {
+export function UserInputMessage({
+  message,
+  workflow,
+}: {
+  message: UserInputSessionMessage
+  workflow: Workflow
+}) {
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(message.content)
+  const { sessionId, handleRegenerate } = useChatContext()
+  const { changeWorkflowInput } = useSessionStoreActions()
+
   return (
     <div className='group flex justify-end px-3 py-2'>
       <div className='max-w-[min(78%,720px)] space-y-2'>
@@ -34,6 +46,17 @@ export function UserInputMessage({ message }: { message: UserInputSessionMessage
               onEdit: () => setEditing(true),
               onSave: () => {
                 setEditing(false)
+                changeWorkflowInput({
+                  sessionId: sessionId,
+                  workflowId: workflow.id,
+                  newInput: content,
+                })
+                const regenerateBranchName = createBranchPayload({
+                  type: 'regenerate',
+                  branchName: `regenerate-${Date.now()}`,
+                  workflowId: workflow.id,
+                })
+                handleRegenerate(workflow.id, regenerateBranchName, content)
               },
               onCancel: () => {
                 setEditing(false)

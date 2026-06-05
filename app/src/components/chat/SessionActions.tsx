@@ -109,7 +109,7 @@ function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
   )
 }
 
-function createBranchPayload(payload: {
+export function createBranchPayload(payload: {
   branchName: string
   workflowId: string
   type: 'regenerate'

@@ -51,6 +51,7 @@ type SessionActions = {
       sourceWorkflowId: string
       branchName: string
     }) => void
+    changeWorkflowInput: (data: { sessionId: string; workflowId: string; newInput: string }) => void
     // for debugger
     buildSessionWorkflowTree: (sessionId: string) => any
   }
@@ -171,6 +172,16 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const targetBranch = session.branches.find((item) => item.name === branchName)
           if (!targetBranch) return
           session.activeBranch = branchName
+        })
+      },
+      changeWorkflowInput(data) {
+        set((state) => {
+          const { sessionId, workflowId, newInput } = data
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const workflowNode = session.workflowNodesMap[workflowId]
+          if (!workflowNode) return
+          workflowNode.workflow.input = newInput
         })
       },
       createSession({
