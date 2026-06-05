@@ -91,6 +91,18 @@ function ToolCallButton({
     })
   }
 
+  const humanRejectToolCall = () => {
+    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    window.ipcRendererApi.invoke('agent-human-rejected', {
+      sessionId,
+      workflowId: workflow.id,
+      payload: {
+        index: originIndex,
+        toolCalls: originToolCalls,
+      },
+    })
+  }
+
   return (
     <div className='space-y-2'>
       <button
@@ -114,6 +126,14 @@ function ToolCallButton({
                   onClick={(e) => {
                     e.stopPropagation()
                     humanApproveToolCall()
+                  }}
+                />
+                <XCircle
+                  size={12}
+                  className='ml-1 text-red-500 dark:text-red-300'
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    humanRejectToolCall()
                   }}
                 />
               </span>

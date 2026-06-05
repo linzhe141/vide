@@ -227,8 +227,20 @@ export class Session {
     }
   }
 
-  rejectActiveWorkflow() {
-    // this.activeWorkflow?.rejectHumanApprove()
+  async rejectHumanApprove(workflowId: string, payload: WaitHumanApprovePayload) {
+    console.log('rejectHumanApprove', workflowId, payload)
+    const targetWorkflow = this.watiHumanWorkflow
+    if (!targetWorkflow) return
+    this.watiHumanWorkflow = null
+    const result = await targetWorkflow.rejectHumanApprove(payload)
+    if (result === 'COMPLETED') {
+      agentEvent.emit('agent-session-finished', {
+        sessionId: this.sessionId,
+        userInput: targetWorkflow.runtime.userInput.at(-1) || '',
+      })
+    } else if (result === 'WAIT_HUMAN_APPROVE') {
+      this.watiHumanWorkflow = targetWorkflow
+    }
   }
 
   static resume(snapshot: SessionSnapshot) {

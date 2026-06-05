@@ -359,12 +359,29 @@ it could be split into modules and written in batches.`
     callToolStepPayload.hasApproval = true
     return await this.runLoop(callToolStepPayload)
   }
-  async rejectHumanApprove() {
+  async rejectHumanApprove(payload: WaitHumanApprovePayload) {
     if (this.state !== 'WAIT_HUMAN_APPROVE') {
       return
     }
-    this.state = 'COMPLETED'
-    workflowEvent.emit('workflow-aborted', { ctx: this.runtime.workflowEventCtx })
+    const { toolCalls, index } = payload
+    const toolCall = toolCalls[index]
+
+    // 将拒绝信息添加到会话中
+    this.runtime.workflowSession.addMessage({
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: 'Command execution rejected by human approval',
+    })
+
+    // 如果还有更多工具调用，继续执行下一个
+    if (index + 1 < toolCalls.length) {
+      this.state = 'CALL_SINGLE_CALL'
+      return await this.runLoop({ toolCalls, index: index + 1 })
+    } else {
+      // 所有工具处理完，回到LLM生成回应
+      this.state = 'CALL_LLM'
+      return await this.runLoop({ messages: this.buildLLMMessages() })
+    }
   }
   buildLLMMessages() {
     return this.runtime.rootSession.buildLLMMessages()
