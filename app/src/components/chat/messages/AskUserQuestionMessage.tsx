@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useChatContext } from './ChatProvider'
-import { useSessionStoreActions } from '../../store/sessionStore'
-import { cn } from '../../lib/utils'
-import type { SessionMessage } from '../../store/sessionStore/types'
+import { useChatContext } from '../ChatProvider'
+import { useSessionStoreActions } from '../../../store/sessionStore'
+import { cn } from '../../../lib/utils'
+import type { SessionMessage } from '../../../store/sessionStore/types'
 
 export const AskUserQuestionUserSlectedReultPrefix = 'AskUserQuestionUserSlectedReult'
-export function AskUserQuestionView({
+export function AskUserQuestionMessage({
   workflowId,
   message,
 }: {

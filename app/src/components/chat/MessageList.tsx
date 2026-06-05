@@ -1,7 +1,10 @@
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import { useSessionWorkflows } from '../../store/sessionStore'
 import { type SessionMessage, type Workflow } from '../../store/sessionStore/types'
-import { AskUserQuestionUserSlectedReultPrefix, AskUserQuestionView } from './AskUserQuestionView'
+import {
+  AskUserQuestionUserSlectedReultPrefix,
+  AskUserQuestionMessage,
+} from './messages/AskUserQuestionMessage'
 import { useChatContext } from './ChatProvider'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
@@ -40,7 +43,7 @@ function MessageView({ workflow, message }: { workflow: Workflow; message: Sessi
       return null
 
     case 'ask-user':
-      return <AskUserQuestionView workflowId={workflow.id} message={message} />
+      return <AskUserQuestionMessage workflowId={workflow.id} message={message} />
 
     case 'error':
       return (

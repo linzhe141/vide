@@ -17,8 +17,8 @@ import {
 import type { ToolCall } from '@/agent/core/types'
 import { useState } from 'react'
 import { Image_TOOL_NAMES } from '@/agent/core/tools/image'
-import ImageToolCall from '../ImageToolCall'
-import { useChatContext } from '../ChatProvider'
+import ImageToolCall from './ImageToolCall'
+import { useChatContext } from '../../ChatProvider'
 
 type ToolCallViewProps = {
   workflow: Workflow
