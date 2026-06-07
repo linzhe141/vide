@@ -18,6 +18,7 @@ export type WorkflowState =
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
   let currentSessionId: string | null = null
+  let currentWorkflowId: string | null = null
   function cleanUp() {
     eventListeners.forEach((remove) => remove())
     eventListeners = []
@@ -25,15 +26,14 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   const stream = new ReadableStream({
     start(controller) {
       // 监听 abort 信号
-      if (abortSignal) {
-        abortSignal.addEventListener('abort', () => {
-          if (currentSessionId) {
-            window.ipcRendererApi.invoke('agent-workflow-abort', { sessionId: currentSessionId })
-          }
-          controller.close()
-          cleanUp()
-        })
-      }
+      abortSignal.addEventListener('abort', () => {
+        if (currentSessionId && currentWorkflowId) {
+          window.ipcRendererApi.invoke('agent-workflow-abort', {
+            sessionId: currentSessionId,
+            workflowId: currentWorkflowId,
+          })
+        }
+      })
 
       agentEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
@@ -60,8 +60,13 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       workflowEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (eventName === 'workflow-start' && currentSessionId === null) {
+          if (
+            eventName === 'workflow-start' &&
+            currentSessionId === null &&
+            currentWorkflowId === null
+          ) {
             currentSessionId = data.ctx.sessionId
+            currentWorkflowId = data.ctx.workflowId
           }
           if (currentSessionId === data.ctx.sessionId) {
             controller.enqueue({ type: eventName, data })

@@ -3,6 +3,7 @@ import type { ChatMessage, FinishReason, FnProcessLLMStream, ToolCall } from './
 import { v4 as uuid } from 'uuid'
 import { AgentSystemPrompt } from './prompt/system'
 import { buildSkillsChatMessage } from './tools/skill'
+import { AbortError } from './error'
 
 let model: string = null!
 export let llmClient: OpenAI = null!
@@ -30,126 +31,134 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   onToolCallArguments,
   onToolCallsEnd,
 }) {
-  const stream = await llmClient.chat.completions.create(
-    {
-      messages: await buildChatMessages(messages),
-      model,
-      stream: true,
-      tools,
-      reasoning_effort: 'medium',
-    },
-    { signal }
-  )
+  try {
+    const stream = await llmClient.chat.completions.create(
+      {
+        messages: await buildChatMessages(messages),
+        model,
+        stream: true,
+        tools,
+        reasoning_effort: 'medium',
+      },
+      { signal }
+    )
 
-  let reasonContent = ''
-  let content = ''
-  const toolCalls: ToolCall[] = []
-  let finishReason: FinishReason = null!
+    let reasonContent = ''
+    let content = ''
+    const toolCalls: ToolCall[] = []
+    let finishReason: FinishReason = null!
 
-  const finishedToolCallName: { name: string; id: string }[] = []
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta
-    // console.log(JSON.stringify(delta, null, 2))
-    const chunkFinishReason = chunk.choices[0].finish_reason
-    if (chunkFinishReason) {
-      console.log('\nchunkFinishReason===>', chunkFinishReason)
-    }
-    if (chunkFinishReason) {
-      finishReason = chunkFinishReason as any
-    }
-    // @ts-expect-error support reason_content
-    if (delta.reasoning_content) {
-      if (reasonContent === '') {
-        // just for ui
-        onReasoningStart?.()
-        console.log('onReasoningStart')
+    const finishedToolCallName: { name: string; id: string }[] = []
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta
+      // console.log(JSON.stringify(delta, null, 2))
+      const chunkFinishReason = chunk.choices[0].finish_reason
+      if (chunkFinishReason) {
+        console.log('\nchunkFinishReason===>', chunkFinishReason)
+      }
+      if (chunkFinishReason) {
+        finishReason = chunkFinishReason as any
       }
       // @ts-expect-error support reason_content
-      reasonContent += delta.reasoning_content
-      // @ts-expect-error support reason_content just for ui
-      onReasoningDelta?.({ content: reasonContent, delta: delta.reasoning_content })
-      // @ts-expect-error support reason_content just for ui
-      process.stdout.write(delta.reasoning_content)
-    }
-
-    if (delta?.content) {
-      if (reasonContent) {
-        onReasoningEnd?.(reasonContent)
-        reasonContent = ''
-        console.log()
-      }
-      if (content === '') {
-        onTextStart?.()
-        console.log('onTextStart')
-      }
-      content += delta.content
-      onTextDelta?.({ content, delta: delta.content })
-      process.stdout.write(delta.content)
-      yield {
-        content,
-        delta: delta.content,
-        finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
-      }
-    }
-
-    if (chunkFinishReason === 'stop') {
-      if (content) {
-        onTextEnd?.(content)
-        content = ''
-        console.log()
-      }
-    }
-    if (delta?.tool_calls) {
-      // just for ui
-      if (reasonContent) {
-        onReasoningEnd?.(reasonContent)
-        reasonContent = ''
-        console.log()
-      }
-      if (content) {
-        onTextEnd?.(content)
-        content = ''
-        console.log()
-      }
-
-      if (toolCalls.length === 0) {
-        onToolCallsStart?.()
-        console.log('onToolCallsStart')
-      }
-      for (const toolCall of delta.tool_calls) {
-        if (!toolCalls[toolCall.index]) {
-          toolCalls[toolCall.index] = {
-            function: { arguments: '', name: '' },
-            id: toolCall.id ?? uuid(),
-            type: 'function',
-          }
-        }
-        if (toolCall.function?.name) {
-          toolCalls[toolCall.index].function.name += toolCall.function.name
-        }
-        if (toolCall.function?.arguments) {
-          const toolCallName = toolCalls[toolCall.index].function.name
-          const id = toolCalls[toolCall.index].id
-          if (!finishedToolCallName.find((i) => i.id === id)) {
-            finishedToolCallName.push({ name: toolCallName, id })
-            // just for ui
-            onToolCallName?.({ id, name: toolCallName })
-          }
-          toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
-
+      if (delta.reasoning_content) {
+        if (reasonContent === '') {
           // just for ui
-          onToolCallArguments?.({ id, arguments: toolCalls[toolCall.index].function.arguments })
+          onReasoningStart?.()
+          console.log('onReasoningStart')
+        }
+        // @ts-expect-error support reason_content
+        reasonContent += delta.reasoning_content
+        // @ts-expect-error support reason_content just for ui
+        onReasoningDelta?.({ content: reasonContent, delta: delta.reasoning_content })
+        // @ts-expect-error support reason_content just for ui
+        process.stdout.write(delta.reasoning_content)
+      }
+
+      if (delta?.content) {
+        if (reasonContent) {
+          onReasoningEnd?.(reasonContent)
+          reasonContent = ''
+          console.log()
+        }
+        if (content === '') {
+          onTextStart?.()
+          console.log('onTextStart')
+        }
+        content += delta.content
+        onTextDelta?.({ content, delta: delta.content })
+        process.stdout.write(delta.content)
+        yield {
+          content,
+          delta: delta.content,
+          finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
+        }
+      }
+
+      if (chunkFinishReason === 'stop') {
+        if (content) {
+          onTextEnd?.(content)
+          content = ''
+          console.log()
+        }
+      }
+      if (delta?.tool_calls) {
+        // just for ui
+        if (reasonContent) {
+          onReasoningEnd?.(reasonContent)
+          reasonContent = ''
+          console.log()
+        }
+        if (content) {
+          onTextEnd?.(content)
+          content = ''
+          console.log()
+        }
+
+        if (toolCalls.length === 0) {
+          onToolCallsStart?.()
+          console.log('onToolCallsStart')
+        }
+        for (const toolCall of delta.tool_calls) {
+          if (!toolCalls[toolCall.index]) {
+            toolCalls[toolCall.index] = {
+              function: { arguments: '', name: '' },
+              id: toolCall.id ?? uuid(),
+              type: 'function',
+            }
+          }
+          if (toolCall.function?.name) {
+            toolCalls[toolCall.index].function.name += toolCall.function.name
+          }
+          if (toolCall.function?.arguments) {
+            const toolCallName = toolCalls[toolCall.index].function.name
+            const id = toolCalls[toolCall.index].id
+            if (!finishedToolCallName.find((i) => i.id === id)) {
+              finishedToolCallName.push({ name: toolCallName, id })
+              // just for ui
+              onToolCallName?.({ id, name: toolCallName })
+            }
+            toolCalls[toolCall.index].function.arguments += toolCall.function.arguments
+
+            // just for ui
+            onToolCallArguments?.({ id, arguments: toolCalls[toolCall.index].function.arguments })
+          }
         }
       }
     }
-  }
 
-  if (toolCalls.length > 0) {
-    onToolCallsEnd?.(toolCalls.filter(Boolean))
-    console.log(JSON.stringify(toolCalls.filter(Boolean), null, 2))
-    yield {
-      tool_calls: toolCalls.filter(Boolean),
-      finishReason: 'tool_calls' as const,
+    if (toolCalls.length > 0) {
+      onToolCallsEnd?.(toolCalls.filter(Boolean))
+      console.log(JSON.stringify(toolCalls.filter(Boolean), null, 2))
+      yield {
+        tool_calls: toolCalls.filter(Boolean),
+        finishReason: 'tool_calls' as const,
+      }
+    }
+  } catch (error) {
+    console.error('Error in processLLMStream:', error)
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.error('Stream was aborted by user')
+      throw new AbortError()
     }
   }
 }

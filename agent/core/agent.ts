@@ -105,6 +105,13 @@ export class Agent {
           })
           break
         }
+        case SessionMessageRole.Abort: {
+          chatMessages.push({
+            role: 'user',
+            content: message.content || 'The user aborted this workflow before it completed.',
+          })
+          break
+        }
         case SessionMessageRole.AssistantText: {
           assistantMessage = {
             role: 'assistant',

@@ -13,4 +13,5 @@ export const enum SessionMessageRole {
   ToolCalls = 'tool-calls',
   Tool = 'tool',
   Error = 'error',
+  Abort = 'abort',
 }

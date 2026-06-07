@@ -77,9 +77,11 @@ export class AgentIpcMainService implements IpcMainService {
         })
         .where(eq(schema.sessions.id, sessionId))
     })
-    ipcMainApi.handle('agent-workflow-abort', async ({ sessionId }) => {
+    ipcMainApi.handle('agent-workflow-abort', async ({ sessionId, workflowId }) => {
       const session = await this.getSession(sessionId)
-      session.abortActiveWorkflow()
+      const workflowNode = session.getWorkflowNode(workflowId)
+      if (!workflowNode) return
+      session.abortWorkflow()
     })
 
     ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId, payload }) => {

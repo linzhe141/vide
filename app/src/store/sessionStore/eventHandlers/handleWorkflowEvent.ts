@@ -50,6 +50,7 @@ export function handleWorkflowEvent(
         session.runtime.running = false
       }
       context.updateWorkflowRuntime((runtime) => {
+        debugger
         runtime.status = 'aborted'
         runtime.waitingHuman = false
       })

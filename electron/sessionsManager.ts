@@ -311,13 +311,23 @@ export class SessionsManager {
     //     .where(eq(sessionWorkflows.id, ctx.workflowId))
     // })
     onWorkflowEvent('workflow-aborted', async ({ ctx }) => {
+      const time = Date.now()
       await db
         .update(sessionWorkflows)
         .set({
           stopStatus: 'aborted',
-          updatedAt: Date.now(),
+          updatedAt: time,
         })
         .where(eq(sessionWorkflows.id, ctx.workflowId))
+      await db.insert(sessionWorkflowMessages).values({
+        id: uuid(),
+        role: SessionMessageRole.Abort,
+        workflowId: ctx.workflowId,
+        content: 'The user aborted this workflow before it completed.',
+        createdAt: time,
+        updatedAt: time,
+        payload: '',
+      })
     })
     onWorkflowEvent('workflow-error', async ({ ctx, error }) => {
       await db

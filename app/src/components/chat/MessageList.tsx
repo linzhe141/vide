@@ -62,6 +62,7 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
       {workflow.messages.map((message) => (
         <MessageView key={message.id} workflow={workflow} message={message} />
       ))}
+      {workflow.runtime.status}
       {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
       {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
     </div>

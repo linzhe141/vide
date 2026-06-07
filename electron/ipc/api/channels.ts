@@ -101,7 +101,7 @@ export interface RenderChannel {
     workflowId: string
     payload: WaitHumanApprovePayload
   }) => void
-  'agent-workflow-abort': (data: { sessionId: string }) => void
+  'agent-workflow-abort': (data: { sessionId: string; workflowId: string }) => void
   'agent-session-switch-auto-approve': (data: { sessionId: string; autoApprove: boolean }) => void
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 

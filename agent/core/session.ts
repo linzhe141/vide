@@ -58,6 +58,7 @@ export class Session {
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
   autoApprove: boolean
   watiHumanWorkflow: Workflow | null = null
+  runningWorkflow: Workflow | null = null
   planners: SessionPlaner[] = []
 
   constructor(options?: {
@@ -81,24 +82,29 @@ export class Session {
   }
 
   async run(userInput: string) {
-    const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
-    const currentHead = this.currentBranch.head
-    if (!currentHead) {
-      this.currentBranch.head = workflowCommitNode
-      if (!this.currentBranch.source) {
-        this.currentBranch.source = workflowCommitNode
+    try {
+      const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
+      this.runningWorkflow = workflow
+      const currentHead = this.currentBranch.head
+      if (!currentHead) {
+        this.currentBranch.head = workflowCommitNode
+        if (!this.currentBranch.source) {
+          this.currentBranch.source = workflowCommitNode
+        }
+      } else {
+        workflowCommitNode.parent = currentHead
+        currentHead.children.push(workflowCommitNode)
+        this.currentBranch.head = workflowCommitNode
       }
-    } else {
-      workflowCommitNode.parent = currentHead
-      currentHead.children.push(workflowCommitNode)
-      this.currentBranch.head = workflowCommitNode
-    }
 
-    const result = await workflow.run(userInput)
-    if (result === 'COMPLETED') {
-      agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
-    } else if (result === 'WAIT_HUMAN_APPROVE') {
-      this.watiHumanWorkflow = workflow
+      const result = await workflow.run(userInput)
+      if (result === 'COMPLETED') {
+        agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
+      } else if (result === 'WAIT_HUMAN_APPROVE') {
+        this.watiHumanWorkflow = workflow
+      }
+    } finally {
+      this.runningWorkflow = null
     }
   }
 
@@ -207,8 +213,12 @@ export class Session {
     return this.workflowNodeMap.get(workflowId) ?? null
   }
 
-  abortActiveWorkflow() {
-    // todo
+  abortWorkflow() {
+    if (this.runningWorkflow) {
+      console.log('\nabortWorkflow\n')
+      this.runningWorkflow.runtime.abort()
+      this.runningWorkflow = null
+    }
   }
 
   async humanApprove(workflowId: string, payload: WaitHumanApprovePayload) {

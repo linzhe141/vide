@@ -56,7 +56,7 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
       handleSend,
       handleFork,
       handleRegenerate,
-      handleAbort: () => abort({ sessionId }),
+      handleAbort: abort,
       sessionId,
     }),
     [abort, handleFork, handleSend, handleRegenerate, sessionId, sessionRuntime]

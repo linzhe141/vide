@@ -69,8 +69,10 @@ export function useWorkflowStream() {
     [handleEvent]
   )
 
-  const abort = useCallback(async ({ sessionId }: { sessionId: string }) => {
-    await window.ipcRendererApi.invoke('agent-workflow-abort', { sessionId })
+  const abort = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
   }, [])
 
   return {

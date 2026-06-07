@@ -18,6 +18,7 @@ import type { WorkflowEventCtx } from './event/channels'
 import type { Session } from './session'
 import { v4 as uuid } from 'uuid'
 import { BASH_TOOL_NAMES } from './tools/bash'
+import { AbortError } from './error'
 
 export type WorkflowState =
   | 'INPUT'
@@ -47,8 +48,9 @@ export class Workflow {
   async runLoop(initialPayload: StepPayload) {
     let payload: StepPayload = initialPayload
 
-    try {
-      while (true) {
+    while (true) {
+      try {
+        this.runtime.throwIfAborted()
         const nextStep = await this.runStep(payload)
 
         // 完成状态
@@ -73,9 +75,15 @@ export class Workflow {
         // 继续执行下一步
         this.state = nextStep.state
         payload = nextStep.payload
+      } catch (error: any) {
+        if (error instanceof AbortError) {
+          this.runtime.workflowSession.addAbortMessage()
+          workflowEvent.emit('workflow-aborted', { ctx: this.runtime.workflowEventCtx })
+          return 'ABORTED'
+        }
+        workflowEvent.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
+        return 'ERROR'
       }
-    } catch (error: any) {
-      workflowEvent.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
     }
   }
   async runStep(payload: StepPayload): Promise<NextStep> {
@@ -112,13 +120,12 @@ export class Workflow {
     let content = ''
     let toolCalls: ToolCall[] = []
 
-    const llmAbortController = new AbortController()
     workflowEvent.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
 
     for await (const chunk of processLLMStream({
       messages,
       tools: this.tools,
-      signal: llmAbortController.signal,
+      signal: this.runtime.signal,
       onReasoningStart: () => {
         workflowEvent.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
       },
@@ -394,7 +401,9 @@ export class WorkflowRuntimeContext {
   readonly workflowSession: WorkflowSession
   readonly branchName: string
   readonly parentWorkflowId: string | null
+  readonly controller = new AbortController()
   userInput: string[] = []
+
   constructor(options: {
     session: Session
     userInput: string
@@ -409,7 +418,19 @@ export class WorkflowRuntimeContext {
     this.userInput.push(options.userInput)
     this.workflowSession = new WorkflowSession()
   }
+  get signal() {
+    return this.controller.signal
+  }
 
+  abort() {
+    this.controller.abort()
+  }
+
+  throwIfAborted() {
+    if (this.signal.aborted) {
+      throw new AbortError()
+    }
+  }
   get sessionId() {
     return this.rootSession.sessionId
   }
@@ -426,10 +447,6 @@ export class WorkflowRuntimeContext {
       parentWorkflowId: this.parentWorkflowId,
     }
   }
-
-  setAbortHandler(handler: (() => void) | null) {
-    //
-  }
 }
 
 export class WorkflowSession {
@@ -437,6 +454,13 @@ export class WorkflowSession {
 
   addMessage(message: ChatMessage) {
     this.messages.push(message)
+  }
+
+  addAbortMessage() {
+    this.messages.push({
+      role: 'user',
+      content: 'The user aborted this workflow before it completed.',
+    })
   }
 
   getMessages() {
