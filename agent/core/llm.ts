@@ -32,7 +32,8 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
   onToolCallsEnd,
 }) {
   try {
-    const stream = await llmClient.chat.completions.create(
+    console.log('singal in processLLMStream', signal)
+    const stream = llmClient.chat.completions.create(
       {
         messages: await buildChatMessages(messages),
         model,
@@ -42,14 +43,14 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
       },
       { signal }
     )
-
+    
     let reasonContent = ''
     let content = ''
     const toolCalls: ToolCall[] = []
     let finishReason: FinishReason = null!
 
     const finishedToolCallName: { name: string; id: string }[] = []
-    for await (const chunk of stream) {
+    for await (const chunk of await stream) {
       const delta = chunk.choices[0]?.delta
       // console.log(JSON.stringify(delta, null, 2))
       const chunkFinishReason = chunk.choices[0].finish_reason
@@ -156,10 +157,14 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
     }
   } catch (error) {
     console.error('Error in processLLMStream:', error)
-    if (error instanceof DOMException && error.name === 'AbortError') {
+    if (error instanceof OpenAI.APIUserAbortError && error.name === 'AbortError') {
       console.error('Stream was aborted by user')
+      // 统一抛出 AbortError，方便上层捕获和处理
       throw new AbortError()
     }
+    console.error('Error in processLLMStream:', error)
+    // 其他错误继续往上抛
+    throw error
   }
 }
 

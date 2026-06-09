@@ -310,8 +310,31 @@ export class SessionsManager {
     //     })
     //     .where(eq(sessionWorkflows.id, ctx.workflowId))
     // })
-    onWorkflowEvent('workflow-aborted', async ({ ctx }) => {
+    onWorkflowEvent('workflow-aborted', async ({ ctx, chunkData }) => {
       const time = Date.now()
+      // abort 时，把未持久化的 reasoning 和 text chunk 存储为消息，然后更新 workflow 状态为 aborted
+      if (chunkData.text) {
+        await db.insert(sessionWorkflowMessages).values({
+          id: uuid(),
+          workflowId: ctx.workflowId,
+          role: SessionMessageRole.AssistantText,
+          content: chunkData.text,
+          payload: '',
+          createdAt: time,
+          updatedAt: time,
+        })
+      }
+      if (chunkData.reasoning) {
+        await db.insert(sessionWorkflowMessages).values({
+          id: uuid(),
+          workflowId: ctx.workflowId,
+          role: SessionMessageRole.AssistantReason,
+          content: chunkData.reasoning,
+          payload: '',
+          createdAt: time,
+          updatedAt: time,
+        })
+      }
       await db
         .update(sessionWorkflows)
         .set({

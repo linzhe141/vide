@@ -18,7 +18,7 @@ import type { WorkflowEventCtx } from './event/channels'
 import type { Session } from './session'
 import { v4 as uuid } from 'uuid'
 import { BASH_TOOL_NAMES } from './tools/bash'
-import { AbortError } from './error'
+import { AbortError, ToolCallError } from './error'
 
 export type WorkflowState =
   | 'INPUT'
@@ -78,7 +78,13 @@ export class Workflow {
       } catch (error: any) {
         if (error instanceof AbortError) {
           this.runtime.workflowSession.addAbortMessage()
-          workflowEvent.emit('workflow-aborted', { ctx: this.runtime.workflowEventCtx })
+          workflowEvent.emit('workflow-aborted', {
+            ctx: this.runtime.workflowEventCtx,
+            chunkData: {
+              reasoning: this.runtime.assistantReasoningChunk,
+              text: this.runtime.assistantChunk,
+            },
+          })
           return 'ABORTED'
         }
         workflowEvent.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
@@ -127,27 +133,33 @@ export class Workflow {
       tools: this.tools,
       signal: this.runtime.signal,
       onReasoningStart: () => {
+        this.runtime.assistantReasoningChunk = ''
         workflowEvent.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
       },
       onReasoningDelta: (chunk) => {
+        this.runtime.assistantReasoningChunk = chunk.content
         workflowEvent.emit('workflow-llm-reasoning-delta', {
           ctx: this.runtime.workflowEventCtx,
           chunk,
         })
       },
       onReasoningEnd: (content) => {
+        this.runtime.assistantReasoningChunk = ''
         workflowEvent.emit('workflow-llm-reasoning-end', {
           ctx: this.runtime.workflowEventCtx,
           content,
         })
       },
       onTextStart: () => {
+        this.runtime.assistantChunk = ''
         workflowEvent.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
       },
       onTextDelta: (chunk) => {
+        this.runtime.assistantChunk = chunk.content
         workflowEvent.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
       },
       onTextEnd: (content) => {
+        this.runtime.assistantChunk = ''
         workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
       },
       onToolCallsStart: () => {
@@ -181,6 +193,10 @@ export class Workflow {
       if ('tool_calls' in chunk && chunk.tool_calls) {
         toolCalls = chunk.tool_calls
       }
+    }
+
+    if (this.runtime.signal.aborted) {
+      throw new AbortError()
     }
     workflowEvent.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
 
@@ -219,18 +235,7 @@ export class Workflow {
     const tool = this.tools.find((t) => t.name === toolName)
     if (!tool) {
       const errorMessage = `Tool not found: ${toolName}`
-      const finishedAt = Date.now()
-      this.runtime.workflowSession.addMessage({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: errorMessage,
-      })
-
-      workflowEvent.emit('workflow-tool-call-error', {
-        ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, error: errorMessage, finishedAt },
-      })
-      return 'call-llm'
+      throw new ToolCallError(errorMessage)
     }
     let args = {}
 
@@ -241,36 +246,9 @@ export class Workflow {
       console.log(error)
       console.log()
 
-      args = toolCall.function.arguments
-
-      let errorMessage = 'An exception occurred while parsing toolCall argument JSON;'
-      const finishedAt = Date.now()
-
-      if (toolName === 'fs_write_file') {
-        errorMessage += `
-Perhaps the [fs_write_file tool] is writing too much content to the file;
-it could be split into modules and written in batches.`
-      }
-      this.runtime.workflowSession.addMessage({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: errorMessage,
-      })
-
-      workflowEvent.emit('workflow-tool-call-error', {
-        ctx: this.runtime.workflowEventCtx,
-        toolCallResult: { id: toolCall.id, toolName, error: errorMessage, finishedAt },
-      })
-      return 'call-llm'
-    }
-
-    const execute = async () => {
-      try {
-        const result = await tool.executor(args)
-        return { success: true, result }
-      } catch (error) {
-        return { success: false, error }
-      }
+      throw new ToolCallError(
+        `Failed to parse tool arguments: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
 
     const startedAt = Date.now()
@@ -278,48 +256,27 @@ it could be split into modules and written in batches.`
       ctx: this.runtime.workflowEventCtx,
       toolCall: { id: toolCall.id, toolName, args },
     })
-    const toolResult = await execute()
+    const toolResult = await tool.executor(args)
     const finishedAt = Date.now()
-    if (toolResult.success) {
-      reason = toolResult.result!.reason
-      const result = toolResult.result!.result
-      this.runtime.workflowSession.addMessage({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: JSON.stringify(toolResult.result),
-      })
+    reason = toolResult.reason
+    const result = toolResult.result
+    this.runtime.workflowSession.addMessage({
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: JSON.stringify(toolResult.result),
+    })
 
-      workflowEvent.emit('workflow-tool-call-success', {
-        ctx: this.runtime.workflowEventCtx,
-        toolCallResult: {
-          id: toolCall.id,
-          toolName,
-          result,
-          startedAt,
-          finishedAt,
-          durationMs: finishedAt - startedAt,
-        },
-      })
-    } else {
-      const error = toolResult.error
-      this.runtime.workflowSession.addMessage({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: 'An exception occurred while executing toolCall: ' + String(error),
-      })
-
-      workflowEvent.emit('workflow-tool-call-error', {
-        ctx: this.runtime.workflowEventCtx,
-        toolCallResult: {
-          id: toolCall.id,
-          toolName,
-          error,
-          startedAt,
-          finishedAt,
-          durationMs: finishedAt - startedAt,
-        },
-      })
-    }
+    workflowEvent.emit('workflow-tool-call-success', {
+      ctx: this.runtime.workflowEventCtx,
+      toolCallResult: {
+        id: toolCall.id,
+        toolName,
+        result,
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt - startedAt,
+      },
+    })
 
     return reason
   }
@@ -340,8 +297,42 @@ it could be split into modules and written in batches.`
         },
       }
     }
+    let reason: ToolResult['reason'] = 'call-llm'
+    try {
+      reason = await this.handleCallTool(toolCall)
+    } catch (error: any) {
+      console.log(`Error executing tool ${toolCall.function.name}:`, error)
+      if (error instanceof ToolCallError) {
+        const errorMessage = 'An exception occurred while executing toolCall: ' + error.message
+        this.runtime.workflowSession.addMessage({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: errorMessage,
+        })
 
-    const reason = await this.handleCallTool(toolCall)
+        workflowEvent.emit('workflow-tool-call-error', {
+          ctx: this.runtime.workflowEventCtx,
+          toolCallResult: {
+            id: toolCall.id,
+            toolName: toolCall.function.name,
+            error: error.message,
+          },
+        })
+        // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
+        const pendingToolCalls = toolCalls.slice(index + 1)
+        for (const t of pendingToolCalls) {
+          this.runtime.workflowSession.addMessage({
+            role: 'tool',
+            tool_call_id: t.id,
+            content: JSON.stringify({
+              result: 'Tool call skipped due to previous error',
+            }),
+          })
+        }
+        return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
+      }
+    }
+
     if (reason === 'stop') {
       return {
         state: 'COMPLETED',
@@ -402,6 +393,10 @@ export class WorkflowRuntimeContext {
   readonly branchName: string
   readonly parentWorkflowId: string | null
   readonly controller = new AbortController()
+
+  // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
+  assistantChunk = ''
+  assistantReasoningChunk = ''
   userInput: string[] = []
 
   constructor(options: {

@@ -39,7 +39,6 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       } = await window.ipcRendererApi.invoke('agent-resume-session', {
         sessionId,
       })
-
       const workflowNodesMap: Record<string, WorkflowNode> = {}
       for (const data of workflowData) {
         const workflow: Workflow = {
@@ -47,7 +46,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
           input: data.userInput,
           messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
           runtime: {
-            status: data.stopStatus === 'finished' ? 'finished' : 'running',
+            status: data.stopStatus,
             waitingHuman: false,
           },
         }

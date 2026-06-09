@@ -59,9 +59,7 @@ All generated files MUST be written inside the returned artifactDir.
       return {
         reason: 'call-llm',
         result: {
-          success: true,
           artifactDir,
-          workspaceId: uuid,
           message: `Artifact workspace created at ${artifactDir}. All generated files MUST be written inside this directory.`,
         },
       }

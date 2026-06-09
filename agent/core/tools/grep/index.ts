@@ -1,6 +1,7 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
 import { DEFAULT_VIDE_HOME } from '../../workspace'
+import { ToolCallError } from '../../error'
 
 export const GREP_TOOL_NAMES = {
   SEARCH: `rg-content-search`,
@@ -53,7 +54,7 @@ export class Grep extends ToolProvider {
     executor: async (args: any = {}) => {
       const { pattern, path = '.', glob, ignoreCase, literal, context, limit = 100 } = args
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const rgArgs: string[] = ['--line-number', '--color=never', '--max-count', String(limit)]
 
         if (ignoreCase) rgArgs.push('-i')
@@ -69,60 +70,43 @@ export class Grep extends ToolProvider {
         })
 
         let stdout = ''
-        let _stderr = ''
-        let killed = false
-
         const MAX_OUTPUT = 2000 // 防止炸 token
 
         proc.stdout.on('data', (data) => {
           if (stdout.length < MAX_OUTPUT) {
             stdout += data.toString()
-          } else if (!killed) {
-            killed = true
-            proc.kill('SIGKILL')
           }
         })
 
-        proc.stderr.on('data', (data) => {
-          _stderr += data.toString()
-        })
-
-        proc.on('close', (code) => {
-          if (!stdout.trim()) {
+        const successHandler = (exitCode: number | null) => {
+          const output = stdout
+          if (!output.trim()) {
             resolve({
               reason: 'call-llm',
               result: {
                 output: 'No matches found',
-                exitCode: code ?? 0,
+                exitCode: exitCode ?? 0,
               },
             })
             return
-          }
-
-          let output = stdout.trim()
-
-          if (killed) {
-            output += '\n\n[truncated: too much output]'
           }
 
           resolve({
             reason: 'call-llm',
             result: {
               output,
-              exitCode: code ?? 0,
+              exitCode: exitCode ?? 0,
             },
           })
-        })
-
+        }
+        proc.on('close', successHandler)
         proc.on('error', (error) => {
-          resolve({
-            reason: 'call-llm',
-            result: {
-              output: '',
-              error: error.message,
-              exitCode: 1,
-            },
-          })
+          proc.off('close', successHandler)
+          reject(
+            new ToolCallError(
+              `Failed to execute grep: ${error instanceof Error ? error.message : String(error)}`
+            )
+          )
         })
       })
     },

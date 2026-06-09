@@ -4,8 +4,9 @@ export class AbortError extends Error {
   }
 }
 
-export class RecoverableError extends Error {
+export class ToolCallError extends Error {
   constructor(message: string) {
-    super(message)
+    super('tool call error')
+    this.message = message
   }
 }

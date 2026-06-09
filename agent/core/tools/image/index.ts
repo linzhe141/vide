@@ -1,5 +1,6 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import { generateImage } from '../../image'
+import { ToolCallError } from '../../error'
 
 export const Image_TOOL_NAMES = {
   GENERATE_IMAGE: `generate-image`,
@@ -31,10 +32,7 @@ Example prompt: "A serene landscape with mountains in the background, a clear bl
       const { prompt } = args
 
       if (!prompt) {
-        return {
-          reason: 'call-llm',
-          result: { error: 'Prompt is required' },
-        }
+        throw new ToolCallError('Prompt is required for image generation')
       }
 
       const imageUrl = await generateImage(prompt)

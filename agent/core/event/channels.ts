@@ -92,7 +92,10 @@ export type WorkflowEventCtx = {
 const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
-  'workflow-aborted': null as unknown as { ctx: WorkflowEventCtx },
+  'workflow-aborted': null as unknown as {
+    ctx: WorkflowEventCtx
+    chunkData: { reasoning: string; text: string }
+  },
   'workflow-wait-human-approve': null as unknown as {
     ctx: WorkflowEventCtx
     data: { index: number; toolCalls: ToolCall[] }
@@ -157,9 +160,6 @@ const WorkflowEventChannels = {
       id: string
       toolName: string
       error: any
-      startedAt?: number
-      finishedAt: number
-      durationMs?: number
     }
   },
   'workflow-tool-call-reject': null as unknown as {

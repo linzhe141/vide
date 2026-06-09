@@ -11,6 +11,7 @@ import { AssistantTextMessage } from './messages/AssistantTextMessage'
 import { ToolCallMessage } from './messages/ToolCallMessage'
 import { UserInputMessage } from './messages/UserInputMessage'
 import { SessionActions } from './SessionActions'
+import { CircleStop } from 'lucide-react'
 
 export function MessageList() {
   const { sessionId } = useChatContext()
@@ -62,7 +63,7 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
       {workflow.messages.map((message) => (
         <MessageView key={message.id} workflow={workflow} message={message} />
       ))}
-      {workflow.runtime.status}
+      {workflow.runtime.status === 'aborted' && <AbortedStatus />}
       {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
       {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
     </div>
@@ -90,3 +91,13 @@ function LoadingStatusCircle() {
     </div>
   )
 }
+
+function AbortedStatus() {
+  return (
+    <div className='border-border/60 bg-background text-text-secondary flex items-center gap-2 rounded-xl border px-3 py-2 text-sm'>
+      <CircleStop className='text-text-secondary/80 h-4 w-4' />
+
+      <span>Workflow aborted</span>
+    </div>
+  )
+} 

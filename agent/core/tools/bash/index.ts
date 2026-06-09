@@ -1,6 +1,7 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import { spawn } from 'node:child_process'
 import { DEFAULT_VIDE_HOME } from '../../workspace'
+import { ToolCallError } from '../../error'
 
 export const BASH_TOOL_NAMES = {
   EXECUTE_BASH_COMMAND: `execute-bash-command`,
@@ -42,7 +43,7 @@ export class Bash extends ToolProvider {
     executor: async (args: any = {}) => {
       const { command, background = false } = args
       const timeout = 30000
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const proc = spawn('bash', ['-c', command], {
           env: { ...process.env },
           cwd: this.runtime.workspacePath || DEFAULT_VIDE_HOME,
@@ -51,32 +52,32 @@ export class Bash extends ToolProvider {
 
         let stdout = ''
         let stderr = ''
-        let timedOut = false
-        this.runtime.setAbortHandler(() => {
+
+        const abortHandler = () => {
           proc.kill('SIGKILL')
-        })
+        }
+        this.runtime.signal.addEventListener('abort', abortHandler, { once: true })
+        const timeoutId = setTimeout(() => {
+          proc.kill('SIGKILL')
+          this.runtime.signal.removeEventListener('abort', abortHandler)
+          reject(new ToolCallError(`Command timed out after ${timeout / 1000} seconds`))
+        }, timeout)
 
         if (background) {
+          clearTimeout(timeoutId)
           proc.unref()
-          this.runtime.setAbortHandler(null)
           resolve({
             reason: 'call-llm',
             result: {
               stdout: '',
               stderr: '',
               exitCode: 0,
-              timedOut: false,
               background: true,
               pid: proc.pid,
             },
           })
           return
         }
-
-        const timeoutId = setTimeout(() => {
-          timedOut = true
-          proc.kill('SIGKILL')
-        }, timeout)
 
         proc.stdout.on('data', (data) => {
           stdout += data.toString()
@@ -86,9 +87,9 @@ export class Bash extends ToolProvider {
           stderr += data.toString()
         })
 
-        proc.on('close', (exitCode) => {
+        const successHandler = (exitCode: number | null) => {
           clearTimeout(timeoutId)
-          this.runtime.setAbortHandler(null)
+          this.runtime.signal.removeEventListener('abort', abortHandler)
 
           resolve({
             reason: 'call-llm',
@@ -96,23 +97,16 @@ export class Bash extends ToolProvider {
               stdout,
               stderr,
               exitCode: exitCode ?? 0,
-              timedOut,
             },
           })
-        })
+        }
+        proc.on('close', successHandler)
 
         proc.on('error', (error) => {
           clearTimeout(timeoutId)
-          this.runtime.setAbortHandler(null)
-          resolve({
-            reason: 'call-llm',
-            result: {
-              stdout: '',
-              stderr: `Error executing command: ${error.message}`,
-              exitCode: 1,
-              timedOut: false,
-            },
-          })
+          proc.off('close', successHandler)
+          this.runtime.signal.removeEventListener('abort', abortHandler)
+          reject(new ToolCallError(`Error executing command: ${error.message}`))
         })
       })
     },

@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import type { Tool } from '@/agent/core/types'
+import { ToolCallError } from '../error'
 
 const CONFIG = {
   MAX_FILE_SIZE: 1024 * 1024, // 1MB
@@ -126,7 +127,9 @@ export const fileRead: Tool = {
       const result = await readFileSmart(path, encoding)
       return { reason: 'call-llm', result }
     } catch (err: any) {
-      throw new Error(`Read file failed: ${err.message}`)
+      throw new ToolCallError(
+        `Read file failed: ${err instanceof Error ? err.message : String(err)}`
+      )
     }
   },
 }

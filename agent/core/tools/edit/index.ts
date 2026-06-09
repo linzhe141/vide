@@ -2,6 +2,7 @@ import { defineTool, ToolProvider } from '../toolProvider'
 import fs from 'fs/promises'
 import * as Diff from 'diff'
 import { resolveWorkspacePath } from '../../workspace'
+import { ToolCallError } from '../../error'
 
 export const EDIT_TOOL_NAMES = {
   EDIT_FILE: `edit-file`,
@@ -65,20 +66,13 @@ export class Edit extends ToolProvider {
       const { path: filePath, edits } = args
 
       if (!filePath) {
-        return {
-          reason: 'call-llm',
-          result: { success: false, error: 'Path is required' },
-        }
+        throw new ToolCallError('Path is required')
       }
 
       if (!Array.isArray(edits) || edits.length === 0) {
-        return {
-          reason: 'call-llm',
-          result: {
-            success: false,
-            error: 'edits must be an array with at least one { oldText, newText } object',
-          },
-        }
+        throw new ToolCallError(
+          `edits must be an array with at least one { oldText, newText } object`
+        )
       }
 
       try {
@@ -121,7 +115,9 @@ export class Edit extends ToolProvider {
         }
       } catch (error: any) {
         console.log('edit_file error', error)
-        throw error
+        throw new ToolCallError(
+          `Failed to edit file: ${error instanceof Error ? error.message : String(error)}`
+        )
       }
     },
   })

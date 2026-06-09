@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { resolveWorkspacePath } from '../../workspace'
+import { ToolCallError } from '../../error'
 
 export const WRITE_TOOL_NAMES = {
   WRITE_FILE: `write-file`,
@@ -41,10 +42,7 @@ export class Write extends ToolProvider {
       const { path: filePath, content } = args
 
       if (!filePath) {
-        return {
-          reason: 'call-llm',
-          result: { success: false, error: 'Path is required' },
-        }
+        throw new ToolCallError('Path is required for writing a file')
       }
 
       try {
@@ -66,13 +64,7 @@ export class Write extends ToolProvider {
         }
       } catch (error: any) {
         console.log('write_file error', error)
-        return {
-          reason: 'call-llm',
-          result: {
-            success: false,
-            error: error.message,
-          },
-        }
+        throw new ToolCallError(`Failed to write file: ${error.message}`)
       }
     },
   })

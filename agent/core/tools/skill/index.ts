@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { getSkillsRoot } from '../../workspace'
+import { ToolCallError } from '../../error'
 
 async function isDirectoryExists(dirPath: string) {
   try {
@@ -63,10 +64,7 @@ Use this when a task matches an available skill description and you need the ful
       const name = args.name.trim()
       const targetSkill = SkillsMap[name]
       if (!targetSkill) {
-        return {
-          reason: 'call-llm',
-          result: `Skill "${name}" is not available`,
-        }
+        throw new ToolCallError(`Skill "${name}" is not available.`)
       }
       return {
         reason: 'call-llm',

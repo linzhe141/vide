@@ -2,6 +2,7 @@ import { uuid } from '@/app/src/lib/uuid'
 import { plannerEvent } from '../../event'
 import { SessionPlaner } from '../../session'
 import { defineTool, ToolProvider } from '../toolProvider'
+import { ToolCallError } from '../../error'
 
 export type PlanStep = {
   id: string
@@ -101,17 +102,11 @@ Set "running" before starting a step, "completed" when it finishes, "failed" if 
       const { plannerId, id, status } = args
       const planner = this.runtime.rootSession.planners.find((item) => item.id === plannerId)
       if (!planner) {
-        return {
-          reason: 'call-llm',
-          result: { content: `Planner ${plannerId} not found.` },
-        }
+        throw new ToolCallError(`Planner ${plannerId} not found.`)
       }
       const target = planner.plans.find((item) => item.id === id)
       if (!target) {
-        return {
-          reason: 'call-llm',
-          result: { content: `Plan step ${id} not found in planner ${plannerId}.` },
-        }
+        throw new ToolCallError(`Plan step ${id} not found in planner ${plannerId}.`)
       }
 
       target.status = status

@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { AbortError } from './error'
 
 let model: string = null!
 export let imageClient: OpenAI = null!
@@ -29,7 +30,13 @@ export async function generateImage(prompt: string) {
     console.log('生成成功：', response.data![0].url)
     return response.data![0].url
   } catch (error) {
-    console.error('生成失败：', error)
+    if (error instanceof OpenAI.APIUserAbortError && error.name === 'AbortError') {
+      console.error('Stream was aborted by user')
+      // 统一抛出 AbortError，方便上层捕获和处理
+      throw new AbortError()
+    }
+    console.error('Error in processLLMStream:', error)
+    // 其他错误继续往上抛
     throw error
   }
 }
