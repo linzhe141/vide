@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { Agent } from '@/agent/core/agent'
 import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
 import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/core/event/channels'
@@ -11,6 +11,8 @@ import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
+import { SessionMessageRole } from '@/types'
+import type { ToolCall } from '@/agent/core/types'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -87,11 +89,77 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId, payload }) => {
       const session = await this.getSession(sessionId)
       session.humanApprove(workflowId, payload)
+
+      // db
+      const targetToolCall = payload.toolCalls[payload.index]
+      const targetMessages = await db
+        .select()
+        .from(schema.sessionWorkflowMessages)
+        .where(
+          and(
+            eq(schema.sessionWorkflowMessages.workflowId, workflowId),
+            eq(schema.sessionWorkflowMessages.role, SessionMessageRole.ToolCalls)
+          )
+        )
+      const targetMessage = targetMessages.find((m) => {
+        const toolCalls = JSON.parse(m.payload!) as ToolCall[]
+        return toolCalls.some((t) => t.id === targetToolCall.id)
+      })
+      if (!targetMessage) return
+      await db
+        .update(schema.sessionWorkflowMessages)
+        .set({
+          payload: JSON.stringify(
+            payload.toolCalls.map((t) => {
+              if (t.id === targetToolCall.id) {
+                return {
+                  ...t,
+                  status: 'human-approved',
+                }
+              }
+              return t
+            })
+          ),
+        })
+        .where(and(eq(schema.sessionWorkflowMessages.id, targetMessage.id)))
     })
 
     ipcMainApi.handle('agent-human-rejected', async ({ sessionId, workflowId, payload }) => {
       const session = await this.getSession(sessionId)
       session.rejectHumanApprove(workflowId, payload)
+
+      // db
+      const targetToolCall = payload.toolCalls[payload.index]
+      const targetMessages = await db
+        .select()
+        .from(schema.sessionWorkflowMessages)
+        .where(
+          and(
+            eq(schema.sessionWorkflowMessages.workflowId, workflowId),
+            eq(schema.sessionWorkflowMessages.role, SessionMessageRole.ToolCalls)
+          )
+        )
+      const targetMessage = targetMessages.find((m) => {
+        const toolCalls = JSON.parse(m.payload!) as ToolCall[]
+        return toolCalls.some((t) => t.id === targetToolCall.id)
+      })
+      if (!targetMessage) return
+      await db
+        .update(schema.sessionWorkflowMessages)
+        .set({
+          payload: JSON.stringify(
+            payload.toolCalls.map((t) => {
+              if (t.id === targetToolCall.id) {
+                return {
+                  ...t,
+                  status: 'human-rejected',
+                }
+              }
+              return t
+            })
+          ),
+        })
+        .where(and(eq(schema.sessionWorkflowMessages.id, targetMessage.id)))
     })
 
     ipcMainApi.handle('agent-session-fork', async ({ sessionId, targetWorkflowId }) => {

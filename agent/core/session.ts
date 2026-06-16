@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid'
-import { agentEvent } from './event'
+import { agentEvent, workflowEvent } from './event'
 import type { PlanStep } from './tools/planner'
 import type { ChatMessage, WaitHumanApprovePayload } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
@@ -214,10 +214,23 @@ export class Session {
   }
 
   abortWorkflow() {
+    console.log('\nabortWorkflow\n')
     if (this.runningWorkflow) {
-      console.log('\nabortWorkflow\n')
-      this.runningWorkflow.runtime.abort()
+      const runtime = this.runningWorkflow.runtime
+      runtime.abort()
       this.runningWorkflow = null
+    }
+    if (this.watiHumanWorkflow) {
+      const runtime = this.watiHumanWorkflow.runtime
+      runtime.abort()
+      runtime.workflowSession.addAbortMessage()
+      workflowEvent.emit('workflow-aborted', {
+        ctx: runtime.workflowEventCtx,
+        chunkData: {
+          reasoning: runtime.assistantReasoningChunk,
+          text: runtime.assistantChunk,
+        },
+      })
     }
   }
 

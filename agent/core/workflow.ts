@@ -180,9 +180,18 @@ export class Workflow {
         })
       },
       onToolCallsEnd: (toolCalls) => {
+        const autoApprove = this.runtime.rootSession.autoApprove
         workflowEvent.emit('workflow-llm-tool-calls-end', {
           ctx: this.runtime.workflowEventCtx,
-          toolCalls,
+          toolCalls: toolCalls.map((t) => {
+            return {
+              ...t,
+              status:
+                t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND && autoApprove === false
+                  ? 'waiting-human'
+                  : 'auto-approved',
+            }
+          }),
         })
       },
     })) {
@@ -365,10 +374,20 @@ export class Workflow {
     const toolCall = toolCalls[index]
 
     // 将拒绝信息添加到会话中
+    const rejectMessage = `Human rejected the execution of this tool call.`
     this.runtime.workflowSession.addMessage({
       role: 'tool',
       tool_call_id: toolCall.id,
-      content: 'Command execution rejected by human approval',
+      content: rejectMessage,
+    })
+
+    workflowEvent.emit('workflow-tool-call-error', {
+      ctx: this.runtime.workflowEventCtx,
+      toolCallResult: {
+        id: toolCall.id,
+        toolName: toolCall.function.name,
+        error: rejectMessage,
+      },
     })
 
     // 如果还有更多工具调用，继续执行下一个

@@ -40,7 +40,6 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
               key={tool.id}
               tool={tool}
               result={findToolResult(workflow, tool.id)}
-              waitHumanApprove={workflow.runtime.waitingHuman}
               originToolCalls={message.toolCalls}
               workflow={workflow}
             />

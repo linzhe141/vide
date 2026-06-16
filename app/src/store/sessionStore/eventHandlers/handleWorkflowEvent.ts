@@ -50,7 +50,6 @@ export function handleWorkflowEvent(
         session.runtime.running = false
       }
       context.updateWorkflowRuntime((runtime) => {
-        debugger
         runtime.status = 'aborted'
         runtime.waitingHuman = false
       })
@@ -185,9 +184,6 @@ export function handleWorkflowEvent(
         toolCallId: event.data.toolCallResult.id,
         status: 'error',
         error: event.data.toolCallResult.error,
-        startedAt: event.data.toolCallResult.startedAt,
-        finishedAt: event.data.toolCallResult.finishedAt,
-        durationMs: event.data.toolCallResult.durationMs,
       })
       return
 

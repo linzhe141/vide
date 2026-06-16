@@ -35,6 +35,7 @@ export type ToolCall = {
   function: { arguments: string; name: string }
   id: string
   type: 'function'
+  status: 'auto-approved' | 'waiting-human' | 'human-approved' | 'human-rejected'
 }
 
 export type UserInputStepPayload = {

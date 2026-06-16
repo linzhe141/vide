@@ -18,6 +18,12 @@ type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
     buildFromDatabase: (data: Session) => void
+    changeToolCallStatus: (data: {
+      sessionId: string
+      workflowId: string
+      toolCallId: string
+      newStatus: 'human-approved' | 'human-rejected'
+    }) => void
     mergeSessionsList: (
       data: {
         id: string
@@ -88,6 +94,23 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             return
           }
           state.sessions.push(data)
+        })
+      },
+      changeToolCallStatus(data) {
+        set((state) => {
+          const { sessionId, workflowId, toolCallId, newStatus } = data
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const workflowNode = session.workflowNodesMap[workflowId]
+          if (!workflowNode) return
+          const toolCallMessage = workflowNode.workflow.messages
+            .filter((item) => item.role === 'tool-call')
+            .map((i) => i.toolCalls)
+            .flat()
+          if (!toolCallMessage.length) return
+          const targetToolCall = toolCallMessage.find((t) => t.id === toolCallId)
+          if (!targetToolCall) return
+          targetToolCall.status = newStatus
         })
       },
       mergeSessionsList(data) {

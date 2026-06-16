@@ -14,25 +14,20 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useChatContext } from '../../ChatProvider'
+import { useSessionStoreActions } from '@/app/src/store/sessionStore'
 
 type BashToolCallProps = {
   tool: ToolCall
   result?: ToolResultSessionMessage
   originToolCalls: ToolCall[]
-  waitHumanApprove: boolean
   workflow: Workflow
 }
 
-function BashToolCall({
-  tool,
-  result,
-  waitHumanApprove,
-  workflow,
-  originToolCalls,
-}: BashToolCallProps) {
+function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallProps) {
   const { sessionId } = useChatContext()
+  const { changeToolCallStatus } = useSessionStoreActions()
   const [open, setOpen] = useState(false)
-  const isRunning = !waitHumanApprove && !result
+  const isRunning = (tool.status === 'auto-approved' || tool.status === 'human-approved') && !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
@@ -54,6 +49,12 @@ function BashToolCall({
 
   const humanApproveToolCall = () => {
     const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    changeToolCallStatus({
+      sessionId,
+      workflowId: workflow.id,
+      toolCallId: tool.id,
+      newStatus: 'human-approved',
+    })
     window.ipcRendererApi.invoke('agent-human-approved', {
       sessionId,
       workflowId: workflow.id,
@@ -66,6 +67,12 @@ function BashToolCall({
 
   const humanRejectToolCall = () => {
     const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    changeToolCallStatus({
+      sessionId,
+      workflowId: workflow.id,
+      toolCallId: tool.id,
+      newStatus: 'human-rejected',
+    })
     window.ipcRendererApi.invoke('agent-human-rejected', {
       sessionId,
       workflowId: workflow.id,
@@ -90,7 +97,7 @@ function BashToolCall({
             <span className='text-foreground truncate font-mono text-[14px] font-medium'>
               {command}
             </span>
-            {waitHumanApprove && !result && (
+            {tool.status === 'waiting-human' && (
               <ApprovalActions onApprove={humanApproveToolCall} onReject={humanRejectToolCall} />
             )}
             {isSuccess && <StatusBadge variant='success' label='Done' />}
