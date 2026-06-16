@@ -5,7 +5,7 @@ import { IS_DEV } from './utils'
 import type { AppManager } from './appManager'
 import { ipcMainApi } from './ipc/api/ipcMain'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const iconPath = path.join(__dirname, '../../../resources/logo.png')
 
 export class WindowManager {
