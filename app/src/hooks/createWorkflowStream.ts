@@ -90,3 +90,81 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   })
   return stream
 }
+
+export function resumeWorkflowStream(
+  sessionId: string,
+  workflowId: string,
+  abortSignal: AbortSignal
+) {
+  let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
+  function cleanUp() {
+    eventListeners.forEach((remove) => remove())
+    eventListeners = []
+  }
+  const stream = new ReadableStream({
+    start(controller) {
+      // 监听 abort 信号
+      abortSignal.addEventListener('abort', () => {
+        if (sessionId && workflowId) {
+          window.ipcRendererApi.invoke('agent-workflow-abort', {
+            sessionId: sessionId,
+            workflowId: workflowId,
+          })
+        }
+      })
+
+      agentEventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
+          if (sessionId === data.sessionId) {
+            controller.enqueue({ type: eventName, data })
+          }
+
+          if (sessionId === data.sessionId && eventName === 'agent-session-finished') {
+            controller.close()
+            cleanUp()
+          }
+        })
+        eventListeners.push(remove)
+      })
+
+      plannerEventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
+          if (sessionId  === data.sessionId) {
+            controller.enqueue({ type: eventName, data })
+          }
+        })
+        eventListeners.push(remove)
+      })
+
+      workflowEventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
+          if (
+            eventName === 'workflow-start' &&
+            sessionId === null &&
+            workflowId === null
+          ) {
+            sessionId = data.ctx.sessionId
+            workflowId = data.ctx.workflowId
+          }
+          if (sessionId === data.ctx.sessionId) {
+            controller.enqueue({ type: eventName, data })
+          }
+
+          if (
+            sessionId === data.ctx.sessionId &&
+            (eventName === 'workflow-error' || eventName === 'workflow-aborted')
+          ) {
+            controller.close()
+            cleanUp()
+          }
+        })
+        eventListeners.push(remove)
+      })
+    },
+    cancel() {
+      // 清理所有监听器
+      cleanUp()
+    },
+  })
+  return stream
+}

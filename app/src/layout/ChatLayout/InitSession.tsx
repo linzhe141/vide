@@ -11,10 +11,12 @@ import { context } from '../../hooks/chatContenxt'
 import type { WorkflowData } from '@/electron/ipc/api/channels'
 import { ASK_USER_TOOL_NAMES } from '@/agent/core/tools/askUserQuestion'
 import { useChatContext } from '../../components/chat/ChatProvider'
+import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
   const { buildFromDatabase } = useSessionStoreActions()
+  const { resumeRunningWorkflow } = useWorkflowStream()
   const currentSession = useSession(sessionId)
   useEffect(() => {
     const firstInput = context.firstInput
@@ -39,8 +41,16 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       } = await window.ipcRendererApi.invoke('agent-resume-session', {
         sessionId,
       })
+
       const workflowNodesMap: Record<string, WorkflowNode> = {}
       for (const data of workflowData) {
+        const isCompleted = await window.ipcRendererApi.invoke('query-workflow-is-completed', {
+          sessionId,
+          workflowId: data.id,
+        })
+        if (!isCompleted) {
+          const message = await resumeRunningWorkflow(sessionId, data.id)
+        }
         const workflow: Workflow = {
           id: data.id,
           input: data.userInput,

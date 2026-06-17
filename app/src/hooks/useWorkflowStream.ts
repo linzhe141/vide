@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { createWorkflowStream } from './createWorkflowStream'
+import { createWorkflowStream, resumeWorkflowStream } from './createWorkflowStream'
 import { useSessionStoreActions } from '../store/sessionStore'
 import type { WorkflowState } from './createWorkflowStream'
 
@@ -69,6 +69,36 @@ export function useWorkflowStream() {
     [handleEvent]
   )
 
+  const resumeRunningWorkflow = useCallback(
+    async (sessionId: string, workflowId: string) => {
+      setRunning(true)
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      const stream = resumeWorkflowStream(sessionId, workflowId, abortController.signal)
+      const reader = stream.getReader()
+      readerRef.current = reader
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          if (!value) continue
+          handleEvent(value)
+        }
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.error(err)
+        }
+      } finally {
+        setRunning(false)
+        reader.releaseLock()
+        cleanup()
+      }
+    },
+    [handleEvent]
+  )
+
   const abort = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -78,6 +108,7 @@ export function useWorkflowStream() {
   return {
     send,
     abort,
+    resumeRunningWorkflow,
     running,
   }
 }

@@ -228,6 +228,20 @@ export class AgentIpcMainService implements IpcMainService {
         })
         .where(eq(schema.askUserQuestions.workflowId, data.workflowId))
     })
+
+    ipcMainApi.handle('query-workflow-is-completed', async ({ sessionId, workflowId }) => {
+      logger.info('query-workflow-is-completed ', sessionId, workflowId)
+      const session = await this.getSession(sessionId)
+
+      return session.runningWorkflow?.state === 'COMPLETED'
+    })
+
+    ipcMainApi.handle('resume-running-workflow', async ({ sessionId, workflowId }) => {
+      logger.info('resume-running-workflow ', sessionId, workflowId)
+      const session = await this.getSession(sessionId)
+
+      return session.runningWorkflow?.runtime.workflowSession.messages ?? []
+    })
   }
 
   private async getSession(sessionId: string) {

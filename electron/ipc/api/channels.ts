@@ -7,7 +7,7 @@ import type {
 } from '@/agent/core/event/channels'
 import type { sessionWorkflowMessages } from '@/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
-import type { WaitHumanApprovePayload } from '@/agent/core/types'
+import type { ChatMessage, WaitHumanApprovePayload } from '@/agent/core/types'
 
 export type FileNode = {
   name: string
@@ -148,6 +148,15 @@ export interface RenderChannel {
       updatedAt: number
     }[]
   >
+  //
+  'query-workflow-is-completed': (data: {
+    sessionId: string
+    workflowId: string
+  }) => Promise<boolean>
+  'resume-running-workflow': (data: {
+    sessionId: string
+    workflowId: string
+  }) => Promise<ChatMessage[]>
 }
 
 export type MainChannel = {
