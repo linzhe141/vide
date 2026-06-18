@@ -13,6 +13,7 @@ import type {
 } from './types'
 import { processLLMStream } from './llm'
 import { workflowEvent } from './event'
+import { WorkflowEventChannels } from './event/channels'
 import { registorTools } from './tools/registor'
 import type { WorkflowEventCtx } from './event/channels'
 import type { Session } from './session'
@@ -41,55 +42,59 @@ export class Workflow {
   }
 
   async run(input: string) {
-    workflowEvent.emit('workflow-start', { input, ctx: this.runtime.workflowEventCtx })
+    this.runtime.emit('workflow-start', { input, ctx: this.runtime.workflowEventCtx })
     return await this.runLoop({ input } as UserInputStepPayload)
   }
 
   async runLoop(initialPayload: StepPayload) {
     let payload: StepPayload = initialPayload
 
-    while (true) {
-      try {
-        this.runtime.throwIfAborted()
-        const nextStep = await this.runStep(payload)
+    try {
+      while (true) {
+        try {
+          this.runtime.throwIfAborted()
+          const nextStep = await this.runStep(payload)
 
-        // 完成状态
-        if (nextStep.state === 'COMPLETED') {
-          workflowEvent.emit('workflow-finished', {
-            ctx: this.runtime.workflowEventCtx,
-          })
-          return 'COMPLETED'
-        }
+          // 完成状态
+          if (nextStep.state === 'COMPLETED') {
+            this.runtime.emit('workflow-finished', {
+              ctx: this.runtime.workflowEventCtx,
+            })
+            return 'COMPLETED'
+          }
 
-        // 等待人工审批
-        if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-          workflowEvent.emit('workflow-wait-human-approve', {
-            ctx: this.runtime.workflowEventCtx,
-            data: nextStep.payload as WaitHumanApprovePayload,
-          })
-          // 需要 保持 状态，等待人工审批结果
+          // 等待人工审批
+          if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
+            this.runtime.emit('workflow-wait-human-approve', {
+              ctx: this.runtime.workflowEventCtx,
+              data: nextStep.payload as WaitHumanApprovePayload,
+            })
+            // 需要 保持 状态，等待人工审批结果
+            this.state = nextStep.state
+            return 'WAIT_HUMAN_APPROVE'
+          }
+
+          // 继续执行下一步
           this.state = nextStep.state
-          return 'WAIT_HUMAN_APPROVE'
+          payload = nextStep.payload
+        } catch (error: any) {
+          if (error instanceof AbortError) {
+            this.runtime.workflowSession.addAbortMessage()
+            this.runtime.emit('workflow-aborted', {
+              ctx: this.runtime.workflowEventCtx,
+              chunkData: {
+                reasoning: this.runtime.assistantReasoningChunk,
+                text: this.runtime.assistantChunk,
+              },
+            })
+            return 'ABORTED'
+          }
+          this.runtime.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
+          return 'ERROR'
         }
-
-        // 继续执行下一步
-        this.state = nextStep.state
-        payload = nextStep.payload
-      } catch (error: any) {
-        if (error instanceof AbortError) {
-          this.runtime.workflowSession.addAbortMessage()
-          workflowEvent.emit('workflow-aborted', {
-            ctx: this.runtime.workflowEventCtx,
-            chunkData: {
-              reasoning: this.runtime.assistantReasoningChunk,
-              text: this.runtime.assistantChunk,
-            },
-          })
-          return 'ABORTED'
-        }
-        workflowEvent.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
-        return 'ERROR'
       }
+    } finally {
+      this.runtime.events = []
     }
   }
   async runStep(payload: StepPayload): Promise<NextStep> {
@@ -126,7 +131,7 @@ export class Workflow {
     let content = ''
     let toolCalls: ToolCall[] = []
 
-    workflowEvent.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
+    this.runtime.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
 
     for await (const chunk of processLLMStream({
       messages,
@@ -134,54 +139,54 @@ export class Workflow {
       signal: this.runtime.signal,
       onReasoningStart: () => {
         this.runtime.assistantReasoningChunk = ''
-        workflowEvent.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+        this.runtime.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
       },
       onReasoningDelta: (chunk) => {
         this.runtime.assistantReasoningChunk = chunk.content
-        workflowEvent.emit('workflow-llm-reasoning-delta', {
+        this.runtime.emit('workflow-llm-reasoning-delta', {
           ctx: this.runtime.workflowEventCtx,
           chunk,
         })
       },
       onReasoningEnd: (content) => {
         this.runtime.assistantReasoningChunk = ''
-        workflowEvent.emit('workflow-llm-reasoning-end', {
+        this.runtime.emit('workflow-llm-reasoning-end', {
           ctx: this.runtime.workflowEventCtx,
           content,
         })
       },
       onTextStart: () => {
         this.runtime.assistantChunk = ''
-        workflowEvent.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
+        this.runtime.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
       },
       onTextDelta: (chunk) => {
         this.runtime.assistantChunk = chunk.content
-        workflowEvent.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
+        this.runtime.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
       },
       onTextEnd: (content) => {
         this.runtime.assistantChunk = ''
-        workflowEvent.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
+        this.runtime.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
       },
       onToolCallsStart: () => {
-        workflowEvent.emit('workflow-llm-tool-calls-start', {
+        this.runtime.emit('workflow-llm-tool-calls-start', {
           ctx: this.runtime.workflowEventCtx,
         })
       },
       onToolCallName: (data) => {
-        workflowEvent.emit('workflow-llm-tool-call-name', {
+        this.runtime.emit('workflow-llm-tool-call-name', {
           ctx: this.runtime.workflowEventCtx,
           data,
         })
       },
       onToolCallArguments: (data) => {
-        workflowEvent.emit('workflow-llm-tool-call-arguments', {
+        this.runtime.emit('workflow-llm-tool-call-arguments', {
           ctx: this.runtime.workflowEventCtx,
           data,
         })
       },
       onToolCallsEnd: (toolCalls) => {
         const autoApprove = this.runtime.rootSession.autoApprove
-        workflowEvent.emit('workflow-llm-tool-calls-end', {
+        this.runtime.emit('workflow-llm-tool-calls-end', {
           ctx: this.runtime.workflowEventCtx,
           toolCalls: toolCalls.map((t) => {
             return {
@@ -207,7 +212,7 @@ export class Workflow {
     if (this.runtime.signal.aborted) {
       throw new AbortError()
     }
-    workflowEvent.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
+    this.runtime.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
 
     return { content, toolCalls }
   }
@@ -239,14 +244,13 @@ export class Workflow {
   }
 
   async handleCallTool(toolCall: ToolCall): Promise<ToolResult['reason']> {
-    let reason: ToolResult['reason'] = 'call-llm'
     const toolName = toolCall.function.name
     const tool = this.tools.find((t) => t.name === toolName)
     if (!tool) {
       const errorMessage = `Tool not found: ${toolName}`
       throw new ToolCallError(errorMessage)
     }
-    let args = {}
+    let args: Record<string, unknown>
 
     try {
       args = JSON.parse(toolCall.function.arguments)
@@ -261,13 +265,13 @@ export class Workflow {
     }
 
     const startedAt = Date.now()
-    workflowEvent.emit('workflow-tool-call-start', {
+    this.runtime.emit('workflow-tool-call-start', {
       ctx: this.runtime.workflowEventCtx,
       toolCall: { id: toolCall.id, toolName, args },
     })
     const toolResult = await tool.executor(args)
     const finishedAt = Date.now()
-    reason = toolResult.reason
+    const reason = toolResult.reason
     const result = toolResult.result
     this.runtime.workflowSession.addMessage({
       role: 'tool',
@@ -275,7 +279,7 @@ export class Workflow {
       content: JSON.stringify(toolResult.result),
     })
 
-    workflowEvent.emit('workflow-tool-call-success', {
+    this.runtime.emit('workflow-tool-call-success', {
       ctx: this.runtime.workflowEventCtx,
       toolCallResult: {
         id: toolCall.id,
@@ -319,7 +323,7 @@ export class Workflow {
           content: errorMessage,
         })
 
-        workflowEvent.emit('workflow-tool-call-error', {
+        this.runtime.emit('workflow-tool-call-error', {
           ctx: this.runtime.workflowEventCtx,
           toolCallResult: {
             id: toolCall.id,
@@ -381,7 +385,7 @@ export class Workflow {
       content: rejectMessage,
     })
 
-    workflowEvent.emit('workflow-tool-call-error', {
+    this.runtime.emit('workflow-tool-call-error', {
       ctx: this.runtime.workflowEventCtx,
       toolCallResult: {
         id: toolCall.id,
@@ -405,6 +409,10 @@ export class Workflow {
   }
 }
 
+type WorkflowEventRecord = {
+  eventName: keyof typeof WorkflowEventChannels
+  data: (typeof WorkflowEventChannels)[WorkflowEventRecord['eventName']]
+}
 export class WorkflowRuntimeContext {
   readonly rootSession: Session
   readonly workflowId: string
@@ -417,6 +425,7 @@ export class WorkflowRuntimeContext {
   assistantChunk = ''
   assistantReasoningChunk = ''
   userInput: string[] = []
+  events: WorkflowEventRecord[] = []
 
   constructor(options: {
     session: Session
@@ -432,10 +441,13 @@ export class WorkflowRuntimeContext {
     this.userInput.push(options.userInput)
     this.workflowSession = new WorkflowSession()
   }
+  emit(eventName: WorkflowEventRecord['eventName'], data: WorkflowEventRecord['data']) {
+    this.events.push({ eventName, data })
+    workflowEvent.emit(eventName, data)
+  }
   get signal() {
     return this.controller.signal
   }
-
   abort() {
     this.controller.abort()
   }

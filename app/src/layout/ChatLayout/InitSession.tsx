@@ -43,27 +43,30 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       })
 
       const workflowNodesMap: Record<string, WorkflowNode> = {}
+      let notCompletedWorkflowId: string | null = null
       for (const data of workflowData) {
         const isCompleted = await window.ipcRendererApi.invoke('query-workflow-is-completed', {
           sessionId,
           workflowId: data.id,
         })
+        console.log('isCompleted', data.id, isCompleted)
         if (!isCompleted) {
-          const message = await resumeRunningWorkflow(sessionId, data.id)
-        }
-        const workflow: Workflow = {
-          id: data.id,
-          input: data.userInput,
-          messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
-          runtime: {
-            status: data.stopStatus,
-            waitingHuman: false,
-          },
-        }
-        workflowNodesMap[data.id] = {
-          workflow,
-          children: [],
-          parent: data.parentWorkflowId ?? null,
+          notCompletedWorkflowId = data.id
+        } else {
+          const workflow: Workflow = {
+            id: data.id,
+            input: data.userInput,
+            messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
+            runtime: {
+              status: data.stopStatus,
+              waitingHuman: false,
+            },
+          }
+          workflowNodesMap[data.id] = {
+            workflow,
+            children: [],
+            parent: data.parentWorkflowId ?? null,
+          }
         }
       }
       for (const node of Object.values(workflowNodesMap)) {
@@ -95,12 +98,12 @@ export function InitSession({ sessionId }: { sessionId: string }) {
         planner,
         artifacts,
       }
-
       buildFromDatabase(session)
+      if (notCompletedWorkflowId) resumeRunningWorkflow(sessionId, notCompletedWorkflowId)
     }
 
     if (!currentSession || !currentSession.hydrated) fetchMessages()
-  }, [sessionId, handleSend, buildFromDatabase, currentSession])
+  }, [sessionId, handleSend, buildFromDatabase, currentSession, resumeRunningWorkflow])
   return null
 }
 

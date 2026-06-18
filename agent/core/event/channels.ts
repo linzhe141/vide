@@ -89,7 +89,7 @@ export type WorkflowEventCtx = {
   branchName: string
   parentWorkflowId: string | null
 }
-const WorkflowEventChannels = {
+export const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string; ctx: WorkflowEventCtx },
   'workflow-finished': null as unknown as { ctx: WorkflowEventCtx },
   'workflow-aborted': null as unknown as {

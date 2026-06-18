@@ -129,7 +129,7 @@ export function resumeWorkflowStream(
 
       plannerEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (sessionId  === data.sessionId) {
+          if (sessionId === data.sessionId) {
             controller.enqueue({ type: eventName, data })
           }
         })
@@ -138,11 +138,7 @@ export function resumeWorkflowStream(
 
       workflowEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (
-            eventName === 'workflow-start' &&
-            sessionId === null &&
-            workflowId === null
-          ) {
+          if (eventName === 'workflow-start' && sessionId === null && workflowId === null) {
             sessionId = data.ctx.sessionId
             workflowId = data.ctx.workflowId
           }

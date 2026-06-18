@@ -80,6 +80,10 @@ export function useWorkflowStream() {
       readerRef.current = reader
 
       try {
+        await window.ipcRendererApi.invoke('resume-running-workflow', {
+          sessionId,
+          workflowId,
+        })
         while (true) {
           const { value, done } = await reader.read()
           if (done) break

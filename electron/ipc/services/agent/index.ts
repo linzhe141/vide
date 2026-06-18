@@ -46,18 +46,17 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('agent-resume-session', async (data) => {
+      const session = await this.getSession(data.sessionId)
       const payload = await this.loadSessionPayload(data.sessionId)
-      const session = this.agent.resumeSession({
-        sessionId: data.sessionId,
-        sessionType: payload.sessionType,
-        origin: payload.origin,
-        workspacePath: payload.workspacePath,
-        activeBranch: payload.activeBranch,
-        branches: payload.branches,
-        workflowData: payload.workflowData,
-        autoApprove: payload.autoApprove,
-      })
-      this.sessions.set(data.sessionId, session)
+      if (session.runningWorkflow) {
+        const activeBranch = payload.branches.find((item) => item.name === session.activeBranch)
+        if (activeBranch) {
+          const target = payload.workflowData.find(
+            (item) => item.id === activeBranch.headWorkflowId
+          )
+          activeBranch.headWorkflowId = target ? target.parentWorkflowId : null
+        }
+      }
       return payload
     })
 
@@ -232,15 +231,22 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('query-workflow-is-completed', async ({ sessionId, workflowId }) => {
       logger.info('query-workflow-is-completed ', sessionId, workflowId)
       const session = await this.getSession(sessionId)
-
-      return session.runningWorkflow?.state === 'COMPLETED'
+      if (!session.runningWorkflow) return true
+      if (session.runningWorkflow.runtime.workflowId !== workflowId) return true
+      return session.runningWorkflow.state === 'COMPLETED'
     })
 
     ipcMainApi.handle('resume-running-workflow', async ({ sessionId, workflowId }) => {
       logger.info('resume-running-workflow ', sessionId, workflowId)
       const session = await this.getSession(sessionId)
 
-      return session.runningWorkflow?.runtime.workflowSession.messages ?? []
+      const events = session.runningWorkflow?.runtime.events ?? []
+      if (events[0].eventName !== 'workflow-start') {
+        console.log('error')
+      }
+      for (const { eventName, data } of events) {
+        ipcMainApi.send(eventName, data)
+      }
     })
   }
 
