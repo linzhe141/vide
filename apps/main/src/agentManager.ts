@@ -1,7 +1,7 @@
-import { createGenerateImageClient } from '@/agent/core/image'
+﻿import { createGenerateImageClient } from '@/agent/image'
 import type { AppManager } from './appManager'
 import { settingsStore } from './store/settingsStore'
-import { createLLMClient } from '@/agent/core/llm'
+import { createLLMClient } from '@/agent/llm'
 export class AgentManager {
   constructor(private app: AppManager) {}
 
@@ -15,14 +15,13 @@ export class AgentManager {
     const baseURL = config ? config.baseUrl : settingsStore.get('llmConfig').baseUrl
     const model = config ? config.model : settingsStore.get('llmConfig').model
 
-    createLLMClient({ apiKey, baseURL, model })
+    if (apiKey && baseURL && model) createLLMClient({ apiKey, baseURL, model })
   }
 
   createGenerateImageClient(config?: { apiKey: string; baseUrl: string; model: string }) {
     const apiKey = config ? config.apiKey : settingsStore.get('generateImageConfig').apiKey
     const baseURL = config ? config.baseUrl : settingsStore.get('generateImageConfig').baseUrl
     const model = config ? config.model : settingsStore.get('generateImageConfig').model
-
-    createGenerateImageClient({ apiKey, baseURL, model })
+    if (apiKey && baseURL && model) createGenerateImageClient({ apiKey, baseURL, model })
   }
 }

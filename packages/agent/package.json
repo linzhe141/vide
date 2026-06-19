@@ -2,5 +2,11 @@
   "name": "@vide/agent",
   "private": true,
   "version": "0.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "dayjs": "^1.11.20",
+    "diff": "^9.0.0",
+    "gray-matter": "^4.0.3",
+    "openai": "^6.37.0"
+  }
 }

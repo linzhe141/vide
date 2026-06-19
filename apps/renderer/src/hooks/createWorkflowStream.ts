@@ -1,11 +1,11 @@
-import {
+﻿import {
   agentEventNames,
   plannerEventNames,
   workflowEventNames,
   type AgentLifecycleEvents,
   type PlannerEvents,
   type WorkflowEvents,
-} from '@/agent/core/event/channels'
+} from '@/agent/event/channels'
 
 type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
   [K in keyof T]: T[K] extends (data: infer D) => any ? { type: K; data: D } : never
@@ -25,7 +25,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   }
   const stream = new ReadableStream({
     start(controller) {
-      // 监听 abort 信号
+      // 鐩戝惉 abort 淇″彿
       abortSignal.addEventListener('abort', () => {
         if (currentSessionId && currentWorkflowId) {
           window.ipcRendererApi.invoke('agent-workflow-abort', {
@@ -84,7 +84,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       })
     },
     cancel() {
-      // 清理所有监听器
+      // 娓呯悊鎵€鏈夌洃鍚櫒
       cleanUp()
     },
   })
@@ -103,7 +103,7 @@ export function resumeWorkflowStream(
   }
   const stream = new ReadableStream({
     start(controller) {
-      // 监听 abort 信号
+      // 鐩戝惉 abort 淇″彿
       abortSignal.addEventListener('abort', () => {
         if (sessionId && workflowId) {
           window.ipcRendererApi.invoke('agent-workflow-abort', {
@@ -158,9 +158,10 @@ export function resumeWorkflowStream(
       })
     },
     cancel() {
-      // 清理所有监听器
+      // 娓呯悊鎵€鏈夌洃鍚櫒
       cleanUp()
     },
   })
   return stream
 }
+

@@ -2,6 +2,6 @@ import type { Config } from 'drizzle-kit'
 
 export default {
   dialect: 'sqlite',
-  schema: './db/schema.ts',
-  out: './drizzle',
+  schema: './src/db/schema.ts',
+  out: './src/drizzle',
 } satisfies Config

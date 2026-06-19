@@ -5,16 +5,16 @@ export default {
   productName: 'vide',
 
   directories: {
-    buildResources: 'resources',
-    output: 'dist/electron-pack',
+    buildResources: '../../resources',
+    output: './dist/electron-pack',
   },
 
   files: [
-    'dist/app/**/*',
-    'dist/electron/**/*',
-    'apps/main/drizzle/**/*',
-    'package.json',
-    'resources/**',
+    './dist/app/**/*',
+    './dist/electron/**/*',
+    './src/drizzle/**/*',
+    '../../package.json',
+    '../../resources/**',
   ],
   asar: true,
   asarUnpack: ['node_modules/**'],

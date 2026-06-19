@@ -1,20 +1,20 @@
-import fs from 'fs/promises'
+﻿import fs from 'fs/promises'
 import path from 'path'
-import type { Tool } from '@/agent/core/types'
+import type { Tool } from '@/agent/types'
 import { ToolCallError } from '../error'
 
 const CONFIG = {
   MAX_FILE_SIZE: 1024 * 1024, // 1MB
 
-  // 👉 可选安全限制（默认关闭）
+  // 馃憠 鍙€夊畨鍏ㄩ檺鍒讹紙榛樿鍏抽棴锛?
   ENABLE_PATH_RESTRICTION: false,
   FS_ROOT: process.cwd(),
 }
 
 /**
- * 解析路径：
- * - 支持绝对路径
- * - 相对路径默认基于 cwd
+ * 瑙ｆ瀽璺緞锛?
+ * - 鏀寔缁濆璺緞
+ * - 鐩稿璺緞榛樿鍩轰簬 cwd
  */
 function resolvePath(inputPath: string): string {
   if (path.isAbsolute(inputPath)) {
@@ -24,7 +24,7 @@ function resolvePath(inputPath: string): string {
 }
 
 /**
- * 可选安全检查
+ * 鍙€夊畨鍏ㄦ鏌?
  */
 function assertPathAllowed(resolvedPath: string) {
   if (!CONFIG.ENABLE_PATH_RESTRICTION) return
@@ -36,7 +36,7 @@ function assertPathAllowed(resolvedPath: string) {
 }
 
 /**
- * 格式化大小
+ * 鏍煎紡鍖栧ぇ灏?
  */
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
@@ -47,7 +47,7 @@ function formatBytes(bytes: number): string {
 }
 
 /**
- * 核心读取逻辑
+ * 鏍稿績璇诲彇閫昏緫
  */
 async function readFileSmart(filePath: string, encoding: BufferEncoding = 'utf8') {
   const fullPath = resolvePath(filePath)
@@ -76,7 +76,7 @@ async function readFileSmart(filePath: string, encoding: BufferEncoding = 'utf8'
   try {
     content = finalBuffer.toString(encoding)
   } catch {
-    // 👉 fallback（二进制安全）
+    // 馃憠 fallback锛堜簩杩涘埗瀹夊叏锛?
     content = finalBuffer.toString('base64')
     finalEncoding = 'base64'
   }
@@ -93,7 +93,7 @@ async function readFileSmart(filePath: string, encoding: BufferEncoding = 'utf8'
 }
 
 /**
- * Tool 定义
+ * Tool 瀹氫箟
  */
 export const fileRead: Tool = {
   name: 'read_file',
@@ -133,3 +133,4 @@ export const fileRead: Tool = {
     }
   },
 }
+

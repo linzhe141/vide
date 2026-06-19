@@ -25,7 +25,7 @@ export class DatabaseManager {
   private async runMigrate() {
     logger.info('Running database migrations...')
     migrate(db, {
-      migrationsFolder: path.join(app.getAppPath(), 'apps/main/drizzle'),
+      migrationsFolder: path.join(app.getAppPath(), 'src/drizzle'),
     })
     logger.info('Run database migrations successfully')
   }

@@ -6,10 +6,10 @@
     "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./*"],
-      "@/agent/*": ["./packages/agent/*"],
+      "@/agent/*": ["./packages/agent/src/*"],
       "@/app/*": ["./apps/renderer/*"],
-      "@/electron/*": ["./apps/main/*"],
-      "@/main/*": ["./apps/main/*"]
+      "@/electron/*": ["./apps/main/src/*"],
+      "@/main/*": ["./apps/main/src/*"]
     },
     "target": "ES2022",
     "useDefineForClassFields": true,

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Workflow,
   ToolCallSessionMessage,
   ToolResultSessionMessage,
@@ -12,7 +12,7 @@ import {
   SquareTerminal,
   XCircle,
 } from 'lucide-react'
-import type { ToolCall } from '@/agent/core/types'
+import type { ToolCall } from '@/agent/types'
 import { useState } from 'react'
 import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
@@ -172,3 +172,4 @@ export function findToolResult(
         message.role === 'tool-result' && message.toolCallId === toolCallId
     )
 }
+

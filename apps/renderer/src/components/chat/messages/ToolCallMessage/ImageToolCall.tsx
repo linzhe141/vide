@@ -1,7 +1,7 @@
-import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
+﻿import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import type { Workflow } from '../../../../store/sessionStore/types'
-import type { ToolCall } from '@/agent/core/types'
+import type { ToolCall } from '@/agent/types'
 
 import { findToolResult } from '../../messages/ToolCallMessage'
 import { CodeBlock } from '../../../codeblock'
@@ -139,3 +139,4 @@ const styles = `
 `
 
 export default ImageToolCall
+

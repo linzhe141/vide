@@ -1,18 +1,18 @@
-import type { Settings } from '@/electron/store/settingsStore'
+﻿import type { Settings } from '@/electron/store/settingsStore'
 import type { GenerateImageConfig, LLMConfig } from '@/types'
 import type {
   AgentLifecycleEvents,
   PlannerEvents,
   WorkflowEvents,
-} from '@/agent/core/event/channels'
+} from '@/agent/event/channels'
 import type { sessionWorkflowMessages } from '@/main/db/schema'
-import type { PlanStep } from '@/agent/core/tools/planner'
-import type { WaitHumanApprovePayload } from '@/agent/core/types'
+import type { PlanStep } from '@/agent/tools/planner'
+import type { WaitHumanApprovePayload } from '@/agent/types'
 
 export type FileNode = {
   name: string
   type: 'file' | 'folder'
-  path: string // 绝对路径
+  path: string // 缁濆璺緞
   content?: string
   children?: FileNode[]
 }
@@ -167,3 +167,4 @@ export type MainChannel = {
 } & AgentLifecycleEvents &
   PlannerEvents &
   WorkflowEvents
+

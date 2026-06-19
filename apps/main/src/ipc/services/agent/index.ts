@@ -1,9 +1,9 @@
-import { and, asc, eq } from 'drizzle-orm'
-import { Agent } from '@/agent/core/agent'
-import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/core/apiEvent'
-import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/core/event/channels'
-import type { Session } from '@/agent/core/session'
-import type { PlanStep } from '@/agent/core/tools/planner'
+﻿import { and, asc, eq } from 'drizzle-orm'
+import { Agent } from '@/agent/agent'
+import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/apiEvent'
+import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/event/channels'
+import type { Session } from '@/agent/session'
+import type { PlanStep } from '@/agent/tools/planner'
 import * as schema from '@/main/db/schema'
 import { db } from '@/electron/databaseManager'
 import { logger } from '@/electron/logger'
@@ -12,7 +12,7 @@ import type { IpcMainService } from '../..'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
 import { SessionMessageRole } from '@/types'
-import type { ToolCall } from '@/agent/core/types'
+import type { ToolCall } from '@/agent/types'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -382,3 +382,4 @@ export class AgentIpcMainService implements IpcMainService {
     })
   }
 }
+

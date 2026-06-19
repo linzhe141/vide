@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm'
+﻿import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import {
   onAgentEvent,
@@ -6,10 +6,10 @@ import {
   onAskUserQuestionEvent,
   onPalnnerEvent,
   onWorkflowEvent,
-} from '@/agent/core/apiEvent'
-import type { SessionType } from '@/agent/core/session'
-import type { AskUserQuestion } from '@/agent/core/tools/askUserQuestion'
-import type { PlanStep } from '@/agent/core/tools/planner'
+} from '@/agent/apiEvent'
+import type { SessionType } from '@/agent/session'
+import type { AskUserQuestion } from '@/agent/tools/askUserQuestion'
+import type { PlanStep } from '@/agent/tools/planner'
 import { SessionMessageRole } from '@/types'
 import {
   artifacts,
@@ -299,8 +299,8 @@ export class SessionsManager {
         })
         .where(eq(sessionWorkflows.id, ctx.workflowId))
     })
-    // TODO 是否需要持久化 waiting-human-approve 状态
-    // workflow-wait-human-approve 更新 stopStatus 为 waiting-human-approve 状态
+    // TODO 鏄惁闇€瑕佹寔涔呭寲 waiting-human-approve 鐘舵€?
+    // workflow-wait-human-approve 鏇存柊 stopStatus 涓?waiting-human-approve 鐘舵€?
     // onWorkflowEvent('workflow-wait-human-approve', async ({ ctx }) => {
     //   await db
     //     .update(sessionWorkflows)
@@ -312,7 +312,7 @@ export class SessionsManager {
     // })
     onWorkflowEvent('workflow-aborted', async ({ ctx, chunkData }) => {
       const time = Date.now()
-      // abort 时，把未持久化的 reasoning 和 text chunk 存储为消息，然后更新 workflow 状态为 aborted
+      // abort 鏃讹紝鎶婃湭鎸佷箙鍖栫殑 reasoning 鍜?text chunk 瀛樺偍涓烘秷鎭紝鐒跺悗鏇存柊 workflow 鐘舵€佷负 aborted
       if (chunkData.text) {
         await db.insert(sessionWorkflowMessages).values({
           id: uuid(),
@@ -552,3 +552,4 @@ export class SessionsManager {
     })
   }
 }
+

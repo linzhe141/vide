@@ -1,4 +1,4 @@
-import type { AppManager } from '@/electron/appManager'
+﻿import type { AppManager } from '@/electron/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/electron/databaseManager'
@@ -8,8 +8,8 @@ import type { FileNode, SessionRowDto } from '../../api/channels'
 import fs from 'fs/promises'
 import path from 'path'
 import { isBinaryFile } from 'isbinaryfile'
-import { getArtifactsRoot } from '@/agent/core/workspace'
-import { scanSkills } from '@/agent/core/tools/skill'
+import { getArtifactsRoot } from '@/agent/workspace'
+import { scanSkills } from '@/agent/tools/skill'
 
 export class SessionIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}
@@ -74,3 +74,4 @@ async function buildFileTree(dir: string): Promise<FileNode> {
 
   return node
 }
+

@@ -1,4 +1,4 @@
-import type { ToolCall } from '@/agent/core/types'
+﻿import type { ToolCall } from '@/agent/types'
 import type { Workflow, ToolResultSessionMessage } from '@/app/src/store/sessionStore/types'
 import {
   Check,
@@ -230,3 +230,4 @@ function formatDuration(durationMs?: number) {
 }
 
 export default BashToolCall
+

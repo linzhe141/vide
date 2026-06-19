@@ -1,4 +1,4 @@
-import type { ToolCall } from '@/agent/core/types'
+﻿import type { ToolCall } from '@/agent/types'
 
 export interface UserInputSessionMessage {
   id: string
@@ -124,3 +124,4 @@ export type Session = {
     updatedAt: number
   }[]
 }
+
