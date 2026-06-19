@@ -1,4 +1,4 @@
-import { uuid } from '@/app/src/lib/uuid'
+import { randomUUID } from 'node:crypto'
 import { plannerEvent } from '../../event'
 import { SessionPlaner } from '../../session'
 import { defineTool, ToolProvider } from '../toolProvider'
@@ -46,7 +46,7 @@ Returns a plannerId and the created steps (with ids). Use those step ids with ${
     executor: async (args) => {
       const steps: string[] = Array.isArray(args?.steps) ? args.steps : []
       const planSteps: PlanStep[] = steps.map((description) => ({
-        id: uuid(),
+        id: randomUUID(),
         status: 'pending',
         description,
       }))

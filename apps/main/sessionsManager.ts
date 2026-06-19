@@ -19,7 +19,7 @@ import {
   sessions,
   sessionWorkflowMessages,
   sessionWorkflows,
-} from '@/db/schema'
+} from '@/main/db/schema'
 import { db } from './databaseManager'
 import type { AppManager } from './appManager'
 

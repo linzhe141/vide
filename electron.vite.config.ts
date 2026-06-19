@@ -10,14 +10,18 @@ export default defineConfig({
       sourcemap: true,
       rollupOptions: {
         input: {
-          index: path.resolve(__dirname, './electron/main.ts'),
+          index: path.resolve(__dirname, './apps/main/main.ts'),
         },
       },
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+      alias: [
+        { find: '@/agent', replacement: path.resolve(__dirname, './packages/agent') },
+        { find: '@/app', replacement: path.resolve(__dirname, './apps/renderer') },
+        { find: '@/electron', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@/main', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@', replacement: path.resolve(__dirname, '.') },
+      ],
     },
   },
   preload: {
@@ -26,24 +30,28 @@ export default defineConfig({
       sourcemap: true,
       rollupOptions: {
         input: {
-          index: path.resolve(__dirname, './electron/preload/index.ts'),
+          index: path.resolve(__dirname, './apps/main/preload/index.ts'),
         },
       },
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+      alias: [
+        { find: '@/agent', replacement: path.resolve(__dirname, './packages/agent') },
+        { find: '@/app', replacement: path.resolve(__dirname, './apps/renderer') },
+        { find: '@/electron', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@/main', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@', replacement: path.resolve(__dirname, '.') },
+      ],
     },
   },
   renderer: {
-    root: './app',
+    root: './apps/renderer',
     build: {
       target: 'esnext',
       outDir: 'dist/app',
       rollupOptions: {
         input: {
-          main: './app/index.html',
+          main: './index.html',
         },
         output: {
           manualChunks(id: string) {
@@ -53,9 +61,13 @@ export default defineConfig({
       },
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+      alias: [
+        { find: '@/agent', replacement: path.resolve(__dirname, './packages/agent') },
+        { find: '@/app', replacement: path.resolve(__dirname, './apps/renderer') },
+        { find: '@/electron', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@/main', replacement: path.resolve(__dirname, './apps/main') },
+        { find: '@', replacement: path.resolve(__dirname, '.') },
+      ],
     },
     plugins: [
       react({

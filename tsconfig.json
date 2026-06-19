@@ -3,8 +3,13 @@
     // 防止没有设置noEmit:true，导致我明明只是想类型检查，但是编译的文件在源码目录中，难得去删除
     "outDir": "out",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/agent/*": ["./packages/agent/*"],
+      "@/app/*": ["./apps/renderer/*"],
+      "@/electron/*": ["./apps/main/*"],
+      "@/main/*": ["./apps/main/*"]
     },
     "target": "ES2022",
     "useDefineForClassFields": true,

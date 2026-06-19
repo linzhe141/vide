@@ -5,7 +5,7 @@ import type {
   PlannerEvents,
   WorkflowEvents,
 } from '@/agent/core/event/channels'
-import type { sessionWorkflowMessages } from '@/db/schema'
+import type { sessionWorkflowMessages } from '@/main/db/schema'
 import type { PlanStep } from '@/agent/core/tools/planner'
 import type { WaitHumanApprovePayload } from '@/agent/core/types'
 

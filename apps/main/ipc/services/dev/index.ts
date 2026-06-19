@@ -10,7 +10,7 @@ import {
   sessions,
   sessionWorkflowMessages,
   sessionWorkflows,
-} from '@/db/schema'
+} from '@/main/db/schema'
 
 export class DevIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}

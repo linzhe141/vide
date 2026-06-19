@@ -4,7 +4,7 @@ import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/core/apiE
 import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/core/event/channels'
 import type { Session } from '@/agent/core/session'
 import type { PlanStep } from '@/agent/core/tools/planner'
-import * as schema from '@/db/schema'
+import * as schema from '@/main/db/schema'
 import { db } from '@/electron/databaseManager'
 import { logger } from '@/electron/logger'
 import type { AppManager } from '@/electron/appManager'

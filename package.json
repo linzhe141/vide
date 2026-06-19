@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "pack:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
     "build": "pnpm clean && pnpm prebuild && pnpm pack:electron",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "pnpm --dir apps/main db:generate"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

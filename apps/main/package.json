@@ -1,0 +1,12 @@
+{
+  "name": "@vide/main",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev --config ../../electron.vite.config.ts",
+    "preview": "electron-vite preview --config ../../electron.vite.config.ts",
+    "build": "electron-vite build --config ../../electron.vite.config.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts"
+  }
+}
