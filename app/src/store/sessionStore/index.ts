@@ -316,8 +316,10 @@ export const useSessionWorkflows = (sessionId: string) => {
   if (!activeBranch || !activeBranch.headWorkflowId) return undefined
 
   function traverse(nodeId: string, result: Workflow[] = []) {
-    // debugger
     const node = session!.workflowNodesMap[nodeId]
+    if (node == null) {
+      debugger
+    }
     result.unshift(node.workflow)
     if (node.parent) {
       traverse(node.parent, result)
