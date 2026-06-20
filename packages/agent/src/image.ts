@@ -22,7 +22,6 @@ export async function generateImage(prompt: string) {
       model,
       prompt,
       n: 1, // 生成 1 张
-      // @ts-expect-error 这是其他厂商的参数
       size: '2K', // 支持 1024x1024 / 2048x2048 / 1K / 2K{insert\_element\_3\_}
       response_format: 'url', // 返回 URL（也可 base64）
     })

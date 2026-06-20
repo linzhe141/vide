@@ -4,7 +4,6 @@ import { type Element, type ElementContent, type Root } from '@/node_modules/@ty
 import { type BuildVisitor } from 'unist-util-visit'
 import { visit } from 'unist-util-visit'
 
-// @ts-expect-error ignore missing types
 const segmenter = new Intl.Segmenter('zh', { granularity: 'word' })
 
 export const rehypeStreamAnimated = () => {
