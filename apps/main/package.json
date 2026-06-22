@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/electron/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",
     "build": "electron-vite build",
     "pack:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@vide/agent": "workspace:*",
+    "@vide/types": "workspace:*",
     "better-sqlite3": "^12.10.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",

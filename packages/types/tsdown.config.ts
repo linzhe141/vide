@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['./src/index.ts', './src/event/channels.ts', './src/types.ts'],
+  entry: ['./src/index.ts'],
   dts: true,
   sourcemap: true,
   clean: false,

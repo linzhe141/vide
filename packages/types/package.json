@@ -1,5 +1,15 @@
 {
-  "name": "@vide/types123",
+  "name": "@vide/types",
   "version": "0.0.0",
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown"
+  }
 }

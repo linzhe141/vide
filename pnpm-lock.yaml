@@ -54,6 +54,9 @@ importers:
       '@vide/agent':
         specifier: workspace:*
         version: link:../../packages/agent
+      '@vide/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.11.1
