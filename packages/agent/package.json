@@ -1,12 +1,24 @@
 {
   "name": "@vide/agent",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
-  "dependencies": {
-    "dayjs": "^1.11.20",
-    "diff": "^9.0.0",
-    "gray-matter": "^4.0.3",
-    "openai": "^6.37.0"
-  }
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./types": {
+      "import": "./dist/types.mjs",
+      "types": "./dist/types.d.mts"
+    },
+    "./event": {
+      "import": "./dist/event/channels.mjs",
+      "types": "./dist/event/channels.d.mts"
+    }
+  },
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown"
+  },
+  "dependencies": {}
 }

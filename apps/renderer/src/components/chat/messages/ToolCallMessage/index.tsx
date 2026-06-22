@@ -2,7 +2,7 @@
   Workflow,
   ToolCallSessionMessage,
   ToolResultSessionMessage,
-} from '@/app/src/store/sessionStore/types'
+} from '../../../../store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -12,7 +12,7 @@ import {
   SquareTerminal,
   XCircle,
 } from 'lucide-react'
-import type { ToolCall } from '@/agent/types'
+import type { ToolCall } from '@vide/agent/types'
 import { useState } from 'react'
 import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
@@ -172,4 +172,3 @@ export function findToolResult(
         message.role === 'tool-result' && message.toolCallId === toolCallId
     )
 }
-

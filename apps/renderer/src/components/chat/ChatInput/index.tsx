@@ -1,7 +1,7 @@
 import { FolderOpen, LoaderCircle, Send, Square, X, Zap } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
-import { Textarea } from '@/app/src/ui/Textarea'
-import { Button } from '@/app/src/ui/Button'
+import { Textarea } from '../../../ui/Textarea'
+import { Button } from '../../../ui/Button'
 
 export const ChatInput = memo(function ChatInput({
   running,

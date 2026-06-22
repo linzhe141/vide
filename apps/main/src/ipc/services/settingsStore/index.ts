@@ -1,5 +1,5 @@
-import { settingsStore } from '@/electron/store/settingsStore'
-import type { AppManager } from '@/electron/appManager'
+import { settingsStore } from '../../../store/settingsStore'
+import type { AppManager } from '../../../appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 

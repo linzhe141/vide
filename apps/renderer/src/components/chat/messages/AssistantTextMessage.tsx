@@ -1,4 +1,4 @@
-import type { AssistantTextSessionMessage } from '@/app/src/store/sessionStore/types'
+import type { AssistantTextSessionMessage } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantTextMessage({ message }: { message: AssistantTextSessionMessage }) {

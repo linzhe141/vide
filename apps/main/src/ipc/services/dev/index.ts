@@ -1,7 +1,7 @@
-import type { AppManager } from '@/electron/appManager'
+import type { AppManager } from '../../..//appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
-import { db } from '@/electron/databaseManager'
+import { db } from '../../..//databaseManager'
 import {
   artifacts,
   askUserQuestions,
@@ -10,7 +10,7 @@ import {
   sessions,
   sessionWorkflowMessages,
   sessionWorkflows,
-} from '@/main/db/schema'
+} from '../../../db/schema'
 
 export class DevIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}

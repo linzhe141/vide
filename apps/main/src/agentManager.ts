@@ -1,7 +1,7 @@
-﻿import { createGenerateImageClient } from '@/agent/image'
+﻿import { createGenerateImageClient } from '@vide/agent'
+import { createLLMClient } from '@vide/agent'
 import type { AppManager } from './appManager'
 import { settingsStore } from './store/settingsStore'
-import { createLLMClient } from '@/agent/llm'
 export class AgentManager {
   constructor(private app: AppManager) {}
 

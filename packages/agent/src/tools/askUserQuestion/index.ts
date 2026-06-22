@@ -1,18 +1,6 @@
 import { askUserQuestionEvent } from '../../event'
+import type { AskUserQuestion } from '../../types'
 import { defineTool, ToolProvider } from '../toolProvider'
-
-export type AskUserQuestionOption = {
-  label: string
-  description: string
-  value: string
-}
-
-export type AskUserQuestion = {
-  title: string
-  description: string
-  type: 'single' | 'multiple'
-  options: AskUserQuestionOption[]
-}
 
 export const ASK_USER_TOOL_NAMES = {
   GENERATE: `ask-user-question-generate`,

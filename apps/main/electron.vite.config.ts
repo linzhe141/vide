@@ -16,6 +16,10 @@ export default defineConfig({
     },
     resolve: {
       alias: [
+        {
+          find: '@vide/types',
+          replacement: path.resolve(__dirname, '../../packages/types/src/index.ts'),
+        },
         { find: '@/agent', replacement: path.resolve(__dirname, '../../packages/agent/src') },
         { find: '@/app', replacement: path.resolve(__dirname, '../renderer') },
         { find: '@/electron', replacement: path.resolve(__dirname, './src') },

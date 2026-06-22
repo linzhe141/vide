@@ -6,11 +6,11 @@ import {
   onAskUserQuestionEvent,
   onPalnnerEvent,
   onWorkflowEvent,
-} from '@/agent/apiEvent'
-import type { SessionType } from '@/agent/session'
-import type { AskUserQuestion } from '@/agent/tools/askUserQuestion'
-import type { PlanStep } from '@/agent/tools/planner'
-import { SessionMessageRole } from '@/types'
+} from '@vide/agent'
+import type { SessionType } from '@vide/agent'
+import type { AskUserQuestion } from '@vide/agent'
+import type { PlanStep } from '@vide/agent'
+import { SessionMessageRole } from '@vide/types'
 import {
   artifacts,
   askUserQuestions,
@@ -19,7 +19,7 @@ import {
   sessions,
   sessionWorkflowMessages,
   sessionWorkflows,
-} from '@/main/db/schema'
+} from './db/schema'
 import { db } from './databaseManager'
 import type { AppManager } from './appManager'
 
@@ -552,4 +552,3 @@ export class SessionsManager {
     })
   }
 }
-

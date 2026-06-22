@@ -1,5 +1,5 @@
-﻿import type { ToolCall } from '@/agent/types'
-import type { Workflow, ToolResultSessionMessage } from '@/app/src/store/sessionStore/types'
+﻿import type { ToolCall } from '@vide/agent/types'
+import type { Workflow, ToolResultSessionMessage } from '../../../../store/sessionStore/types'
 import {
   Check,
   CheckCircle2,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useChatContext } from '../../ChatProvider'
-import { useSessionStoreActions } from '@/app/src/store/sessionStore'
+import { useSessionStoreActions } from '../../../../store/sessionStore'
 
 type BashToolCallProps = {
   tool: ToolCall
@@ -230,4 +230,3 @@ function formatDuration(durationMs?: number) {
 }
 
 export default BashToolCall
-

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
-import type { AssistantReasonSessionMessage } from '@/app/src/store/sessionStore/types'
+import type { AssistantReasonSessionMessage } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantReasonMessage({ message }: { message: AssistantReasonSessionMessage }) {

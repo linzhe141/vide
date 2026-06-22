@@ -1,18 +1,18 @@
 ﻿import { and, asc, eq } from 'drizzle-orm'
-import { Agent } from '@/agent/agent'
-import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@/agent/apiEvent'
-import { agentEventNames, plannerEventNames, workflowEventNames } from '@/agent/event/channels'
-import type { Session } from '@/agent/session'
-import type { PlanStep } from '@/agent/tools/planner'
-import * as schema from '@/main/db/schema'
-import { db } from '@/electron/databaseManager'
-import { logger } from '@/electron/logger'
-import type { AppManager } from '@/electron/appManager'
+import { Agent } from '@vide/agent'
+import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@vide/agent'
+import { agentEventNames, plannerEventNames, workflowEventNames } from '@vide/agent/event'
+import type { Session } from '@vide/agent'
+import type { PlanStep } from '@vide/agent/types'
+import * as schema from '../../../db/schema'
+import { db } from '../../../databaseManager'
+import { logger } from '../../../logger'
+import type { AppManager } from '../../../appManager'
 import type { IpcMainService } from '../..'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
-import { SessionMessageRole } from '@/types'
-import type { ToolCall } from '@/agent/types'
+import { SessionMessageRole } from '@vide/types'
+import type { ToolCall } from '@vide/agent/types'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -382,4 +382,3 @@ export class AgentIpcMainService implements IpcMainService {
     })
   }
 }
-

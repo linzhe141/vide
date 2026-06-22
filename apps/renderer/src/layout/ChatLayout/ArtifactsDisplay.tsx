@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink } from 'lucide-react'
-import type { FileNode } from '@/electron/ipc/api/channels'
 import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
 
@@ -11,7 +10,7 @@ export function ArtifactsDisplay({
   sessionId: string
   className?: string
 }) {
-  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null)
+  const [selectedFile, setSelectedFile] = useState<any | null>(null)
   const [artifacts, setArtifacts] = useState<
     {
       id: string
@@ -102,9 +101,9 @@ function TreeNode({
   level = 0,
   onSelect,
 }: {
-  node: FileNode
+  node: any
   level?: number
-  onSelect: (file: FileNode) => void
+  onSelect: (file: any) => void
 }) {
   const [open, setOpen] = useState(false)
 

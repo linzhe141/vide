@@ -1,13 +1,12 @@
-﻿import type { Settings } from '@/electron/store/settingsStore'
-import type { GenerateImageConfig, LLMConfig } from '@/types'
+﻿import type { Settings, GenerateImageConfig, LLMConfig } from '@vide/types'
 import type {
   AgentLifecycleEvents,
   PlannerEvents,
   WorkflowEvents,
-} from '@/agent/event/channels'
-import type { sessionWorkflowMessages } from '@/main/db/schema'
-import type { PlanStep } from '@/agent/tools/planner'
-import type { WaitHumanApprovePayload } from '@/agent/types'
+  PlanStep,
+  WaitHumanApprovePayload,
+} from '@vide/agent'
+import type { sessionWorkflowMessages } from '../../db/schema'
 
 export type FileNode = {
   name: string
@@ -167,4 +166,3 @@ export type MainChannel = {
 } & AgentLifecycleEvents &
   PlannerEvents &
   WorkflowEvents
-

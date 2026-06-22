@@ -5,7 +5,7 @@
   type AgentLifecycleEvents,
   type PlannerEvents,
   type WorkflowEvents,
-} from '@/agent/event/channels'
+} from '@vide/agent/event'
 
 type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
   [K in keyof T]: T[K] extends (data: infer D) => any ? { type: K; data: D } : never
@@ -164,4 +164,3 @@ export function resumeWorkflowStream(
   })
   return stream
 }
-

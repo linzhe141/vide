@@ -5,11 +5,15 @@
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["./*"],
-      "@/agent/*": ["./packages/agent/src/*"],
-      "@/app/*": ["./apps/renderer/*"],
-      "@/electron/*": ["./apps/main/src/*"],
-      "@/main/*": ["./apps/main/src/*"]
+      // "@/agent/*": ["./packages/agent/src/*"],
+      // "@/app/*": ["./apps/renderer/*"],
+      // "@/electron/*": ["./apps/main/src/*"],
+      // "@/main/*": ["./apps/main/src/*"],
+      "@vide/agent": ["./packages/agent/src/index.ts"],
+      "@vide/types": ["./packages/types/src/index.ts"],
+      "@vide/main": ["./apps/main/src/index.ts"],
+      "@vide/renderer": ["./apps/renderer/src/index.ts"],
+      "@/*": ["./*"]
     },
     "target": "ES2022",
     "useDefineForClassFields": true,

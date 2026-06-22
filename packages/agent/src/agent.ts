@@ -1,4 +1,3 @@
-import { SessionMessageRole } from '@/types'
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
 import type { WorkflowData } from '@/electron/ipc/api/channels'
@@ -10,6 +9,16 @@ import {
   type SessionType,
   type SessionWorkflowSnapshot,
 } from './session'
+export const enum SessionMessageRole {
+  System = 'system',
+  User = 'user',
+  AssistantReason = 'assistant-reason',
+  AssistantText = 'assistant-text',
+  ToolCalls = 'tool-calls',
+  Tool = 'tool',
+  Error = 'error',
+  Abort = 'abort',
+}
 
 export class Agent {
   constructor() {}

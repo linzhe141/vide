@@ -1,5 +1,5 @@
-import type { AskUserQuestion } from '../tools/askUserQuestion'
-import type { PlanStep } from '../tools/planner'
+type PlanStep = any
+type AskUserQuestion = any
 import type { AssistantChatMessage, ChatMessage, ToolCall } from '../types'
 
 const AgentLifecycleEventChannels = {

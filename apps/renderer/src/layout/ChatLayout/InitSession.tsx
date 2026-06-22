@@ -8,8 +8,7 @@ import {
 } from '../../store/sessionStore/types'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
-import type { WorkflowData } from '@/electron/ipc/api/channels'
-import { ASK_USER_TOOL_NAMES } from '@/agent/tools/askUserQuestion'
+type WorkflowData = any
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 
@@ -166,7 +165,7 @@ function buildWorkflowMessages(
           durationMs: data.durationMs,
         })
         const toolCall = toolCallsById.get(data.id)
-        if (toolCall?.function.name === ASK_USER_TOOL_NAMES.GENERATE) {
+        if (toolCall?.function.name === 'ask-user-question-generate') {
           const question = data.result?.question
           if (question) {
             result.push({
@@ -188,4 +187,3 @@ function buildWorkflowMessages(
 
   return result
 }
-

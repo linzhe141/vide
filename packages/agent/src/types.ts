@@ -112,3 +112,23 @@ export interface ToolResult {
   reason: 'stop' | 'call-llm'
   result: any
 }
+
+// toolcall
+export type PlanStep = {
+  id: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  description: string
+}
+
+export type AskUserQuestionOption = {
+  label: string
+  description: string
+  value: string
+}
+
+export type AskUserQuestion = {
+  title: string
+  description: string
+  type: 'single' | 'multiple'
+  options: AskUserQuestionOption[]
+}

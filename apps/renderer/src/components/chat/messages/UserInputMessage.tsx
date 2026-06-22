@@ -1,10 +1,10 @@
-import type { UserInputSessionMessage, Workflow } from '@/app/src/store/sessionStore/types'
+import type { UserInputSessionMessage, Workflow } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 import { Check, Copy, Pen, X } from 'lucide-react'
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { createBranchPayload } from '../SessionActions'
 import { useChatContext } from '../ChatProvider'
-import { useSessionStoreActions } from '@/app/src/store/sessionStore'
+import { useSessionStoreActions } from '../../../store/sessionStore'
 
 export function UserInputMessage({
   message,

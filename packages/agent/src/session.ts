@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { agentEvent, workflowEvent } from './event'
-import type { PlanStep } from './tools/planner'
-import type { ChatMessage, WaitHumanApprovePayload } from './types'
+import type { ChatMessage, WaitHumanApprovePayload, PlanStep } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
 
 export type SessionType = 'normal' | 'fork'

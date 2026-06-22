@@ -1,4 +1,4 @@
-import type { AppManager } from '@/electron/appManager'
+import type { AppManager } from '../../../appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 

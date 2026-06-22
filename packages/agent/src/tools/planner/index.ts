@@ -3,12 +3,9 @@ import { plannerEvent } from '../../event'
 import { SessionPlaner } from '../../session'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { ToolCallError } from '../../error'
+import type { PlanStep } from '../../types'
 
-export type PlanStep = {
-  id: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  description: string
-}
+
 
 export const PLANNER_TOOL_NAMES = {
   SUBMIT_PLAN: `submit-plan`,
