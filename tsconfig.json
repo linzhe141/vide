@@ -1,7 +1,9 @@
 {
+  "files": [],
   "references": [
     { "path": "./apps/main" },
     { "path": "./apps/renderer" },
-    { "path": "./packages/agent" }
+    { "path": "./packages/agent" },
+    { "path": "./packages/types" }
   ]
 }
