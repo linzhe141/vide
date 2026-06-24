@@ -20,7 +20,7 @@ export type ThemeColor = Settings['themeColor']
 export type LLMConfig = Settings['llmConfig']
 export type GenerateImageConfig = Settings['generateImageConfig']
 
-export const enum SessionMessageRole {
+export enum SessionMessageRole {
   System = 'system',
   User = 'user',
   AssistantReason = 'assistant-reason',

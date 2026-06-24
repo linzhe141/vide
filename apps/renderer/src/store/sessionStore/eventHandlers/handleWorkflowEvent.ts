@@ -1,5 +1,4 @@
 ﻿import { nanoid } from 'nanoid'
-import { ASK_USER_TOOL_NAMES } from '@/agent/tools/askUserQuestion'
 import type {
   Workflow,
   PlanStep,
@@ -157,7 +156,7 @@ export function handleWorkflowEvent(
         finishedAt: event.data.toolCallResult.finishedAt,
         durationMs: event.data.toolCallResult.durationMs,
       })
-      if (event.data.toolCallResult.toolName === ASK_USER_TOOL_NAMES.GENERATE) {
+      if (event.data.toolCallResult.toolName === 'ask-user-question-generate') {
         const question = event.data.toolCallResult.result?.question
         if (question) {
           context.pushMessage({
@@ -237,4 +236,3 @@ function updatePlannerStepStatus(
   if (!step) return
   step.status = status
 }
-

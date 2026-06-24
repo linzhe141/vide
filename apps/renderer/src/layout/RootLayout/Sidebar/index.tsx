@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router'
 import { Plus, ChevronLeft } from 'lucide-react'
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 import { SidebarFooter } from './SidebarFooter'
 import { SessionRecents } from './SessionRecents'
 

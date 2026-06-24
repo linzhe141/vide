@@ -1,8 +1,8 @@
 import { Eraser, Moon, Sun } from 'lucide-react'
-import { useTheme, themeColors, type ThemeColor } from '@/app/src/provider/ThemeProvider'
-import { cn } from '@/app/src/lib/utils'
-import { Button } from '@/app/src/ui/Button'
-import { useSessionStoreActions } from '@/app/src/store/sessionStore'
+import { useTheme, themeColors, type ThemeColor } from '@/provider/ThemeProvider'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/Button'
+import { useSessionStoreActions } from '@/store/sessionStore'
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()

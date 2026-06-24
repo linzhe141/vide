@@ -1,4 +1,4 @@
-﻿import { SessionMessageRole } from '@/types'
+﻿import { SessionMessageRole } from '@vide/types'
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 import {
   type Workflow,

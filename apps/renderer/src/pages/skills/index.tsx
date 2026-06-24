@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ExternalLink, Sparkles } from 'lucide-react'
-import { Button } from '@/app/src/ui/Button'
+import { Button } from '@/ui/Button'
 
 type Skill = {
   name: string

@@ -3,8 +3,8 @@ import './index.css'
 import './style.css'
 import App from './App'
 // import App from './MarkDownStreamRender'
-import { createElectronSettingStore } from '@/app/src/store/electronSettingStore'
-import { initShikiHighlighter } from '@/app/src/components/highlight/shiki'
+import { createElectronSettingStore } from '@/store/electronSettingStore'
+import { initShikiHighlighter } from '@/components/highlight/shiki'
 
 await Promise.all([createElectronSettingStore(), initShikiHighlighter()])
 

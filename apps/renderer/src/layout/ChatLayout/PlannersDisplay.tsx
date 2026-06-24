@@ -1,4 +1,4 @@
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { useSessionPlanners } from '../../store/sessionStore'
 import { type PlanStep } from '../../store/sessionStore/types'

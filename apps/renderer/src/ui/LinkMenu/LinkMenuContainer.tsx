@@ -1,5 +1,5 @@
 import { useEffect, type PropsWithChildren } from 'react'
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 import { useLinkMenu } from './provider'
 
 interface LinkMenuContainerProps {

@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router'
 import { Settings, Sparkles } from 'lucide-react'
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 
 export function SidebarFooter() {
   return (

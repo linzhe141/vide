@@ -1,7 +1,7 @@
 import { Minus, Square, X, Copy } from 'lucide-react'
 import Logo from '../logo.png'
 import { useEffect, useState, type PropsWithChildren } from 'react'
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 
 const WindowState = {
   MINIMIZED: 'minimized',

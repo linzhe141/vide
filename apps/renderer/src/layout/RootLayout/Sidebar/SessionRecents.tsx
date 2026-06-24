@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { GitBranch, LoaderCircle } from 'lucide-react'
 import { NavLink } from 'react-router'
-import { cn } from '@/app/src/lib/utils'
-import { useSessionStore, useSessionStoreActions } from '@/app/src/store/sessionStore'
+import { cn } from '@/lib/utils'
+import { useSessionStore, useSessionStoreActions } from '@/store/sessionStore'
 
 export function SessionRecents() {
   const sessions = useSessionStore((state) => state.sessions)

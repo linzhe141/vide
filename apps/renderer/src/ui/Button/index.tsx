@@ -1,4 +1,4 @@
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 import * as React from 'react'
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost'

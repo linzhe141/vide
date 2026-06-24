@@ -8,7 +8,6 @@ export const ipcRendererApi = {
   on<T extends keyof MainChannel>(ch: T, handler: MainChannel[T]) {
     // @ts-expect-error ignore
     const fn = (_e: IpcRendererEvent, data) => {
-      // @ts-expect-error ignore
       handler(data)
     }
     ipcRenderer.addListener(ch, fn)

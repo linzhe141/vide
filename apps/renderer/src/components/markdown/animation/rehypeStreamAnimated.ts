@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 // SPDX-License-Identifier: MIT
-import { type Element, type ElementContent, type Root } from '@/node_modules/@types/hast/index.d'
+import type { Element, ElementContent, Root } from 'hast'
 import { type BuildVisitor } from 'unist-util-visit'
 import { visit } from 'unist-util-visit'
 

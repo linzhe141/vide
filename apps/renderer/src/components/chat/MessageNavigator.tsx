@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/app/src/lib/utils'
+import { cn } from '@/lib/utils'
 
 type MessageNavigatorItem = {
   id: string
