@@ -20,5 +20,11 @@
     "dev": "tsdown --watch",
     "build": "tsdown"
   },
-  "dependencies": {}
+  "dependencies": {
+    "dayjs": "^1.11.20",
+    "diff": "^9.0.0",
+    "gray-matter": "^4.0.3",
+    "openai": "^6.37.0",
+    "zod": "^4.4.3"
+  }
 }

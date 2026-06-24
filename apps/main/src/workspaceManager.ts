@@ -1,12 +1,7 @@
 ﻿import { app, dialog, shell } from 'electron'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import {
-  DEFAULT_VIDE_HOME,
-  getArtifactsRoot,
-  getSkillsRoot,
-  getVideHome,
-} from '@/agent/workspace'
+import { DEFAULT_VIDE_HOME, getArtifactsRoot, getSkillsRoot, getVideHome } from '@vide/agent'
 import type { AppManager } from './appManager'
 
 export type WorkspaceInfo = {
@@ -123,4 +118,3 @@ export class WorkspaceManager {
 }
 
 export { DEFAULT_VIDE_HOME }
-

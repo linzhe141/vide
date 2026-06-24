@@ -19,6 +19,9 @@
     "build": "pnpm clean && pnpm prebuild && pnpm pack:electron",
     "db:generate": "pnpm --dir apps/main db:generate"
   },
+  "dependencies": {
+    "uuid": "^14.0.1"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.2",
@@ -31,9 +34,7 @@
     "tsdown": "^0.22.3",
     "tsx": "^4.21.0",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.2"
-  },
-  "dependencies": {
-    "uuid": "^14.0.1"
+    "typescript-eslint": "^8.59.2",
+    "unrun": "^0.3.1"
   }
 }

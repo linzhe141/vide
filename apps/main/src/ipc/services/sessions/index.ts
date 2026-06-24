@@ -8,8 +8,7 @@ import type { FileNode, SessionRowDto } from '../../api/channels'
 import fs from 'fs/promises'
 import path from 'path'
 import { isBinaryFile } from 'isbinaryfile'
-import { getArtifactsRoot } from '@/agent/workspace'
-import { scanSkills } from '@/agent/tools/skill'
+import { getArtifactsRoot, scanSkills } from '@vide/agent'
 
 export class SessionIpcMainService implements IpcMainService {
   constructor(private appManager: AppManager) {}
@@ -74,4 +73,3 @@ async function buildFileTree(dir: string): Promise<FileNode> {
 
   return node
 }
-

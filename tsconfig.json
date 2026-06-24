@@ -1,25 +1,13 @@
 {
   "compilerOptions": {
-    // 防止没有设置noEmit:true，导致我明明只是想类型检查，但是编译的文件在源码目录中，难得去删除
     "outDir": "out",
-    "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
-    "paths": {
-      // "@/agent/*": ["./packages/agent/src/*"],
-      // "@/app/*": ["./apps/renderer/*"],
-      // "@/electron/*": ["./apps/main/src/*"],
-      // "@/main/*": ["./apps/main/src/*"],
-      "@vide/agent": ["./packages/agent/src/index.ts"],
-      "@vide/types": ["./packages/types/src/index.ts"],
-      "@vide/main": ["./apps/main/src/index.ts"],
-      "@vide/renderer": ["./apps/renderer/src/index.ts"],
-      "@/*": ["./*"]
-    },
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

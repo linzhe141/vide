@@ -15,18 +15,7 @@ export default defineConfig({
       },
     },
     resolve: {
-      alias: [
-        { find: '@/agent', replacement: path.resolve(__dirname, '../../packages/agent/src') },
-        { find: '@/app', replacement: path.resolve(__dirname, '../renderer') },
-        { find: '@/electron', replacement: path.resolve(__dirname, './src') },
-        { find: '@/main', replacement: path.resolve(__dirname, './src') },
-        { find: '@', replacement: path.resolve(__dirname, '../..') },
-
-        {
-          find: '@vide/types',
-          replacement: path.resolve(__dirname, '../../packages/types/src/foo.ts'),
-        },
-      ],
+      alias: [{ find: '@', replacement: path.resolve(__dirname, './src') }],
     },
   },
   preload: {
@@ -38,15 +27,6 @@ export default defineConfig({
           index: path.resolve(__dirname, './src/preload/index.ts'),
         },
       },
-    },
-    resolve: {
-      alias: [
-        { find: '@/agent', replacement: path.resolve(__dirname, '../../packages/agent/src') },
-        { find: '@/app', replacement: path.resolve(__dirname, '../renderer') },
-        { find: '@/electron', replacement: path.resolve(__dirname, './src') },
-        { find: '@/main', replacement: path.resolve(__dirname, './src') },
-        { find: '@', replacement: path.resolve(__dirname, '../..') },
-      ],
     },
   },
   renderer: {
@@ -66,13 +46,7 @@ export default defineConfig({
       },
     },
     resolve: {
-      alias: [
-        { find: '@/agent', replacement: path.resolve(__dirname, '../../packages/agent/src') },
-        { find: '@/app', replacement: path.resolve(__dirname, '../renderer') },
-        { find: '@/electron', replacement: path.resolve(__dirname, './src') },
-        { find: '@/main', replacement: path.resolve(__dirname, './src') },
-        { find: '@', replacement: path.resolve(__dirname, '../..') },
-      ],
+      alias: [{ find: '@', replacement: path.resolve(__dirname, './src') }],
     },
     plugins: [
       react({

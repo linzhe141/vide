@@ -1,6 +1,5 @@
 import { agentEvent } from './event'
 import type { AssistantChatMessage, ChatMessage } from './types'
-import type { WorkflowData } from '@/electron/ipc/api/channels'
 import {
   Session,
   type SessionOrigin,
@@ -18,6 +17,15 @@ export const enum SessionMessageRole {
   Tool = 'tool',
   Error = 'error',
   Abort = 'abort',
+}
+
+type WorkflowData = {
+  id: string
+  userInput: string
+  parentWorkflowId: string | null
+  stopStatus: 'finished' | 'error' | 'aborted'
+  askUserSubmitValue?: string[]
+  messages: any
 }
 
 export class Agent {
