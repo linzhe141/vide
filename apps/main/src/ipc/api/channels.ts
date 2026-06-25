@@ -1,11 +1,6 @@
 ﻿import type { Settings, GenerateImageConfig, LLMConfig } from '@vide/types'
-import type {
-  AgentLifecycleEvents,
-  PlannerEvents,
-  WorkflowEvents,
-  PlanStep,
-  WaitHumanApprovePayload,
-} from '@vide/agent'
+import type { AgentLifecycleEvents, PlannerEvents, WorkflowEvents } from '@vide/agent/event'
+import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 import type { sessionWorkflowMessages } from '../../db/schema'
 
 export type FileNode = {
@@ -156,12 +151,6 @@ export interface RenderChannel {
 }
 
 export type MainChannel = {
-  // example
-  sendChunk: (chunk: string) => void
-  foo: (data: Record<'foo', 'bar'>) => void
-  ping: () => void
-
-  // window
   'changed-window-size': (isMaximized: boolean) => void
 } & AgentLifecycleEvents &
   PlannerEvents &

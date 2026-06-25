@@ -4,6 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/electron/main/index.js",
+  "exports": {
+    "./ipc": {
+      "import": "./src/ipc/api/ipcRenderer.ts",
+      "types": "./src/ipc/api/ipcRenderer.ts"
+    }
+  },
   "scripts": {
     "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",

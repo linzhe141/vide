@@ -1,4 +1,4 @@
-﻿import type { ToolCall } from '@/agent/types'
+﻿import type { ToolCall } from '@vide/agent/types'
 
 export interface UserInputSessionMessage {
   id: string

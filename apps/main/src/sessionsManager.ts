@@ -8,8 +8,8 @@ import {
   onWorkflowEvent,
 } from '@vide/agent'
 import type { SessionType } from '@vide/agent'
-import type { AskUserQuestion } from '@vide/agent'
-import type { PlanStep } from '@vide/agent'
+import type { AskUserQuestion } from '@vide/agent/types'
+import type { PlanStep } from '@vide/agent/types'
 import { SessionMessageRole } from '@vide/types'
 import {
   artifacts,

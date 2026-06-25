@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type PropsWithChildren } from 'react'
 import { useElectronSettingStore } from '../store/electronSettingStore'
-import type { Theme } from '@/types'
+import type { Theme } from '@vide/types'
 
 export type ThemeColor = 'blue' | 'green' | 'orange'
 

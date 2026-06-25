@@ -125,6 +125,7 @@ export const processLLMStream: FnProcessLLMStream = async function* ({
               function: { arguments: '', name: '' },
               id: toolCall.id ?? uuid(),
               type: 'function',
+              status: 'auto-approved'
             }
           }
           if (toolCall.function?.name) {

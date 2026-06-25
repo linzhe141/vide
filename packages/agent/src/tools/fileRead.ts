@@ -1,6 +1,6 @@
 ﻿import fs from 'fs/promises'
 import path from 'path'
-import type { Tool } from '@/agent/types'
+import type { Tool } from '@vide/agent/types'
 import { ToolCallError } from '../error'
 
 const CONFIG = {
