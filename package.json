@@ -9,7 +9,7 @@
   "packageManager": "pnpm@10.5.1",
   "scripts": {
     "preview": "pnpm --dir apps/main preview",
-    "dev": "node scripts/dev.mjs",
+    "dev": "pnpm --dir apps/main dev",
     "prebuild": "pnpm --dir apps/main build",
     "rebuild:electron": "pnpm --dir apps/main rebuild:electron",
     "clean": "rm -rf dist",
