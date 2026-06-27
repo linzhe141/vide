@@ -1,17 +1,13 @@
 import type {
-  AssistantChatMessage,
   CallLLMStepPayload,
   CallToolsStepPayload,
   CallToolStepPayload,
-  ChatMessage,
   StepPayload,
-  Tool,
-  ToolCall,
-  ToolResult,
   UserInputStepPayload,
   WaitHumanApprovePayload,
 } from './types'
-import { processLLMStream } from './llm'
+import type { AssistantChatMessage, ChatMessage, Tool, ToolCall, ToolResult } from '@vide/ai'
+import { callAI } from './llm'
 import { workflowEvent } from './event'
 import { WorkflowEventChannels } from './event/channels'
 import { registorTools } from './tools/registor'
@@ -128,93 +124,90 @@ export class Workflow {
   }
 
   async handleCallLLM(messages: ChatMessage[]) {
-    let content = ''
-    let toolCalls: ToolCall[] = []
-
     this.runtime.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
 
-    for await (const chunk of processLLMStream({
+    const result = callAI({
       messages,
       tools: this.tools,
       signal: this.runtime.signal,
-      onReasoningStart: () => {
-        this.runtime.assistantReasoningChunk = ''
-        this.runtime.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+      events: {
+        onReasoningStart: () => {
+          this.runtime.assistantReasoningChunk = ''
+          this.runtime.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+        },
+        onReasoningDelta: (chunk) => {
+          this.runtime.assistantReasoningChunk = chunk.content
+          this.runtime.emit('workflow-llm-reasoning-delta', {
+            ctx: this.runtime.workflowEventCtx,
+            chunk,
+          })
+        },
+        onReasoningEnd: (content) => {
+          this.runtime.assistantReasoningChunk = ''
+          this.runtime.emit('workflow-llm-reasoning-end', {
+            ctx: this.runtime.workflowEventCtx,
+            content,
+          })
+        },
+        onTextStart: () => {
+          this.runtime.assistantChunk = ''
+          this.runtime.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
+        },
+        onTextDelta: (chunk) => {
+          this.runtime.assistantChunk = chunk.content
+          this.runtime.emit('workflow-llm-text-delta', {
+            ctx: this.runtime.workflowEventCtx,
+            chunk,
+          })
+        },
+        onTextEnd: (content) => {
+          this.runtime.assistantChunk = ''
+          this.runtime.emit('workflow-llm-text-end', {
+            ctx: this.runtime.workflowEventCtx,
+            content,
+          })
+        },
+        onToolCallsStart: () => {
+          this.runtime.emit('workflow-llm-tool-calls-start', {
+            ctx: this.runtime.workflowEventCtx,
+          })
+        },
+        onToolCallName: (data) => {
+          this.runtime.emit('workflow-llm-tool-call-name', {
+            ctx: this.runtime.workflowEventCtx,
+            data,
+          })
+        },
+        onToolCallArguments: (data) => {
+          this.runtime.emit('workflow-llm-tool-call-arguments', {
+            ctx: this.runtime.workflowEventCtx,
+            data,
+          })
+        },
+        onToolCallsEnd: (toolCalls) => {
+          const autoApprove = this.runtime.rootSession.autoApprove
+          this.runtime.emit('workflow-llm-tool-calls-end', {
+            ctx: this.runtime.workflowEventCtx,
+            toolCalls: toolCalls.map((t) => {
+              return {
+                ...t,
+                status:
+                  t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND && autoApprove === false
+                    ? 'waiting-human'
+                    : 'auto-approved',
+              }
+            }),
+          })
+        },
       },
-      onReasoningDelta: (chunk) => {
-        this.runtime.assistantReasoningChunk = chunk.content
-        this.runtime.emit('workflow-llm-reasoning-delta', {
-          ctx: this.runtime.workflowEventCtx,
-          chunk,
-        })
-      },
-      onReasoningEnd: (content) => {
-        this.runtime.assistantReasoningChunk = ''
-        this.runtime.emit('workflow-llm-reasoning-end', {
-          ctx: this.runtime.workflowEventCtx,
-          content,
-        })
-      },
-      onTextStart: () => {
-        this.runtime.assistantChunk = ''
-        this.runtime.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
-      },
-      onTextDelta: (chunk) => {
-        this.runtime.assistantChunk = chunk.content
-        this.runtime.emit('workflow-llm-text-delta', { ctx: this.runtime.workflowEventCtx, chunk })
-      },
-      onTextEnd: (content) => {
-        this.runtime.assistantChunk = ''
-        this.runtime.emit('workflow-llm-text-end', { ctx: this.runtime.workflowEventCtx, content })
-      },
-      onToolCallsStart: () => {
-        this.runtime.emit('workflow-llm-tool-calls-start', {
-          ctx: this.runtime.workflowEventCtx,
-        })
-      },
-      onToolCallName: (data) => {
-        this.runtime.emit('workflow-llm-tool-call-name', {
-          ctx: this.runtime.workflowEventCtx,
-          data,
-        })
-      },
-      onToolCallArguments: (data) => {
-        this.runtime.emit('workflow-llm-tool-call-arguments', {
-          ctx: this.runtime.workflowEventCtx,
-          data,
-        })
-      },
-      onToolCallsEnd: (toolCalls) => {
-        const autoApprove = this.runtime.rootSession.autoApprove
-        this.runtime.emit('workflow-llm-tool-calls-end', {
-          ctx: this.runtime.workflowEventCtx,
-          toolCalls: toolCalls.map((t) => {
-            return {
-              ...t,
-              status:
-                t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND && autoApprove === false
-                  ? 'waiting-human'
-                  : 'auto-approved',
-            }
-          }),
-        })
-      },
-    })) {
-      if ('content' in chunk && chunk.content) {
-        content = chunk.content
-      }
-
-      if ('tool_calls' in chunk && chunk.tool_calls) {
-        toolCalls = chunk.tool_calls
-      }
-    }
+    })
 
     if (this.runtime.signal.aborted) {
       throw new AbortError()
     }
     this.runtime.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
 
-    return { content, toolCalls }
+    return result
   }
 
   async stateCallLLM(payload: CallLLMStepPayload): Promise<NextStep> {

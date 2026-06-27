@@ -1,5 +1,5 @@
 import { agentEvent } from './event'
-import type { AssistantChatMessage, ChatMessage } from './types'
+import type { AssistantChatMessage, ChatMessage } from '@vide/ai'
 import {
   Session,
   type SessionOrigin,

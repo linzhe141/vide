@@ -1,4 +1,4 @@
-﻿import type { ToolCall } from '@vide/agent/types'
+﻿import type { ToolCall } from '@vide/ai'
 import type { Workflow, ToolResultSessionMessage } from '../../../../store/sessionStore/types'
 import {
   Check,

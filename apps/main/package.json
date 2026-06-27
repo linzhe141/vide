@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@vide/agent": "workspace:*",
+    "@vide/ai": "workspace:*",
     "@vide/types": "workspace:*",
     "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.2.4",

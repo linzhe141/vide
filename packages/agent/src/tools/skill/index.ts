@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../../types'
+import type { ChatMessage } from '@vide/ai'
 import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'

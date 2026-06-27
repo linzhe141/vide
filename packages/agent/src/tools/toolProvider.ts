@@ -1,4 +1,4 @@
-import type { Tool } from '../types'
+import type { Tool } from '@vide/ai'
 import type { WorkflowRuntimeContext } from '../workflow'
 
 export abstract class ToolProvider {

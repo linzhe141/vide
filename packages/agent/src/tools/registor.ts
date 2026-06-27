@@ -9,7 +9,7 @@ import { Grep } from './grep'
 import { AskUserQuestionTool } from './askUserQuestion'
 import { SkillTool } from './skill'
 import { Image } from './image'
-import type { Tool } from '../types'
+import type { Tool } from '@vide/ai'
 import type { WorkflowRuntimeContext } from '../workflow'
 
 export function registorTools(runtime: WorkflowRuntimeContext) {

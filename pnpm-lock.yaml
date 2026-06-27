@@ -97,6 +97,9 @@ importers:
       '@vide/agent':
         specifier: workspace:*
         version: link:../../packages/agent
+      '@vide/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@vide/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -206,6 +209,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@vide/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@vide/main':
         specifier: workspace:*
         version: link:../main
@@ -215,6 +221,9 @@ importers:
 
   packages/agent:
     dependencies:
+      '@vide/ai':
+        specifier: workspace:*
+        version: link:../ai
       dayjs:
         specifier: ^1.11.20
         version: 1.11.21
@@ -224,12 +233,15 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
-      openai:
-        specifier: ^6.37.0
-        version: 6.42.0(zod@4.4.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/ai:
+    dependencies:
+      openai:
+        specifier: ^6.37.0
+        version: 6.42.0(zod@4.4.3)
 
   packages/types: {}
 

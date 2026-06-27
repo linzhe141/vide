@@ -12,7 +12,7 @@ import {
   SquareTerminal,
   XCircle,
 } from 'lucide-react'
-import type { ToolCall } from '@vide/agent/types'
+import type { ToolCall } from '@vide/ai'
 import { useState } from 'react'
 import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'

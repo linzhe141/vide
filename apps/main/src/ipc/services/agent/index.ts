@@ -12,7 +12,7 @@ import type { IpcMainService } from '../..'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
 import { SessionMessageRole } from '@vide/types'
-import type { ToolCall } from '@vide/agent/types'
+import type { ToolCall } from '@vide/ai'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
