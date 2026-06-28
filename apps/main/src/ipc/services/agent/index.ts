@@ -11,7 +11,7 @@ import type { AppManager } from '../../../appManager'
 import type { IpcMainService } from '../..'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
-import { SessionMessageRole } from '@vide/types'
+import { MessageRole } from '@vide/ai'
 import type { ToolCall } from '@vide/ai'
 
 export class AgentIpcMainService implements IpcMainService {
@@ -97,7 +97,7 @@ export class AgentIpcMainService implements IpcMainService {
         .where(
           and(
             eq(schema.sessionWorkflowMessages.workflowId, workflowId),
-            eq(schema.sessionWorkflowMessages.role, SessionMessageRole.ToolCalls)
+            eq(schema.sessionWorkflowMessages.role, MessageRole.ToolCalls)
           )
         )
       const targetMessage = targetMessages.find((m) => {
@@ -135,7 +135,7 @@ export class AgentIpcMainService implements IpcMainService {
         .where(
           and(
             eq(schema.sessionWorkflowMessages.workflowId, workflowId),
-            eq(schema.sessionWorkflowMessages.role, SessionMessageRole.ToolCalls)
+            eq(schema.sessionWorkflowMessages.role, MessageRole.ToolCalls)
           )
         )
       const targetMessage = targetMessages.find((m) => {

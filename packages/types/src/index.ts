@@ -19,16 +19,3 @@ export type Theme = Settings['theme']
 export type ThemeColor = Settings['themeColor']
 export type LLMConfig = Settings['llmConfig']
 export type GenerateImageConfig = Settings['generateImageConfig']
-
-export enum SessionMessageRole {
-  System = 'system',
-  User = 'user',
-  AssistantReason = 'assistant-reason',
-  AssistantText = 'assistant-text',
-  ToolCalls = 'tool-calls',
-  Tool = 'tool',
-  Error = 'error',
-  Abort = 'abort',
-}
-//
-// export * from './planner'

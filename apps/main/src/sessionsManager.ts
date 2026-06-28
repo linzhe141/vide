@@ -10,7 +10,7 @@ import {
 import type { SessionType } from '@vide/agent'
 import type { AskUserQuestion } from '@vide/agent/types'
 import type { PlanStep } from '@vide/agent/types'
-import { SessionMessageRole } from '@vide/types'
+import { MessageRole } from '@vide/ai'
 import {
   artifacts,
   askUserQuestions,
@@ -281,7 +281,7 @@ export class SessionsManager {
 
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        role: SessionMessageRole.User,
+        role: MessageRole.User,
         workflowId: ctx.workflowId,
         content: input,
         createdAt: time,
@@ -317,7 +317,7 @@ export class SessionsManager {
         await db.insert(sessionWorkflowMessages).values({
           id: uuid(),
           workflowId: ctx.workflowId,
-          role: SessionMessageRole.AssistantText,
+          role: MessageRole.AssistantText,
           content: chunkData.text,
           payload: '',
           createdAt: time,
@@ -328,7 +328,7 @@ export class SessionsManager {
         await db.insert(sessionWorkflowMessages).values({
           id: uuid(),
           workflowId: ctx.workflowId,
-          role: SessionMessageRole.AssistantReason,
+          role: MessageRole.AssistantReason,
           content: chunkData.reasoning,
           payload: '',
           createdAt: time,
@@ -344,7 +344,7 @@ export class SessionsManager {
         .where(eq(sessionWorkflows.id, ctx.workflowId))
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        role: SessionMessageRole.Abort,
+        role: MessageRole.Abort,
         workflowId: ctx.workflowId,
         content: 'The user aborted this workflow before it completed.',
         createdAt: time,
@@ -374,7 +374,7 @@ export class SessionsManager {
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         workflowId,
-        role: SessionMessageRole.AssistantReason,
+        role: MessageRole.AssistantReason,
         content,
         payload: '',
         createdAt: time,
@@ -389,7 +389,7 @@ export class SessionsManager {
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         workflowId,
-        role: SessionMessageRole.AssistantText,
+        role: MessageRole.AssistantText,
         content,
         payload: '',
         createdAt: time,
@@ -405,7 +405,7 @@ export class SessionsManager {
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
         workflowId,
-        role: SessionMessageRole.ToolCalls,
+        role: MessageRole.ToolCalls,
         content: '',
         payload: JSON.stringify(toolCalls),
         createdAt: time,
@@ -418,7 +418,7 @@ export class SessionsManager {
       const time = Date.now()
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        role: SessionMessageRole.Tool,
+        role: MessageRole.Tool,
         workflowId: ctx.workflowId,
         content: '',
         createdAt: time,
@@ -430,7 +430,7 @@ export class SessionsManager {
       const time = Date.now()
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        role: SessionMessageRole.Tool,
+        role: MessageRole.Tool,
         workflowId: ctx.workflowId,
         content: '',
         createdAt: time,
@@ -442,7 +442,7 @@ export class SessionsManager {
       const time = Date.now()
       await db.insert(sessionWorkflowMessages).values({
         id: uuid(),
-        role: SessionMessageRole.Tool,
+        role: MessageRole.Tool,
         workflowId: ctx.workflowId,
         content: '',
         payload: JSON.stringify(toolCallResult),

@@ -1,5 +1,5 @@
 import { agentEvent } from './event'
-import type { AssistantChatMessage, ChatMessage } from '@vide/ai'
+import { MessageRole, type AssistantChatMessage, type ChatMessage } from '@vide/ai'
 import {
   Session,
   type SessionOrigin,
@@ -8,16 +8,6 @@ import {
   type SessionType,
   type SessionWorkflowSnapshot,
 } from './session'
-export const enum SessionMessageRole {
-  System = 'system',
-  User = 'user',
-  AssistantReason = 'assistant-reason',
-  AssistantText = 'assistant-text',
-  ToolCalls = 'tool-calls',
-  Tool = 'tool',
-  Error = 'error',
-  Abort = 'abort',
-}
 
 type WorkflowData = {
   id: string
@@ -115,21 +105,21 @@ export class Agent {
     let assistantMessage: AssistantChatMessage | null = null
     for (const message of messages) {
       switch (message.role) {
-        case SessionMessageRole.User: {
+        case MessageRole.User: {
           chatMessages.push({
             role: 'user',
             content: message.content || '',
           })
           break
         }
-        case SessionMessageRole.Abort: {
+        case MessageRole.Abort: {
           chatMessages.push({
             role: 'user',
             content: message.content || 'The user aborted this workflow before it completed.',
           })
           break
         }
-        case SessionMessageRole.AssistantText: {
+        case MessageRole.AssistantText: {
           assistantMessage = {
             role: 'assistant',
             content: message.content || '',
@@ -137,7 +127,7 @@ export class Agent {
           chatMessages.push(assistantMessage)
           break
         }
-        case SessionMessageRole.ToolCalls: {
+        case MessageRole.ToolCalls: {
           if (assistantMessage) {
             assistantMessage.tool_calls = JSON.parse(message.payload || '[]')
           } else {
@@ -149,7 +139,7 @@ export class Agent {
           }
           break
         }
-        case SessionMessageRole.Tool: {
+        case MessageRole.Tool: {
           const toolResult = JSON.parse(message.payload || '{}') as
             | { id: string; toolName: string; result: any }
             | { id: string; toolName: string; error: any }

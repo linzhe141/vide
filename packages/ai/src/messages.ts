@@ -41,3 +41,4 @@ export type ToolCall = {
   type: 'function'
   status: 'auto-approved' | 'waiting-human' | 'human-approved' | 'human-rejected'
 }
+

@@ -1,4 +1,4 @@
-﻿import { SessionMessageRole } from '@vide/types'
+﻿import { MessageRole } from '@vide/ai'
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 import {
   type Workflow,
@@ -114,7 +114,7 @@ function buildWorkflowMessages(
   const toolCallsById = new Map<string, { function: { name: string } }>()
   for (const message of messages) {
     switch (message.role) {
-      case SessionMessageRole.User:
+      case MessageRole.User:
         result.push({
           role: 'user',
           id: message.id,
@@ -122,7 +122,7 @@ function buildWorkflowMessages(
         })
         break
 
-      case SessionMessageRole.AssistantReason:
+      case MessageRole.AssistantReason:
         result.push({
           role: 'assistant-reason',
           id: message.id,
@@ -131,7 +131,7 @@ function buildWorkflowMessages(
         })
         break
 
-      case SessionMessageRole.AssistantText:
+      case MessageRole.AssistantText:
         result.push({
           role: 'assistant-text',
           id: message.id,
@@ -140,7 +140,7 @@ function buildWorkflowMessages(
         })
         break
 
-      case SessionMessageRole.ToolCalls:
+      case MessageRole.ToolCalls:
         for (const toolCall of JSON.parse(message.payload || '[]')) {
           toolCallsById.set(toolCall.id, toolCall)
         }
@@ -151,7 +151,7 @@ function buildWorkflowMessages(
         })
         break
 
-      case SessionMessageRole.Tool: {
+      case MessageRole.Tool: {
         const data = JSON.parse(message.payload || '{}')
         result.push({
           role: 'tool-result',
