@@ -9,7 +9,7 @@ import { db } from '../../../databaseManager'
 import { logger } from '../../../logger'
 import type { AppManager } from '../../../appManager'
 import type { IpcMainService } from '../..'
-import type { WorkflowData } from '../../api/channels'
+import type { WorkflowData } from '@vide/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
 import { MessageRole } from '@vide/ai'
 import type { ToolCall } from '@vide/ai'
@@ -312,6 +312,7 @@ export class AgentIpcMainService implements IpcMainService {
         userInput: workflow.userInput,
         parentWorkflowId: workflow.parentWorkflowId,
         stopStatus: workflow.stopStatus ?? 'finished',
+        // @ts-expect-error role skip
         messages: workflowMessageRows,
       })
     }

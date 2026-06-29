@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink } from 'lucide-react'
 import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
+import type { FileNode } from '@vide/ipc'
 
 export function ArtifactsDisplay({
   sessionId,
@@ -101,7 +102,7 @@ function TreeNode({
   level = 0,
   onSelect,
 }: {
-  node: any
+  node: FileNode
   level?: number
   onSelect: (file: any) => void
 }) {

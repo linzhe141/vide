@@ -1,4 +1,5 @@
 ﻿import { MessageRole } from '@vide/ai'
+import { type WorkflowData } from '@vide/ipc'
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 import {
   type Workflow,
@@ -8,7 +9,6 @@ import {
 } from '../../store/sessionStore/types'
 import { useEffect } from 'react'
 import { context } from '../../hooks/chatContenxt'
-type WorkflowData = any
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 

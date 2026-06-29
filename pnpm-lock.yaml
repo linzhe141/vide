@@ -100,6 +100,9 @@ importers:
       '@vide/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@vide/ipc':
+        specifier: workspace:*
+        version: link:../../packages/ipc
       '@vide/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -212,6 +215,9 @@ importers:
       '@vide/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@vide/ipc':
+        specifier: workspace:*
+        version: link:../../packages/ipc
       '@vide/main':
         specifier: workspace:*
         version: link:../main
@@ -242,6 +248,21 @@ importers:
       openai:
         specifier: ^6.37.0
         version: 6.42.0(zod@4.4.3)
+
+  packages/ipc:
+    dependencies:
+      '@vide/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@vide/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@vide/types':
+        specifier: workspace:*
+        version: link:../types
+      electron:
+        specifier: 41.3.0
+        version: 41.3.0
 
   packages/types: {}
 

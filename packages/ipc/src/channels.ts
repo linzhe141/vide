@@ -1,7 +1,7 @@
 ﻿import type { Settings, GenerateImageConfig, LLMConfig } from '@vide/types'
 import type { AgentLifecycleEvents, PlannerEvents, WorkflowEvents } from '@vide/agent/event'
 import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
-import type { sessionWorkflowMessages } from '../../db/schema'
+import type { MessageRole } from '@vide/ai'
 
 export type FileNode = {
   name: string
@@ -27,7 +27,14 @@ export type WorkflowData = {
   parentWorkflowId: string | null
   stopStatus: 'finished' | 'error' | 'aborted'
   askUserSubmitValue?: string[]
-  messages: (typeof sessionWorkflowMessages.$inferSelect)[]
+  messages: {
+    id: string
+    role: MessageRole
+    content: string | null
+    payload: string | null
+    createdAt: number
+    updatedAt: number
+  }[]
 }
 
 export interface RenderChannel {

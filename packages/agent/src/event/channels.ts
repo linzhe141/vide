@@ -1,6 +1,5 @@
-export type PlanStep = any
-export type AskUserQuestion = any
 import type { AssistantChatMessage, ChatMessage, ToolCall } from '@vide/ai'
+import type { AskUserQuestion, PlanStep } from '../types'
 
 const AgentLifecycleEventChannels = {
   'agent-create-session': null as unknown as {
