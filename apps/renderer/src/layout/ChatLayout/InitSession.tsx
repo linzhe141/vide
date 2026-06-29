@@ -1,5 +1,5 @@
 ﻿import { MessageRole } from '@vide/ai'
-import { type WorkflowData } from '@vide/ipc'
+import { type WorkflowData } from '@vide/main/ipcChannels'
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 import {
   type Workflow,

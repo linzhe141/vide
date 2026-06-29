@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink } from 'lucide-react'
 import { CodeBlock } from '../../components/codeblock'
 import { cn } from '../../lib/utils'
-import type { FileNode } from '@vide/ipc'
+import type { FileNode } from '@vide/main/ipcChannels'
 
 export function ArtifactsDisplay({
   sessionId,

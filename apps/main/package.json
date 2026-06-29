@@ -5,9 +5,13 @@
   "type": "module",
   "main": "./dist/electron/main/index.js",
   "exports": {
-    "./ipc": {
+    "./ipcRenderer": {
       "import": "./src/ipc/api/ipcRenderer.ts",
       "types": "./src/ipc/api/ipcRenderer.ts"
+    },
+    "./ipcChannels": {
+      "import": "./src/ipc/api/channels.ts",
+      "types": "./src/ipc/api/channels.ts"
     }
   },
   "scripts": {
@@ -31,7 +35,6 @@
   "devDependencies": {
     "@vide/agent": "workspace:*",
     "@vide/ai": "workspace:*",
-    "@vide/ipc": "workspace:*",
     "@vide/types": "workspace:*",
     "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.2.4",

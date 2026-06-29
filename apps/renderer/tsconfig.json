@@ -6,8 +6,9 @@
       "@/*": ["./src/*"]
     },
     "types": ["./vite-env.d.ts"],
-    "composite": true
+    "declarationMap": false,
+    "declaration": false
   },
   "include": ["src"],
-  "exclude": ["dist", "node_modules",]
+  "exclude": ["dist", "node_modules"]
 }

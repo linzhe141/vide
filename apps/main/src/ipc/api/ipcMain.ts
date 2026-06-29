@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import type { MainChannel, RenderChannel } from '@vide/ipc'
+import type { MainChannel, RenderChannel } from './channels'
 
 export const ipcMainApi = {
   handle<T extends keyof RenderChannel>(ch: T, fn: RenderChannel[T]) {

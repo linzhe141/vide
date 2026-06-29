@@ -1,5 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { MainChannel, RenderChannel } from '@vide/ipc'
+import type { MainChannel, RenderChannel } from './channels'
 
 export const ipcRendererApi = {
   invoke<T extends keyof RenderChannel>(ch: T, ...data: Parameters<RenderChannel[T]>) {
