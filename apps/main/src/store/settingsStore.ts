@@ -1,4 +1,4 @@
-import type { Settings } from '@vide/types'
+import type { Settings } from '@vide/config'
 import ElectronStore from 'electron-store'
 
 export const settingsStore = new ElectronStore<Settings>({

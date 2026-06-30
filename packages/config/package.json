@@ -1,5 +1,5 @@
 {
-  "name": "@vide/types",
+  "name": "@vide/config",
   "version": "0.0.0",
   "type": "module",
   "exports": {

@@ -19,7 +19,9 @@ export function MessageList() {
 
   return (
     <div className='mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-10'>
-      {workflows?.map((workflow) => <WorkflowView key={workflow.id} workflow={workflow} />)}
+      {workflows?.map((workflow) => (
+        <WorkflowView key={workflow.id} workflow={workflow} />
+      ))}
     </div>
   )
 }
@@ -100,4 +102,4 @@ function AbortedStatus() {
       <span>Workflow aborted</span>
     </div>
   )
-} 
+}

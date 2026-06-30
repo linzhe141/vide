@@ -5,7 +5,7 @@ import { SettingsIcon } from 'lucide-react'
 import { Input } from '@/ui/Input'
 import { Alert } from '@/ui/Alert'
 import { useElectronSettingStore } from '@/store/electronSettingStore'
-import type { LLMConfig } from '@vide/types'
+import type { LLMConfig } from '@vide/config'
 import { useRef, useCallback, useEffect } from 'react'
 
 export function useAutoDismiss<T>(duration = 3000) {

@@ -1,41 +1,15 @@
-﻿import type { Settings, GenerateImageConfig, LLMConfig } from '@vide/types'
+import type {
+  Settings,
+  GenerateImageConfig,
+  LLMConfig,
+  FileNode,
+  SessionRowDto,
+  WorkflowData,
+} from '@vide/config'
 import type { AgentLifecycleEvents, PlannerEvents, WorkflowEvents } from '@vide/agent/event'
 import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
-import type { MessageRole } from '@vide/ai'
 
-export type FileNode = {
-  name: string
-  type: 'file' | 'folder'
-  path: string // 缁濆璺緞
-  content?: string
-  children?: FileNode[]
-}
-
-export type SessionRowDto = {
-  id: string
-  title: string
-  type: 'normal' | 'fork'
-  originSessionId: string | null
-  originWorkflowId: string | null
-  workspacePath: string | null
-  createdAt: number
-  updatedAt: number
-}
-export type WorkflowData = {
-  id: string
-  userInput: string
-  parentWorkflowId: string | null
-  stopStatus: 'finished' | 'error' | 'aborted'
-  askUserSubmitValue?: string[]
-  messages: {
-    id: string
-    role: MessageRole
-    content: string | null
-    payload: string | null
-    createdAt: number
-    updatedAt: number
-  }[]
-}
+export type { FileNode, SessionRowDto, WorkflowData }
 
 export interface RenderChannel {
   // electron store

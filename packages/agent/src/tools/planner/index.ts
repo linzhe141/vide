@@ -5,8 +5,6 @@ import { defineTool, ToolProvider } from '../toolProvider'
 import { ToolCallError } from '../../error'
 import type { PlanStep } from '../../types'
 
-
-
 export const PLANNER_TOOL_NAMES = {
   SUBMIT_PLAN: `submit-plan`,
   UPDATE_PLAN_STEP: `update-plan-step`,

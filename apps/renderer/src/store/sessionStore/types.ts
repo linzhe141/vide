@@ -124,4 +124,3 @@ export type Session = {
     updatedAt: number
   }[]
 }
-

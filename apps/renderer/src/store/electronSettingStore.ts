@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { StoreApi, UseBoundStore } from 'zustand'
 import { forwardToElectronStore } from './forwardToElectronStore'
-import type { GenerateImageConfig, LLMConfig, Theme, ThemeColor } from '@vide/types'
+import type { GenerateImageConfig, LLMConfig, Theme, ThemeColor } from '@vide/config'
 
 type State = {
   theme: Theme

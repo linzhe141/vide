@@ -4,16 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/electron/main/index.js",
-  "exports": {
-    "./ipcRenderer": {
-      "import": "./src/ipc/api/ipcRenderer.ts",
-      "types": "./src/ipc/api/ipcRenderer.ts"
-    },
-    "./ipcChannels": {
-      "import": "./src/ipc/api/channels.ts",
-      "types": "./src/ipc/api/channels.ts"
-    }
-  },
   "scripts": {
     "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",
@@ -35,7 +25,7 @@
   "devDependencies": {
     "@vide/agent": "workspace:*",
     "@vide/ai": "workspace:*",
-    "@vide/types": "workspace:*",
+    "@vide/config": "workspace:*",
     "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.2.4",
     "@types/better-sqlite3": "^7.6.13",

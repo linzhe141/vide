@@ -3,26 +3,6 @@ import { createWorkflowStream, resumeWorkflowStream } from './createWorkflowStre
 import { useSessionStoreActions } from '../store/sessionStore'
 import type { WorkflowState } from './createWorkflowStream'
 
-type WorkflowListenersType = { [K in WorkflowState['type']]: Array<(...args: any[]) => any> }
-const workflowListeners = {} as WorkflowListenersType
-
-export function onWorkflowEvent(event: WorkflowState['type'], fn: (...args: any[]) => any) {
-  if (!workflowListeners[event]) {
-    workflowListeners[event] = []
-  }
-  workflowListeners[event].push(fn)
-  return () => {
-    workflowListeners[event] = workflowListeners[event].filter((item) => item !== fn)
-  }
-}
-
-export function emitWorkflowEvent(event: WorkflowState['type'], ...args: any[]) {
-  const listeners = workflowListeners[event]
-  if (listeners) {
-    listeners.forEach((fn) => fn(...args))
-  }
-}
-
 export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
