@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["./vite-env.d.ts"],
+    "declarationMap": false,
+    "declaration": false
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
+}
