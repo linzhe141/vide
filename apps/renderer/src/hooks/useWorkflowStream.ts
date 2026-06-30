@@ -1,11 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
 import { createWorkflowStream, resumeWorkflowStream } from './createWorkflowStream'
 import { useSessionStoreActions } from '../store/sessionStore'
-import type { WorkflowState } from './createWorkflowStream'
 
 export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
-  const readerRef = useRef<ReadableStreamDefaultReader<WorkflowState> | null>(null)
+  const readerRef = useRef<ReadableStreamDefaultReader | null>(null)
   const [running, setRunning] = useState(false)
   const { handleEvent } = useSessionStoreActions()
 
