@@ -5,6 +5,6 @@
   "trailingComma": "es5",
   "tabWidth": 2,
   "jsxSingleQuote": true,
-  "endOfLine": "crlf",
+  "endOfLine": "auto",
   "plugins": ["prettier-plugin-tailwindcss"]
 }

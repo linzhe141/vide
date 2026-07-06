@@ -15,9 +15,13 @@ import {
 } from './db/schema'
 import { db } from './databaseManager'
 import type { AppManager } from './appManager'
+import { SessionStorage } from './services/sessionStorage'
 
 export class SessionsManager {
-  constructor(private app: AppManager) {}
+  storage: SessionStorage
+  constructor(private app: AppManager) {
+    this.storage = new SessionStorage()
+  }
 
   init() {
     this.setupAgentEvents()
