@@ -2,7 +2,7 @@ import type { AssistantChatMessage, ChatMessage, ToolCall } from '@vide/ai'
 import type { AskUserQuestion, PlanStep } from '../types'
 
 const AgentLifecycleEventChannels = {
-  'agent-create-session': null as unknown as {
+  'agent-create-session1': null as unknown as {
     sessionId: string
     activeBranch: string
     sessionType: 'normal' | 'fork'
@@ -11,16 +11,16 @@ const AgentLifecycleEventChannels = {
     workspacePath: string | null
     autoApprove: boolean
   },
-  'agent-session-finished': null as unknown as {
+  'agent-session-finished1': null as unknown as {
     sessionId: string
     userInput: string
   },
-  'agent-session-forked': null as unknown as {
+  'agent-session-forked1': null as unknown as {
     sourceSessionId: string
     forkedSessionId: string
     sourceWorkflowId: string | null
   },
-  'agent-workflow-regenerated': null as unknown as {
+  'agent-workflow-regenerated1': null as unknown as {
     sessionId: string
     branchName: string
     sourceWorkflowId: string | null
@@ -30,56 +30,6 @@ const AgentLifecycleEventChannels = {
 export type AgentLifecycleEventKey = keyof typeof AgentLifecycleEventChannels
 export type AgentLifecycleEvents = {
   [K in AgentLifecycleEventKey]: (data: (typeof AgentLifecycleEventChannels)[K]) => void
-}
-
-const PlannerEventChannels = {
-  'planner-end-generate': null as unknown as {
-    sessionId: string
-    plannerId: string
-    plans: PlanStep[]
-  },
-  'planner-execute-item-start': null as unknown as {
-    sessionId: string
-    plannerId: string
-    plan: PlanStep
-  },
-  'planner-execute-item-success': null as unknown as {
-    sessionId: string
-    plannerId: string
-    plan: PlanStep
-  },
-  'planner-execute-item-error': null as unknown as {
-    sessionId: string
-    plannerId: string
-    plan: PlanStep
-  },
-}
-export type PlannerEventKey = keyof typeof PlannerEventChannels
-export type PlannerEvents = {
-  [K in PlannerEventKey]: (data: (typeof PlannerEventChannels)[K]) => void
-}
-
-const AskUserQuestionEventChannels = {
-  'ask-user': null as unknown as {
-    sessionId: string
-    workflowId: string
-    question: AskUserQuestion
-  },
-}
-export type AskUserQuestionEventKey = keyof typeof AskUserQuestionEventChannels
-export type AskUserQuestionEvents = {
-  [K in AskUserQuestionEventKey]: (data: (typeof AskUserQuestionEventChannels)[K]) => void
-}
-
-const ArtifactEventChannels = {
-  'artifacts-created-workspace': null as unknown as {
-    sessionId: string
-    workspaceName: string
-  },
-}
-export type ArtifactEventKey = keyof typeof ArtifactEventChannels
-export type ArtifactEvents = {
-  [K in ArtifactEventKey]: (data: (typeof ArtifactEventChannels)[K]) => void
 }
 
 export type WorkflowEventCtx = {
@@ -165,22 +115,45 @@ export const WorkflowEventChannels = {
     ctx: WorkflowEventCtx
     toolCallResult: { id: string; toolName: string; reject: any }
   },
+
+  // plan events
+  'planner-end-generate': null as unknown as {
+    ctx: WorkflowEventCtx
+    plannerId: string
+    plans: PlanStep[]
+  },
+  'planner-execute-item-start': null as unknown as {
+    ctx: WorkflowEventCtx
+    plannerId: string
+    plan: PlanStep
+  },
+  'planner-execute-item-success': null as unknown as {
+    ctx: WorkflowEventCtx
+    plannerId: string
+    plan: PlanStep
+  },
+  'planner-execute-item-error': null as unknown as {
+    ctx: WorkflowEventCtx
+    plannerId: string
+    plan: PlanStep
+  },
+  // ask user
+  'ask-user': null as unknown as {
+    ctx: WorkflowEventCtx
+    workflowId: string
+    question: AskUserQuestion
+  },
+  // artifact events
+  'artifacts-created-workspace': null as unknown as {
+    ctx: WorkflowEventCtx
+    workspaceName: string
+  },
 } as const
 export type WorkflowEventKey = keyof typeof WorkflowEventChannels
 export type WorkflowEvents = {
   [K in WorkflowEventKey]: (data: (typeof WorkflowEventChannels)[K]) => void
 }
-export type Events =
-  | AgentLifecycleEvents
-  | WorkflowEvents
-  | PlannerEvents
-  | AskUserQuestionEvents
-  | ArtifactEvents
+export type Events = AgentLifecycleEvents | WorkflowEvents
 
 export const agentEventNames = Object.keys(AgentLifecycleEventChannels) as AgentLifecycleEventKey[]
-export const plannerEventNames = Object.keys(PlannerEventChannels) as PlannerEventKey[]
 export const workflowEventNames = Object.keys(WorkflowEventChannels) as WorkflowEventKey[]
-export const askUserQuestionEventNames = Object.keys(
-  AskUserQuestionEventChannels
-) as AskUserQuestionEventKey[]
-export const artifactEventNames = Object.keys(ArtifactEventChannels) as ArtifactEventKey[]

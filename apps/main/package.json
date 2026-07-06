@@ -12,6 +12,9 @@
     "rebuild:electron": "electron-rebuild",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts"
   },
+  "exports": {
+    "./ipcRenderer": "./src/ipc/api/ipcRenderer.ts"
+  },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
     "drizzle-kit": "^0.31.10",

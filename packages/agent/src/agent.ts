@@ -1,4 +1,3 @@
-import { agentEvent } from './event'
 import { MessageRole, type AssistantChatMessage, type ChatMessage } from '@vide/ai'
 import {
   Session,
@@ -34,15 +33,7 @@ export class Agent {
       autoApprove: options?.autoApprove,
     })
     session.branchs[session.activeBranch] = { head: null, source: null }
-    agentEvent.emit('agent-create-session', {
-      sessionId: session.sessionId,
-      activeBranch: session.activeBranch,
-      sessionType: session.sessionType,
-      originSessionId: session.origin?.sessionId || null,
-      originWorkflowId: session.origin?.workflowId || null,
-      workspacePath: session.workspacePath,
-      autoApprove: session.autoApprove,
-    })
+
     return session
   }
 
@@ -83,20 +74,7 @@ export class Agent {
       throw new Error('Target workflow node not found: ' + targetWorkflowId)
     }
     const forkedSession = session.fork(targetNode)
-    agentEvent.emit('agent-create-session', {
-      sessionId: forkedSession.sessionId,
-      activeBranch: forkedSession.activeBranch,
-      sessionType: forkedSession.sessionType,
-      originSessionId: forkedSession.origin?.sessionId || null,
-      originWorkflowId: forkedSession.origin?.workflowId || null,
-      workspacePath: forkedSession.workspacePath,
-      autoApprove: forkedSession.autoApprove,
-    })
-    agentEvent.emit('agent-session-forked', {
-      sourceSessionId: session.sessionId,
-      forkedSessionId: forkedSession.sessionId,
-      sourceWorkflowId: targetWorkflowId,
-    })
+
     return forkedSession
   }
 

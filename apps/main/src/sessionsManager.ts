@@ -1,12 +1,6 @@
 ﻿import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
-import {
-  onAgentEvent,
-  onArtifactEvent,
-  onAskUserQuestionEvent,
-  onPalnnerEvent,
-  onWorkflowEvent,
-} from '@vide/agent'
+import { onWorkflowEvent } from '@vide/agent'
 import type { SessionType } from '@vide/agent'
 import type { AskUserQuestion, PlanStep } from '@vide/agent/types'
 import { MessageRole } from '@vide/ai'
@@ -29,7 +23,7 @@ export class SessionsManager {
     this.setupAgentEvents()
   }
 
-  private async upsertSessionBranch(data: {
+  async upsertSessionBranch(data: {
     sessionId: string
     branchName: string
     headWorkflowId: string | null
@@ -73,7 +67,7 @@ export class SessionsManager {
     })
   }
 
-  private async updateSessionState(data: { sessionId: string; activeBranch: string }) {
+  async updateSessionState(data: { sessionId: string; activeBranch: string }) {
     await db
       .update(sessions)
       .set({
@@ -239,19 +233,6 @@ export class SessionsManager {
   }
 
   setupAgentEvents() {
-    onAgentEvent('agent-workflow-regenerated', async (data) => {
-      await this.updateSessionState({
-        sessionId: data.sessionId,
-        activeBranch: data.branchName,
-      })
-      await this.upsertSessionBranch({
-        sessionId: data.sessionId,
-        branchName: data.branchName,
-        headWorkflowId: data.sourceWorkflowId,
-        sourceWorkflowId: data.sourceWorkflowId,
-      })
-    })
-
     onWorkflowEvent('workflow-start', async ({ input, ctx }) => {
       const time = Date.now()
       const rows = await db.select().from(sessions).where(eq(sessions.id, ctx.sessionId))
@@ -450,7 +431,7 @@ export class SessionsManager {
       })
     })
 
-    onPalnnerEvent('planner-end-generate', async ({ sessionId, plannerId, plans }) => {
+    onWorkflowEvent('planner-end-generate', async ({ ctx: { sessionId }, plannerId, plans }) => {
       const time = Date.now()
       await db.insert(planners).values({
         id: plannerId,
@@ -460,7 +441,7 @@ export class SessionsManager {
         updatedAt: time,
       })
     })
-    onPalnnerEvent('planner-execute-item-start', async ({ plan, plannerId }) => {
+    onWorkflowEvent('planner-execute-item-start', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) return
       const targetRow = target[0]
@@ -480,7 +461,7 @@ export class SessionsManager {
         })
         .where(eq(planners.id, plannerId))
     })
-    onPalnnerEvent('planner-execute-item-success', async ({ plan, plannerId }) => {
+    onWorkflowEvent('planner-execute-item-success', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) return
       const targetRow = target[0]
@@ -500,7 +481,7 @@ export class SessionsManager {
         })
         .where(eq(planners.id, plannerId))
     })
-    onPalnnerEvent('planner-execute-item-error', async ({ plan, plannerId }) => {
+    onWorkflowEvent('planner-execute-item-error', async ({ plan, plannerId }) => {
       const target = await db.select().from(planners).where(eq(planners.id, plannerId))
       if (!target.length) return
       const targetRow = target[0]
@@ -521,7 +502,7 @@ export class SessionsManager {
         .where(eq(planners.id, plannerId))
     })
 
-    onAskUserQuestionEvent('ask-user', async ({ workflowId, question }) => {
+    onWorkflowEvent('ask-user', async ({ workflowId, question }) => {
       const time = Date.now()
       const normalizedQuestion: AskUserQuestion = {
         type: question.type === 'multiple' ? 'multiple' : 'single',
@@ -539,15 +520,18 @@ export class SessionsManager {
       })
     })
 
-    onArtifactEvent('artifacts-created-workspace', async ({ sessionId, workspaceName }) => {
-      const time = Date.now()
-      await db.insert(artifacts).values({
-        id: uuid(),
-        sessionId: sessionId,
-        artifactWorkspaceName: workspaceName,
-        createdAt: time,
-        updatedAt: time,
-      })
-    })
+    onWorkflowEvent(
+      'artifacts-created-workspace',
+      async ({ ctx: { sessionId }, workspaceName }) => {
+        const time = Date.now()
+        await db.insert(artifacts).values({
+          id: uuid(),
+          sessionId: sessionId,
+          artifactWorkspaceName: workspaceName,
+          createdAt: time,
+          updatedAt: time,
+        })
+      }
+    )
   }
 }

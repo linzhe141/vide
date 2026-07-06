@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { plannerEvent } from '../../event'
+import { workflowEvent } from '../../event'
 import { SessionPlaner } from '../../session'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { ToolCallError } from '../../error'
@@ -49,8 +49,8 @@ Returns a plannerId and the created steps (with ids). Use those step ids with ${
       const sessionPlaner = new SessionPlaner(planSteps)
       this.runtime.rootSession.planners.push(sessionPlaner)
 
-      plannerEvent.emit('planner-end-generate', {
-        sessionId: this.runtime.sessionId,
+      workflowEvent.emit('planner-end-generate', {
+        ctx: this.runtime.workflowEventCtx,
         plannerId: sessionPlaner.id,
         plans: planSteps,
       })
@@ -111,8 +111,8 @@ Set "running" before starting a step, "completed" when it finishes, "failed" if 
           : status === 'completed'
             ? 'planner-execute-item-success'
             : 'planner-execute-item-error'
-      plannerEvent.emit(eventName, {
-        sessionId: this.runtime.sessionId,
+      workflowEvent.emit(eventName, {
+        ctx: this.runtime.workflowEventCtx,
         plannerId: planner.id,
         plan: target,
       })

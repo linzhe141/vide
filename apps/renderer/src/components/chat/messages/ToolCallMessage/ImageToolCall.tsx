@@ -3,7 +3,7 @@ import { useState } from 'react'
 import type { Workflow } from '../../../../store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
-import { findToolResult } from '../../messages/ToolCallMessage'
+import { findToolResult } from '.'
 import { CodeBlock } from '../../../codeblock'
 function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: ToolCall }) {
   const [imageLoaded, setImageLoaded] = useState(false)

@@ -1,19 +1,13 @@
 ﻿import {
-  agentEventNames,
-  plannerEventNames,
   workflowEventNames,
   type AgentLifecycleEvents,
-  type PlannerEvents,
   type WorkflowEvents,
 } from '@vide/agent/event'
 
 type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
   [K in keyof T]: T[K] extends (data: infer D) => any ? { type: K; data: D } : never
 }[keyof T]
-export type WorkflowState =
-  | EventMapToUnion<AgentLifecycleEvents>
-  | EventMapToUnion<PlannerEvents>
-  | EventMapToUnion<WorkflowEvents>
+export type WorkflowState = EventMapToUnion<AgentLifecycleEvents> | EventMapToUnion<WorkflowEvents>
 
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
@@ -33,29 +27,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             workflowId: currentWorkflowId,
           })
         }
-      })
-
-      agentEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (currentSessionId === data.sessionId) {
-            controller.enqueue({ type: eventName, data })
-          }
-
-          if (currentSessionId === data.sessionId && eventName === 'agent-session-finished') {
-            controller.close()
-            cleanUp()
-          }
-        })
-        eventListeners.push(remove)
-      })
-
-      plannerEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (currentSessionId === data.sessionId) {
-            controller.enqueue({ type: eventName, data })
-          }
-        })
-        eventListeners.push(remove)
       })
 
       workflowEventNames.forEach((eventName) => {
@@ -111,29 +82,6 @@ export function resumeWorkflowStream(
             workflowId: workflowId,
           })
         }
-      })
-
-      agentEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (sessionId === data.sessionId) {
-            controller.enqueue({ type: eventName, data })
-          }
-
-          if (sessionId === data.sessionId && eventName === 'agent-session-finished') {
-            controller.close()
-            cleanUp()
-          }
-        })
-        eventListeners.push(remove)
-      })
-
-      plannerEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (sessionId === data.sessionId) {
-            controller.enqueue({ type: eventName, data })
-          }
-        })
-        eventListeners.push(remove)
       })
 
       workflowEventNames.forEach((eventName) => {

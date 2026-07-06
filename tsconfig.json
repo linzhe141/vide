@@ -5,6 +5,6 @@
     { "path": "./apps/renderer" },
     { "path": "./packages/agent" },
     { "path": "./packages/ai" },
-    { "path": "./packages/types" }
+    { "path": "./packages/config" }
   ]
 }

@@ -1,4 +1,4 @@
-import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
+import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 import { useSessionWorkflows } from '../../store/sessionStore'
 import { type SessionMessage, type Workflow } from '../../store/sessionStore/types'
 import {

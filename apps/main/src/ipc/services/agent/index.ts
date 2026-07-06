@@ -1,7 +1,7 @@
 ﻿import { and, asc, eq } from 'drizzle-orm'
 import { Agent } from '@vide/agent'
-import { onAgentEvent, onPalnnerEvent, onWorkflowEvent } from '@vide/agent'
-import { agentEventNames, plannerEventNames, workflowEventNames } from '@vide/agent/event'
+import { onAgentEvent, onWorkflowEvent } from '@vide/agent'
+import { agentEventNames, workflowEventNames } from '@vide/agent/event'
 import type { Session } from '@vide/agent'
 import type { PlanStep } from '@vide/agent/types'
 import * as schema from '../../../db/schema'
@@ -216,6 +216,17 @@ export class AgentIpcMainService implements IpcMainService {
         const targetNode = session.getWorkflowNode(targetWorkflowId)
         if (!targetNode) return
         session.regenerateWorkflow(branchName, targetNode, input)
+        await this.appManager.sessionsManager.updateSessionState({
+          sessionId: sessionId,
+          activeBranch: branchName,
+        })
+        const sourceWorkflowId = targetNode?.id || null
+        await this.appManager.sessionsManager.upsertSessionBranch({
+          sessionId: sessionId,
+          branchName: branchName,
+          headWorkflowId: sourceWorkflowId,
+          sourceWorkflowId: sourceWorkflowId,
+        })
       }
     )
 
@@ -366,12 +377,6 @@ export class AgentIpcMainService implements IpcMainService {
   registerIpcMainSenders() {
     agentEventNames.forEach((eventName) => {
       onAgentEvent(eventName, (data: any) => {
-        ipcMainApi.send(eventName, data)
-      })
-    })
-
-    plannerEventNames.forEach((eventName) => {
-      onPalnnerEvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)
       })
     })

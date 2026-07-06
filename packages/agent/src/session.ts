@@ -99,7 +99,7 @@ export class Session {
 
       const result = await workflow.run(userInput)
       if (result === 'COMPLETED') {
-        agentEvent.emit('agent-session-finished', { sessionId: this.sessionId, userInput })
+        //
       } else if (result === 'WAIT_HUMAN_APPROVE') {
         this.watiHumanWorkflow = workflow
       }
@@ -180,12 +180,6 @@ export class Session {
       head: parentNode,
       source: parentNode,
     }
-    agentEvent.emit('agent-workflow-regenerated', {
-      sessionId: this.sessionId,
-      branchName,
-      sourceWorkflowId: parentNode?.id || null,
-      input,
-    })
   }
 
   buildLLMMessages() {
@@ -241,10 +235,7 @@ export class Session {
     this.watiHumanWorkflow = null
     const result = await targetWorkflow.approveHumanApprove(payload)
     if (result === 'COMPLETED') {
-      agentEvent.emit('agent-session-finished', {
-        sessionId: this.sessionId,
-        userInput: targetWorkflow.runtime.userInput.at(-1) || '',
-      })
+      //
     } else if (result === 'WAIT_HUMAN_APPROVE') {
       this.watiHumanWorkflow = targetWorkflow
     }
@@ -257,10 +248,7 @@ export class Session {
     this.watiHumanWorkflow = null
     const result = await targetWorkflow.rejectHumanApprove(payload)
     if (result === 'COMPLETED') {
-      agentEvent.emit('agent-session-finished', {
-        sessionId: this.sessionId,
-        userInput: targetWorkflow.runtime.userInput.at(-1) || '',
-      })
+      //
     } else if (result === 'WAIT_HUMAN_APPROVE') {
       this.watiHumanWorkflow = targetWorkflow
     }

@@ -46,6 +46,9 @@ export const callAI: FnCallAI = async function ({ messages, tools, signal, event
     console.log('singal in processLLMStream', signal)
     let content = ''
     let toolCalls: ToolCall[] = []
+    if (!llmClient) {
+      throw new Error('LLM client is not initialized. Please goto LLM Settings.')
+    }
     const stream = llmClient.chat.completions.create(
       {
         messages: await buildChatMessages(messages),
