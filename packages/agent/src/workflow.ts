@@ -11,11 +11,12 @@ import { callAI } from './llm'
 import { workflowEvent } from './event'
 import { WorkflowEventChannels } from './event/channels'
 import { registorTools } from './tools/registor'
-import type { WorkflowEventCtx } from './event/channels'
+import type { WorkflowEvent, WorkflowEventCtx, WorkflowEventWithCtx } from './event/channels'
 import type { Session } from './session'
 import { v4 as uuid } from 'uuid'
 import { BASH_TOOL_NAMES } from './tools/bash'
 import { AbortError, ToolCallError } from './error'
+import type { WorkflowStream } from './event/stream'
 
 export type WorkflowState =
   | 'INPUT'
@@ -33,12 +34,28 @@ export class Workflow {
   state: WorkflowState = 'INPUT'
   tools: Tool[] = []
 
-  constructor(public runtime: WorkflowRuntimeContext) {
+  constructor(
+    public runtime: WorkflowRuntimeContext,
+    public stream: WorkflowStream
+  ) {
     this.tools = registorTools(this.runtime)
   }
 
+  emit = (data: WorkflowEvent) => {
+    const event = { eventName: data.eventName } as WorkflowEventWithCtx
+    if ('data' in data) {
+      event.data = {
+        ...data.data,
+        ctx: this.runtime.workflowEventCtx,
+      }
+    } else {
+      event.data = { ctx: this.runtime.workflowEventCtx }
+    }
+    this.stream.push(event)
+  }
+
   async run(input: string) {
-    this.runtime.emit('workflow-start', { input, ctx: this.runtime.workflowEventCtx })
+    this.emit({ eventName: 'workflow-start', data: { input } })
     return await this.runLoop({ input } as UserInputStepPayload)
   }
 
@@ -53,18 +70,20 @@ export class Workflow {
 
           // 完成状态
           if (nextStep.state === 'COMPLETED') {
-            this.runtime.emit('workflow-finished', {
-              ctx: this.runtime.workflowEventCtx,
-            })
+            this.emit({ eventName: 'workflow-finished' })
+
             return 'COMPLETED'
           }
 
           // 等待人工审批
           if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-            this.runtime.emit('workflow-wait-human-approve', {
-              ctx: this.runtime.workflowEventCtx,
-              data: nextStep.payload as WaitHumanApprovePayload,
+            this.emit({
+              eventName: 'workflow-wait-human-approve',
+              data: {
+                data: nextStep.payload as WaitHumanApprovePayload,
+              },
             })
+
             // 需要 保持 状态，等待人工审批结果
             this.state = nextStep.state
             return 'WAIT_HUMAN_APPROVE'
@@ -76,16 +95,22 @@ export class Workflow {
         } catch (error: any) {
           if (error instanceof AbortError) {
             this.runtime.workflowSession.addAbortMessage()
-            this.runtime.emit('workflow-aborted', {
-              ctx: this.runtime.workflowEventCtx,
-              chunkData: {
-                reasoning: this.runtime.assistantReasoningChunk,
-                text: this.runtime.assistantChunk,
+
+            this.emit({
+              eventName: 'workflow-aborted',
+              data: {
+                chunkData: {
+                  reasoning: this.runtime.assistantReasoningChunk,
+                  text: this.runtime.assistantChunk,
+                },
               },
             })
             return 'ABORTED'
           }
-          this.runtime.emit('workflow-error', { error, ctx: this.runtime.workflowEventCtx })
+          this.emit({
+            eventName: 'workflow-error',
+            data: { error },
+          })
           return 'ERROR'
         }
       }
@@ -124,8 +149,7 @@ export class Workflow {
   }
 
   async handleCallLLM(messages: ChatMessage[]) {
-    this.runtime.emit('workflow-llm-start', { ctx: this.runtime.workflowEventCtx, messages })
-
+    this.emit({ eventName: 'workflow-llm-start', data: { messages } })
     const result = callAI({
       messages,
       tools: this.tools,
@@ -133,70 +157,77 @@ export class Workflow {
       events: {
         onReasoningStart: () => {
           this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit('workflow-llm-reasoning-start', { ctx: this.runtime.workflowEventCtx })
+          this.emit({ eventName: 'workflow-llm-reasoning-start' })
         },
         onReasoningDelta: (chunk) => {
           this.runtime.assistantReasoningChunk = chunk.content
-          this.runtime.emit('workflow-llm-reasoning-delta', {
-            ctx: this.runtime.workflowEventCtx,
-            chunk,
+          this.emit({
+            eventName: 'workflow-llm-reasoning-delta',
+            data: {
+              chunk,
+            },
           })
         },
         onReasoningEnd: (content) => {
           this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit('workflow-llm-reasoning-end', {
-            ctx: this.runtime.workflowEventCtx,
-            content,
+          this.emit({
+            eventName: 'workflow-llm-reasoning-end',
+            data: { content },
           })
         },
         onTextStart: () => {
           this.runtime.assistantChunk = ''
-          this.runtime.emit('workflow-llm-text-start', { ctx: this.runtime.workflowEventCtx })
+          this.emit({
+            eventName: 'workflow-llm-text-start',
+          })
         },
         onTextDelta: (chunk) => {
           this.runtime.assistantChunk = chunk.content
-          this.runtime.emit('workflow-llm-text-delta', {
-            ctx: this.runtime.workflowEventCtx,
-            chunk,
+          this.emit({
+            eventName: 'workflow-llm-text-delta',
+            data: { chunk },
           })
         },
         onTextEnd: (content) => {
           this.runtime.assistantChunk = ''
-          this.runtime.emit('workflow-llm-text-end', {
-            ctx: this.runtime.workflowEventCtx,
-            content,
+          this.emit({
+            eventName: 'workflow-llm-text-end',
+            data: { content },
           })
         },
         onToolCallsStart: () => {
-          this.runtime.emit('workflow-llm-tool-calls-start', {
-            ctx: this.runtime.workflowEventCtx,
+          this.emit({
+            eventName: 'workflow-llm-tool-calls-start',
           })
         },
         onToolCallName: (data) => {
-          this.runtime.emit('workflow-llm-tool-call-name', {
-            ctx: this.runtime.workflowEventCtx,
-            data,
+          this.emit({
+            eventName: 'workflow-llm-tool-call-name',
+            data: { data },
           })
         },
         onToolCallArguments: (data) => {
-          this.runtime.emit('workflow-llm-tool-call-arguments', {
-            ctx: this.runtime.workflowEventCtx,
-            data,
+          this.emit({
+            eventName: 'workflow-llm-tool-call-arguments',
+            data: { data },
           })
         },
         onToolCallsEnd: (toolCalls) => {
           const autoApprove = this.runtime.rootSession.autoApprove
-          this.runtime.emit('workflow-llm-tool-calls-end', {
-            ctx: this.runtime.workflowEventCtx,
-            toolCalls: toolCalls.map((t) => {
-              return {
-                ...t,
-                status:
-                  t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND && autoApprove === false
-                    ? 'waiting-human'
-                    : 'auto-approved',
-              }
-            }),
+          this.emit({
+            eventName: 'workflow-llm-tool-calls-end',
+            data: {
+              toolCalls: toolCalls.map((t) => {
+                return {
+                  ...t,
+                  status:
+                    t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
+                    autoApprove === false
+                      ? 'waiting-human'
+                      : 'auto-approved',
+                }
+              }),
+            },
           })
         },
       },
@@ -205,8 +236,7 @@ export class Workflow {
     if (this.runtime.signal.aborted) {
       throw new AbortError()
     }
-    this.runtime.emit('workflow-llm-end', { ctx: this.runtime.workflowEventCtx })
-
+    this.emit({ eventName: 'workflow-llm-end' })
     return result
   }
 
@@ -258,10 +288,14 @@ export class Workflow {
     }
 
     const startedAt = Date.now()
-    this.runtime.emit('workflow-tool-call-start', {
-      ctx: this.runtime.workflowEventCtx,
-      toolCall: { id: toolCall.id, toolName, args },
+
+    this.emit({
+      eventName: 'workflow-tool-call-start',
+      data: {
+        toolCall: { id: toolCall.id, toolName, args },
+      },
     })
+
     const toolResult = await tool.executor(args)
     const finishedAt = Date.now()
     const reason = toolResult.reason
@@ -272,18 +306,19 @@ export class Workflow {
       content: JSON.stringify(toolResult.result),
     })
 
-    this.runtime.emit('workflow-tool-call-success', {
-      ctx: this.runtime.workflowEventCtx,
-      toolCallResult: {
-        id: toolCall.id,
-        toolName,
-        result,
-        startedAt,
-        finishedAt,
-        durationMs: finishedAt - startedAt,
+    this.emit({
+      eventName: 'workflow-tool-call-success',
+      data: {
+        toolCallResult: {
+          id: toolCall.id,
+          toolName,
+          result,
+          startedAt,
+          finishedAt,
+          durationMs: finishedAt - startedAt,
+        },
       },
     })
-
     return reason
   }
 
@@ -316,12 +351,14 @@ export class Workflow {
           content: errorMessage,
         })
 
-        this.runtime.emit('workflow-tool-call-error', {
-          ctx: this.runtime.workflowEventCtx,
-          toolCallResult: {
-            id: toolCall.id,
-            toolName: toolCall.function.name,
-            error: error.message,
+        this.emit({
+          eventName: 'workflow-tool-call-error',
+          data: {
+            toolCallResult: {
+              id: toolCall.id,
+              toolName: toolCall.function.name,
+              error: error.message,
+            },
           },
         })
         // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
@@ -378,15 +415,16 @@ export class Workflow {
       content: rejectMessage,
     })
 
-    this.runtime.emit('workflow-tool-call-error', {
-      ctx: this.runtime.workflowEventCtx,
-      toolCallResult: {
-        id: toolCall.id,
-        toolName: toolCall.function.name,
-        error: rejectMessage,
+    this.emit({
+      eventName: 'workflow-tool-call-error',
+      data: {
+        toolCallResult: {
+          id: toolCall.id,
+          toolName: toolCall.function.name,
+          error: rejectMessage,
+        },
       },
     })
-
     // 如果还有更多工具调用，继续执行下一个
     if (index + 1 < toolCalls.length) {
       this.state = 'CALL_SINGLE_CALL'

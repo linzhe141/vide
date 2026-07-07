@@ -1,12 +1,5 @@
-import { agentEvent, workflowEvent } from './event'
-import type { AgentLifecycleEvents, WorkflowEvents } from './event/channels'
-
-export function onAgentEvent<T extends keyof AgentLifecycleEvents>(
-  event: T,
-  handle: AgentLifecycleEvents[T]
-) {
-  return agentEvent.on(event, handle)
-}
+import { workflowEvent } from './event'
+import type { WorkflowEvents } from './event/channels'
 
 export function onWorkflowEvent<T extends keyof WorkflowEvents>(
   event: T,

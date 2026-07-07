@@ -1,7 +1,7 @@
 ﻿import { and, asc, eq } from 'drizzle-orm'
 import { Agent } from '@vide/agent'
-import { onAgentEvent, onWorkflowEvent } from '@vide/agent'
-import { agentEventNames, workflowEventNames } from '@vide/agent/event'
+import { onWorkflowEvent } from '@vide/agent'
+import { workflowEventNames } from '@vide/agent/event'
 import type { Session } from '@vide/agent'
 import type { PlanStep } from '@vide/agent/types'
 import * as schema from '../../../db/schema'
@@ -13,6 +13,7 @@ import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
 import { MessageRole } from '@vide/ai'
 import type { ToolCall } from '@vide/ai'
+import { SessionStorage } from '@/services/sessionStorage'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -32,7 +33,7 @@ export class AgentIpcMainService implements IpcMainService {
         autoApprove: data.autoApprove,
       })
       this.sessions.set(session.sessionId, session)
-      await this.appManager.sessionsManager.createSessionRecord({
+      await SessionStorage.createSessionRecord({
         sessionId: session.sessionId,
         sessionType: session.sessionType,
         activeBranch: session.activeBranch,
@@ -172,7 +173,7 @@ export class AgentIpcMainService implements IpcMainService {
       const sourceSessionRow = sourceSessionRows[0]
       const forkedSession = this.agent.forkSession(sourceSession, targetWorkflowId)
 
-      await this.appManager.sessionsManager.createSessionRecord({
+      await SessionStorage.createSessionRecord({
         sessionId: forkedSession.sessionId,
         sessionType: forkedSession.sessionType,
         activeBranch: forkedSession.activeBranch,
@@ -182,15 +183,12 @@ export class AgentIpcMainService implements IpcMainService {
         autoApprove: forkedSession.autoApprove,
         title: sourceSessionRow?.title || '',
       })
-      await this.appManager.sessionsManager.cloneForkedSessionHistory({
+      await SessionStorage.cloneForkedSessionHistory({
         sourceSessionId,
         targetSessionId: forkedSession.sessionId,
         targetWorkflowId,
       })
-      await this.appManager.sessionsManager.cloneSessionResources(
-        sourceSessionId,
-        forkedSession.sessionId
-      )
+      await SessionStorage.cloneSessionResources(sourceSessionId, forkedSession.sessionId)
 
       const payload = await this.loadSessionPayload(forkedSession.sessionId)
       const resumedForkedSession = this.agent.resumeSession({
@@ -216,12 +214,12 @@ export class AgentIpcMainService implements IpcMainService {
         const targetNode = session.getWorkflowNode(targetWorkflowId)
         if (!targetNode) return
         session.regenerateWorkflow(branchName, targetNode, input)
-        await this.appManager.sessionsManager.updateSessionState({
+        await SessionStorage.updateSessionState({
           sessionId: sessionId,
           activeBranch: branchName,
         })
         const sourceWorkflowId = targetNode?.id || null
-        await this.appManager.sessionsManager.upsertSessionBranch({
+        await SessionStorage.upsertSessionBranch({
           sessionId: sessionId,
           branchName: branchName,
           headWorkflowId: sourceWorkflowId,
@@ -375,12 +373,6 @@ export class AgentIpcMainService implements IpcMainService {
   }
 
   registerIpcMainSenders() {
-    agentEventNames.forEach((eventName) => {
-      onAgentEvent(eventName, (data: any) => {
-        ipcMainApi.send(eventName, data)
-      })
-    })
-
     workflowEventNames.forEach((eventName) => {
       onWorkflowEvent(eventName, (data: any) => {
         ipcMainApi.send(eventName, data)

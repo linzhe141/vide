@@ -1,13 +1,9 @@
-﻿import {
-  workflowEventNames,
-  type AgentLifecycleEvents,
-  type WorkflowEvents,
-} from '@vide/agent/event'
+﻿import { workflowEventNames, type WorkflowEvents } from '@vide/agent/event'
 
 type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
   [K in keyof T]: T[K] extends (data: infer D) => any ? { type: K; data: D } : never
 }[keyof T]
-export type WorkflowState = EventMapToUnion<AgentLifecycleEvents> | EventMapToUnion<WorkflowEvents>
+export type WorkflowState = EventMapToUnion<WorkflowEvents>
 
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []

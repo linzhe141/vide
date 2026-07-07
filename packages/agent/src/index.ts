@@ -5,4 +5,4 @@ export * from './tools/skill'
 export { createLLMClient } from './llm'
 export { createGenerateImageClient } from './image'
 
-export { onAgentEvent, onWorkflowEvent } from './apiEvent'
+export { onWorkflowEvent } from './apiEvent'

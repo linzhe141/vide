@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid'
-import { agentEvent, workflowEvent } from './event'
+import { workflowEvent } from './event'
 import type { WaitHumanApprovePayload, PlanStep } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
 import type { ChatMessage } from '@vide/ai'

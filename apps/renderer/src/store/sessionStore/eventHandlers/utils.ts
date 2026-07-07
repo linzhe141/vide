@@ -128,9 +128,5 @@ function getEventSessionId(event: WorkflowState) {
     return event.data.ctx.sessionId
   }
 
-  if ('sessionId' in event.data) {
-    return event.data.sessionId
-  }
-
   return undefined
 }

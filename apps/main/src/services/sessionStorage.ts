@@ -1,15 +1,21 @@
 import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import type { SessionType } from '@vide/agent'
-import { artifacts, askUserQuestions, planners, sessionBranches, sessions, sessionWorkflowMessages, sessionWorkflows } from '@/db/schema'
+import {
+  artifacts,
+  askUserQuestions,
+  planners,
+  sessionBranches,
+  sessions,
+  sessionWorkflowMessages,
+  sessionWorkflows,
+} from '@/db/schema'
 import { db } from '@/databaseManager'
-import { MessageRole } from '@vide/ai'
-import type { PlanStep } from '@vide/agent/types'
+import { MessageRole, type ToolCall } from '@vide/ai'
+import type { AskUserQuestion, PlanStep } from '@vide/agent/types'
 
 export class SessionStorage {
-  constructor() {}
-
-  async upsertSessionBranch(data: {
+  static async upsertSessionBranch(data: {
     sessionId: string
     branchName: string
     headWorkflowId: string | null
@@ -56,7 +62,7 @@ export class SessionStorage {
     })
   }
 
-  async updateSessionState(data: { sessionId: string; activeBranch: string }) {
+  static async updateSessionState(data: { sessionId: string; activeBranch: string }) {
     await db
       .update(sessions)
       .set({
@@ -66,7 +72,7 @@ export class SessionStorage {
       .where(eq(sessions.id, data.sessionId))
   }
 
-  async createSessionRecord(data: {
+  static async createSessionRecord(data: {
     sessionId: string
     sessionType: SessionType
     activeBranch: string
@@ -99,7 +105,7 @@ export class SessionStorage {
     })
   }
 
-  async cloneSessionResources(sourceSessionId: string, targetSessionId: string) {
+  static async cloneSessionResources(sourceSessionId: string, targetSessionId: string) {
     const time = Date.now()
 
     const sourcePlanners = await db
@@ -133,7 +139,7 @@ export class SessionStorage {
     }
   }
 
-  async cloneForkedSessionHistory(data: {
+  static async cloneForkedSessionHistory(data: {
     sourceSessionId: string
     targetSessionId: string
     targetWorkflowId: string
@@ -228,7 +234,7 @@ export class SessionStorage {
     })
   }
 
-  async setSessionTitle(sessionId: string, title: string) {
+  static async setSessionTitle(sessionId: string, title: string) {
     const rows = await db.select().from(sessions).where(eq(sessions.id, sessionId))
 
     if (!rows.length || rows[0].title) {
@@ -243,7 +249,7 @@ export class SessionStorage {
       .where(eq(sessions.id, sessionId))
   }
 
-  async createWorkflow(data: {
+  static async createWorkflow(data: {
     workflowId: string
     sessionId: string
     parentWorkflowId: string | null
@@ -261,7 +267,7 @@ export class SessionStorage {
     })
   }
 
-  async finishWorkflow(workflowId: string) {
+  static async finishWorkflow(workflowId: string) {
     await db
       .update(sessionWorkflows)
       .set({
@@ -271,7 +277,7 @@ export class SessionStorage {
       .where(eq(sessionWorkflows.id, workflowId))
   }
 
-  async abortWorkflow(
+  static async abortWorkflow(
     workflowId: string,
     chunkData: {
       text?: string
@@ -323,7 +329,7 @@ export class SessionStorage {
     })
   }
 
-  async errorWorkflow(workflowId: string) {
+  static async errorWorkflow(workflowId: string) {
     await db
       .update(sessionWorkflows)
       .set({
@@ -333,7 +339,7 @@ export class SessionStorage {
       .where(eq(sessionWorkflows.id, workflowId))
   }
 
-  async insertUserMessage(workflowId: string, content: string) {
+  static async insertUserMessage(workflowId: string, content: string) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -347,7 +353,7 @@ export class SessionStorage {
     })
   }
 
-  async insertAssistantReasoning(workflowId: string, content: string) {
+  static async insertAssistantReasoning(workflowId: string, content: string) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -361,7 +367,7 @@ export class SessionStorage {
     })
   }
 
-  async insertAssistantText(workflowId: string, content: string) {
+  static async insertAssistantText(workflowId: string, content: string) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -375,7 +381,7 @@ export class SessionStorage {
     })
   }
 
-  async insertToolCalls(workflowId: string, toolCalls: unknown) {
+  static async insertToolCalls(workflowId: string, toolCalls: ToolCall[]) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -389,7 +395,7 @@ export class SessionStorage {
     })
   }
 
-  async insertToolResult(workflowId: string, toolCallResult: unknown) {
+  static async insertToolResult(workflowId: string, toolCallResult: unknown) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -403,7 +409,7 @@ export class SessionStorage {
     })
   }
 
-  async insertAbortMessage(workflowId: string) {
+  static async insertAbortMessage(workflowId: string) {
     const time = Date.now()
 
     await db.insert(sessionWorkflowMessages).values({
@@ -417,7 +423,7 @@ export class SessionStorage {
     })
   }
 
-  async createPlanner(sessionId: string, plannerId: string, plans: PlanStep[]) {
+  static async createPlanner(sessionId: string, plannerId: string, plans: PlanStep[]) {
     const time = Date.now()
 
     await db.insert(planners).values({
@@ -429,19 +435,55 @@ export class SessionStorage {
     })
   }
 
-  async getPlanner(plannerId: string) {
+  static async updatePlanner(plannerId: string, plan: PlanStep) {
     const rows = await db.select().from(planners).where(eq(planners.id, plannerId))
 
-    return rows[0] ?? null
-  }
-
-  async updatePlanner(plannerId: string, plans: PlanStep[]) {
+    if (!rows.length) return
+    const target = rows[0]
+    const planJson = JSON.parse(target.planJson ?? '[]') as PlanStep[]
+    const updated = planJson.map((item) => {
+      if (item.id === plan.id) {
+        item.status = plan.status
+      }
+      return item
+    })
     await db
       .update(planners)
       .set({
-        planJson: JSON.stringify(plans),
+        planJson: JSON.stringify(updated),
         updatedAt: Date.now(),
       })
       .where(eq(planners.id, plannerId))
+  }
+
+  static async insertAskUserQuestion(workflowId: string, question: AskUserQuestion) {
+    const time = Date.now()
+    const normalizedQuestion: AskUserQuestion = {
+      type: question.type === 'multiple' ? 'multiple' : 'single',
+      title: question.title,
+      description: question.description,
+      options: question.options,
+    }
+
+    await db.insert(askUserQuestions).values({
+      id: uuid(),
+      workflowId,
+      draftJson: JSON.stringify(normalizedQuestion),
+      createdAt: time,
+      updatedAt: time,
+    })
+  }
+
+  static async updateAskUserQuestionAnswer(workflowId: string, answer: unknown) {}
+
+  static async createArtifactWorkspace(sessionId: string, workspaceName: string) {
+    const time = Date.now()
+    await db.insert(artifacts).values({
+      id: uuid(),
+      sessionId,
+      artifactWorkspaceName: workspaceName,
+      createdAt: time,
+      updatedAt: time,
+    })
   }
 }
