@@ -25,7 +25,7 @@ export function useWorkflowStream() {
       readerRef.current = reader
 
       try {
-        await window.ipcRendererApi.invoke('agent-session-send', {
+        window.ipcRendererApi.invoke('agent-session-send', {
           sessionId,
           input,
         })
@@ -59,7 +59,7 @@ export function useWorkflowStream() {
       readerRef.current = reader
 
       try {
-        await window.ipcRendererApi.invoke('resume-running-workflow', {
+        window.ipcRendererApi.invoke('resume-running-workflow', {
           sessionId,
           workflowId,
         })

@@ -1,8 +1,8 @@
 import { v4 as uuid } from 'uuid'
-import { workflowEvent } from './event'
-import type { WaitHumanApprovePayload, PlanStep } from './types'
+import type { PlanStep, WaitHumanApprovePayload } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
 import type { ChatMessage } from '@vide/ai'
+import { WorkflowStream } from './event/stream'
 
 export type SessionType = 'normal' | 'fork'
 
@@ -81,9 +81,38 @@ export class Session {
     return this.branchs[this.activeBranch]
   }
 
-  async run(userInput: string) {
+  send(userInput: string) {
+    const stream = new WorkflowStream()
+    this.runWorkflow(userInput, stream)
+    return stream
+  }
+
+  createWorkflow(userInput: string, stream: WorkflowStream) {
+    const parentWorkflowNode = this.currentBranch?.head ?? null
+    const workflowRuntimeContext = new WorkflowRuntimeContext({
+      session: this,
+      userInput,
+      branchName: this.activeBranch,
+      parentWorkflowId: parentWorkflowNode?.id || null,
+    })
+    const workflowCommitNode: SessionWorkflowNode = {
+      id: workflowRuntimeContext.workflowId,
+      stopStatus: null as any,
+      messages: workflowRuntimeContext.workflowSession.getMessages(),
+      parent: null,
+      children: [],
+    }
+    this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
+    const workflow = new Workflow(workflowRuntimeContext, stream)
+    return {
+      workflowCommitNode,
+      workflow,
+    }
+  }
+
+  async runWorkflow(userInput: string, stream: WorkflowStream) {
     try {
-      const { workflow, workflowCommitNode } = this.createWorkflow(userInput)
+      const { workflow, workflowCommitNode } = this.createWorkflow(userInput, stream)
       this.runningWorkflow = workflow
       const currentHead = this.currentBranch.head
       if (!currentHead) {
@@ -105,29 +134,6 @@ export class Session {
       }
     } finally {
       this.runningWorkflow = null
-    }
-  }
-
-  createWorkflow(userInput: string) {
-    const parentWorkflowNode = this.currentBranch?.head ?? null
-    const workflowRuntimeContext = new WorkflowRuntimeContext({
-      session: this,
-      userInput,
-      branchName: this.activeBranch,
-      parentWorkflowId: parentWorkflowNode?.id || null,
-    })
-    const workflowCommitNode: SessionWorkflowNode = {
-      id: workflowRuntimeContext.workflowId,
-      stopStatus: null as any,
-      messages: workflowRuntimeContext.workflowSession.getMessages(),
-      parent: null,
-      children: [],
-    }
-    this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
-    const workflow = new Workflow(workflowRuntimeContext)
-    return {
-      workflowCommitNode,
-      workflow,
     }
   }
 
@@ -169,11 +175,7 @@ export class Session {
     return forkedSession
   }
 
-  regenerateWorkflow(
-    branchName: string,
-    regenerateWorkflowNode: SessionWorkflowNode,
-    input?: string
-  ) {
+  regenerateWorkflow(branchName: string, regenerateWorkflowNode: SessionWorkflowNode) {
     this.activeBranch = branchName
     const parentNode = regenerateWorkflowNode.parent
     this.branchs[branchName] = {
@@ -215,14 +217,19 @@ export class Session {
       this.runningWorkflow = null
     }
     if (this.watiHumanWorkflow) {
-      const runtime = this.watiHumanWorkflow.runtime
+      const workflow = this.watiHumanWorkflow
+      const runtime = workflow.runtime
+      this.watiHumanWorkflow = null
       runtime.abort()
       runtime.workflowSession.addAbortMessage()
-      workflowEvent.emit('workflow-aborted', {
-        ctx: runtime.workflowEventCtx,
-        chunkData: {
-          reasoning: runtime.assistantReasoningChunk,
-          text: runtime.assistantChunk,
+
+      workflow.emit({
+        eventName: 'workflow-aborted',
+        data: {
+          chunkData: {
+            reasoning: runtime.assistantReasoningChunk,
+            text: runtime.assistantChunk,
+          },
         },
       })
     }

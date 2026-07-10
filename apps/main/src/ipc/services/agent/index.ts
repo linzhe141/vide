@@ -1,7 +1,5 @@
 ﻿import { and, asc, eq } from 'drizzle-orm'
 import { Agent } from '@vide/agent'
-import { onWorkflowEvent } from '@vide/agent'
-import { workflowEventNames } from '@vide/agent/event'
 import type { Session } from '@vide/agent'
 import type { PlanStep } from '@vide/agent/types'
 import * as schema from '../../../db/schema'
@@ -20,7 +18,6 @@ export class AgentIpcMainService implements IpcMainService {
   sessions = new Map<string, Session>()
 
   constructor(private appManager: AppManager) {
-    this.registerIpcMainSenders()
     this.agent = new Agent()
   }
 
@@ -64,7 +61,151 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
       logger.info('agent-session-send ', sessionId, input)
       const session = await this.getSession(sessionId)
-      session.run(input)
+      const stream = session.send(input)
+      for await (const { eventName, data } of stream) {
+        const ctx = data.ctx
+        ipcMainApi.send(eventName, data)
+        switch (eventName) {
+          case 'workflow-start': {
+            await SessionStorage.setSessionTitle(ctx.sessionId, input)
+            await SessionStorage.createWorkflow({
+              workflowId: ctx.workflowId,
+              sessionId: ctx.sessionId,
+              parentWorkflowId: ctx.parentWorkflowId,
+              input,
+            })
+            await SessionStorage.upsertSessionBranch({
+              sessionId: ctx.sessionId,
+              branchName: ctx.branchName,
+              headWorkflowId: ctx.workflowId,
+            })
+            await SessionStorage.insertUserMessage(ctx.workflowId, input)
+            break
+          }
+          case 'workflow-finished': {
+            await SessionStorage.finishWorkflow(ctx.workflowId)
+            break
+          }
+          case 'workflow-aborted': {
+            const chunkData = data.chunkData
+            await SessionStorage.abortWorkflow(ctx.workflowId, chunkData)
+            break
+          }
+          case 'workflow-error': {
+            const error = data.error
+            await SessionStorage.abortWorkflow(ctx.workflowId, error)
+            break
+          }
+
+          case 'workflow-llm-start': {
+            break
+          }
+          case 'workflow-llm-error': {
+            break
+          }
+
+          case 'workflow-llm-reasoning-start': {
+            break
+          }
+          case 'workflow-llm-reasoning-delta': {
+            break
+          }
+          case 'workflow-llm-reasoning-end': {
+            const { workflowId } = ctx
+            const content = data.content
+            await SessionStorage.insertAssistantReasoning(workflowId, content)
+            break
+          }
+
+          case 'workflow-llm-text-start': {
+            break
+          }
+          case 'workflow-llm-text-delta': {
+            break
+          }
+          case 'workflow-llm-text-end': {
+            const { workflowId } = ctx
+            const content = data.content
+            await SessionStorage.insertAssistantText(workflowId, content)
+            break
+          }
+
+          case 'workflow-llm-tool-calls-start': {
+            break
+          }
+          case 'workflow-llm-tool-call-name': {
+            break
+          }
+          case 'workflow-llm-tool-call-arguments': {
+            break
+          }
+          case 'workflow-llm-tool-calls-end': {
+            const { workflowId } = ctx
+            const toolCalls = data.toolCalls
+            await SessionStorage.insertToolCalls(workflowId, toolCalls)
+            break
+          }
+
+          case 'workflow-tool-call-start': {
+            break
+          }
+          case 'workflow-tool-call-success': {
+            const { workflowId } = ctx
+            const toolCallResult = data.toolCallResult
+            await SessionStorage.insertToolResult(workflowId, toolCallResult)
+            break
+          }
+          case 'workflow-tool-call-error': {
+            const { workflowId } = ctx
+            const toolCallResult = data.toolCallResult
+            await SessionStorage.insertToolResult(workflowId, toolCallResult)
+            break
+          }
+          case 'workflow-tool-call-reject': {
+            const { workflowId } = ctx
+            const toolCallResult = data.toolCallResult
+            await SessionStorage.insertToolResult(workflowId, toolCallResult)
+            break
+          }
+
+          case 'planner-end-generate': {
+            const { sessionId } = ctx
+            const { plannerId, plans } = data
+            await SessionStorage.createPlanner(sessionId, plannerId, plans)
+
+            break
+          }
+          case 'planner-execute-item-start': {
+            const { plannerId, plan } = data
+            await SessionStorage.updatePlanner(plannerId, plan)
+            break
+          }
+          case 'planner-execute-item-success': {
+            const { plannerId, plan } = data
+            await SessionStorage.updatePlanner(plannerId, plan)
+            break
+          }
+          case 'planner-execute-item-error': {
+            const { plannerId, plan } = data
+            await SessionStorage.updatePlanner(plannerId, plan)
+            break
+          }
+
+          case 'ask-user': {
+            const { workflowId } = ctx
+            const { question } = data
+            await SessionStorage.insertAskUserQuestion(workflowId, question)
+            break
+          }
+
+          case 'artifacts-created-workspace': {
+            const { sessionId } = ctx
+            const { workspaceName } = data
+            await SessionStorage.createArtifactWorkspace(sessionId, workspaceName)
+            break
+          }
+        }
+      }
     })
 
     ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
@@ -213,7 +354,7 @@ export class AgentIpcMainService implements IpcMainService {
         const session = await this.getSession(sessionId)
         const targetNode = session.getWorkflowNode(targetWorkflowId)
         if (!targetNode) return
-        session.regenerateWorkflow(branchName, targetNode, input)
+        session.regenerateWorkflow(branchName, targetNode)
         await SessionStorage.updateSessionState({
           sessionId: sessionId,
           activeBranch: branchName,
@@ -249,10 +390,9 @@ export class AgentIpcMainService implements IpcMainService {
       logger.info('resume-running-workflow ', sessionId, workflowId)
       const session = await this.getSession(sessionId)
 
-      const events = session.runningWorkflow?.runtime.events ?? []
-      if (events[0].eventName !== 'workflow-start') {
-        console.log('error')
-      }
+      const events = session.runningWorkflow?.stream.events
+      if (!events) return
+
       for (const { eventName, data } of events) {
         ipcMainApi.send(eventName, data)
       }
@@ -370,13 +510,5 @@ export class AgentIpcMainService implements IpcMainService {
       })),
       artifacts: artifactRows,
     }
-  }
-
-  registerIpcMainSenders() {
-    workflowEventNames.forEach((eventName) => {
-      onWorkflowEvent(eventName, (data: any) => {
-        ipcMainApi.send(eventName, data)
-      })
-    })
   }
 }

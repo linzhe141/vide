@@ -1,9 +1,6 @@
-﻿import { workflowEventNames, type WorkflowEvents } from '@vide/agent/event'
+﻿import { workflowEventNames, type WorkflowEventWithCtx } from '@vide/agent/event'
 
-type EventMapToUnion<T extends Record<string, (...args: any) => any>> = {
-  [K in keyof T]: T[K] extends (data: infer D) => any ? { type: K; data: D } : never
-}[keyof T]
-export type WorkflowState = EventMapToUnion<WorkflowEvents>
+export type WorkflowState = WorkflowEventWithCtx
 
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
@@ -15,7 +12,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   }
   const stream = new ReadableStream({
     start(controller) {
-      // 鐩戝惉 abort 淇″彿
       abortSignal.addEventListener('abort', () => {
         if (currentSessionId && currentWorkflowId) {
           window.ipcRendererApi.invoke('agent-workflow-abort', {
@@ -36,12 +32,15 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             currentWorkflowId = data.ctx.workflowId
           }
           if (currentSessionId === data.ctx.sessionId) {
-            controller.enqueue({ type: eventName, data })
+            console.log(eventName, data)
+            controller.enqueue({ eventName, data })
           }
 
           if (
             currentSessionId === data.ctx.sessionId &&
-            (eventName === 'workflow-error' || eventName === 'workflow-aborted')
+            (eventName === 'workflow-error' ||
+              eventName === 'workflow-aborted' ||
+              eventName === 'workflow-finished')
           ) {
             controller.close()
             cleanUp()
@@ -51,7 +50,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
       })
     },
     cancel() {
-      // 娓呯悊鎵€鏈夌洃鍚櫒
       cleanUp()
     },
   })
@@ -70,7 +68,6 @@ export function resumeWorkflowStream(
   }
   const stream = new ReadableStream({
     start(controller) {
-      // 鐩戝惉 abort 淇″彿
       abortSignal.addEventListener('abort', () => {
         if (sessionId && workflowId) {
           window.ipcRendererApi.invoke('agent-workflow-abort', {
@@ -87,7 +84,7 @@ export function resumeWorkflowStream(
             workflowId = data.ctx.workflowId
           }
           if (sessionId === data.ctx.sessionId) {
-            controller.enqueue({ type: eventName, data })
+            controller.enqueue({ eventName, data })
           }
 
           if (
@@ -102,7 +99,6 @@ export function resumeWorkflowStream(
       })
     },
     cancel() {
-      // 娓呯悊鎵€鏈夌洃鍚櫒
       cleanUp()
     },
   })

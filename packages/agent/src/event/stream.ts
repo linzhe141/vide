@@ -2,6 +2,7 @@ import type { WorkflowEventWithCtx } from "./channels"
 
 export class WorkflowStream {
   stream: ReadableStream<WorkflowEventWithCtx>
+  events: WorkflowEventWithCtx[] = []  
   private controller!: ReadableStreamDefaultController<WorkflowEventWithCtx>
 
   constructor() {
@@ -13,6 +14,7 @@ export class WorkflowStream {
   }
 
   push(data: WorkflowEventWithCtx) {
+    this.events.push(data)
     this.controller.enqueue(data)
   }
 

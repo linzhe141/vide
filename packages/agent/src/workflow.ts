@@ -8,8 +8,6 @@ import type {
 } from './types'
 import type { AssistantChatMessage, ChatMessage, Tool, ToolCall, ToolResult } from '@vide/ai'
 import { callAI } from './llm'
-import { workflowEvent } from './event'
-import { WorkflowEventChannels } from './event/channels'
 import { registorTools } from './tools/registor'
 import type { WorkflowEvent, WorkflowEventCtx, WorkflowEventWithCtx } from './event/channels'
 import type { Session } from './session'
@@ -39,6 +37,7 @@ export class Workflow {
     public stream: WorkflowStream
   ) {
     this.tools = registorTools(this.runtime)
+    this.runtime.stream = stream
   }
 
   emit = (data: WorkflowEvent) => {
@@ -62,60 +61,56 @@ export class Workflow {
   async runLoop(initialPayload: StepPayload) {
     let payload: StepPayload = initialPayload
 
-    try {
-      while (true) {
-        try {
-          this.runtime.throwIfAborted()
-          const nextStep = await this.runStep(payload)
+    while (true) {
+      try {
+        this.runtime.throwIfAborted()
+        const nextStep = await this.runStep(payload)
 
-          // 完成状态
-          if (nextStep.state === 'COMPLETED') {
-            this.emit({ eventName: 'workflow-finished' })
+        // 完成状态
+        if (nextStep.state === 'COMPLETED') {
+          this.emit({ eventName: 'workflow-finished' })
 
-            return 'COMPLETED'
-          }
-
-          // 等待人工审批
-          if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-            this.emit({
-              eventName: 'workflow-wait-human-approve',
-              data: {
-                data: nextStep.payload as WaitHumanApprovePayload,
-              },
-            })
-
-            // 需要 保持 状态，等待人工审批结果
-            this.state = nextStep.state
-            return 'WAIT_HUMAN_APPROVE'
-          }
-
-          // 继续执行下一步
-          this.state = nextStep.state
-          payload = nextStep.payload
-        } catch (error: any) {
-          if (error instanceof AbortError) {
-            this.runtime.workflowSession.addAbortMessage()
-
-            this.emit({
-              eventName: 'workflow-aborted',
-              data: {
-                chunkData: {
-                  reasoning: this.runtime.assistantReasoningChunk,
-                  text: this.runtime.assistantChunk,
-                },
-              },
-            })
-            return 'ABORTED'
-          }
-          this.emit({
-            eventName: 'workflow-error',
-            data: { error },
-          })
-          return 'ERROR'
+          return 'COMPLETED'
         }
+
+        // 等待人工审批
+        if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
+          this.emit({
+            eventName: 'workflow-wait-human-approve',
+            data: {
+              data: nextStep.payload as WaitHumanApprovePayload,
+            },
+          })
+
+          // 需要 保持 状态，等待人工审批结果
+          this.state = nextStep.state
+          return 'WAIT_HUMAN_APPROVE'
+        }
+
+        // 继续执行下一步
+        this.state = nextStep.state
+        payload = nextStep.payload
+      } catch (error: any) {
+        if (error instanceof AbortError) {
+          this.runtime.workflowSession.addAbortMessage()
+
+          this.emit({
+            eventName: 'workflow-aborted',
+            data: {
+              chunkData: {
+                reasoning: this.runtime.assistantReasoningChunk,
+                text: this.runtime.assistantChunk,
+              },
+            },
+          })
+          return 'ABORTED'
+        }
+        this.emit({
+          eventName: 'workflow-error',
+          data: { error },
+        })
+        return 'ERROR'
       }
-    } finally {
-      this.runtime.events = []
     }
   }
   async runStep(payload: StepPayload): Promise<NextStep> {
@@ -440,10 +435,6 @@ export class Workflow {
   }
 }
 
-type WorkflowEventRecord = {
-  eventName: keyof typeof WorkflowEventChannels
-  data: (typeof WorkflowEventChannels)[WorkflowEventRecord['eventName']]
-}
 export class WorkflowRuntimeContext {
   readonly rootSession: Session
   readonly workflowId: string
@@ -451,12 +442,12 @@ export class WorkflowRuntimeContext {
   readonly branchName: string
   readonly parentWorkflowId: string | null
   readonly controller = new AbortController()
-
+  
+  stream: WorkflowStream | null = null
   // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
   assistantChunk = ''
   assistantReasoningChunk = ''
   userInput: string[] = []
-  events: WorkflowEventRecord[] = []
 
   constructor(options: {
     session: Session
@@ -472,10 +463,7 @@ export class WorkflowRuntimeContext {
     this.userInput.push(options.userInput)
     this.workflowSession = new WorkflowSession()
   }
-  emit(eventName: WorkflowEventRecord['eventName'], data: WorkflowEventRecord['data']) {
-    this.events.push({ eventName, data })
-    workflowEvent.emit(eventName, data)
-  }
+
   get signal() {
     return this.controller.signal
   }

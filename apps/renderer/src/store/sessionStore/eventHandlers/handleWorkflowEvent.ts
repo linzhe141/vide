@@ -16,7 +16,7 @@ export function handleWorkflowEvent(
   const context = createSessionEventContext(storeState, workflowEvent)
   const { event, session, planner } = context
 
-  switch (event.type) {
+  switch (event.eventName) {
     case 'workflow-start': {
       // main old: null
       // main new: a

@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { randomUUID } from 'crypto'
-import { workflowEvent } from '../../event'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { getArtifactsRoot } from '../../workspace'
 
@@ -52,9 +51,9 @@ All generated files MUST be written inside the returned artifactDir.
 
       const artifactDir = path.join(getArtifactsRoot(this.runtime.workspacePath), workspaceName)
       await fs.mkdir(artifactDir, { recursive: true })
-      workflowEvent.emit('artifacts-created-workspace', {
-        ctx: this.runtime.workflowEventCtx,
-        workspaceName,
+      this.emit({
+        eventName: 'artifacts-created-workspace',
+        data: { workspaceName },
       })
       return {
         reason: 'call-llm',

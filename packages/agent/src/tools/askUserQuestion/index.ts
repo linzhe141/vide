@@ -1,4 +1,3 @@
-import { workflowEvent } from '../../event'
 import type { AskUserQuestion } from '../../types'
 import { defineTool, ToolProvider } from '../toolProvider'
 
@@ -43,17 +42,13 @@ Create a complete user question and pause the workflow for user input.
     },
 
     executor: async (question: AskUserQuestion) => {
-      workflowEvent.emit('ask-user', {
-        ctx: this.runtime.workflowEventCtx,
-        workflowId: this.runtime.workflowId,
-        question,
+      this.emit({
+        eventName: 'ask-user',
+        data: { workflowId: this.runtime.workflowId, question },
       })
-
       return {
         reason: 'stop',
-        result: {
-          question,
-        },
+        result: { question },
       }
     },
   })

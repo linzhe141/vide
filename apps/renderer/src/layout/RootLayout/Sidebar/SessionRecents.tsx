@@ -26,9 +26,6 @@ export function SessionRecents() {
       window.ipcRendererApi.on('workflow-llm-start', () => {
         setTimeout(fetchChats, 250)
       }),
-      window.ipcRendererApi.on('agent-create-session', () => {
-        setTimeout(fetchChats, 50)
-      }),
       window.ipcRendererApi.on('agent-session-forked', () => {
         setTimeout(fetchChats, 50)
       }),

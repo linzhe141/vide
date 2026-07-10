@@ -6,7 +6,7 @@ import type {
   SessionRowDto,
   WorkflowData,
 } from '@vide/config'
-import type { WorkflowEvents } from '@vide/agent/event'
+import type { WorkflowIPCEvents } from '@vide/agent/event'
 import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 
 export type { FileNode, SessionRowDto, WorkflowData }
@@ -133,4 +133,4 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
-} & WorkflowEvents
+} & WorkflowIPCEvents

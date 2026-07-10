@@ -102,22 +102,29 @@ export const WorkflowEventChannels = {
   },
 } as const
 
+// 简写
 export type WorkflowEvent = {
   [K in keyof typeof WorkflowEventChannels]: (typeof WorkflowEventChannels)[K] extends null
     ? { eventName: K }
     : { eventName: K; data: (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
 
+// 完整 + ctx
 export type WorkflowEventWithCtx = {
   [K in keyof typeof WorkflowEventChannels]: (typeof WorkflowEventChannels)[K] extends null
     ? { eventName: K; data: { ctx: WorkflowEventCtx } }
     : { eventName: K; data: { ctx: WorkflowEventCtx } & (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
 
-// TODO 删除这些
-export type WorkflowEventKey = keyof typeof WorkflowEventChannels
-export type WorkflowEvents = {
-  [K in WorkflowEventKey]: (data: (typeof WorkflowEventChannels)[K]) => void
+// IPC 使用
+export type WorkflowIPCEvents = {
+  [K in keyof typeof WorkflowEventChannels]: (
+    data: (typeof WorkflowEventChannels)[K] extends null
+      ? { ctx: WorkflowEventCtx }
+      : { ctx: WorkflowEventCtx } & (typeof WorkflowEventChannels)[K]
+  ) => void
 }
-export type Events = WorkflowEvents
-export const workflowEventNames = Object.keys(WorkflowEventChannels) as WorkflowEventKey[]
+
+export const workflowEventNames = Object.keys(
+  WorkflowEventChannels
+) as (keyof typeof WorkflowEventChannels)[]
