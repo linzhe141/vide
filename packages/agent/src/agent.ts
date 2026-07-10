@@ -78,7 +78,7 @@ export class Agent {
     return forkedSession
   }
 
-  buildChatMessages(messages: WorkflowData['messages']) {
+  buildChatMessages(messages: WorkflowData['messages']): ChatMessage[] {
     const chatMessages: ChatMessage[] = []
     let assistantMessage: AssistantChatMessage | null = null
     for (const message of messages) {

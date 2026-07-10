@@ -2,7 +2,6 @@ import { DatabaseManager } from './databaseManager'
 import { WindowManager } from './windowManager'
 import { setupApplicationMenu } from './menu'
 import { IpcService } from './ipc'
-import { SessionsManager } from './sessionsManager'
 import { AgentManager } from './agentManager'
 import { WorkspaceManager } from './workspaceManager'
 import { UpdaterManager } from './updaterManager'
@@ -12,7 +11,6 @@ export class AppManager {
   databaseManager: DatabaseManager
   windowManager: WindowManager
   ipcService: IpcService
-  sessionsManager: SessionsManager
   workspaceManager: WorkspaceManager
   updaterManager: UpdaterManager
 
@@ -21,7 +19,6 @@ export class AppManager {
     this.databaseManager = new DatabaseManager(this)
     this.windowManager = new WindowManager(this)
     this.ipcService = new IpcService(this)
-    this.sessionsManager = new SessionsManager(this)
     this.workspaceManager = new WorkspaceManager(this)
     this.updaterManager = new UpdaterManager(this)
   }
@@ -31,7 +28,6 @@ export class AppManager {
     this.databaseManager.init()
     this.windowManager.init()
     this.ipcService.registerIpcMainHandle()
-    this.sessionsManager.init()
     this.workspaceManager.init()
     this.updaterManager.init()
 

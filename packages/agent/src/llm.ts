@@ -25,6 +25,7 @@ type FnCallAI = (data: {
   messages: ChatMessage[]
   tools: Tool[]
   signal: AbortSignal
+  workspace: string | null
   events: {
     onReasoningStart?: () => void
     onReasoningDelta?: (chunk: { delta: string; content: string }) => void
@@ -41,7 +42,7 @@ type FnCallAI = (data: {
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 
-export const callAI: FnCallAI = async function ({ messages, tools, signal, events }) {
+export const callAI: FnCallAI = async function ({ messages, tools, signal, events, workspace }) {
   try {
     console.log('singal in processLLMStream', signal)
     let content = ''
@@ -51,7 +52,7 @@ export const callAI: FnCallAI = async function ({ messages, tools, signal, event
     }
     const stream = llmClient.chat.completions.create(
       {
-        messages: await buildChatMessages(messages),
+        messages: await buildChatMessages(messages, workspace),
         model,
         stream: true,
         tools,
@@ -83,7 +84,10 @@ export const callAI: FnCallAI = async function ({ messages, tools, signal, event
   }
 }
 
-export async function buildChatMessages(messages: ChatMessage[]) {
+async function buildChatMessages(
+  messages: ChatMessage[],
+  workspace: string | null
+): Promise<ChatMessage[]> {
   const skillsChatMessage = await buildSkillsChatMessage()
   // console.log(skillsChatMessage)
   const chatMessages: ChatMessage[] = [
@@ -92,6 +96,12 @@ export async function buildChatMessages(messages: ChatMessage[]) {
       content: AgentSystemPrompt,
     },
   ]
+  if (workspace) {
+    chatMessages.push({
+      role: 'system',
+      content: `You are working in the workspace located at: ${workspace}`,
+    })
+  }
   if (skillsChatMessage) {
     chatMessages.push(skillsChatMessage)
   }

@@ -21,6 +21,10 @@
     "dayjs": "^1.11.20",
     "diff": "^9.0.0",
     "gray-matter": "^4.0.3",
+    "partial-json": "0.1.7",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
   }
 }

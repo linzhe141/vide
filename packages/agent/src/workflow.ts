@@ -146,6 +146,7 @@ export class Workflow {
   async handleCallLLM(messages: ChatMessage[]) {
     this.emit({ eventName: 'workflow-llm-start', data: { messages } })
     const result = callAI({
+      workspace: this.runtime.workspacePath,
       messages,
       tools: this.tools,
       signal: this.runtime.signal,
@@ -442,7 +443,7 @@ export class WorkflowRuntimeContext {
   readonly branchName: string
   readonly parentWorkflowId: string | null
   readonly controller = new AbortController()
-  
+
   stream: WorkflowStream | null = null
   // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
   assistantChunk = ''
