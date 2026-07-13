@@ -53,6 +53,7 @@ export type WorkflowData = {
   userInput: string
   parentWorkflowId: string | null
   stopStatus: 'finished' | 'error' | 'aborted'
+  feedback: 'like' | 'dislike' | null
   askUserSubmitValue?: string[]
   messages: {
     id: string
