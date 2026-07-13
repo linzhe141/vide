@@ -485,6 +485,10 @@ export class WorkflowRuntimeContext {
     return this.rootSession.workspacePath
   }
 
+  get webSearchConfig() {
+    return this.rootSession.webSearchConfig
+  }
+
   get workflowEventCtx(): WorkflowEventCtx {
     return {
       sessionId: this.sessionId,

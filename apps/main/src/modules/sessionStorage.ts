@@ -10,9 +10,9 @@ import {
   sessionWorkflowMessages,
   sessionWorkflows,
 } from '@/db/schema'
-import { db } from '@/databaseManager'
+import { db } from '@/db/databaseManager'
 import { MessageRole, type ToolCall } from '@vide/ai'
-import type { AskUserQuestion, PlanStep } from '@vide/agent/types'
+import type { AskUserQuestion, PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 
 export class SessionStorage {
   static async upsertSessionBranch(data: {
@@ -62,7 +62,7 @@ export class SessionStorage {
     })
   }
 
-  static async updateSessionState(data: { sessionId: string; activeBranch: string }) {
+  static async checkoutSessionBranch(data: { sessionId: string; activeBranch: string }) {
     await db
       .update(sessions)
       .set({
@@ -72,7 +72,7 @@ export class SessionStorage {
       .where(eq(sessions.id, data.sessionId))
   }
 
-  static async createSessionRecord(data: {
+  static async createSession(data: {
     sessionId: string
     sessionType: SessionType
     activeBranch: string
@@ -185,6 +185,7 @@ export class SessionStorage {
         sessionId: data.targetSessionId,
         parentWorkflowId: clonedParentWorkflowId,
         stopStatus: workflow.stopStatus,
+        feedback: workflow.feedback,
         input: workflow.input,
         createdAt: timeBase + index,
         updatedAt: timeBase + index,
@@ -249,6 +250,15 @@ export class SessionStorage {
       .where(eq(sessions.id, sessionId))
   }
 
+  static async changeSessionAutoApprove(sessionId: string, autoApprove: boolean) {
+    await db
+      .update(sessions)
+      .set({
+        autoApprove,
+      })
+      .where(eq(sessions.id, sessionId))
+  }
+
   static async createWorkflow(data: {
     workflowId: string
     sessionId: string
@@ -272,6 +282,16 @@ export class SessionStorage {
       .update(sessionWorkflows)
       .set({
         stopStatus: 'finished',
+        updatedAt: Date.now(),
+      })
+      .where(eq(sessionWorkflows.id, workflowId))
+  }
+
+  static async updateWorkflowFeedback(workflowId: string, feedback: 'like' | 'dislike' | null) {
+    await db
+      .update(sessionWorkflows)
+      .set({
+        feedback,
         updatedAt: Date.now(),
       })
       .where(eq(sessionWorkflows.id, workflowId))
@@ -474,7 +494,14 @@ export class SessionStorage {
     })
   }
 
-  static async updateAskUserQuestionAnswer(workflowId: string, answer: unknown) {}
+  static async updateAskUserQuestionAnswer(workflowId: string, answer: unknown) {
+    await db
+      .update(askUserQuestions)
+      .set({
+        answerJson: JSON.stringify(answer),
+      })
+      .where(eq(askUserQuestions.workflowId, workflowId))
+  }
 
   static async createArtifactWorkspace(sessionId: string, workspaceName: string) {
     const time = Date.now()
@@ -485,5 +512,43 @@ export class SessionStorage {
       createdAt: time,
       updatedAt: time,
     })
+  }
+
+  static async handleToolCallApproval(
+    type: 'human-approved' | 'human-rejected',
+    workflowId: string,
+    payload: WaitHumanApprovePayload
+  ) {
+    const targetToolCall = payload.toolCalls[payload.index]
+    const targetMessages = await db
+      .select()
+      .from(sessionWorkflowMessages)
+      .where(
+        and(
+          eq(sessionWorkflowMessages.workflowId, workflowId),
+          eq(sessionWorkflowMessages.role, MessageRole.ToolCalls)
+        )
+      )
+    const targetMessage = targetMessages.find((m) => {
+      const toolCalls = JSON.parse(m.payload!) as ToolCall[]
+      return toolCalls.some((t) => t.id === targetToolCall.id)
+    })
+    if (!targetMessage) return
+    await db
+      .update(sessionWorkflowMessages)
+      .set({
+        payload: JSON.stringify(
+          payload.toolCalls.map((t) => {
+            if (t.id === targetToolCall.id) {
+              return {
+                ...t,
+                status: type,
+              }
+            }
+            return t
+          })
+        ),
+      })
+      .where(and(eq(sessionWorkflowMessages.id, targetMessage.id)))
   }
 }

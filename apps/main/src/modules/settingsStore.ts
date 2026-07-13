@@ -16,6 +16,10 @@ export const settingsStore = new ElectronStore<Settings>({
       baseUrl: '',
       model: '',
     },
+    webSearchConfig: {
+      apiKey: '',
+      searchUrl: '',
+    },
   },
   name: 'settings',
   fileExtension: 'json',

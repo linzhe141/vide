@@ -10,6 +10,7 @@ import { GeneralSettings } from '../pages/settings/general'
 import { GenerateImageSettings } from '../pages/settings/generateImage'
 import { Chat } from '../pages/chat'
 import { LlmSettings } from '../pages/settings/llm'
+import { WebSearchSettings } from '../pages/settings/webSearch'
 import { SkillsPage } from '../pages/skills'
 
 export const router = createHashRouter([
@@ -37,6 +38,10 @@ export const router = createHashRouter([
           {
             path: 'generateImage',
             Component: GenerateImageSettings,
+          },
+          {
+            path: 'webSearch',
+            Component: WebSearchSettings,
           },
         ],
       },

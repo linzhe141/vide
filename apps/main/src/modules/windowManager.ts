@@ -1,18 +1,16 @@
 import { BrowserWindow, shell } from 'electron'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { IS_DEV } from './utils'
-import type { AppManager } from './appManager'
-import { ipcMainApi } from './ipc/api/ipcMain'
+import { IS_DEV } from '../utils'
+import { ipcMainApi } from '../ipc/api/ipcMain'
+import type { AppManager } from '@/appManager'
 
 // const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const iconPath = path.join(__dirname, '../../../resources/logo.png')
 
 export class WindowManager {
   mainWindow: BrowserWindow = null!
-
   constructor(private app: AppManager) {}
-
+  
   createWindow() {
     const minHeight = 800
     const minWidth = 1200

@@ -9,6 +9,7 @@ import { Grep } from './grep'
 import { AskUserQuestionTool } from './askUserQuestion'
 import { SkillTool } from './skill'
 import { Image } from './image'
+import { WebSearch } from './websearch'
 import type { Tool } from '@vide/ai'
 import type { WorkflowRuntimeContext } from '../workflow'
 
@@ -23,6 +24,7 @@ export function registorTools(runtime: WorkflowRuntimeContext) {
   const askUserQuestionTool = new AskUserQuestionTool(runtime)
   const skill = new SkillTool(runtime)
   const read = new Read(runtime)
+  const webSearch = new WebSearch(runtime)
   const tools: Tool[] = [
     ...read.getTools(),
     ...timer.getTools(),
@@ -32,6 +34,7 @@ export function registorTools(runtime: WorkflowRuntimeContext) {
     ...bash.getTools(),
     ...planner.getTools(),
     ...grep.getTools(),
+    ...webSearch.getTools(),
     ...askUserQuestionTool.getTools(),
     ...skill.getTools(),
     ...new Image(runtime).getTools(),

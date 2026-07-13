@@ -67,6 +67,7 @@ export type SessionMessage =
 export type Workflow = {
   id: string
   input: string
+  feedback: 'like' | 'dislike' | null
   messages: SessionMessage[]
   runtime: {
     status: 'running' | 'finished' | 'error' | 'aborted'

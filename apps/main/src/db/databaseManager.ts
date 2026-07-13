@@ -1,11 +1,10 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import * as schema from '@/db/schema'
+import * as schema from './schema'
 import { app } from 'electron'
 import path from 'path'
-import type { AppManager } from './appManager'
-import { logger } from './logger'
+import { logger } from '../logger'
 
 const dbPath = path.join(app.getPath('userData'), 'data.db')
 
@@ -16,8 +15,6 @@ const sqlite = new Database(dbPath)
 export const db = drizzle(sqlite, { schema })
 
 export class DatabaseManager {
-  constructor(private app: AppManager) {}
-
   async init() {
     await this.runMigrate()
   }

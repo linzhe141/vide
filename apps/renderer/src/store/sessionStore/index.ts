@@ -58,6 +58,11 @@ type SessionActions = {
       branchName: string
     }) => void
     changeWorkflowInput: (data: { sessionId: string; workflowId: string; newInput: string }) => void
+    setWorkflowFeedback: (data: {
+      sessionId: string
+      workflowId: string
+      feedback: Workflow['feedback']
+    }) => void
     // for debugger
     buildSessionWorkflowTree: (sessionId: string) => any
   }
@@ -205,6 +210,16 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const workflowNode = session.workflowNodesMap[workflowId]
           if (!workflowNode) return
           workflowNode.workflow.input = newInput
+        })
+      },
+      setWorkflowFeedback(data) {
+        set((state) => {
+          const { sessionId, workflowId, feedback } = data
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const workflowNode = session.workflowNodesMap[workflowId]
+          if (!workflowNode) return
+          workflowNode.workflow.feedback = feedback
         })
       },
       createSession({

@@ -8,7 +8,7 @@ export function Layout() {
   const currentLink = pathname
   return (
     <div className='flex h-full'>
-      <div className='border-border w-[300px] border-r p-4'>
+      <div className='border-border w-75 border-r p-4'>
         <div className='my-3'>
           <div className='text-3xl'>Settings</div>
           <div className='text-text-info text-xs'>Preferences and LLM settings.</div>
@@ -18,6 +18,7 @@ export function Layout() {
             <LinkMenuItem label='Preferences settings' link='/settings'></LinkMenuItem>
             <LinkMenuItem label='LLM settings' link='/settings/llm'></LinkMenuItem>
             <LinkMenuItem label='Generate Image' link='/settings/generateImage'></LinkMenuItem>
+            <LinkMenuItem label='Web Search' link='/settings/webSearch'></LinkMenuItem>
           </LinkMenu>
         </div>
       </div>

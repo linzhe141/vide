@@ -55,6 +55,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
           const workflow: Workflow = {
             id: data.id,
             input: data.userInput,
+            feedback: data.feedback,
             messages: buildWorkflowMessages(data.messages, data.askUserSubmitValue ?? []),
             runtime: {
               status: data.stopStatus,

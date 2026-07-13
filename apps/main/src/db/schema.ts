@@ -33,6 +33,7 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
     (): AnySQLiteColumn => sessionWorkflows.id
   ),
   stopStatus: text('stop_status', { enum: ['finished', 'error', 'aborted'] }),
+  feedback: text('feedback', { enum: ['like', 'dislike'] }),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),

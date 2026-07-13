@@ -1,12 +1,28 @@
-import { ChevronLeft, ChevronRight, GitBranch, RefreshCcw, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  GitBranch,
+  RefreshCcw,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+} from 'lucide-react'
 import { useChatContext } from './ChatProvider'
 import { useSession, useSessionStoreActions, useWorkflowBranches } from '../../store/sessionStore'
 import { type Workflow } from '../../store/sessionStore/types'
 import { useNavigate } from 'react-router'
+import { Textarea } from '../../ui/Textarea'
+import { Button } from '@/ui/Button'
 
 export function SessionActions({ workflow }: { workflow: Workflow }) {
-  const { handleFork, handleRegenerate } = useChatContext()
+  const { handleFork, handleRegenerate, sessionId } = useChatContext()
+  const { setWorkflowFeedback } = useSessionStoreActions()
   const navigate = useNavigate()
+  const [memoryQueued, setMemoryQueued] = useState(false)
+  const [dislikeOpen, setDislikeOpen] = useState(false)
+  const [dislikeReason, setDislikeReason] = useState('')
 
   async function onClickFork() {
     const nextSessionId = await handleFork(workflow.id)
@@ -22,6 +38,33 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
     handleRegenerate(workflow.id, regenerateBranchName, workflow.input)
   }
 
+  function submitUserMemoryFeedback(rating: 'manual' | 'like' | 'dislike', reason?: string) {
+    setMemoryQueued(true)
+    window.setTimeout(() => setMemoryQueued(false), 1600)
+
+    if (rating === 'like' || rating === 'dislike') {
+      setWorkflowFeedback({ sessionId, workflowId: workflow.id, feedback: rating })
+    }
+    setDislikeOpen(false)
+    setDislikeReason('')
+
+    window.ipcRendererApi
+      .invoke('agent-update-user-memory', {
+        sessionId,
+        workflowId: workflow.id,
+        feedback: {
+          rating,
+          reason: reason?.trim() || undefined,
+        },
+      })
+      .catch((error) => {
+        console.error('Failed to update user memory:', error)
+      })
+  }
+
+  const liked = workflow.feedback === 'like'
+  const disliked = workflow.feedback === 'dislike'
+
   return (
     <div className='space-y-3'>
       <div className='space-y-3'>
@@ -30,7 +73,7 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
           <button
             type='button'
             onClick={onClickFork}
-            className='border-foreground/10 bg-foreground/[0.03] hover:bg-foreground/[0.06] inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
+            className='border-foreground/10 bg-foreground/3 hover:bg-foreground/6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
           >
             <GitBranch size={13} />
             Fork here
@@ -44,7 +87,67 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
             <RefreshCcw size={13} />
             Regenerate
           </button>
+
+          <button
+            type='button'
+            onClick={() => submitUserMemoryFeedback('manual')}
+            className='border-foreground/10 bg-foreground/3 hover:bg-foreground/6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60'
+          >
+            <Brain size={13} />
+            {memoryQueued ? 'Queued' : 'Extract memory'}
+          </button>
+
+          <button
+            type='button'
+            onClick={() => submitUserMemoryFeedback('like')}
+            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              liked
+                ? 'border-primary/30 bg-primary/15 text-primary'
+                : 'border-foreground/10 bg-foreground/3 hover:bg-foreground/6'
+            }`}
+          >
+            <ThumbsUp size={13} />
+          </button>
+
+          <button
+            type='button'
+            onClick={() => setDislikeOpen((open) => !open)}
+            className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              disliked
+                ? 'border-red-500/30 bg-red-500/10 text-red-500'
+                : 'border-foreground/10 bg-foreground/3 hover:bg-foreground/6'
+            }`}
+          >
+            <ThumbsDown size={13} />
+          </button>
         </div>
+        {dislikeOpen && (
+          <div className='border-foreground/10 bg-foreground/3 max-w-2xl space-y-2 rounded-xl border p-3'>
+            <Textarea
+              value={dislikeReason}
+              onChange={(event) => setDislikeReason(event.target.value)}
+              placeholder='What should be remembered about this response?'
+              className='min-h-18 resize-none'
+            />
+            <div className='flex justify-end gap-2'>
+              <Button
+                type='button'
+                onClick={() => {
+                  setDislikeOpen(false)
+                  setDislikeReason('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type='button'
+                onClick={() => submitUserMemoryFeedback('dislike', dislikeReason)}
+              >
+                Save feedback
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -73,7 +176,7 @@ function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
 
   return (
     <div className='space-y-3'>
-      <div className='border-foreground/10 from-foreground/[0.03] to-primary/8 rounded-2xl border bg-gradient-to-r via-transparent px-3 py-2.5'>
+      <div className='border-foreground/10 from-foreground/3 to-primary/8 rounded-2xl border bg-linear-to-r via-transparent px-3 py-2.5'>
         <div className='flex items-center justify-between gap-3'>
           <div className='flex min-w-0 items-center gap-3'>
             <div className='bg-primary/12 text-primary flex h-8 w-8 items-center justify-center rounded-full'>

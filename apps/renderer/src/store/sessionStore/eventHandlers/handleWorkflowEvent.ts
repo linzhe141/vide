@@ -213,6 +213,7 @@ function createWorkflow(workflowId: string, input: string): Workflow {
   return {
     id: workflowId,
     input,
+    feedback: null,
     messages: [
       {
         id: nanoid(),

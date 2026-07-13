@@ -2,6 +2,11 @@ import { AgentSystemPrompt } from './prompt/system'
 import { buildSkillsChatMessage } from './tools/skill'
 import { AbortError } from './error'
 import {
+  buildUserMemoryChatMessage,
+  updateUserMemoryFromConversation,
+  type UserMemoryFeedback,
+} from './memory/userMemory'
+import {
   type AI,
   createLLMClient as createAIClient,
   processLLMStream as processStream,
@@ -19,6 +24,20 @@ export function createLLMClient(options: { apiKey: string; baseURL: string; mode
     baseURL: options.baseURL,
   })
   model = options.model
+}
+
+export function updateUserMemory(messages: ChatMessage[], feedback?: UserMemoryFeedback) {
+  const activeClient = llmClient
+  const activeModel = model
+  if (!activeClient || !activeModel) {
+    throw new Error('LLM client is not initialized. Please goto LLM Settings.')
+  }
+  return updateUserMemoryFromConversation({
+    messages,
+    llmClient: activeClient,
+    model: activeModel,
+    feedback,
+  })
 }
 
 type FnCallAI = (data: {
@@ -89,6 +108,7 @@ async function buildChatMessages(
   workspace: string | null
 ): Promise<ChatMessage[]> {
   const skillsChatMessage = await buildSkillsChatMessage()
+  const userMemoryChatMessage = await buildUserMemoryChatMessage()
   // console.log(skillsChatMessage)
   const chatMessages: ChatMessage[] = [
     {
@@ -101,6 +121,9 @@ async function buildChatMessages(
       role: 'system',
       content: `You are working in the workspace located at: ${workspace}`,
     })
+  }
+  if (userMemoryChatMessage) {
+    chatMessages.push(userMemoryChatMessage)
   }
   if (skillsChatMessage) {
     chatMessages.push(skillsChatMessage)

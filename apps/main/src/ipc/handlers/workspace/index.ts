@@ -1,5 +1,5 @@
-import type { AppManager } from '../../../appManager'
-import type { IpcMainService } from '../..'
+import type { AppManager } from '@/appManager'
+import type { IpcMainService } from '@/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
 
 export class WorkspaceIpcMainService implements IpcMainService {

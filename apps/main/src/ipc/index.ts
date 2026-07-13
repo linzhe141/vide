@@ -1,11 +1,11 @@
 import type { AppManager } from '../appManager'
-import { SettingsStoreIpcMainService } from './services/settingsStore'
-import { WindowIpcMainService } from './services/window'
-import { AgentIpcMainService } from './services/agent'
-import { SessionIpcMainService } from './services/sessions'
-import { LLMSettingsIpcMainService } from './services/llmSettings'
-import { DevIpcMainService } from './services/dev'
-import { WorkspaceIpcMainService } from './services/workspace'
+import { SettingsStoreIpcMainService } from './handlers/settingsStore'
+import { WindowIpcMainService } from './handlers/window'
+import { AgentIpcMainService } from './handlers/agent'
+import { SessionIpcMainService } from './handlers/sessions'
+import { LLMSettingsIpcMainService } from './handlers/llmSettings'
+import { DevIpcMainService } from './handlers/dev'
+import { WorkspaceIpcMainService } from './handlers/workspace'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void

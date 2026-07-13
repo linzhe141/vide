@@ -1,17 +1,16 @@
-﻿import { and, asc, eq } from 'drizzle-orm'
-import { Agent } from '@vide/agent'
+﻿import { asc, eq } from 'drizzle-orm'
+import { Agent, updateUserMemory } from '@vide/agent'
 import type { Session } from '@vide/agent'
 import type { PlanStep } from '@vide/agent/types'
-import * as schema from '../../../db/schema'
-import { db } from '../../../databaseManager'
-import { logger } from '../../../logger'
-import type { AppManager } from '../../../appManager'
-import type { IpcMainService } from '../..'
+import * as schema from '@/db/schema'
+import { db } from '@/db/databaseManager'
+import { logger } from '@/logger'
+import type { AppManager } from '@/appManager'
+import type { IpcMainService } from '@/ipc'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
-import { MessageRole } from '@vide/ai'
-import type { ToolCall } from '@vide/ai'
-import { SessionStorage } from '@/services/sessionStorage'
+import { SessionStorage } from '@/modules/sessionStorage'
+import { settingsStore } from '@/modules/settingsStore'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -28,9 +27,10 @@ export class AgentIpcMainService implements IpcMainService {
       const session = this.agent.createSession({
         workspacePath,
         autoApprove: data.autoApprove,
+        webSearchConfig: this.getWebSearchConfig(),
       })
       this.sessions.set(session.sessionId, session)
-      await SessionStorage.createSessionRecord({
+      await SessionStorage.createSession({
         sessionId: session.sessionId,
         sessionType: session.sessionType,
         activeBranch: session.activeBranch,
@@ -61,6 +61,7 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
       logger.info('agent-session-send ', sessionId, input)
       const session = await this.getSession(sessionId)
+      session.webSearchConfig = this.getWebSearchConfig()
       const stream = session.send(input)
       for await (const { eventName, data } of stream) {
         const ctx = data.ctx
@@ -212,13 +213,7 @@ export class AgentIpcMainService implements IpcMainService {
       logger.info('agent-session-switch-auto-approve ', sessionId, autoApprove)
       const session = await this.getSession(sessionId)
       session.autoApprove = autoApprove
-      // DB update
-      await db
-        .update(schema.sessions)
-        .set({
-          autoApprove,
-        })
-        .where(eq(schema.sessions.id, sessionId))
+      await SessionStorage.changeSessionAutoApprove(sessionId, autoApprove)
     })
     ipcMainApi.handle('agent-workflow-abort', async ({ sessionId, workflowId }) => {
       const session = await this.getSession(sessionId)
@@ -227,80 +222,30 @@ export class AgentIpcMainService implements IpcMainService {
       session.abortWorkflow()
     })
 
+    ipcMainApi.handle('agent-update-user-memory', async ({ sessionId, workflowId, feedback }) => {
+      const session = await this.getSession(sessionId)
+      const workflowNode = session.getWorkflowNode(workflowId)
+      if (!workflowNode) {
+        throw new Error('Workflow not found: ' + workflowId)
+      }
+      if (feedback?.rating === 'like' || feedback?.rating === 'dislike') {
+        await SessionStorage.updateWorkflowFeedback(workflowId, feedback.rating)
+      }
+      await updateUserMemory(workflowNode.messages, feedback)
+    })
+
     ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId, payload }) => {
       const session = await this.getSession(sessionId)
       session.humanApprove(workflowId, payload)
 
-      // db
-      const targetToolCall = payload.toolCalls[payload.index]
-      const targetMessages = await db
-        .select()
-        .from(schema.sessionWorkflowMessages)
-        .where(
-          and(
-            eq(schema.sessionWorkflowMessages.workflowId, workflowId),
-            eq(schema.sessionWorkflowMessages.role, MessageRole.ToolCalls)
-          )
-        )
-      const targetMessage = targetMessages.find((m) => {
-        const toolCalls = JSON.parse(m.payload!) as ToolCall[]
-        return toolCalls.some((t) => t.id === targetToolCall.id)
-      })
-      if (!targetMessage) return
-      await db
-        .update(schema.sessionWorkflowMessages)
-        .set({
-          payload: JSON.stringify(
-            payload.toolCalls.map((t) => {
-              if (t.id === targetToolCall.id) {
-                return {
-                  ...t,
-                  status: 'human-approved',
-                }
-              }
-              return t
-            })
-          ),
-        })
-        .where(and(eq(schema.sessionWorkflowMessages.id, targetMessage.id)))
+      await SessionStorage.handleToolCallApproval('human-approved', workflowId, payload)
     })
 
     ipcMainApi.handle('agent-human-rejected', async ({ sessionId, workflowId, payload }) => {
       const session = await this.getSession(sessionId)
       session.rejectHumanApprove(workflowId, payload)
 
-      // db
-      const targetToolCall = payload.toolCalls[payload.index]
-      const targetMessages = await db
-        .select()
-        .from(schema.sessionWorkflowMessages)
-        .where(
-          and(
-            eq(schema.sessionWorkflowMessages.workflowId, workflowId),
-            eq(schema.sessionWorkflowMessages.role, MessageRole.ToolCalls)
-          )
-        )
-      const targetMessage = targetMessages.find((m) => {
-        const toolCalls = JSON.parse(m.payload!) as ToolCall[]
-        return toolCalls.some((t) => t.id === targetToolCall.id)
-      })
-      if (!targetMessage) return
-      await db
-        .update(schema.sessionWorkflowMessages)
-        .set({
-          payload: JSON.stringify(
-            payload.toolCalls.map((t) => {
-              if (t.id === targetToolCall.id) {
-                return {
-                  ...t,
-                  status: 'human-rejected',
-                }
-              }
-              return t
-            })
-          ),
-        })
-        .where(and(eq(schema.sessionWorkflowMessages.id, targetMessage.id)))
+      await SessionStorage.handleToolCallApproval('human-rejected', workflowId, payload)
     })
 
     ipcMainApi.handle('agent-session-fork', async ({ sessionId, targetWorkflowId }) => {
@@ -314,7 +259,7 @@ export class AgentIpcMainService implements IpcMainService {
       const sourceSessionRow = sourceSessionRows[0]
       const forkedSession = this.agent.forkSession(sourceSession, targetWorkflowId)
 
-      await SessionStorage.createSessionRecord({
+      await SessionStorage.createSession({
         sessionId: forkedSession.sessionId,
         sessionType: forkedSession.sessionType,
         activeBranch: forkedSession.activeBranch,
@@ -342,6 +287,7 @@ export class AgentIpcMainService implements IpcMainService {
         workflowData: payload.workflowData,
         autoApprove: payload.autoApprove,
       })
+      resumedForkedSession.webSearchConfig = this.getWebSearchConfig()
       this.sessions.set(forkedSession.sessionId, resumedForkedSession)
 
       return payload
@@ -354,8 +300,8 @@ export class AgentIpcMainService implements IpcMainService {
         const session = await this.getSession(sessionId)
         const targetNode = session.getWorkflowNode(targetWorkflowId)
         if (!targetNode) return
-        session.regenerateWorkflow(branchName, targetNode)
-        await SessionStorage.updateSessionState({
+        session.checkoutRegeneratedWorkflow(branchName, targetNode)
+        await SessionStorage.checkoutSessionBranch({
           sessionId: sessionId,
           activeBranch: branchName,
         })
@@ -370,12 +316,7 @@ export class AgentIpcMainService implements IpcMainService {
     )
 
     ipcMainApi.handle('ask-user-question-submit', async (data) => {
-      await db
-        .update(schema.askUserQuestions)
-        .set({
-          answerJson: JSON.stringify(data.submitValue),
-        })
-        .where(eq(schema.askUserQuestions.workflowId, data.workflowId))
+      await SessionStorage.updateAskUserQuestionAnswer(data.workflowId, data.submitValue)
     })
 
     ipcMainApi.handle('query-workflow-is-completed', async ({ sessionId, workflowId }) => {
@@ -414,8 +355,13 @@ export class AgentIpcMainService implements IpcMainService {
       workflowData: payload.workflowData,
       autoApprove: payload.autoApprove,
     })
+    session.webSearchConfig = this.getWebSearchConfig()
     this.sessions.set(sessionId, session)
     return session
+  }
+
+  private getWebSearchConfig() {
+    return settingsStore.get('webSearchConfig')
   }
 
   private async loadSessionPayload(sessionId: string) {
@@ -431,6 +377,7 @@ export class AgentIpcMainService implements IpcMainService {
         userInput: schema.sessionWorkflows.input,
         parentWorkflowId: schema.sessionWorkflows.parentWorkflowId,
         stopStatus: schema.sessionWorkflows.stopStatus,
+        feedback: schema.sessionWorkflows.feedback,
       })
       .from(schema.sessionWorkflows)
       .where(eq(schema.sessionWorkflows.sessionId, sessionId))
@@ -461,6 +408,7 @@ export class AgentIpcMainService implements IpcMainService {
         userInput: workflow.userInput,
         parentWorkflowId: workflow.parentWorkflowId,
         stopStatus: workflow.stopStatus ?? 'finished',
+        feedback: workflow.feedback,
         // @ts-expect-error role skip
         messages: workflowMessageRows,
       })

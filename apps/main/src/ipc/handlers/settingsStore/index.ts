@@ -1,5 +1,5 @@
-import { settingsStore } from '../../../store/settingsStore'
-import type { AppManager } from '../../../appManager'
+import { settingsStore } from '@/modules/settingsStore'
+import type { AppManager } from '@/appManager'
 import type { IpcMainService } from '../..'
 import { ipcMainApi } from '../../api/ipcMain'
 

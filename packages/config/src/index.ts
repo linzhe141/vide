@@ -15,12 +15,18 @@ export type Settings = {
     baseUrl: string
     model: string
   }
+
+  webSearchConfig: {
+    apiKey: string
+    searchUrl: string
+  }
 }
 
 export type Theme = Settings['theme']
 export type ThemeColor = Settings['themeColor']
 export type LLMConfig = Settings['llmConfig']
 export type GenerateImageConfig = Settings['generateImageConfig']
+export type WebSearchConfig = Settings['webSearchConfig']
 
 // IPC Types
 export type FileNode = {

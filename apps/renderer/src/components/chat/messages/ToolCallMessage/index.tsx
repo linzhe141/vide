@@ -16,6 +16,7 @@ import type { ToolCall } from '@vide/ai'
 import { useState } from 'react'
 import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
+import WebSearchToolCall from './WebSearchToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -42,6 +43,16 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
               result={findToolResult(workflow, tool.id)}
               originToolCalls={message.toolCalls}
               workflow={workflow}
+            />
+          )
+        }
+
+        if (tool.function.name === 'websearch') {
+          return (
+            <WebSearchToolCall
+              key={tool.id}
+              tool={tool}
+              result={findToolResult(workflow, tool.id)}
             />
           )
         }
@@ -79,7 +90,7 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background/80 dark:bg-background/60 hover:bg-foreground/[0.03] dark:hover:bg-foreground/[0.05] flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='text-text-secondary shrink-0'>
           <SquareTerminal size={17} strokeWidth={1.8} />
@@ -123,7 +134,7 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
       </button>
 
       {open && (
-        <div className='border-border bg-foreground/[0.03] dark:bg-foreground/[0.04] rounded-[22px] border p-4'>
+        <div className='border-border bg-foreground/3 dark:bg-foreground/4 rounded-[22px] border p-4'>
           <div className='space-y-4'>
             <section className='space-y-2'>
               <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>

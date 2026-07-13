@@ -37,6 +37,11 @@ export interface SessionBranchSnapshot {
   sourceWorkflowId: string | null
 }
 
+export type WebSearchConfig = {
+  apiKey: string
+  searchUrl: string
+}
+
 export interface SessionSnapshot {
   sessionId: string
   sessionType: SessionType
@@ -57,6 +62,7 @@ export class Session {
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
   autoApprove: boolean
+  webSearchConfig?: WebSearchConfig
   watiHumanWorkflow: Workflow | null = null
   runningWorkflow: Workflow | null = null
   planners: SessionPlaner[] = []
@@ -68,6 +74,7 @@ export class Session {
     origin?: SessionOrigin | null
     workspacePath?: string | null
     autoApprove?: boolean
+    webSearchConfig?: WebSearchConfig
   }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
@@ -75,6 +82,7 @@ export class Session {
     this.origin = options?.origin || null
     this.workspacePath = options?.workspacePath || null
     this.autoApprove = options?.autoApprove || false
+    this.webSearchConfig = options?.webSearchConfig
   }
 
   get currentBranch() {
@@ -128,13 +136,19 @@ export class Session {
 
       const result = await workflow.run(userInput)
       if (result === 'COMPLETED') {
-        //
+        this.finishWorkflow(workflow)
       } else if (result === 'WAIT_HUMAN_APPROVE') {
         this.watiHumanWorkflow = workflow
       }
     } finally {
       this.runningWorkflow = null
     }
+  }
+
+  finishWorkflow(workflow: Workflow) {
+    const workflowNode = this.getWorkflowNode(workflow.runtime.workflowId)
+    if (!workflowNode) return
+    workflowNode.stopStatus = 'finished'
   }
 
   fork(targetCommitNode: SessionWorkflowNode) {
@@ -175,9 +189,17 @@ export class Session {
     return forkedSession
   }
 
-  regenerateWorkflow(branchName: string, regenerateWorkflowNode: SessionWorkflowNode) {
+  // 在分支上切换到一个已经存在的工作流节点，重新生成后续的工作流
+  //    a
+  //   /
+  //  b (click regenerate)
+  //
+  //    a(a`) 在真正启动 工作流之前，先切换到 a`，然后重新生成后续的工作流
+  //   / \
+  //  b   c (finished a`)
+  checkoutRegeneratedWorkflow(branchName: string, source: SessionWorkflowNode) {
     this.activeBranch = branchName
-    const parentNode = regenerateWorkflowNode.parent
+    const parentNode = source.parent
     this.branchs[branchName] = {
       head: parentNode,
       source: parentNode,
@@ -242,7 +264,7 @@ export class Session {
     this.watiHumanWorkflow = null
     const result = await targetWorkflow.approveHumanApprove(payload)
     if (result === 'COMPLETED') {
-      //
+      this.finishWorkflow(targetWorkflow)
     } else if (result === 'WAIT_HUMAN_APPROVE') {
       this.watiHumanWorkflow = targetWorkflow
     }
@@ -255,7 +277,7 @@ export class Session {
     this.watiHumanWorkflow = null
     const result = await targetWorkflow.rejectHumanApprove(payload)
     if (result === 'COMPLETED') {
-      //
+      this.finishWorkflow(targetWorkflow)
     } else if (result === 'WAIT_HUMAN_APPROVE') {
       this.watiHumanWorkflow = targetWorkflow
     }

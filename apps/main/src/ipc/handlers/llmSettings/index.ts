@@ -1,6 +1,6 @@
-import type { AppManager } from '../../..//appManager'
-import type { IpcMainService } from '../..'
-import { ipcMainApi } from '../../api/ipcMain'
+import type { AppManager } from '@/appManager'
+import type { IpcMainService } from '@/ipc'
+import { ipcMainApi } from '@/ipc/api/ipcMain'
 import OpenAI from 'openai'
 
 export class LLMSettingsIpcMainService implements IpcMainService {
