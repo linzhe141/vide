@@ -1,6 +1,6 @@
 ﻿import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import type { Workflow } from '../../../../store/sessionStore/types'
+import type { Workflow } from '@/store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
 import { findToolResult } from '.'

@@ -68,7 +68,6 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
   return (
     <div className='space-y-3'>
       <div className='space-y-3'>
-        <RegeneratedBranchSwitcher workflow={workflow} />
         <div className='flex flex-wrap items-center gap-2'>
           <button
             type='button'
@@ -153,7 +152,7 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
   )
 }
 
-function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
+export function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { switchBranch } = useSessionStoreActions()

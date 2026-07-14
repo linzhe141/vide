@@ -4,8 +4,8 @@ import type { AssistantReasonSessionMessage } from '../../../store/sessionStore/
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
 export function AssistantReasonMessage({ message }: { message: AssistantReasonSessionMessage }) {
-  const [open, setOpen] = useState(true)
   const isReasoning = message.reasoning === true
+  const [open, setOpen] = useState(isReasoning)
   return (
     <div className='space-y-4 text-xs'>
       <button
@@ -24,10 +24,7 @@ export function AssistantReasonMessage({ message }: { message: AssistantReasonSe
       {open && (
         <div className='space-y-4 pl-2'>
           <div className='border-border border-l pl-5'>
-            <MarkdownRenderer
-              animation={isReasoning}
-              className='text-text-secondary prose prose-sm dark:prose-invert max-w-none text-[12px] leading-7'
-            >
+            <MarkdownRenderer animation={isReasoning} className='text-text-secondary text-[12px]'>
               {message.content}
             </MarkdownRenderer>
           </div>

@@ -1,37 +1,18 @@
 import type { ToolCall } from '@vide/ai'
-import type { ToolResultSessionMessage } from '../../../../store/sessionStore/types'
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Clock3,
-  Ellipsis,
-  ExternalLink,
-  Search,
-  XCircle,
-} from 'lucide-react'
-import { useState } from 'react'
+import type { ToolResultSessionMessage } from '@/store/sessionStore/types'
+import { CheckCircle2, Clock3, Ellipsis, Search, XCircle } from 'lucide-react'
+import { cn, getSiteIcon } from '@/lib/utils'
+import { useChatLayout } from '@/layout/ChatLayout'
+import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearchStore'
 
 type WebSearchToolCallProps = {
   tool: ToolCall
   result?: ToolResultSessionMessage
 }
 
-type WebSearchResult = {
-  query?: string
-  didYouMean?: string
-  results?: Array<{
-    title?: string
-    link?: string
-    snippet?: string
-    date?: string
-    position?: number
-  }>
-  credits?: number
-}
-
 function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
-  const [open, setOpen] = useState(true)
+  const { select } = useWebSearchStoreActions()
+  const { showWebSearchResults } = useChatLayout()
   const args = parseToolArguments(tool.function.arguments)
   const query = typeof args?.query === 'string' ? args.query : tool.function.arguments
   const searchResult = result?.result as WebSearchResult | undefined
@@ -41,19 +22,53 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
 
+  const handleClick = () => {
+    if (!isSuccess || !searchResult) return
+
+    select({
+      id: tool.id,
+      query,
+      result: searchResult,
+      durationMs: result?.durationMs,
+    })
+    showWebSearchResults()
+  }
+
   return (
-    <div className='space-y-2'>
+    <div className='space-y-2 text-sm'>
       <button
-        onClick={() => setOpen((value) => !value)}
-        className='group border-border/80 from-primary/8 to-background hover:border-primary/30 dark:from-primary/12 dark:to-background/70 flex w-full items-center gap-3 rounded-[22px] border bg-linear-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        onClick={handleClick}
+        disabled={!isSuccess}
+        className={cn(
+          'group border-border bg-background flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition',
+          'shadow-[0_1px_8px_rgba(0,0,0,0.025)] dark:shadow-none',
+          isSuccess && 'hover:border-primary/35 hover:bg-primary/4 cursor-pointer',
+          !isSuccess && 'cursor-default'
+        )}
       >
-        <div className='bg-primary/10 text-primary shrink-0 rounded-2xl p-2'>
-          <Search size={17} strokeWidth={1.8} />
+        <div className='bg-primary/8 text-primary border-primary/10 shrink-0 rounded-lg border p-1.5'>
+          <Search size={15} strokeWidth={1.9} />
         </div>
         <div className='min-w-0 flex-1'>
-          <div className='flex items-center gap-3'>
-            <span className='text-foreground truncate text-[15px] font-medium'>{query}</span>
-            {isSuccess && <StatusBadge variant='success' label={`${results.length} results`} />}
+          <div className='flex min-w-0 items-center gap-2'>
+            <span className='text-foreground truncate text-sm font-medium'>{query}</span>
+            {isSuccess && (
+              <div className='flex shrink-0 items-center gap-2'>
+                <StatusBadge variant='success' label={`${results.length} results`} />
+                <div className='flex -space-x-1.5'>
+                  {results.map((item, index) =>
+                    item.link ? (
+                      <img
+                        key={`${item.link}-${index}`}
+                        src={getSiteIcon(item.link)}
+                        alt=''
+                        className='border-background bg-background size-5 rounded-md border'
+                      />
+                    ) : null
+                  )}
+                </div>
+              </div>
+            )}
             {isRunning && <StatusBadge variant='running' label='Searching' />}
             {isError && <StatusBadge variant='error' label='Failed' />}
           </div>
@@ -62,10 +77,10 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
             {searchResult?.didYouMean && <span>Did you mean: {searchResult.didYouMean}</span>}
           </div>
         </div>
-        <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
+        <div className='text-text-secondary flex shrink-0 items-center gap-2 text-xs'>
           {duration && (
             <span className='flex items-center gap-1.5'>
-              <Clock3 size={14} />
+              <Clock3 size={13} />
               {duration}
             </span>
           )}
@@ -74,66 +89,12 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
             <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
           )}
           {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </div>
       </button>
-
-      {open && (
-        <div className='border-border/80 bg-background/85 rounded-[22px] border p-4'>
-          {isRunning && (
-            <div className='text-text-secondary flex items-center gap-2 text-sm'>
-              <Ellipsis size={16} className='animate-pulse' />
-              Searching the web...
-            </div>
-          )}
-
-          {isError && (
-            <pre className='rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
-              {JSON.stringify(result?.error, null, 2)}
-            </pre>
-          )}
-
-          {isSuccess && (
-            <div className='space-y-4'>
-              <div className='grid gap-2'>
-                {results.map((item, index) => (
-                  <a
-                    key={`${item.link}-${index}`}
-                    href={item.link}
-                    target='_blank'
-                    rel='noreferrer'
-                    className='border-border/70 bg-foreground/2.5 hover:border-primary/25 hover:bg-primary/4 block overflow-hidden rounded-2xl border p-3 text-ellipsis transition'
-                  >
-                    <div className='flex items-start gap-3'>
-                      <span className='bg-background text-text-secondary border-border mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium'>
-                        {item.position ?? index + 1}
-                      </span>
-                      <span className='min-w-0 flex-1'>
-                        <span className='text-foreground flex items-center gap-2 text-sm font-medium'>
-                          <span className='truncate'>{item.title || 'Untitled result'}</span>
-                          <ExternalLink className='text-text-info h-3.5 w-3.5 shrink-0' />
-                        </span>
-                        {item.link && (
-                          <span className='text-primary mt-1 block truncate text-xs'>
-                            {item.link}
-                          </span>
-                        )}
-                        {item.snippet && (
-                          <span className='text-text-secondary mt-2 line-clamp-2 block text-sm leading-6'>
-                            {item.snippet}
-                          </span>
-                        )}
-                        {item.date && (
-                          <span className='text-text-info mt-2 block text-xs'>{item.date}</span>
-                        )}
-                      </span>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {isError && (
+        <pre className='border-border bg-background text-danger rounded-xl border p-3 font-mono text-xs leading-6'>
+          {JSON.stringify(result?.error, null, 2)}
+        </pre>
       )}
     </div>
   )
@@ -148,10 +109,10 @@ function StatusBadge({
 }) {
   const className =
     variant === 'success'
-      ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'
+      ? 'bg-success/10 text-success'
       : variant === 'running'
         ? 'bg-foreground/6 text-text-secondary dark:bg-foreground/10'
-        : 'bg-red-100 text-red-500 dark:bg-red-950/40 dark:text-red-300'
+        : 'bg-danger/10 text-danger'
 
   return (
     <span className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${className}`}>{label}</span>

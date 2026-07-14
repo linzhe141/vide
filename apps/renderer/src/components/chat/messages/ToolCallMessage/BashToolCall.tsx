@@ -1,5 +1,5 @@
 ﻿import type { ToolCall } from '@vide/ai'
-import type { Workflow, ToolResultSessionMessage } from '../../../../store/sessionStore/types'
+import type { Workflow, ToolResultSessionMessage } from '@/store/sessionStore/types'
 import {
   Check,
   CheckCircle2,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useChatContext } from '../../ChatProvider'
-import { useSessionStoreActions } from '../../../../store/sessionStore'
+import { useSessionStoreActions } from '@/store/sessionStore'
 
 type BashToolCallProps = {
   tool: ToolCall

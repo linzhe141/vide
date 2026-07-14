@@ -10,7 +10,7 @@ import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
 import { ToolCallMessage } from './messages/ToolCallMessage'
 import { UserInputMessage } from './messages/UserInputMessage'
-import { SessionActions } from './SessionActions'
+import { SessionActions, RegeneratedBranchSwitcher } from './SessionActions'
 import { CircleStop } from 'lucide-react'
 
 export function MessageList() {
@@ -68,6 +68,7 @@ function WorkflowView({ workflow }: { workflow: Workflow }) {
       {workflow.runtime.status === 'aborted' && <AbortedStatus />}
       {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
       {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
+      <RegeneratedBranchSwitcher workflow={workflow} />
     </div>
   )
 }

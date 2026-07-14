@@ -2,7 +2,7 @@
   Workflow,
   ToolCallSessionMessage,
   ToolResultSessionMessage,
-} from '../../../../store/sessionStore/types'
+} from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,

@@ -17,10 +17,17 @@ import { ArtifactsDisplay } from './ArtifactsDisplay'
 import { Planner, PlannersDisplay } from './PlannersDisplay'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
 import { useNavigate } from 'react-router'
+import { WebSearchDisplay } from './WebSearchDisplay'
 
 interface ChatLayoutContextType {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   scrollToBottom: () => void
+  open: boolean
+  moving: boolean
+  type: 'Artifacts' | 'Planners' | 'WebSearch'
+  togglePane: (next: 'Artifacts' | 'Planners' | 'WebSearch') => void
+  showWebSearchResults: () => void
+  closePane?: () => void
 }
 
 const ChatLayoutContext = createContext<ChatLayoutContextType | null>(null)
@@ -32,15 +39,60 @@ export function useChatLayout() {
 
 export function ChatLayoutProvider({ children }: PropsWithChildren) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState<'Artifacts' | 'Planners' | 'WebSearch'>('Artifacts')
+  const [moving, setMoving] = useState(false)
 
   const scrollToBottom = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
     }
   }, [])
+
+  const startMoving = useCallback(() => {
+    setMoving(true)
+    setTimeout(() => setMoving(false), 200)
+  }, [])
+
+  const togglePane = useCallback(
+    (next: 'Artifacts' | 'Planners' | 'WebSearch') => {
+      startMoving()
+
+      if (!open) {
+        setType(next)
+        setOpen(true)
+        return
+      }
+
+      if (type === next) {
+        setOpen(false)
+      } else {
+        setType(next)
+      }
+    },
+    [open, startMoving, type]
+  )
+
+  const showWebSearchResults = useCallback(() => {
+    startMoving()
+    setType('WebSearch')
+    setOpen(true)
+  }, [startMoving])
+
   const chatLayoutProvideValue = useMemo(
-    () => ({ scrollContainerRef, scrollToBottom }),
-    [scrollToBottom]
+    () => ({
+      scrollContainerRef,
+      scrollToBottom,
+      open,
+      moving,
+      type,
+      togglePane,
+      showWebSearchResults,
+      closePane: () => {
+        setOpen(false)
+      },
+    }),
+    [open, moving, scrollToBottom, showWebSearchResults, togglePane, type]
   )
   return (
     <ChatLayoutContext.Provider value={chatLayoutProvideValue}>
@@ -51,27 +103,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
 
 export function ChatLayout({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
-
-  const [open, setOpen] = useState(false)
-  const [type, setType] = useState<'Artifacts' | 'Planners'>('Artifacts')
-  const [moving, setMoving] = useState(false)
-
-  const togglePane = (next: 'Artifacts' | 'Planners') => {
-    setMoving(true)
-    setTimeout(() => setMoving(false), 200)
-
-    if (!open) {
-      setType(next)
-      setOpen(true)
-      return
-    }
-
-    if (type === next) {
-      setOpen(false)
-    } else {
-      setType(next)
-    }
-  }
+  const { open, type, moving, togglePane } = useChatLayout()
   return (
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
       <InitSession sessionId={sessionId} />
@@ -105,6 +137,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
             'w-0': !open,
             'w-[1000px] border-l': open && type === 'Artifacts',
             'w-[600px] border-l': open && type === 'Planners',
+            'w-[520px] border-l': open && type === 'WebSearch',
           })}
         >
           {type === 'Artifacts' && (
@@ -115,6 +148,9 @@ export function ChatLayout({ children }: PropsWithChildren) {
           )}
           {type === 'Planners' && (
             <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
+          )}
+          {type === 'WebSearch' && (
+            <WebSearchDisplay className={cn({ 'whitespace-nowrap': moving })} />
           )}
         </div>
       </div>
