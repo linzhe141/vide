@@ -37,11 +37,6 @@ export interface SessionBranchSnapshot {
   sourceWorkflowId: string | null
 }
 
-export type WebSearchConfig = {
-  apiKey: string
-  searchUrl: string
-}
-
 export interface SessionSnapshot {
   sessionId: string
   sessionType: SessionType

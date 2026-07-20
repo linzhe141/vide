@@ -5,7 +5,6 @@ import {
   type SessionBranchSnapshot,
   type SessionSnapshot,
   type SessionType,
-  type WebSearchConfig,
   type SessionWorkflowSnapshot,
 } from './session'
 
@@ -26,7 +25,6 @@ export class Agent {
     origin?: SessionOrigin | null
     workspacePath?: string | null
     autoApprove?: boolean
-    webSearchConfig?: WebSearchConfig
   }) {
     const session = new Session({
       sessionType: options?.sessionType,

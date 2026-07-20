@@ -10,7 +10,6 @@ import type { IpcMainService } from '@/ipc'
 import type { WorkflowData } from '../../api/channels'
 import { ipcMainApi } from '../../api/ipcMain'
 import { SessionStorage } from '@/modules/sessionStorage'
-import { settingsStore } from '@/modules/settingsStore'
 
 export class AgentIpcMainService implements IpcMainService {
   agent: Agent
@@ -355,10 +354,6 @@ export class AgentIpcMainService implements IpcMainService {
     })
     this.sessions.set(sessionId, session)
     return session
-  }
-
-  private getWebSearchConfig() {
-    return settingsStore.get('webSearchConfig')
   }
 
   private async loadSessionPayload(sessionId: string) {
