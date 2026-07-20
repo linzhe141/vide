@@ -4,8 +4,8 @@ import type { AskUserQuestion, PlanStep } from '../types'
 export type WorkflowEventCtx = {
   sessionId: string
   workflowId: string
-  branchName: string
-  parentWorkflowId: string | null
+  // branchName: string
+  // parentWorkflowId: string | null
 }
 
 export const WorkflowEventChannels = {

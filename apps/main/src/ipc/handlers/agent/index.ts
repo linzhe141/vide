@@ -27,7 +27,6 @@ export class AgentIpcMainService implements IpcMainService {
       const session = this.agent.createSession({
         workspacePath,
         autoApprove: data.autoApprove,
-        webSearchConfig: this.getWebSearchConfig(),
       })
       this.sessions.set(session.sessionId, session)
       await SessionStorage.createSession({
@@ -61,23 +60,23 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
       logger.info('agent-session-send ', sessionId, input)
       const session = await this.getSession(sessionId)
-      session.webSearchConfig = this.getWebSearchConfig()
       const stream = session.send(input)
       for await (const { eventName, data } of stream) {
         const ctx = data.ctx
         ipcMainApi.send(eventName, data)
         switch (eventName) {
           case 'workflow-start': {
+            const parentWorkflowId = session.currentBranch.head?.id ?? null
             await SessionStorage.setSessionTitle(ctx.sessionId, input)
             await SessionStorage.createWorkflow({
               workflowId: ctx.workflowId,
               sessionId: ctx.sessionId,
-              parentWorkflowId: ctx.parentWorkflowId,
+              parentWorkflowId,
               input,
             })
             await SessionStorage.upsertSessionBranch({
               sessionId: ctx.sessionId,
-              branchName: ctx.branchName,
+              branchName: session.activeBranch,
               headWorkflowId: ctx.workflowId,
             })
             await SessionStorage.insertUserMessage(ctx.workflowId, input)
@@ -287,7 +286,6 @@ export class AgentIpcMainService implements IpcMainService {
         workflowData: payload.workflowData,
         autoApprove: payload.autoApprove,
       })
-      resumedForkedSession.webSearchConfig = this.getWebSearchConfig()
       this.sessions.set(forkedSession.sessionId, resumedForkedSession)
 
       return payload
@@ -331,7 +329,7 @@ export class AgentIpcMainService implements IpcMainService {
       logger.info('resume-running-workflow ', sessionId, workflowId)
       const session = await this.getSession(sessionId)
 
-      const events = session.runningWorkflow?.stream.events
+      const events = session.runningWorkflow?.runtime.stream.events
       if (!events) return
 
       for (const { eventName, data } of events) {
@@ -355,7 +353,6 @@ export class AgentIpcMainService implements IpcMainService {
       workflowData: payload.workflowData,
       autoApprove: payload.autoApprove,
     })
-    session.webSearchConfig = this.getWebSearchConfig()
     this.sessions.set(sessionId, session)
     return session
   }

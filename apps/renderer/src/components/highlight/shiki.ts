@@ -9,6 +9,7 @@ export function getHighlighter() {
 export const FALLBACK_LANG = 'tsx'
 
 export const defaultLangs = {
+  diff: import('@shikijs/langs/diff'),
   json: import('@shikijs/langs/json'),
   bash: import('@shikijs/langs/bash'),
   vue: import('@shikijs/langs/vue'),

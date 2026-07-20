@@ -4,3 +4,5 @@ export * from './workspace'
 export * from './tools/skill'
 export { createLLMClient, updateUserMemory } from './llm'
 export { createGenerateImageClient } from './image'
+
+export { setWebSearchConfig } from './tools/websearch'

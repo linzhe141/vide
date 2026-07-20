@@ -32,29 +32,12 @@ export class Workflow {
   state: WorkflowState = 'INPUT'
   tools: Tool[] = []
 
-  constructor(
-    public runtime: WorkflowRuntimeContext,
-    public stream: WorkflowStream
-  ) {
+  constructor(public runtime: WorkflowRuntimeContextNew) {
     this.tools = registorTools(this.runtime)
-    this.runtime.stream = stream
-  }
-
-  emit = (data: WorkflowEvent) => {
-    const event = { eventName: data.eventName } as WorkflowEventWithCtx
-    if ('data' in data) {
-      event.data = {
-        ...data.data,
-        ctx: this.runtime.workflowEventCtx,
-      }
-    } else {
-      event.data = { ctx: this.runtime.workflowEventCtx }
-    }
-    this.stream.push(event)
   }
 
   async run(input: string) {
-    this.emit({ eventName: 'workflow-start', data: { input } })
+    this.runtime.emit({ eventName: 'workflow-start', data: { input } })
     return await this.runLoop({ input } as UserInputStepPayload)
   }
 
@@ -68,14 +51,14 @@ export class Workflow {
 
         // 完成状态
         if (nextStep.state === 'COMPLETED') {
-          this.emit({ eventName: 'workflow-finished' })
+          this.runtime.emit({ eventName: 'workflow-finished' })
 
           return 'COMPLETED'
         }
 
         // 等待人工审批
         if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-wait-human-approve',
             data: {
               data: nextStep.payload as WaitHumanApprovePayload,
@@ -92,9 +75,9 @@ export class Workflow {
         payload = nextStep.payload
       } catch (error: any) {
         if (error instanceof AbortError) {
-          this.runtime.workflowSession.addAbortMessage()
+          this.runtime.workflowMessages.addAbortMessage()
 
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-aborted',
             data: {
               chunkData: {
@@ -105,7 +88,7 @@ export class Workflow {
           })
           return 'ABORTED'
         }
-        this.emit({
+        this.runtime.emit({
           eventName: 'workflow-error',
           data: { error },
         })
@@ -134,7 +117,7 @@ export class Workflow {
   }
 
   stateInput(payload: UserInputStepPayload): NextStep {
-    this.runtime.workflowSession.addMessage({ role: 'user', content: payload.input })
+    this.runtime.workflowMessages.addMessage({ role: 'user', content: payload.input })
     return {
       state: 'CALL_LLM',
       payload: {
@@ -144,7 +127,7 @@ export class Workflow {
   }
 
   async handleCallLLM(messages: ChatMessage[]) {
-    this.emit({ eventName: 'workflow-llm-start', data: { messages } })
+    this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
     const result = callAI({
       workspace: this.runtime.workspacePath,
       messages,
@@ -153,11 +136,11 @@ export class Workflow {
       events: {
         onReasoningStart: () => {
           this.runtime.assistantReasoningChunk = ''
-          this.emit({ eventName: 'workflow-llm-reasoning-start' })
+          this.runtime.emit({ eventName: 'workflow-llm-reasoning-start' })
         },
         onReasoningDelta: (chunk) => {
           this.runtime.assistantReasoningChunk = chunk.content
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-reasoning-delta',
             data: {
               chunk,
@@ -166,51 +149,51 @@ export class Workflow {
         },
         onReasoningEnd: (content) => {
           this.runtime.assistantReasoningChunk = ''
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-reasoning-end',
             data: { content },
           })
         },
         onTextStart: () => {
           this.runtime.assistantChunk = ''
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-text-start',
           })
         },
         onTextDelta: (chunk) => {
           this.runtime.assistantChunk = chunk.content
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-text-delta',
             data: { chunk },
           })
         },
         onTextEnd: (content) => {
           this.runtime.assistantChunk = ''
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-text-end',
             data: { content },
           })
         },
         onToolCallsStart: () => {
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-tool-calls-start',
           })
         },
         onToolCallName: (data) => {
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-tool-call-name',
             data: { data },
           })
         },
         onToolCallArguments: (data) => {
-          this.emit({
+          this.runtime.emit({
             eventName: 'workflow-llm-tool-call-arguments',
             data: { data },
           })
         },
         onToolCallsEnd: (toolCalls) => {
-          const autoApprove = this.runtime.rootSession.autoApprove
-          this.emit({
+          const autoApprove = this.runtime.autoApprove
+          this.runtime.emit({
             eventName: 'workflow-llm-tool-calls-end',
             data: {
               toolCalls: toolCalls.map((t) => {
@@ -232,7 +215,7 @@ export class Workflow {
     if (this.runtime.signal.aborted) {
       throw new AbortError()
     }
-    this.emit({ eventName: 'workflow-llm-end' })
+    this.runtime.emit({ eventName: 'workflow-llm-end' })
     return result
   }
 
@@ -247,7 +230,7 @@ export class Workflow {
     if (toolCalls.length) {
       assistantMessage.tool_calls = toolCalls
     }
-    this.runtime.workflowSession.addMessage(assistantMessage)
+    this.runtime.workflowMessages.addMessage(assistantMessage)
 
     if (toolCalls.length) {
       return { state: 'CALL_TOOLS', payload: { toolCalls } }
@@ -285,7 +268,7 @@ export class Workflow {
 
     const startedAt = Date.now()
 
-    this.emit({
+    this.runtime.emit({
       eventName: 'workflow-tool-call-start',
       data: {
         toolCall: { id: toolCall.id, toolName, args },
@@ -296,13 +279,13 @@ export class Workflow {
     const finishedAt = Date.now()
     const reason = toolResult.reason
     const result = toolResult.result
-    this.runtime.workflowSession.addMessage({
+    this.runtime.workflowMessages.addMessage({
       role: 'tool',
       tool_call_id: toolCall.id,
       content: JSON.stringify(toolResult.result),
     })
 
-    this.emit({
+    this.runtime.emit({
       eventName: 'workflow-tool-call-success',
       data: {
         toolCallResult: {
@@ -324,7 +307,7 @@ export class Workflow {
     const toolCall = toolCalls[index]
     const needWaitHumanApprove =
       toolCall.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
-      this.runtime.rootSession.autoApprove === false
+      this.runtime.autoApprove === false
     if (needWaitHumanApprove && !payload.hasApproval) {
       return {
         state: 'WAIT_HUMAN_APPROVE',
@@ -334,20 +317,20 @@ export class Workflow {
         },
       }
     }
-    let reason: ToolResult['reason'] = 'call-llm'
+    let reason: ToolResult['reason']
     try {
       reason = await this.handleCallTool(toolCall)
     } catch (error: any) {
       console.log(`Error executing tool ${toolCall.function.name}:`, error)
       if (error instanceof ToolCallError) {
         const errorMessage = 'An exception occurred while executing toolCall: ' + error.message
-        this.runtime.workflowSession.addMessage({
+        this.runtime.workflowMessages.addMessage({
           role: 'tool',
           tool_call_id: toolCall.id,
           content: errorMessage,
         })
 
-        this.emit({
+        this.runtime.emit({
           eventName: 'workflow-tool-call-error',
           data: {
             toolCallResult: {
@@ -360,7 +343,7 @@ export class Workflow {
         // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
         const pendingToolCalls = toolCalls.slice(index + 1)
         for (const t of pendingToolCalls) {
-          this.runtime.workflowSession.addMessage({
+          this.runtime.workflowMessages.addMessage({
             role: 'tool',
             tool_call_id: t.id,
             content: JSON.stringify({
@@ -370,6 +353,7 @@ export class Workflow {
         }
         return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
       }
+      throw error
     }
 
     if (reason === 'stop') {
@@ -405,13 +389,13 @@ export class Workflow {
 
     // 将拒绝信息添加到会话中
     const rejectMessage = `Human rejected the execution of this tool call.`
-    this.runtime.workflowSession.addMessage({
+    this.runtime.workflowMessages.addMessage({
       role: 'tool',
       tool_call_id: toolCall.id,
       content: rejectMessage,
     })
 
-    this.emit({
+    this.runtime.emit({
       eventName: 'workflow-tool-call-error',
       data: {
         toolCallResult: {
@@ -432,37 +416,54 @@ export class Workflow {
     }
   }
   buildLLMMessages() {
-    return this.runtime.rootSession.buildLLMMessages()
+    return this.runtime.buildLLMMessages()
   }
 }
 
-export class WorkflowRuntimeContext {
-  readonly rootSession: Session
-  readonly workflowId: string
-  readonly workflowSession: WorkflowSession
-  readonly branchName: string
-  readonly parentWorkflowId: string | null
-  readonly controller = new AbortController()
+export class WorkflowRuntimeContextNew {
+  workspacePath: string | null
+  sessionId: string
+  workflowId: string
+  workflowMessages: WorkflowSession
+  autoApprove: boolean
+  controller = new AbortController()
 
-  stream: WorkflowStream | null = null
+  stream: WorkflowStream
+  workflow: Workflow = null!
+  buildLLMMessages: () => ChatMessage[]
+  //
+
   // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
   assistantChunk = ''
   assistantReasoningChunk = ''
-  userInput: string[] = []
 
   constructor(options: {
-    session: Session
-    userInput: string
-    branchName: string
-    parentWorkflowId: string | null
+    workspacePath: string | null
+    sessionId: string
+    autoApprove: boolean
+    stream: WorkflowStream
+    buildLLMMessages?: () => ChatMessage[]
   }) {
-    this.rootSession = options.session
+    this.workspacePath = options.workspacePath
+    this.sessionId = options.sessionId
     this.workflowId = uuid()
-    this.branchName = options.branchName
-    this.parentWorkflowId = options.parentWorkflowId
-    // During initialization, `userInput` contains only one element.
-    this.userInput.push(options.userInput)
-    this.workflowSession = new WorkflowSession()
+    this.workflowMessages = new WorkflowMessages()  
+    this.autoApprove = options.autoApprove
+    this.stream = options.stream
+    this.buildLLMMessages = options.buildLLMMessages ?? (() => this.workflowMessages.getMessages())
+  }
+
+  emit = (data: WorkflowEvent) => {
+    const event = { eventName: data.eventName } as WorkflowEventWithCtx
+    if ('data' in data) {
+      event.data = {
+        ...data.data,
+        ctx: this.workflowEventCtx,
+      }
+    } else {
+      event.data = { ctx: this.workflowEventCtx }
+    }
+    this.stream.push(event)
   }
 
   get signal() {
@@ -477,29 +478,36 @@ export class WorkflowRuntimeContext {
       throw new AbortError()
     }
   }
-  get sessionId() {
-    return this.rootSession.sessionId
-  }
-
-  get workspacePath() {
-    return this.rootSession.workspacePath
-  }
-
-  get webSearchConfig() {
-    return this.rootSession.webSearchConfig
-  }
 
   get workflowEventCtx(): WorkflowEventCtx {
     return {
       sessionId: this.sessionId,
       workflowId: this.workflowId,
-      branchName: this.branchName,
-      parentWorkflowId: this.parentWorkflowId,
+      // parentWorkflowId: this.parentWorkflowId,
     }
   }
 }
 
 export class WorkflowSession {
+  messages: ChatMessage[] = []
+
+  addMessage(message: ChatMessage) {
+    this.messages.push(message)
+  }
+
+  addAbortMessage() {
+    this.messages.push({
+      role: 'user',
+      content: 'The user aborted this workflow before it completed.',
+    })
+  }
+
+  getMessages() {
+    return this.messages
+  }
+}
+
+export class WorkflowMessages {
   messages: ChatMessage[] = []
 
   addMessage(message: ChatMessage) {

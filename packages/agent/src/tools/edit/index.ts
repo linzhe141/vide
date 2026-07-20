@@ -1,10 +1,11 @@
 import { defineTool, ToolProvider } from '../toolProvider'
 import fs from 'fs/promises'
-import * as Diff from 'diff'
+import { createPatch } from 'diff'
 import { resolveWorkspacePath } from '../../workspace'
 import { ToolCallError } from '../../error'
 
 export const EDIT_TOOL_NAMES = {
+  SEARCH_REPLACE: `search-replace`,
   EDIT_FILE: `edit-file`,
 } as const
 
@@ -14,20 +15,123 @@ interface EditText {
 }
 
 export class Edit extends ToolProvider {
+  searchReplace = defineTool({
+    name: EDIT_TOOL_NAMES.SEARCH_REPLACE,
+    type: 'function',
+    function: {
+      name: EDIT_TOOL_NAMES.SEARCH_REPLACE,
+      description: `
+  Search for text in a file using regular expression and replace all matches.
+  
+  The oldText is treated as a regular expression pattern with the 'g' flag.
+  All matches will be replaced with newText.
+  
+  The path can be either absolute or relative.
+  Returns a unified diff showing the changes made.
+  `,
+      parameters: {
+        type: 'object',
+        properties: {
+          path: {
+            type: 'string',
+            description: 'File path (absolute or relative)',
+          },
+          oldText: {
+            type: 'string',
+            description: 'Regular expression pattern to search for. Will be used with /g flag.',
+          },
+          newText: {
+            type: 'string',
+            description: 'Text to replace matches with',
+          },
+        },
+        required: ['path', 'oldText', 'newText'],
+      },
+    },
+
+    executor: async (args: any = {}) => {
+      const { path: filePath, oldText, newText } = args
+
+      if (!filePath) {
+        throw new ToolCallError('Path is required')
+      }
+
+      if (typeof oldText !== 'string' || oldText === '') {
+        throw new ToolCallError('oldText must be a non-empty string')
+      }
+
+      if (typeof newText !== 'string') {
+        throw new ToolCallError('newText must be a string')
+      }
+
+      try {
+        const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)
+        const content = await fs.readFile(fullPath, 'utf8')
+
+        let regex: RegExp
+        try {
+          regex = new RegExp(oldText, 'g')
+        } catch (_error: any) {
+          throw new ToolCallError(`Invalid regular expression: ${oldText}`)
+        }
+
+        const matches = content.match(regex)
+        if (!matches || matches.length === 0) {
+          throw new ToolCallError(`No matches found for pattern "${oldText}" in ${filePath}`)
+        }
+
+        const newContent = content.replace(regex, newText)
+
+        if (content === newContent) {
+          throw new ToolCallError(
+            `No changes made to ${filePath}. The replacement produced identical content.`
+          )
+        }
+
+        const {
+          diff: diffText,
+          linesAdded,
+          linesDeleted,
+        } = buildDiff(filePath, content, newContent)
+
+        await fs.writeFile(fullPath, newContent, 'utf8')
+        const stats = await fs.stat(fullPath)
+
+        return {
+          reason: 'call-llm',
+          result: {
+            success: true,
+            path: fullPath,
+            size: stats.size,
+            message: `Successfully replaced ${matches.length} match(es) in ${filePath}. (+${linesAdded} -${linesDeleted} lines)`,
+            diff: diffText,
+            linesAdded,
+            linesDeleted,
+            replacements: matches.length,
+          },
+        }
+      } catch (error: any) {
+        console.log('search_replace error', error)
+        throw new ToolCallError(
+          `Failed to replace text: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
+    },
+  })
+
   editFile = defineTool({
     name: EDIT_TOOL_NAMES.EDIT_FILE,
     type: 'function',
     function: {
       name: EDIT_TOOL_NAMES.EDIT_FILE,
       description: `
-  Edit a file by performing one or more exact text replacements.
-
-  Each edit replaces oldText with newText in the file. All edits are matched
-  against the original file content (not incrementally). The text must match
-  exactly including all whitespace, indentation, and newlines.
+  Apply one or more exact text replacements to a file.
+  
+  Each edit replaces all occurrences of oldText with newText in the file. 
+  All edits are matched against the original file content (not incrementally). 
+  The text must match exactly including all whitespace, indentation, and newlines.
 
   Multiple edits must not overlap - if they do, merge them into one edit instead.
-  Each oldText must be unique in the file.
 
   The path can be either absolute or relative.
   Returns a unified diff showing the changes made.
@@ -47,7 +151,7 @@ export class Edit extends ToolProvider {
               properties: {
                 oldText: {
                   type: 'string',
-                  description: 'Exact text to replace. Must be unique in the file.',
+                  description: 'Exact text to replace. All occurrences will be replaced.',
                 },
                 newText: {
                   type: 'string',
@@ -77,31 +181,24 @@ export class Edit extends ToolProvider {
 
       try {
         const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)
-
-        // Read file
         const content = await fs.readFile(fullPath, 'utf8')
 
-        // Apply edits
-        const { baseContent, newContent } = applyEdits(content, edits, filePath)
+        const result = applyEdits(content, edits, filePath)
 
-        // Generate diff
-        const diff = generateDiff(baseContent, newContent)
+        if (content === result.newContent) {
+          throw new ToolCallError(
+            `No changes made to ${filePath}. The replacements produced identical content.`
+          )
+        }
 
-        // Restore original line endings
-        const finalContent = restoreLineEndings(newContent, content)
+        const {
+          diff: diffText,
+          linesAdded,
+          linesDeleted,
+        } = buildDiff(filePath, content, result.newContent)
 
-        // Write back
-        await fs.writeFile(fullPath, finalContent, 'utf8')
-
+        await fs.writeFile(fullPath, result.newContent, 'utf8')
         const stats = await fs.stat(fullPath)
-
-        // Count changes
-        const linesAdded = diff
-          .split('\n')
-          .filter((l) => l.startsWith('+') && !l.startsWith('+++')).length
-        const linesRemoved = diff
-          .split('\n')
-          .filter((l) => l.startsWith('-') && !l.startsWith('---')).length
 
         return {
           reason: 'call-llm',
@@ -109,8 +206,11 @@ export class Edit extends ToolProvider {
             success: true,
             path: fullPath,
             size: stats.size,
-            message: `Successfully applied ${edits.length} edit(s) to ${filePath}. (+${linesAdded} -${linesRemoved} lines)`,
-            diff,
+            message: `Successfully applied ${edits.length} edit(s) to ${filePath}. (+${linesAdded} -${linesDeleted} lines)`,
+            diff: diffText,
+            linesAdded,
+            linesDeleted,
+            replacements: result.totalReplacements,
           },
         }
       } catch (error: any) {
@@ -123,143 +223,106 @@ export class Edit extends ToolProvider {
   })
 
   getTools() {
-    return [this.editFile]
+    return [this.searchReplace, this.editFile]
   }
-}
-
-function generateDiff(oldContent: string, newContent: string): string {
-  const parts = Diff.diffLines(oldContent, newContent)
-  const output: string[] = []
-
-  const oldLines = oldContent.split('\n')
-  const newLines = newContent.split('\n')
-  const maxLineNum = Math.max(oldLines.length, newLines.length)
-  const lineNumWidth = String(maxLineNum).length
-
-  let oldLineNum = 1
-  let newLineNum = 1
-
-  for (const part of parts) {
-    const raw = part.value.split('\n')
-    if (raw[raw.length - 1] === '') {
-      raw.pop()
-    }
-
-    for (const line of raw) {
-      if (part.added) {
-        const lineNum = String(newLineNum).padStart(lineNumWidth, ' ')
-        output.push(`+${lineNum} ${line}`)
-        newLineNum++
-      } else if (part.removed) {
-        const lineNum = String(oldLineNum).padStart(lineNumWidth, ' ')
-        output.push(`-${lineNum} ${line}`)
-        oldLineNum++
-      } else {
-        const lineNum = String(oldLineNum).padStart(lineNumWidth, ' ')
-        output.push(` ${lineNum} ${line}`)
-        oldLineNum++
-        newLineNum++
-      }
-    }
-  }
-
-  return output.join('\n')
-}
-
-function normalizeToLF(text: string): string {
-  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-}
-
-function restoreLineEndings(text: string, original: string): string {
-  if (original.includes('\r\n')) {
-    return text.replace(/\n/g, '\r\n')
-  }
-  if (original.includes('\r') && !original.includes('\r\n')) {
-    return text.replace(/\n/g, '\r')
-  }
-  return text
 }
 
 function applyEdits(
   content: string,
   edits: EditText[],
   filePath: string
-): { baseContent: string; newContent: string } {
-  const normalizedContent = normalizeToLF(content)
-  const normalizedEdits = edits.map((edit) => ({
-    oldText: normalizeToLF(edit.oldText),
-    newText: normalizeToLF(edit.newText),
-  }))
+): { newContent: string; totalReplacements: number } {
+  let totalReplacements = 0
 
-  // Validate all edits
-  for (let i = 0; i < normalizedEdits.length; i++) {
-    const edit = normalizedEdits[i]
+  for (let i = 0; i < edits.length; i++) {
+    const edit = edits[i]
 
     if (!edit.oldText && edit.oldText !== '') {
-      throw new Error(`edits[${i}].oldText must not be empty`)
+      throw new ToolCallError(`edits[${i}].oldText must not be empty`)
     }
 
-    // Find in content
-    const index = normalizedContent.indexOf(edit.oldText)
-    if (index === -1) {
-      throw new Error(
+    if (!content.includes(edit.oldText)) {
+      throw new ToolCallError(
         `Cannot find edits[${i}].oldText in ${filePath}. ` +
           `Text must match exactly including whitespace and newlines.`
       )
     }
-
-    // Check uniqueness
-    const secondIndex = normalizedContent.indexOf(edit.oldText, index + 1)
-    if (secondIndex !== -1) {
-      const occurrences = normalizedContent.split(edit.oldText).length - 1
-      throw new Error(
-        `Found ${occurrences} occurrences of edits[${i}].oldText in ${filePath}. ` +
-          `Each oldText must be unique. Provide more context.`
-      )
-    }
   }
 
-  // Collect match positions
-  interface MatchedEdit {
+  interface MatchPosition {
     editIndex: number
-    matchIndex: number
-    matchLength: number
+    start: number
+    end: number
+    oldText: string
     newText: string
   }
 
-  const matchedEdits: MatchedEdit[] = normalizedEdits.map((edit, i) => ({
-    editIndex: i,
-    matchIndex: normalizedContent.indexOf(edit.oldText),
-    matchLength: edit.oldText.length,
-    newText: edit.newText,
-  }))
+  const allMatches: MatchPosition[] = []
 
-  // Check for overlaps
-  matchedEdits.sort((a, b) => a.matchIndex - b.matchIndex)
-  for (let i = 1; i < matchedEdits.length; i++) {
-    const prev = matchedEdits[i - 1]
-    const curr = matchedEdits[i]
-    if (prev.matchIndex + prev.matchLength > curr.matchIndex) {
-      throw new Error(
-        `edits[${prev.editIndex}] and edits[${curr.editIndex}] overlap in ${filePath}. ` +
-          `Merge them into one edit or target disjoint regions.`
-      )
+  for (let i = 0; i < edits.length; i++) {
+    const edit = edits[i]
+    let startIndex = 0
+
+    while (true) {
+      const index = content.indexOf(edit.oldText, startIndex)
+      if (index === -1) break
+
+      allMatches.push({
+        editIndex: i,
+        start: index,
+        end: index + edit.oldText.length,
+        oldText: edit.oldText,
+        newText: edit.newText,
+      })
+
+      startIndex = index + 1
     }
   }
 
-  // Apply edits in reverse order to preserve offsets
-  let newContent = normalizedContent
-  for (let i = matchedEdits.length - 1; i >= 0; i--) {
-    const edit = matchedEdits[i]
+  allMatches.sort((a, b) => b.start - a.start)
+
+  for (let i = 0; i < allMatches.length - 1; i++) {
+    for (let j = i + 1; j < allMatches.length; j++) {
+      const a = allMatches[i]
+      const b = allMatches[j]
+
+      if (a.editIndex !== b.editIndex) {
+        if (b.start < a.end && a.start < b.end) {
+          throw new ToolCallError(
+            `edits[${a.editIndex}] and edits[${b.editIndex}] overlap in ${filePath}. ` +
+              `Merge them into one edit or target disjoint regions.`
+          )
+        }
+      }
+    }
+  }
+
+  let newContent = content
+  for (const match of allMatches) {
     newContent =
-      newContent.substring(0, edit.matchIndex) +
-      edit.newText +
-      newContent.substring(edit.matchIndex + edit.matchLength)
+      newContent.substring(0, match.start) + match.newText + newContent.substring(match.end)
+    totalReplacements++
   }
 
-  if (normalizedContent === newContent) {
-    throw new Error(`No changes made to ${filePath}. The replacements produced identical content.`)
+  return { newContent, totalReplacements }
+}
+
+function buildDiff(filePath: string, content: string, newContent: string) {
+  const patch = createPatch(filePath, content, newContent, '', '')
+  const diffText = `diff --git a/${filePath} b/${filePath}\n${patch}`
+
+  const patchLines = patch.split('\n')
+  let linesAdded = 0
+  let linesDeleted = 0
+
+  for (const line of patchLines) {
+    if (line.startsWith('+') && !line.startsWith('+++')) linesAdded++
+    else if (line.startsWith('-') && !line.startsWith('---')) linesDeleted++
   }
 
-  return { baseContent: normalizedContent, newContent }
+  return {
+    diff: diffText,
+    linesAdded,
+    linesDeleted,
+  }
 }

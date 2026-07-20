@@ -60,13 +60,8 @@ export function SideBar() {
       </div>
 
       {/* Footer */}
-      <div
-        className={cn(
-          'transition-opacity duration-150',
-          collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-        )}
-      >
-        <SidebarFooter />
+      <div className={cn('transition-opacity duration-150')}>
+        <SidebarFooter collapsed={collapsed} />
       </div>
     </aside>
   )

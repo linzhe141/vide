@@ -1,5 +1,4 @@
-﻿import { createGenerateImageClient } from '@vide/agent'
-import { createLLMClient } from '@vide/agent'
+﻿import { createLLMClient, setWebSearchConfig, createGenerateImageClient } from '@vide/agent'
 import { settingsStore } from './settingsStore'
 import type { AppManager } from '@/appManager'
 export class AgentManager {
@@ -8,6 +7,7 @@ export class AgentManager {
   init() {
     this.createLLMClient()
     this.createGenerateImageClient()
+    this.createWebSearchClient()
   }
 
   createLLMClient(config?: { apiKey: string; baseUrl: string; model: string }) {
@@ -23,5 +23,11 @@ export class AgentManager {
     const baseURL = config ? config.baseUrl : settingsStore.get('generateImageConfig').baseUrl
     const model = config ? config.model : settingsStore.get('generateImageConfig').model
     if (apiKey && baseURL && model) createGenerateImageClient({ apiKey, baseURL, model })
+  }
+
+  createWebSearchClient(config?: { apiKey: string; searchUrl: string }) {
+    const apiKey = config ? config.apiKey : settingsStore.get('webSearchConfig').apiKey
+    const searchUrl = config ? config.searchUrl : settingsStore.get('webSearchConfig').searchUrl
+    if (apiKey && searchUrl) setWebSearchConfig({ apiKey, searchUrl })
   }
 }

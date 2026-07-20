@@ -34,7 +34,7 @@ function MessageView({ workflow, message }: { workflow: Workflow; message: Sessi
       )
 
     case 'assistant-text':
-      return <AssistantTextMessage message={message} />
+      return <AssistantTextMessage workflow={workflow} message={message} />
 
     case 'assistant-reason':
       return <AssistantReasonMessage message={message} />

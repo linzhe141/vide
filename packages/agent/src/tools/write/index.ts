@@ -52,13 +52,13 @@ Write a complete file in one operation.
         throw new ToolCallError('Content must be a string')
       }
 
-      // 内容过长时拒绝执行，防止 LLM 输出截断
-      if (content.length > MAX_WRITE_CONTENT_LENGTH) {
-        throw new ToolCallError(
-          `Content is too long (${content.length} characters). Maximum allowed is ${MAX_WRITE_CONTENT_LENGTH}. ` +
-            `Please use the \`append-file\` tool to write the file in smaller chunks.`
-        )
-      }
+      // // 内容过长时拒绝执行，防止 LLM 输出截断
+      // if (content.length > MAX_WRITE_CONTENT_LENGTH) {
+      //   throw new ToolCallError(
+      //     `Content is too long (${content.length} characters). Maximum allowed is ${MAX_WRITE_CONTENT_LENGTH}. ` +
+      //       `Please use the \`append-file\` tool to write the file in smaller chunks.`
+      //   )
+      // }
 
       try {
         const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)

@@ -5,6 +5,7 @@ import type {
   FileNode,
   SessionRowDto,
   WorkflowData,
+  WebSearchConfig,
 } from '@vide/config'
 import type { WorkflowIPCEvents } from '@vide/agent/event'
 import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
@@ -97,6 +98,7 @@ export interface RenderChannel {
     data: LLMConfig
   ) => Promise<{ success: true } | { success: false; error: any }>
   'submit-generate-image-settings': (data: GenerateImageConfig) => void
+  'submit-web-search-settings': (data: WebSearchConfig) => void
   // only dev
   'dev-delete-database-rows': () => void
 

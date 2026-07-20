@@ -13,6 +13,9 @@ export class LLMSettingsIpcMainService implements IpcMainService {
     ipcMainApi.handle('submit-generate-image-settings', (data) => {
       this.appManager.agentManager.createGenerateImageClient(data)
     })
+    ipcMainApi.handle('submit-web-search-settings', (data) => {
+      this.appManager.agentManager.createWebSearchClient(data)
+    })
 
     ipcMainApi.handle('verify-llm-settings-connection', ({ apiKey, baseUrl, model }) => {
       return new Promise((resolve) => {

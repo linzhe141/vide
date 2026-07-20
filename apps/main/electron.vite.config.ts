@@ -12,7 +12,7 @@ export default defineConfig({
         input: {
           index: path.resolve(__dirname, './src/main.ts'),
         },
-        external: [/* 'jsdom',  */ '@mozilla/readability'],
+        external: ['jsdom' /*,  '@mozilla/readability' */],
       },
     },
     resolve: {

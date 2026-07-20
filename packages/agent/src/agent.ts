@@ -33,7 +33,6 @@ export class Agent {
       origin: options?.origin,
       workspacePath: options?.workspacePath,
       autoApprove: options?.autoApprove,
-      webSearchConfig: options?.webSearchConfig,
     })
     session.branchs[session.activeBranch] = { head: null, source: null }
 

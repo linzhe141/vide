@@ -6,6 +6,16 @@ import TurndownService from 'turndown'
 // @ts-expect-error ignore missing types
 import { gfm } from 'turndown-plugin-gfm'
 
+const webSearchConfig = {
+  apiKey: '',
+  searchUrl: '',
+}
+
+export function setWebSearchConfig(config: { apiKey: string; searchUrl: string }) {
+  webSearchConfig.apiKey = config.apiKey
+  webSearchConfig.searchUrl = config.searchUrl
+}
+
 export const WEBSEARCH_TOOL_NAMES = {
   SEARCH: 'websearch',
   FETCH: 'webfetch',
@@ -80,8 +90,8 @@ export class WebSearch extends ToolProvider {
         throw new ToolCallError('Search query is required')
       }
 
-      const searchUrl = this.runtime.webSearchConfig?.searchUrl?.trim()
-      const apiKey = this.runtime.webSearchConfig?.apiKey?.trim()
+      const searchUrl = webSearchConfig.searchUrl?.trim()
+      const apiKey = webSearchConfig.apiKey?.trim()
 
       if (!searchUrl || !apiKey) {
         throw new ToolCallError('Web search is not configured. Please goto Web Search Settings.')

@@ -35,7 +35,8 @@ Example prompt: "A serene landscape with mountains in the background, a clear bl
         throw new ToolCallError('Prompt is required for image generation')
       }
 
-      const imageUrl = await generateImage(prompt)
+      const imageUrl = await generateImage(prompt)!
+
       return {
         reason: 'call-llm',
         result: { url: imageUrl },

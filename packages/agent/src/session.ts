@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import type { PlanStep, WaitHumanApprovePayload } from './types'
-import { Workflow, WorkflowRuntimeContext } from './workflow'
+import { Workflow, WorkflowRuntimeContextNew } from './workflow'
 import type { ChatMessage } from '@vide/ai'
 import { WorkflowStream } from './event/stream'
 
@@ -56,13 +56,16 @@ export interface SessionSnapshot {
 export class Session {
   sessionId: string
   sessionType: SessionType
-  origin: SessionOrigin | null
+  // config context
   workspacePath: string | null
+  autoApprove: boolean
+
+  // workflow graph context
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   workflowNodeMap = new Map<string, SessionWorkflowNode>()
-  autoApprove: boolean
-  webSearchConfig?: WebSearchConfig
+  origin: SessionOrigin | null
+
   watiHumanWorkflow: Workflow | null = null
   runningWorkflow: Workflow | null = null
   planners: SessionPlaner[] = []
@@ -74,7 +77,6 @@ export class Session {
     origin?: SessionOrigin | null
     workspacePath?: string | null
     autoApprove?: boolean
-    webSearchConfig?: WebSearchConfig
   }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
@@ -82,7 +84,6 @@ export class Session {
     this.origin = options?.origin || null
     this.workspacePath = options?.workspacePath || null
     this.autoApprove = options?.autoApprove || false
-    this.webSearchConfig = options?.webSearchConfig
   }
 
   get currentBranch() {
@@ -95,23 +96,23 @@ export class Session {
     return stream
   }
 
-  createWorkflow(userInput: string, stream: WorkflowStream) {
-    const parentWorkflowNode = this.currentBranch?.head ?? null
-    const workflowRuntimeContext = new WorkflowRuntimeContext({
-      session: this,
-      userInput,
-      branchName: this.activeBranch,
-      parentWorkflowId: parentWorkflowNode?.id || null,
+  createWorkflow(stream: WorkflowStream) {
+    const workflowRuntimeContext = new WorkflowRuntimeContextNew({
+      sessionId: this.sessionId,
+      workspacePath: this.workspacePath,
+      autoApprove: this.autoApprove,
+      stream,
+      buildLLMMessages: () => this.buildLLMMessages(),
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
       stopStatus: null as any,
-      messages: workflowRuntimeContext.workflowSession.getMessages(),
+      messages: workflowRuntimeContext.workflowMessages.getMessages(),
       parent: null,
       children: [],
     }
     this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
-    const workflow = new Workflow(workflowRuntimeContext, stream)
+    const workflow = new Workflow(workflowRuntimeContext)
     return {
       workflowCommitNode,
       workflow,
@@ -120,7 +121,7 @@ export class Session {
 
   async runWorkflow(userInput: string, stream: WorkflowStream) {
     try {
-      const { workflow, workflowCommitNode } = this.createWorkflow(userInput, stream)
+      const { workflow, workflowCommitNode } = this.createWorkflow(stream)
       this.runningWorkflow = workflow
       const currentHead = this.currentBranch.head
       if (!currentHead) {
@@ -243,9 +244,9 @@ export class Session {
       const runtime = workflow.runtime
       this.watiHumanWorkflow = null
       runtime.abort()
-      runtime.workflowSession.addAbortMessage()
+      runtime.workflowMessages.addAbortMessage()
 
-      workflow.emit({
+      runtime.emit({
         eventName: 'workflow-aborted',
         data: {
           chunkData: {

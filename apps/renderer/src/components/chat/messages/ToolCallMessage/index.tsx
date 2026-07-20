@@ -17,6 +17,7 @@ import { useState } from 'react'
 import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
 import WebSearchToolCall from './WebSearchToolCall'
+import { EditFileToolCall, SearchReplaceToolCall } from './EditFileToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -57,6 +58,24 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
           )
         }
 
+        if (tool.function.name === 'search-replace') {
+          return (
+            <SearchReplaceToolCall
+              key={tool.id}
+              tool={tool}
+              result={findToolResult(workflow, tool.id)}
+            />
+          )
+        }
+        if (tool.function.name === 'edit-file') {
+          return (
+            <EditFileToolCall
+              key={tool.id}
+              tool={tool}
+              result={findToolResult(workflow, tool.id)}
+            />
+          )
+        }
         return (
           <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
         )

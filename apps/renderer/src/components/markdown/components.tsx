@@ -1,8 +1,23 @@
 import type { PropsWithChildren } from 'react'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../codeblock'
+import { useChatLayout } from '@/layout/ChatLayout'
 
 export function A({ ...props }: PropsWithChildren) {
+  const { showWebSearchResults } = useChatLayout()
+
+  // 把 [number](url) 有单独的样式
+  const isWebSearchLink = /^\d+$/.test(props.children as string)
+  if (isWebSearchLink) {
+    return (
+      <span
+        className='bg-primary/20 mx-1 inline-block size-4 cursor-pointer rounded-full text-center text-[10px]'
+        onClick={showWebSearchResults}
+      >
+        {props.children}
+      </span>
+    )
+  }
   return (
     <a {...props} target='_blank'>
       {props.children}
@@ -59,7 +74,7 @@ export function Strong({ ...props }: PropsWithChildren) {
 }
 
 export const components = {
-  // a: A,
+  a: A,
   // p: P,
   // h1: H1,
   // h2: H2,
