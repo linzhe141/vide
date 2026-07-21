@@ -4,13 +4,14 @@ import type { AskUserQuestion, PlanStep } from '../types'
 export type WorkflowEventCtx = {
   sessionId: string
   workflowId: string
+  namespace?: string
   // branchName: string
   // parentWorkflowId: string | null
 }
 
 export const WorkflowEventChannels = {
   'workflow-start': null as unknown as { input: string },
-  'workflow-finished': null,
+  'workflow-finished': null as unknown as { content: string },
   'workflow-aborted': null as unknown as {
     chunkData: { reasoning: string; text: string }
   },

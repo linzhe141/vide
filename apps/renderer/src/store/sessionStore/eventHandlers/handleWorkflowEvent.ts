@@ -1,7 +1,6 @@
 ﻿import { nanoid } from 'nanoid'
 import type {
   Workflow,
-  PlanStep,
   Session,
   AssistantReasonSessionMessage,
   AssistantTextSessionMessage,
@@ -14,7 +13,7 @@ export function handleWorkflowEvent(
   workflowEvent: WorkflowState
 ) {
   const context = createSessionEventContext(storeState, workflowEvent)
-  const { event, session, planner } = context
+  const { event, session } = context
 
   switch (event.eventName) {
     case 'workflow-start': {
@@ -185,27 +184,6 @@ export function handleWorkflowEvent(
         error: event.data.toolCallResult.error,
       })
       return
-
-    case 'planner-end-generate': {
-      if (!session) return
-      session.planner.push({
-        id: event.data.plannerId,
-        plan: event.data.plans,
-      })
-      return
-    }
-
-    case 'planner-execute-item-start':
-      updatePlannerStepStatus(planner, event.data.plan.id, 'running')
-      return
-
-    case 'planner-execute-item-success':
-      updatePlannerStepStatus(planner, event.data.plan.id, 'completed')
-      return
-
-    case 'planner-execute-item-error':
-      updatePlannerStepStatus(planner, event.data.plan.id, 'failed')
-      return
   }
 }
 
@@ -226,14 +204,4 @@ function createWorkflow(workflowId: string, input: string): Workflow {
       waitingHuman: false,
     },
   }
-}
-
-function updatePlannerStepStatus(
-  planner: Session['planner'][number] | undefined,
-  planId: string,
-  status: PlanStep['status']
-) {
-  const step = planner?.plan.find((item) => item.id === planId)
-  if (!step) return
-  step.status = status
 }

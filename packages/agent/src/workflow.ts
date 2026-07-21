@@ -2,15 +2,15 @@ import type {
   CallLLMStepPayload,
   CallToolsStepPayload,
   CallToolStepPayload,
+  FinishedStepPayload,
   StepPayload,
   UserInputStepPayload,
   WaitHumanApprovePayload,
 } from './types'
 import type { AssistantChatMessage, ChatMessage, Tool, ToolCall, ToolResult } from '@vide/ai'
 import { callAI } from './llm'
-import { registorTools } from './tools/registor'
+import { registorTools as registorAllTools } from './tools/registor'
 import type { WorkflowEvent, WorkflowEventCtx, WorkflowEventWithCtx } from './event/channels'
-import type { Session } from './session'
 import { v4 as uuid } from 'uuid'
 import { BASH_TOOL_NAMES } from './tools/bash'
 import { AbortError, ToolCallError } from './error'
@@ -32,8 +32,11 @@ export class Workflow {
   state: WorkflowState = 'INPUT'
   tools: Tool[] = []
 
-  constructor(public runtime: WorkflowRuntimeContextNew) {
-    this.tools = registorTools(this.runtime)
+  constructor(
+    public runtime: WorkflowRuntimeContextNew,
+    registerTools?: () => Tool[]
+  ) {
+    this.tools = registerTools ? registerTools() : registorAllTools(this.runtime)
   }
 
   async run(input: string) {
@@ -51,8 +54,11 @@ export class Workflow {
 
         // 完成状态
         if (nextStep.state === 'COMPLETED') {
-          this.runtime.emit({ eventName: 'workflow-finished' })
-
+          this.runtime.emit({
+            eventName: 'workflow-finished',
+            data: { content: (nextStep.payload as FinishedStepPayload).content },
+          })
+          this.runtime.endStream()
           return 'COMPLETED'
         }
 
@@ -86,12 +92,14 @@ export class Workflow {
               },
             },
           })
+          this.runtime.endStream()
           return 'ABORTED'
         }
         this.runtime.emit({
           eventName: 'workflow-error',
           data: { error },
         })
+        this.runtime.endStream()
         return 'ERROR'
       }
     }
@@ -447,7 +455,7 @@ export class WorkflowRuntimeContextNew {
     this.workspacePath = options.workspacePath
     this.sessionId = options.sessionId
     this.workflowId = uuid()
-    this.workflowMessages = new WorkflowMessages()  
+    this.workflowMessages = new WorkflowMessages()
     this.autoApprove = options.autoApprove
     this.stream = options.stream
     this.buildLLMMessages = options.buildLLMMessages ?? (() => this.workflowMessages.getMessages())
@@ -466,6 +474,9 @@ export class WorkflowRuntimeContextNew {
     this.stream.push(event)
   }
 
+  endStream() {
+    this.stream.end()
+  }
   get signal() {
     return this.controller.signal
   }

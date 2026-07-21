@@ -1,17 +1,23 @@
 import type { Tool } from '@vide/ai'
 import { WorkflowStream } from '../event/stream'
-import type { Session } from '../session'
 import { Workflow, WorkflowRuntimeContextNew } from '../workflow'
 
 export abstract class SubAgent {
   abstract name: string
-  abstract systemPrompt: string
-  abstract Tools: Tool[]
+  abstract prompt: string
+  abstract description: string
 
-  constructor(public rootSession: Session) {}
+  constructor(
+    public rootSessionConfig: {
+      sessionId: string
+      workspacePath: string | null
+      autoApprove: boolean
+    }
+  ) {}
 
   run(input: string) {
     const subAgentStream = new WorkflowStream()
+    subAgentStream.namespace = this.name
     const workflow = this.createWorkflow(subAgentStream)
     workflow.run(input)
     return subAgentStream
@@ -19,13 +25,17 @@ export abstract class SubAgent {
 
   createWorkflow(stream: WorkflowStream) {
     const workflowRuntimeContext = new WorkflowRuntimeContextNew({
-      workspacePath: this.rootSession.workspacePath,
-      sessionId: this.rootSession.sessionId,
-      autoApprove: this.rootSession.autoApprove,
+      workspacePath: this.rootSessionConfig.workspacePath,
+      sessionId: this.rootSessionConfig.sessionId,
+      autoApprove: this.rootSessionConfig.autoApprove,
       stream,
     })
-    const workflow = new Workflow(workflowRuntimeContext)
+
+    const workflow = new Workflow(workflowRuntimeContext, () =>
+      this.registerTools(workflowRuntimeContext)
+    )
     return workflow
   }
-  // only one time user input
+
+  abstract registerTools(workflowRuntimeContext: WorkflowRuntimeContextNew): Tool[]
 }
