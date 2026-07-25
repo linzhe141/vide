@@ -4,9 +4,9 @@ import type { AskUserQuestion, PlanStep } from '../types'
 export type WorkflowEventCtx = {
   sessionId: string
   workflowId: string
+  // sub agent
   namespace?: string
-  // branchName: string
-  // parentWorkflowId: string | null
+  mainWorkflowId?: string
 }
 
 export const WorkflowEventChannels = {

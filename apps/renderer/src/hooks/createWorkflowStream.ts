@@ -25,6 +25,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
           if (
             eventName === 'workflow-start' &&
+            data.ctx.namespace === undefined &&
             currentSessionId === null &&
             currentWorkflowId === null
           ) {
@@ -38,6 +39,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
           if (
             currentSessionId === data.ctx.sessionId &&
+            data.ctx.namespace === undefined &&
             (eventName === 'workflow-error' ||
               eventName === 'workflow-aborted' ||
               eventName === 'workflow-finished')
@@ -79,7 +81,12 @@ export function resumeWorkflowStream(
 
       workflowEventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (eventName === 'workflow-start' && sessionId === null && workflowId === null) {
+          if (
+            eventName === 'workflow-start' &&
+            data.ctx.namespace === undefined &&
+            sessionId === null &&
+            workflowId === null
+          ) {
             sessionId = data.ctx.sessionId
             workflowId = data.ctx.workflowId
           }
@@ -89,6 +96,7 @@ export function resumeWorkflowStream(
 
           if (
             sessionId === data.ctx.sessionId &&
+            data.ctx.namespace === undefined &&
             (eventName === 'workflow-error' || eventName === 'workflow-aborted')
           ) {
             controller.close()

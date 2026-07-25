@@ -18,6 +18,7 @@ import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
 import WebSearchToolCall from './WebSearchToolCall'
 import { EditFileToolCall, SearchReplaceToolCall } from './EditFileToolCall'
+import { SubAgentToolCall } from './SubAgentToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -26,9 +27,8 @@ type ToolCallViewProps = {
 
 export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
   const visibleTools = message.toolCalls.filter(shouldShowToolCall)
-
+  console.log('visibleToofdasfdasfasls', visibleTools, message.toolCalls)
   if (!visibleTools.length) return null
-
   return (
     <div className='space-y-3'>
       {visibleTools.map((tool) => {
@@ -67,6 +67,11 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
             />
           )
         }
+
+        if (tool.function.name === 'call-sub-agent') {
+          return <SubAgentToolCall key={tool.id} workflow={workflow} toolCall={tool} />
+        }
+
         if (tool.function.name === 'edit-file') {
           return (
             <EditFileToolCall
@@ -86,8 +91,8 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 
 const HIDDEN_TOOL_NAMES = new Set<string>([
   'ask-user-question-generate',
-  'submit-plan',
-  'update-plan-step',
+  // 'submit-plan',
+  // 'update-plan-step',
 ])
 
 function shouldShowToolCall(tool: ToolCall) {
@@ -109,14 +114,14 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-3 rounded-[4px] border px-2 py-1 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='text-text-secondary shrink-0'>
           <SquareTerminal size={17} strokeWidth={1.8} />
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-3'>
-            <span className='text-foreground truncate text-[15px] font-medium'>
+            <span className='text-foreground truncate text-[12px] font-medium'>
               {tool.function.name}
             </span>
             {isSuccess && (

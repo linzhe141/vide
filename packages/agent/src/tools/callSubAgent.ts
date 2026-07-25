@@ -15,6 +15,7 @@ export class CallSubAgent extends ToolProvider {
       sessionId: this.runtime.sessionId,
       workspacePath: this.runtime.workspacePath,
       autoApprove: this.runtime.autoApprove,
+      mainWorkflowId: this.runtime.workflowId,
     }
 
     this.subAgents = [new PlannerAgent(subAgentsConfig)]
@@ -70,7 +71,7 @@ Use this tool to delegate tasks to specialized agents.`,
         let result = ''
         for await (const event of stream) {
           // proxy the events from the sub-agent to the main workflow
-          this.emit(event)
+          this.runtime.stream.push(event)
 
           if (event.eventName === 'workflow-finished') {
             result = event.data.content

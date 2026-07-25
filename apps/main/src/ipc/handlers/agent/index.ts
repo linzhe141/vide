@@ -63,147 +63,147 @@ export class AgentIpcMainService implements IpcMainService {
       for await (const { eventName, data } of stream) {
         const ctx = data.ctx
         ipcMainApi.send(eventName, data)
-        switch (eventName) {
-          case 'workflow-start': {
-            const parentWorkflowId = session.currentBranch.head?.id ?? null
-            await SessionStorage.setSessionTitle(ctx.sessionId, input)
-            await SessionStorage.createWorkflow({
-              workflowId: ctx.workflowId,
-              sessionId: ctx.sessionId,
-              parentWorkflowId,
-              input,
-            })
-            await SessionStorage.upsertSessionBranch({
-              sessionId: ctx.sessionId,
-              branchName: session.activeBranch,
-              headWorkflowId: ctx.workflowId,
-            })
-            await SessionStorage.insertUserMessage(ctx.workflowId, input)
-            break
-          }
-          case 'workflow-finished': {
-            await SessionStorage.finishWorkflow(ctx.workflowId)
-            break
-          }
-          case 'workflow-aborted': {
-            const chunkData = data.chunkData
-            await SessionStorage.abortWorkflow(ctx.workflowId, chunkData)
-            break
-          }
-          case 'workflow-error': {
-            const error = data.error
-            await SessionStorage.abortWorkflow(ctx.workflowId, error)
-            break
-          }
+        // switch (eventName) {
+        //   case 'workflow-start': {
+        //     const parentWorkflowId = session.currentBranch.head?.id ?? null
+        //     await SessionStorage.setSessionTitle(ctx.sessionId, input)
+        //     await SessionStorage.createWorkflow({
+        //       workflowId: ctx.workflowId,
+        //       sessionId: ctx.sessionId,
+        //       parentWorkflowId,
+        //       input,
+        //     })
+        //     await SessionStorage.upsertSessionBranch({
+        //       sessionId: ctx.sessionId,
+        //       branchName: session.activeBranch,
+        //       headWorkflowId: ctx.workflowId,
+        //     })
+        //     await SessionStorage.insertUserMessage(ctx.workflowId, input)
+        //     break
+        //   }
+        //   case 'workflow-finished': {
+        //     await SessionStorage.finishWorkflow(ctx.workflowId)
+        //     break
+        //   }
+        //   case 'workflow-aborted': {
+        //     const chunkData = data.chunkData
+        //     await SessionStorage.abortWorkflow(ctx.workflowId, chunkData)
+        //     break
+        //   }
+        //   case 'workflow-error': {
+        //     const error = data.error
+        //     await SessionStorage.abortWorkflow(ctx.workflowId, error)
+        //     break
+        //   }
 
-          case 'workflow-llm-start': {
-            break
-          }
-          case 'workflow-llm-error': {
-            break
-          }
+        //   case 'workflow-llm-start': {
+        //     break
+        //   }
+        //   case 'workflow-llm-error': {
+        //     break
+        //   }
 
-          case 'workflow-llm-reasoning-start': {
-            break
-          }
-          case 'workflow-llm-reasoning-delta': {
-            break
-          }
-          case 'workflow-llm-reasoning-end': {
-            const { workflowId } = ctx
-            const content = data.content
-            await SessionStorage.insertAssistantReasoning(workflowId, content)
-            break
-          }
+        //   case 'workflow-llm-reasoning-start': {
+        //     break
+        //   }
+        //   case 'workflow-llm-reasoning-delta': {
+        //     break
+        //   }
+        //   case 'workflow-llm-reasoning-end': {
+        //     const { workflowId } = ctx
+        //     const content = data.content
+        //     await SessionStorage.insertAssistantReasoning(workflowId, content)
+        //     break
+        //   }
 
-          case 'workflow-llm-text-start': {
-            break
-          }
-          case 'workflow-llm-text-delta': {
-            break
-          }
-          case 'workflow-llm-text-end': {
-            const { workflowId } = ctx
-            const content = data.content
-            await SessionStorage.insertAssistantText(workflowId, content)
-            break
-          }
+        //   case 'workflow-llm-text-start': {
+        //     break
+        //   }
+        //   case 'workflow-llm-text-delta': {
+        //     break
+        //   }
+        //   case 'workflow-llm-text-end': {
+        //     const { workflowId } = ctx
+        //     const content = data.content
+        //     await SessionStorage.insertAssistantText(workflowId, content)
+        //     break
+        //   }
 
-          case 'workflow-llm-tool-calls-start': {
-            break
-          }
-          case 'workflow-llm-tool-call-name': {
-            break
-          }
-          case 'workflow-llm-tool-call-arguments': {
-            break
-          }
-          case 'workflow-llm-tool-calls-end': {
-            const { workflowId } = ctx
-            const toolCalls = data.toolCalls
-            await SessionStorage.insertToolCalls(workflowId, toolCalls)
-            break
-          }
+        //   case 'workflow-llm-tool-calls-start': {
+        //     break
+        //   }
+        //   case 'workflow-llm-tool-call-name': {
+        //     break
+        //   }
+        //   case 'workflow-llm-tool-call-arguments': {
+        //     break
+        //   }
+        //   case 'workflow-llm-tool-calls-end': {
+        //     const { workflowId } = ctx
+        //     const toolCalls = data.toolCalls
+        //     await SessionStorage.insertToolCalls(workflowId, toolCalls)
+        //     break
+        //   }
 
-          case 'workflow-tool-call-start': {
-            break
-          }
-          case 'workflow-tool-call-success': {
-            const { workflowId } = ctx
-            const toolCallResult = data.toolCallResult
-            await SessionStorage.insertToolResult(workflowId, toolCallResult)
-            break
-          }
-          case 'workflow-tool-call-error': {
-            const { workflowId } = ctx
-            const toolCallResult = data.toolCallResult
-            await SessionStorage.insertToolResult(workflowId, toolCallResult)
-            break
-          }
-          case 'workflow-tool-call-reject': {
-            const { workflowId } = ctx
-            const toolCallResult = data.toolCallResult
-            await SessionStorage.insertToolResult(workflowId, toolCallResult)
-            break
-          }
+        //   case 'workflow-tool-call-start': {
+        //     break
+        //   }
+        //   case 'workflow-tool-call-success': {
+        //     const { workflowId } = ctx
+        //     const toolCallResult = data.toolCallResult
+        //     await SessionStorage.insertToolResult(workflowId, toolCallResult)
+        //     break
+        //   }
+        //   case 'workflow-tool-call-error': {
+        //     const { workflowId } = ctx
+        //     const toolCallResult = data.toolCallResult
+        //     await SessionStorage.insertToolResult(workflowId, toolCallResult)
+        //     break
+        //   }
+        //   case 'workflow-tool-call-reject': {
+        //     const { workflowId } = ctx
+        //     const toolCallResult = data.toolCallResult
+        //     await SessionStorage.insertToolResult(workflowId, toolCallResult)
+        //     break
+        //   }
 
-          case 'planner-end-generate': {
-            const { sessionId } = ctx
-            const { plannerId, plans } = data
-            await SessionStorage.createPlanner(sessionId, plannerId, plans)
+        //   case 'planner-end-generate': {
+        //     const { sessionId } = ctx
+        //     const { plannerId, plans } = data
+        //     await SessionStorage.createPlanner(sessionId, plannerId, plans)
 
-            break
-          }
-          case 'planner-execute-item-start': {
-            const { plannerId, plan } = data
-            await SessionStorage.updatePlanner(plannerId, plan)
-            break
-          }
-          case 'planner-execute-item-success': {
-            const { plannerId, plan } = data
-            await SessionStorage.updatePlanner(plannerId, plan)
-            break
-          }
-          case 'planner-execute-item-error': {
-            const { plannerId, plan } = data
-            await SessionStorage.updatePlanner(plannerId, plan)
-            break
-          }
+        //     break
+        //   }
+        //   case 'planner-execute-item-start': {
+        //     const { plannerId, plan } = data
+        //     await SessionStorage.updatePlanner(plannerId, plan)
+        //     break
+        //   }
+        //   case 'planner-execute-item-success': {
+        //     const { plannerId, plan } = data
+        //     await SessionStorage.updatePlanner(plannerId, plan)
+        //     break
+        //   }
+        //   case 'planner-execute-item-error': {
+        //     const { plannerId, plan } = data
+        //     await SessionStorage.updatePlanner(plannerId, plan)
+        //     break
+        //   }
 
-          case 'ask-user': {
-            const { workflowId } = ctx
-            const { question } = data
-            await SessionStorage.insertAskUserQuestion(workflowId, question)
-            break
-          }
+        //   case 'ask-user': {
+        //     const { workflowId } = ctx
+        //     const { question } = data
+        //     await SessionStorage.insertAskUserQuestion(workflowId, question)
+        //     break
+        //   }
 
-          case 'artifacts-created-workspace': {
-            const { sessionId } = ctx
-            const { workspaceName } = data
-            await SessionStorage.createArtifactWorkspace(sessionId, workspaceName)
-            break
-          }
-        }
+        //   case 'artifacts-created-workspace': {
+        //     const { sessionId } = ctx
+        //     const { workspaceName } = data
+        //     await SessionStorage.createArtifactWorkspace(sessionId, workspaceName)
+        //     break
+        //   }
+        // }
       }
     })
 

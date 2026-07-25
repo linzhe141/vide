@@ -12,12 +12,15 @@ export abstract class SubAgent {
       sessionId: string
       workspacePath: string | null
       autoApprove: boolean
+      // 启动子工作流时的主工作流ID
+      mainWorkflowId: string
     }
   ) {}
 
   run(input: string) {
     const subAgentStream = new WorkflowStream()
     subAgentStream.namespace = this.name
+    subAgentStream.mainWorkflowId = this.rootSessionConfig.mainWorkflowId
     const workflow = this.createWorkflow(subAgentStream)
     workflow.run(input)
     return subAgentStream

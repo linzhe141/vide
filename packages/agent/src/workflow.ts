@@ -136,7 +136,7 @@ export class Workflow {
 
   async handleCallLLM(messages: ChatMessage[]) {
     this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
-    const result = callAI({
+    const result = await callAI({
       workspace: this.runtime.workspacePath,
       messages,
       tools: this.tools,

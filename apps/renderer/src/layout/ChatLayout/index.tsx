@@ -222,7 +222,10 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
   )
 }
 
-export function ChatLayoutInput({ children }: PropsWithChildren) {
+export function ChatLayoutInput({
+  children,
+  className,
+}: PropsWithChildren<{ className?: string }>) {
   const { sessionId } = useChatContext()
   const planners = useSessionPlanners(sessionId)
   // const pendingPlanner = planners?.[0] // for test
@@ -230,7 +233,7 @@ export function ChatLayoutInput({ children }: PropsWithChildren) {
 
   return (
     <div
-      className='relative mx-auto w-full max-w-[920px]'
+      className={cn('relative mx-auto w-full max-w-[920px]', className)}
       style={{
         paddingBottom: pendingPlanner ? 80 : 0, // 👈 关键：预留空间
       }}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Brain, ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { AssistantReasonSessionMessage } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
@@ -12,7 +12,6 @@ export function AssistantReasonMessage({ message }: { message: AssistantReasonSe
         onClick={() => setOpen((value) => !value)}
         className='text-text-secondary flex items-center gap-3 font-medium'
       >
-        <Brain size={16} strokeWidth={2} />
         <span>{isReasoning ? 'Thinking' : 'Reason'}</span>
         {open ? (
           <ChevronDown size={16} strokeWidth={2} />

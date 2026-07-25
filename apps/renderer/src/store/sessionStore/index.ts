@@ -330,15 +330,38 @@ export const useSessionWorkflows = (sessionId: string) => {
   const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
   if (!activeBranch || !activeBranch.headWorkflowId) return undefined
 
-  function traverse(nodeId: string, result: Workflow[] = []) {
+  // function traverse(nodeId: string, result: Workflow[] = []) {
+  //   const node = session!.workflowNodesMap[nodeId]
+  //   if (node == null) {
+  //     debugger
+  //   }
+  //   result.unshift(node.workflow)
+  //   if (node.parent) {
+  //     traverse(node.parent, result)
+  //   }
+  //   return result
+  // }
+  function traverse(nodeId: string, result: Workflow[] = [], visited = new Set<string>()) {
+    if (visited.has(nodeId)) {
+      debugger // 找到环了
+      throw new Error(`Cycle detected: ${nodeId}`)
+    }
+
+    visited.add(nodeId)
+
     const node = session!.workflowNodesMap[nodeId]
-    if (node == null) {
+
+    if (!node) {
       debugger
+      throw new Error(`Node not found: ${nodeId}`)
     }
+
     result.unshift(node.workflow)
+
     if (node.parent) {
-      traverse(node.parent, result)
+      traverse(node.parent, result, visited)
     }
+
     return result
   }
 

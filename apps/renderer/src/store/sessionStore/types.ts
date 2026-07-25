@@ -55,6 +55,11 @@ export interface ErrorSessionMessage {
   error: any
 }
 
+// sub agent messages
+export type WorkflowSessionMessage = {
+  role: 'workflow'
+} & Workflow
+
 export type SessionMessage =
   | UserInputSessionMessage
   | AssistantReasonSessionMessage
@@ -63,6 +68,7 @@ export type SessionMessage =
   | ToolResultSessionMessage
   | AskUserSessionMessage
   | ErrorSessionMessage
+  | WorkflowSessionMessage
 
 export type Workflow = {
   id: string
@@ -73,6 +79,9 @@ export type Workflow = {
     status: 'running' | 'finished' | 'error' | 'aborted'
     waitingHuman: boolean
   }
+  nextSubWorkflow?: Workflow
+  // 指向真正运行的子工作流
+  subWorkflow?: Workflow
 }
 
 export type SessionRuntime = {

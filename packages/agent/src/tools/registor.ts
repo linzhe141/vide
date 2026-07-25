@@ -36,7 +36,7 @@ export function registorTools(runtime: WorkflowRuntimeContextNew) {
     ...grep.getTools(),
     ...webSearch.getTools(),
     ...askUserQuestionTool.getTools(),
-    ...skill.getTools(),
+    // ...skill.getTools(),
     ...callSubAgent.getTools(),
     ...new Image(runtime).getTools(),
   ]

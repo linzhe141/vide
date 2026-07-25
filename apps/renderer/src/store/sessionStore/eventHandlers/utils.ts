@@ -15,12 +15,11 @@ type SessionEventContext = {
   sessionId?: string
   session?: Session
   currentBranch?: SessionBranch
-  workflow?: Workflow
   planner?: Session['planner'][number]
   event: WorkflowState
 
   // operates
-  pushWorkflow(workflow: Workflow): void
+  pushMainWorkflow(workflow: Workflow): void
   pushMessage(message: SessionMessage): void
   ensureLastMessage(
     role: 'assistant-reason' | 'assistant-text'
@@ -39,22 +38,36 @@ export function createSessionEventContext(
   const currentBranch = session
     ? session.branches.find((item) => item.name === session.activeBranch)
     : undefined
-  const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
-  const workflow =
-    session && workflowId ? session.workflowNodesMap[workflowId]?.workflow : undefined
+  // const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
+
   const plannerId = 'plannerId' in event.data ? event.data.plannerId : undefined
   const planner = session?.planner.find((p) => p.id === plannerId)
 
+  function getWorkflow() {
+    if (!session) return undefined
+    const mainWorkflowId = event.data.ctx.mainWorkflowId || event.data.ctx.workflowId
+    const mainWorkflow = session.workflowNodesMap[mainWorkflowId]?.workflow
+    if (!mainWorkflow) return undefined
+    const namespace = event.data.ctx.namespace
+    if (namespace && mainWorkflow.messages) {
+      const last = mainWorkflow.messages.at(-1)
+      if (last?.role === 'workflow' && last.id === event.data.ctx.workflowId) {
+        return last as Workflow
+      }
+    }
+    return mainWorkflow
+  }
+  const workflow = getWorkflow()
   return {
     state,
     sessionId,
     session,
     currentBranch,
-    workflow,
     planner,
     event,
+
     // operates
-    pushWorkflow(workflow) {
+    pushMainWorkflow(workflow) {
       if (!session) throw new Error('No session found for this event, this is a internal error')
       if (!currentBranch)
         throw new Error('No branch found for this event, this is a internal error')
@@ -77,11 +90,14 @@ export function createSessionEventContext(
         newWorkflowNode.parent = parentWorkflowNode.workflow.id
       }
     },
+
     pushMessage(message: SessionMessage) {
       if (!workflow) throw new Error('No workflow found for this event, this is a internal error')
       workflow.messages.push(message)
     },
     ensureLastMessage(role: 'assistant-reason' | 'assistant-text') {
+      const workflow = getWorkflow()
+
       if (!workflow) throw new Error('No workflow found for this event, this is a internal error')
       const last = workflow.messages.at(-1)
       let message: AssistantReasonSessionMessage | AssistantTextSessionMessage = null!

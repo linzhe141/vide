@@ -15,6 +15,7 @@ export function handleWorkflowEvent(
   const context = createSessionEventContext(storeState, workflowEvent)
   const { event, session } = context
 
+  const namespace = event.data.ctx.namespace
   switch (event.eventName) {
     case 'workflow-start': {
       // main old: null
@@ -22,14 +23,22 @@ export function handleWorkflowEvent(
 
       // main old: a
       // main new: a -> b
-      const { workflowId } = event.data.ctx
-      const newWorkflow = createWorkflow(workflowId, event.data.input)
-      newWorkflow.runtime.status = 'running'
-      if (session) {
-        session.runtime.running = true
+      if (namespace) {
+        // start a sub agent workflow
+        const { workflowId } = event.data.ctx
+        const subWorkflow = createWorkflow(workflowId, event.data.input)
+        subWorkflow.runtime.status = 'running'
+        context.pushMessage({ role: 'workflow', ...subWorkflow })
+      } else {
+        const { workflowId } = event.data.ctx
+        const newWorkflow = createWorkflow(workflowId, event.data.input)
+        newWorkflow.runtime.status = 'running'
+        if (session) {
+          session.runtime.running = true
+        }
+        context.pushMainWorkflow(newWorkflow)
+        context.commitBranch(workflowId)
       }
-      context.pushWorkflow(newWorkflow)
-      context.commitBranch(workflowId)
       return
     }
 
@@ -134,6 +143,7 @@ export function handleWorkflowEvent(
       })
       return
     case 'workflow-llm-end':
+      debugger
       // nothing to do
       return
 
@@ -188,7 +198,7 @@ export function handleWorkflowEvent(
 }
 
 function createWorkflow(workflowId: string, input: string): Workflow {
-  return {
+  const newWorkflow: Workflow = {
     id: workflowId,
     input,
     feedback: null,
@@ -204,4 +214,5 @@ function createWorkflow(workflowId: string, input: string): Workflow {
       waitingHuman: false,
     },
   }
+  return newWorkflow
 }
