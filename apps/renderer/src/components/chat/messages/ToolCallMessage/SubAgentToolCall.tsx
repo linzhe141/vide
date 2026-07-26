@@ -34,10 +34,10 @@ export function SubAgentToolCall({
   const isComplete = result?.status === 'success'
 
   return (
-    <div className='border-border/50 bg-background/50 my-4 overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-md'>
+    <div className='border-border/50 bg-background/50 my-4 rounded-lg border shadow-sm transition-all hover:shadow-md'>
       {/* Header */}
       <div
-        className='bg-primary/5 border-border/30 hover:bg-primary/10 flex cursor-pointer items-center justify-between border-b px-4 py-3 transition-colors'
+        className='border-border/30 sticky top-0 z-10 flex cursor-pointer items-center justify-between rounded-t-lg border-b bg-[#ebf1f8] px-4 py-3 transition-colors dark:bg-[#030910]'
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className='flex min-w-0 items-center gap-3'>

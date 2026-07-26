@@ -123,8 +123,8 @@ function CodeBlockWrapper({
   children,
 }: PropsWithChildren<{ lang: string; code: string }>) {
   return (
-    <div className='relative my-4 w-0 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
-      <div className='text-muted-foreground sticky top-0 z-10 flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs'>
+    <div className='relative my-4 w-0 min-w-full rounded-xl border border-white/10 bg-[#0f0f10] shadow-lg'>
+      <div className='text-muted-foreground sticky top-0 z-10 flex items-center justify-between rounded-t-xl border-b border-white/10 bg-[#131314]/95 px-4 py-2 text-xs backdrop-blur'>
         <span className='font-mono tracking-wide text-white/90 uppercase select-none'>{lang}</span>
 
         <div className='flex items-center gap-1'>
@@ -132,12 +132,14 @@ function CodeBlockWrapper({
         </div>
       </div>
 
-      <pre
-        className={cn('hightligh-code-wrapper overflow-auto rounded bg-[#181818] p-2', '!my-0')}
-        style={{ ...THEME.dark, fontSize: '14px' }}
-      >
-        {children}
-      </pre>
+      <div className='overflow-hidden rounded-b-xl'>
+        <pre
+          className={cn('hightligh-code-wrapper overflow-x-auto bg-[#181818] p-2', 'my-0!')}
+          style={{ ...THEME.dark, fontSize: '14px' }}
+        >
+          {children}
+        </pre>
+      </div>
     </div>
   )
 }

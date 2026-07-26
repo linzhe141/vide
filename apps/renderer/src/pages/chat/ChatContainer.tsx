@@ -40,7 +40,7 @@ export function ChatContainer() {
       <ChatLayoutMessage>
         <MessageList />
       </ChatLayoutMessage>
-      <ChatLayoutInput className='absolute bottom-5 left-1/2 -translate-x-1/2'>
+      <ChatLayoutInput className='absolute bottom-5 left-1/2 -translate-x-1/2 z-10'>
         <div className='px-10'>
           <ChatInput
             running={running}
