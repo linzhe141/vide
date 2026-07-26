@@ -3,7 +3,7 @@ import type { ToolCall } from '@vide/ai'
 
 import { findToolResult } from '.'
 import { MessageView } from '../../MessageView'
-import { Bot, Clock, ChevronDown, ChevronUp, Sparkles, Loader2 } from 'lucide-react'
+import { Bot, Clock, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
 export function SubAgentToolCall({
@@ -49,7 +49,7 @@ export function SubAgentToolCall({
               <span className='truncate text-sm font-semibold'>Sub-Agent</span>
               <span className='bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium'>
                 {JSON.parse(toolCall.function?.arguments).agentName || 'Tool'}
-                </span>
+              </span>
               {isComplete && (
                 <span className='bg-success/10 text-success rounded-full px-2 py-0.5 text-xs font-medium'>
                   Complete
@@ -92,16 +92,6 @@ export function SubAgentToolCall({
                   )
                 })}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {isExpanded && !hasContent && (
-        <div className='px-4 py-6 text-center'>
-          <div className='text-text-secondary flex flex-col items-center gap-2'>
-            <Sparkles className='h-8 w-8 opacity-30' />
-            <p className='text-sm'>No content from sub-agent</p>
           </div>
         </div>
       )}

@@ -111,70 +111,68 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   const duration = formatDuration(result?.durationMs)
 
   return (
-    <div className='space-y-2'>
+    <div className='space-y-1.5'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-3 rounded-[4px] border px-2 py-1 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left transition-all duration-200'
       >
         <div className='text-text-secondary shrink-0'>
-          <SquareTerminal size={17} strokeWidth={1.8} />
+          <SquareTerminal size={15} strokeWidth={1.8} />
         </div>
         <div className='min-w-0 flex-1'>
-          <div className='flex items-center gap-3'>
-            <span className='text-foreground truncate text-[12px] font-medium'>
+          <div className='flex items-center gap-2'>
+            <span className='text-foreground truncate text-[11px] leading-none font-medium'>
               {tool.function.name}
             </span>
             {isSuccess && (
-              <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300'>
+              <span className='bg-success/10 text-success rounded-full px-1.5 py-0.5 text-[10px] leading-none font-medium'>
                 Success
               </span>
             )}
             {isRunning && (
-              <span className='bg-foreground/6 text-text-secondary dark:bg-foreground/10 rounded-full px-2 py-0.5 text-[12px] font-medium'>
+              <span className='bg-foreground/5 text-text-secondary rounded-full px-1.5 py-0.5 text-[10px] leading-none font-medium'>
                 Running
               </span>
             )}
             {isError && (
-              <span className='rounded-full bg-red-100 px-2 py-0.5 text-[12px] font-medium text-red-500 dark:bg-red-950/40 dark:text-red-300'>
+              <span className='bg-danger/10 text-danger rounded-full px-1.5 py-0.5 text-[10px] leading-none font-medium'>
                 Error
               </span>
             )}
           </div>
         </div>
-        <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
+        <div className='text-text-secondary flex items-center gap-2 text-[11px]'>
           {duration && (
-            <span className='flex items-center gap-1.5'>
-              <Clock3 size={14} />
+            <span className='flex items-center gap-1'>
+              <Clock3 size={12} />
               {duration}
             </span>
           )}
-          {isRunning && <Ellipsis size={16} className='animate-pulse' />}
-          {isSuccess && (
-            <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
-          )}
-          {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {isRunning && <Ellipsis size={14} className='animate-pulse' />}
+          {isSuccess && <CheckCircle2 size={14} className='text-success' />}
+          {isError && <XCircle size={14} className='text-danger' />}
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </div>
       </button>
 
       {open && (
-        <div className='border-border bg-foreground/3 dark:bg-foreground/4 rounded-[22px] border p-4'>
-          <div className='space-y-4'>
-            <section className='space-y-2'>
-              <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
+        <div className='border-border bg-foreground/3 dark:bg-foreground/4 rounded-xl border p-3'>
+          <div className='space-y-3'>
+            <section className='space-y-1.5'>
+              <div className='text-text-info text-[10px] font-medium tracking-[0.12em] uppercase'>
                 Arguments
               </div>
-              <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
-                {tool.function.arguments}
+              <pre className='bg-background text-text-secondary overflow-x-auto rounded-lg p-2.5 text-[11px] leading-relaxed'>
+                {JSON.stringify(JSON.parse(tool.function.arguments), null, 2)}
               </pre>
             </section>
 
             {(result?.result !== undefined || result?.error !== undefined) && (
-              <section className='space-y-2'>
-                <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
+              <section className='space-y-1.5'>
+                <div className='text-text-info text-[10px] font-medium tracking-[0.12em] uppercase'>
                   {result?.error !== undefined ? 'Error' : 'Result'}
                 </div>
-                <pre className='bg-background text-text-secondary overflow-x-auto rounded-2xl p-3 text-xs leading-6'>
+                <pre className='bg-background text-text-secondary overflow-x-auto rounded-lg p-2.5 text-[11px] leading-relaxed'>
                   {JSON.stringify(result?.error ?? result?.result, null, 2)}
                 </pre>
               </section>

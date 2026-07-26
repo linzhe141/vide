@@ -3,11 +3,7 @@ import type { ToolResultSessionMessage } from '@/store/sessionStore/types'
 import { CheckCircle2, Clock3, Ellipsis, Search, XCircle } from 'lucide-react'
 import { cn, getSiteIcon } from '@/lib/utils'
 import { useChatLayout } from '@/layout/ChatLayout'
-import {
-  useSelectedWebSearch,
-  useWebSearchStoreActions,
-  type WebSearchResult,
-} from '@/store/webSearchStore'
+import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearchStore'
 
 type WebSearchToolCallProps = {
   tool: ToolCall

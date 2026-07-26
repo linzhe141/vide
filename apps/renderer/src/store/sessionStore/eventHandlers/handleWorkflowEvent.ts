@@ -43,7 +43,8 @@ export function handleWorkflowEvent(
     }
 
     case 'workflow-finished':
-      if (session) {
+      if (session && namespace === undefined) {
+        // only main agent workflow can be finished, sub agent workflow cannot be finished
         session.runtime.running = false
       }
       context.updateWorkflowRuntime((runtime) => {
@@ -143,7 +144,6 @@ export function handleWorkflowEvent(
       })
       return
     case 'workflow-llm-end':
-      debugger
       // nothing to do
       return
 
