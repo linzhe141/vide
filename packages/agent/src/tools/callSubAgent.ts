@@ -14,7 +14,7 @@ export class CallSubAgent extends ToolProvider {
     const subAgentsConfig = {
       sessionId: this.runtime.sessionId,
       workspacePath: this.runtime.workspacePath,
-      autoApprove: this.runtime.autoApprove,
+      getAutoApprove: () => this.runtime.getAutoApprove(),
       mainWorkflowId: this.runtime.workflowId,
     }
 

@@ -11,7 +11,7 @@ export abstract class SubAgent {
     public rootSessionConfig: {
       sessionId: string
       workspacePath: string | null
-      autoApprove: boolean
+      getAutoApprove: () => boolean
       // 启动子工作流时的主工作流ID
       mainWorkflowId: string
     }
@@ -30,7 +30,7 @@ export abstract class SubAgent {
     const workflowRuntimeContext = new WorkflowRuntimeContextNew({
       workspacePath: this.rootSessionConfig.workspacePath,
       sessionId: this.rootSessionConfig.sessionId,
-      autoApprove: this.rootSessionConfig.autoApprove,
+      getAutoApprove: () => this.rootSessionConfig.getAutoApprove(),
       stream,
     })
 

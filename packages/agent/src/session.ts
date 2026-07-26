@@ -95,7 +95,7 @@ export class Session {
     const workflowRuntimeContext = new WorkflowRuntimeContextNew({
       sessionId: this.sessionId,
       workspacePath: this.workspacePath,
-      autoApprove: this.autoApprove,
+      getAutoApprove: () => this.autoApprove,
       stream,
       buildLLMMessages: () => this.buildLLMMessages(),
     })

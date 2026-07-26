@@ -433,12 +433,17 @@ export class WorkflowRuntimeContextNew {
   sessionId: string
   workflowId: string
   workflowMessages: WorkflowSession
-  autoApprove: boolean
+
   controller = new AbortController()
 
   stream: WorkflowStream
   workflow: Workflow = null!
   buildLLMMessages: () => ChatMessage[]
+
+  getAutoApprove: () => boolean
+  get autoApprove() {
+    return this.getAutoApprove()
+  }
   //
 
   // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
@@ -448,7 +453,7 @@ export class WorkflowRuntimeContextNew {
   constructor(options: {
     workspacePath: string | null
     sessionId: string
-    autoApprove: boolean
+    getAutoApprove: () => boolean
     stream: WorkflowStream
     buildLLMMessages?: () => ChatMessage[]
   }) {
@@ -456,7 +461,7 @@ export class WorkflowRuntimeContextNew {
     this.sessionId = options.sessionId
     this.workflowId = uuid()
     this.workflowMessages = new WorkflowMessages()
-    this.autoApprove = options.autoApprove
+    this.getAutoApprove = options.getAutoApprove
     this.stream = options.stream
     this.buildLLMMessages = options.buildLLMMessages ?? (() => this.workflowMessages.getMessages())
   }
