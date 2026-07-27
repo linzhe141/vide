@@ -51,7 +51,7 @@ All generated files MUST be written inside the returned artifactDir.
 
       const artifactDir = path.join(getArtifactsRoot(this.runtime.workspacePath), workspaceName)
       await fs.mkdir(artifactDir, { recursive: true })
-      this.emit({
+      await this.emit({
         eventName: 'artifacts-created-workspace',
         data: { workspaceName },
       })

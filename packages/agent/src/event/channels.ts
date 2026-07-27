@@ -1,5 +1,4 @@
 import type { AssistantChatMessage, ChatMessage, ToolCall } from '@vide/ai'
-import type { AskUserQuestion, PlanStep } from '../types'
 
 export type WorkflowEventCtx = {
   sessionId: string
@@ -74,33 +73,6 @@ export const WorkflowEventChannels = {
   'workflow-tool-call-reject': null as unknown as {
     toolCallResult: { id: string; toolName: string; reject: any }
   },
-
-  // plan events
-  'planner-end-generate': null as unknown as {
-    plannerId: string
-    plans: PlanStep[]
-  },
-  'planner-execute-item-start': null as unknown as {
-    plannerId: string
-    plan: PlanStep
-  },
-  'planner-execute-item-success': null as unknown as {
-    plannerId: string
-    plan: PlanStep
-  },
-  'planner-execute-item-error': null as unknown as {
-    plannerId: string
-    plan: PlanStep
-  },
-  // ask user
-  'ask-user': null as unknown as {
-    workflowId: string
-    question: AskUserQuestion
-  },
-  // artifact events
-  'artifacts-created-workspace': null as unknown as {
-    workspaceName: string
-  },
 } as const
 
 // 简写
@@ -110,12 +82,26 @@ export type WorkflowEvent = {
     : { eventName: K; data: (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
 
+export type WorkflowCustomEvent = {
+  eventName: string
+  data?: Record<string, any>
+}
+
+export type WorkflowEmitEvent = WorkflowEvent | WorkflowCustomEvent
+
 // 完整 + ctx
 export type WorkflowEventWithCtx = {
   [K in keyof typeof WorkflowEventChannels]: (typeof WorkflowEventChannels)[K] extends null
     ? { eventName: K; data: { ctx: WorkflowEventCtx } }
     : { eventName: K; data: { ctx: WorkflowEventCtx } & (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
+
+export type WorkflowCustomEventWithCtx = {
+  eventName: string
+  data: { ctx: WorkflowEventCtx } & Record<string, any>
+}
+
+export type WorkflowRuntimeEventWithCtx = WorkflowEventWithCtx | WorkflowCustomEventWithCtx
 
 // IPC 使用
 export type WorkflowIPCEvents = {

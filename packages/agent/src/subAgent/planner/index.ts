@@ -4,7 +4,7 @@ import { SubAgent } from '..'
 import { v4 as uuid } from 'uuid'
 import { prompt } from './prompt'
 import type { Tool } from '@vide/ai'
-import type { WorkflowRuntimeContextNew } from '../../workflow'
+import type { WorkflowRuntimeContext } from '../../workflow'
 import { Grep } from '../../tools/grep'
 import { Read } from '../../tools/fileRead'
 
@@ -19,7 +19,7 @@ export class PlannerAgent extends SubAgent {
 
   plan: PlanStep[] = []
 
-  registerTools(workflowRuntimeContext: WorkflowRuntimeContextNew): Tool[] {
+  registerTools(workflowRuntimeContext: WorkflowRuntimeContext): Tool[] {
     // only read level tools
     const grep = new Grep(workflowRuntimeContext)
     const read = new Read(workflowRuntimeContext)

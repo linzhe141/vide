@@ -1,14 +1,14 @@
 import { defineTool, ToolProvider } from './toolProvider'
 import { PlannerAgent } from '../subAgent/planner'
 import type { SubAgent } from '../subAgent'
-import type { WorkflowRuntimeContextNew } from '../workflow'
+import type { WorkflowRuntimeContext } from '../workflow'
 
 const ToolName = 'call-sub-agent'
 
 export class CallSubAgent extends ToolProvider {
   subAgents: SubAgent[] = []
 
-  constructor(runtime: WorkflowRuntimeContextNew) {
+  constructor(runtime: WorkflowRuntimeContext) {
     super(runtime)
 
     const subAgentsConfig = {
@@ -16,6 +16,7 @@ export class CallSubAgent extends ToolProvider {
       workspacePath: this.runtime.workspacePath,
       getAutoApprove: () => this.runtime.getAutoApprove(),
       mainWorkflowId: this.runtime.workflowId,
+      plugins: this.runtime.plugins,
     }
 
     this.subAgents = [new PlannerAgent(subAgentsConfig)]

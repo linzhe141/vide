@@ -42,7 +42,7 @@ Create a complete user question and pause the workflow for user input.
     },
 
     executor: async (question: AskUserQuestion) => {
-      this.emit({
+      await this.emit({
         eventName: 'ask-user',
         data: { workflowId: this.runtime.workflowId, question },
       })

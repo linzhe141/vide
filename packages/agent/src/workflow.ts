@@ -10,11 +10,20 @@ import type {
 import type { AssistantChatMessage, ChatMessage, Tool, ToolCall, ToolResult } from '@vide/ai'
 import { callAI } from './llm'
 import { registorTools as registorAllTools } from './tools/registor'
-import type { WorkflowEvent, WorkflowEventCtx, WorkflowEventWithCtx } from './event/channels'
+import type {
+  WorkflowEmitEvent,
+  WorkflowEventCtx,
+  WorkflowRuntimeEventWithCtx,
+} from './event/channels'
 import { v4 as uuid } from 'uuid'
-import { BASH_TOOL_NAMES } from './tools/bash'
 import { AbortError, ToolCallError } from './error'
 import type { WorkflowStream } from './event/stream'
+import {
+  resolveWorkflowPlugins,
+  type WorkflowPlugin,
+  type WorkflowToolCallErrorHookPayload,
+  type WorkflowToolCallHookPayload,
+} from './plugin'
 
 export type WorkflowState =
   | 'INPUT'
@@ -33,14 +42,15 @@ export class Workflow {
   tools: Tool[] = []
 
   constructor(
-    public runtime: WorkflowRuntimeContextNew,
+    public runtime: WorkflowRuntimeContext,
     registerTools?: () => Tool[]
   ) {
+    this.runtime.workflow = this
     this.tools = registerTools ? registerTools() : registorAllTools(this.runtime)
   }
 
   async run(input: string) {
-    this.runtime.emit({ eventName: 'workflow-start', data: { input } })
+    await this.runtime.emit({ eventName: 'workflow-start', data: { input } })
     return await this.runLoop({ input } as UserInputStepPayload)
   }
 
@@ -54,7 +64,7 @@ export class Workflow {
 
         // 完成状态
         if (nextStep.state === 'COMPLETED') {
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-finished',
             data: { content: (nextStep.payload as FinishedStepPayload).content },
           })
@@ -64,7 +74,7 @@ export class Workflow {
 
         // 等待人工审批
         if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-wait-human-approve',
             data: {
               data: nextStep.payload as WaitHumanApprovePayload,
@@ -83,7 +93,7 @@ export class Workflow {
         if (error instanceof AbortError) {
           this.runtime.workflowMessages.addAbortMessage()
 
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-aborted',
             data: {
               chunkData: {
@@ -95,7 +105,7 @@ export class Workflow {
           this.runtime.endStream()
           return 'ABORTED'
         }
-        this.runtime.emit({
+        await this.runtime.emit({
           eventName: 'workflow-error',
           data: { error },
         })
@@ -135,87 +145,79 @@ export class Workflow {
   }
 
   async handleCallLLM(messages: ChatMessage[]) {
-    this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
+    await this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
     const result = await callAI({
       workspace: this.runtime.workspacePath,
       messages,
       tools: this.tools,
       signal: this.runtime.signal,
       events: {
-        onReasoningStart: () => {
+        onReasoningStart: async () => {
           this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit({ eventName: 'workflow-llm-reasoning-start' })
+          await this.runtime.emit({ eventName: 'workflow-llm-reasoning-start' })
         },
-        onReasoningDelta: (chunk) => {
+        onReasoningDelta: async (chunk) => {
           this.runtime.assistantReasoningChunk = chunk.content
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-llm-reasoning-delta',
             data: {
               chunk,
             },
           })
         },
-        onReasoningEnd: (content) => {
+        onReasoningEnd: async (content) => {
           this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-llm-reasoning-end',
             data: { content },
           })
         },
-        onTextStart: () => {
+        onTextStart: async () => {
           this.runtime.assistantChunk = ''
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-llm-text-start',
           })
         },
-        onTextDelta: (chunk) => {
+        onTextDelta: async (chunk) => {
           this.runtime.assistantChunk = chunk.content
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-llm-text-delta',
             data: { chunk },
           })
         },
-        onTextEnd: (content) => {
+        onTextEnd: async (content) => {
           this.runtime.assistantChunk = ''
-          this.runtime.emit({
+          await this.runtime.emit({
             eventName: 'workflow-llm-text-end',
             data: { content },
           })
         },
-        onToolCallsStart: () => {
-          this.runtime.emit({
+        onToolCallsStart: async () => {
+          await this.runtime.emit({
             eventName: 'workflow-llm-tool-calls-start',
           })
         },
-        onToolCallName: (data) => {
-          this.runtime.emit({
+        onToolCallName: async (data) => {
+          await this.runtime.emit({
             eventName: 'workflow-llm-tool-call-name',
             data: { data },
           })
         },
-        onToolCallArguments: (data) => {
-          this.runtime.emit({
+        onToolCallArguments: async (data) => {
+          await this.runtime.emit({
             eventName: 'workflow-llm-tool-call-arguments',
             data: { data },
           })
         },
-        onToolCallsEnd: (toolCalls) => {
-          const autoApprove = this.runtime.autoApprove
-          this.runtime.emit({
+        onToolCallsEnd: async (toolCalls) => {
+          const transformedToolCalls = await this.runtime.transformToolCalls(toolCalls)
+          await this.runtime.emit({
             eventName: 'workflow-llm-tool-calls-end',
             data: {
-              toolCalls: toolCalls.map((t) => {
-                return {
-                  ...t,
-                  status:
-                    t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
-                    autoApprove === false
-                      ? 'waiting-human'
-                      : 'auto-approved',
-                }
-              }),
+              toolCalls: transformedToolCalls,
             },
           })
+          return transformedToolCalls
         },
       },
     })
@@ -223,7 +225,7 @@ export class Workflow {
     if (this.runtime.signal.aborted) {
       throw new AbortError()
     }
-    this.runtime.emit({ eventName: 'workflow-llm-end' })
+    await this.runtime.emit({ eventName: 'workflow-llm-end' })
     return result
   }
 
@@ -274,30 +276,46 @@ export class Workflow {
       )
     }
 
+    const beforeToolCallResult = await this.runtime.runBeforeToolCallHooks({
+      tool,
+      toolCall,
+      args,
+    })
+    const nextToolCall = beforeToolCallResult?.toolCall ?? toolCall
+    const nextArgs = beforeToolCallResult?.args ?? args
+
     const startedAt = Date.now()
 
-    this.runtime.emit({
+    await this.runtime.emit({
       eventName: 'workflow-tool-call-start',
       data: {
-        toolCall: { id: toolCall.id, toolName, args },
+        toolCall: { id: nextToolCall.id, toolName, args: nextArgs },
       },
     })
 
-    const toolResult = await tool.executor(args)
+    const toolResult = await tool.executor(nextArgs)
     const finishedAt = Date.now()
-    const reason = toolResult.reason
-    const result = toolResult.result
+    const transformedToolResult = await this.runtime.runToolCallResultHooks({
+      tool,
+      toolCall: nextToolCall,
+      args: nextArgs,
+      reason: toolResult.reason,
+      result: toolResult.result,
+    })
+    const reason = transformedToolResult?.reason ?? toolResult.reason
+    const result = transformedToolResult?.result ?? toolResult.result
+    const toolMessageContent = transformedToolResult?.toolMessageContent ?? JSON.stringify(result)
     this.runtime.workflowMessages.addMessage({
       role: 'tool',
-      tool_call_id: toolCall.id,
-      content: JSON.stringify(toolResult.result),
+      tool_call_id: nextToolCall.id,
+      content: toolMessageContent,
     })
 
-    this.runtime.emit({
+    await this.runtime.emit({
       eventName: 'workflow-tool-call-success',
       data: {
         toolCallResult: {
-          id: toolCall.id,
+          id: nextToolCall.id,
           toolName,
           result,
           startedAt,
@@ -313,9 +331,12 @@ export class Workflow {
     const toolCalls = payload.toolCalls
     const index = payload.index
     const toolCall = toolCalls[index]
+    const parsedArgs = safeParseToolCallArguments(toolCall.function.arguments)
+    const tool = this.runtime.getToolByName(toolCall.function.name)
     const needWaitHumanApprove =
-      toolCall.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
-      this.runtime.autoApprove === false
+      !!tool &&
+      !!parsedArgs &&
+      (await this.runtime.shouldWaitForToolCall({ tool, toolCall, args: parsedArgs }))
     if (needWaitHumanApprove && !payload.hasApproval) {
       return {
         state: 'WAIT_HUMAN_APPROVE',
@@ -331,20 +352,32 @@ export class Workflow {
     } catch (error: any) {
       console.log(`Error executing tool ${toolCall.function.name}:`, error)
       if (error instanceof ToolCallError) {
-        const errorMessage = 'An exception occurred while executing toolCall: ' + error.message
+        const tool = this.runtime.getToolByName(toolCall.function.name)
+        const parsedArgs = safeParseToolCallArguments(toolCall.function.arguments)
+        const transformedError = await this.runtime.runToolCallErrorHooks({
+          tool,
+          toolCall,
+          args: parsedArgs,
+          error,
+        })
+        const nextError = transformedError?.error ?? error
+        const errorMessage =
+          transformedError?.toolMessageContent ??
+          'An exception occurred while executing toolCall: ' +
+            (nextError instanceof Error ? nextError.message : String(nextError))
         this.runtime.workflowMessages.addMessage({
           role: 'tool',
           tool_call_id: toolCall.id,
           content: errorMessage,
         })
 
-        this.runtime.emit({
+        await this.runtime.emit({
           eventName: 'workflow-tool-call-error',
           data: {
             toolCallResult: {
               id: toolCall.id,
               toolName: toolCall.function.name,
-              error: error.message,
+              error: nextError instanceof Error ? nextError.message : String(nextError),
             },
           },
         })
@@ -403,7 +436,7 @@ export class Workflow {
       content: rejectMessage,
     })
 
-    this.runtime.emit({
+    await this.runtime.emit({
       eventName: 'workflow-tool-call-error',
       data: {
         toolCallResult: {
@@ -428,11 +461,12 @@ export class Workflow {
   }
 }
 
-export class WorkflowRuntimeContextNew {
+export class WorkflowRuntimeContext {
   workspacePath: string | null
   sessionId: string
   workflowId: string
   workflowMessages: WorkflowSession
+  plugins: WorkflowPlugin[]
 
   controller = new AbortController()
 
@@ -456,6 +490,7 @@ export class WorkflowRuntimeContextNew {
     getAutoApprove: () => boolean
     stream: WorkflowStream
     buildLLMMessages?: () => ChatMessage[]
+    plugins?: WorkflowPlugin[]
   }) {
     this.workspacePath = options.workspacePath
     this.sessionId = options.sessionId
@@ -464,10 +499,11 @@ export class WorkflowRuntimeContextNew {
     this.getAutoApprove = options.getAutoApprove
     this.stream = options.stream
     this.buildLLMMessages = options.buildLLMMessages ?? (() => this.workflowMessages.getMessages())
+    this.plugins = resolveWorkflowPlugins(options.plugins)
   }
 
-  emit = (data: WorkflowEvent) => {
-    const event = { eventName: data.eventName } as WorkflowEventWithCtx
+  emit = async (data: WorkflowEmitEvent) => {
+    const event = { eventName: data.eventName } as WorkflowRuntimeEventWithCtx
     if ('data' in data) {
       event.data = {
         ...data.data,
@@ -476,7 +512,124 @@ export class WorkflowRuntimeContextNew {
     } else {
       event.data = { ctx: this.workflowEventCtx }
     }
-    this.stream.push(event)
+    let transformedEvent: WorkflowRuntimeEventWithCtx = event
+    for (const plugin of this.plugins) {
+      if (!plugin.transformEvent) continue
+      const nextEvent = await plugin.transformEvent(transformedEvent, { runtime: this })
+      transformedEvent = nextEvent
+    }
+    if (transformedEvent) {
+      this.stream.push(transformedEvent)
+    }
+  }
+
+  getToolByName(toolName: string) {
+    return this.workflow?.tools.find((tool) => tool.name === toolName) ?? null
+  }
+
+  async transformToolCalls(toolCalls: ToolCall[]) {
+    let currentToolCalls = toolCalls
+    for (const plugin of this.plugins) {
+      if (!plugin.transformToolCalls) continue
+      const nextToolCalls = await plugin.transformToolCalls(currentToolCalls, { runtime: this })
+      currentToolCalls = nextToolCalls ?? currentToolCalls
+    }
+    return currentToolCalls
+  }
+
+  async shouldWaitForToolCall(payload: WorkflowToolCallHookPayload) {
+    for (const plugin of this.plugins) {
+      // TODO
+      // plugin应该是针对某一个tool的，而不是所有的tool都要走这个hook
+      // 或者可以删除这个 hook，感觉意义不大
+      const result = await plugin.shouldWaitForToolCall?.(payload, { runtime: this })
+      if (typeof result === 'boolean') {
+        return result
+      }
+    }
+    return false
+  }
+
+  async runBeforeToolCallHooks(payload: WorkflowToolCallHookPayload) {
+    let currentPayload = payload
+    for (const plugin of this.plugins) {
+      const result = await plugin.beforeToolCall?.(currentPayload, { runtime: this })
+      if (!result) continue
+      currentPayload = {
+        tool: currentPayload.tool,
+        toolCall: result.toolCall ?? currentPayload.toolCall,
+        args: result.args ?? currentPayload.args,
+      }
+    }
+
+    if (currentPayload.toolCall === payload.toolCall && currentPayload.args === payload.args) {
+      return undefined
+    }
+
+    return {
+      toolCall: currentPayload.toolCall,
+      args: currentPayload.args,
+    }
+  }
+
+  async runToolCallResultHooks(payload: {
+    tool: Tool
+    toolCall: ToolCall
+    args: Record<string, unknown>
+    reason: ToolResult['reason']
+    result: ToolResult['result']
+  }) {
+    let currentPayload = payload
+    let toolMessageContent: string | undefined
+
+    for (const plugin of this.plugins) {
+      const result = await plugin.transformToolCallResult?.(currentPayload, { runtime: this })
+      if (!result) continue
+      currentPayload = {
+        ...currentPayload,
+        reason: result.reason ?? currentPayload.reason,
+        result: result.result ?? currentPayload.result,
+      }
+      if (result.toolMessageContent !== undefined) {
+        toolMessageContent = result.toolMessageContent
+      }
+    }
+
+    if (currentPayload === payload && toolMessageContent === undefined) {
+      return undefined
+    }
+
+    return {
+      reason: currentPayload.reason,
+      result: currentPayload.result,
+      toolMessageContent,
+    }
+  }
+
+  async runToolCallErrorHooks(payload: WorkflowToolCallErrorHookPayload) {
+    let currentPayload = payload
+    let toolMessageContent: string | undefined
+
+    for (const plugin of this.plugins) {
+      const result = await plugin.transformToolCallError?.(currentPayload, { runtime: this })
+      if (!result) continue
+      currentPayload = {
+        ...currentPayload,
+        error: result.error ?? currentPayload.error,
+      }
+      if (result.toolMessageContent !== undefined) {
+        toolMessageContent = result.toolMessageContent
+      }
+    }
+
+    if (currentPayload === payload && toolMessageContent === undefined) {
+      return undefined
+    }
+
+    return {
+      error: currentPayload.error,
+      toolMessageContent,
+    }
   }
 
   endStream() {
@@ -501,6 +654,14 @@ export class WorkflowRuntimeContextNew {
       workflowId: this.workflowId,
       // parentWorkflowId: this.parentWorkflowId,
     }
+  }
+}
+
+function safeParseToolCallArguments(argumentsText: string) {
+  try {
+    return JSON.parse(argumentsText) as Record<string, unknown>
+  } catch {
+    return null
   }
 }
 

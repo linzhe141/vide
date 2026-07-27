@@ -57,7 +57,7 @@ type FnCallAI = (data: {
     onToolCallsStart?: () => void
     onToolCallName?: (data: { id: string; name: string }) => void
     onToolCallArguments?: (data: { id: string; arguments: string }) => void
-    onToolCallsEnd?: (toolCalls: ToolCall[]) => void
+    onToolCallsEnd?: (toolCalls: ToolCall[]) => Promise<ToolCall[]>
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 
@@ -126,7 +126,7 @@ async function buildChatMessages(
     chatMessages.push(userMemoryChatMessage)
   }
   if (skillsChatMessage) {
-    chatMessages.push(skillsChatMessage)
+    // chatMessages.push(skillsChatMessage)
   }
   chatMessages.push(...messages)
 

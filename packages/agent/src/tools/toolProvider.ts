@@ -1,18 +1,18 @@
 import type { Tool } from '@vide/ai'
-import type { WorkflowRuntimeContextNew } from '../workflow'
-import type { WorkflowEvent } from '../event/channels'
+import type { WorkflowRuntimeContext } from '../workflow'
+import type { WorkflowEmitEvent } from '../event/channels'
 
 export abstract class ToolProvider {
-  protected runtime: WorkflowRuntimeContextNew
+  protected runtime: WorkflowRuntimeContext
 
-  constructor(runtime: WorkflowRuntimeContextNew) {
+  constructor(runtime: WorkflowRuntimeContext) {
     this.runtime = runtime
   }
 
   abstract getTools(): Tool[]
 
-  emit(data: WorkflowEvent) {
-    this.runtime.emit(data)
+  emit(data: WorkflowEmitEvent) {
+    return this.runtime.emit(data)
   }
 }
 

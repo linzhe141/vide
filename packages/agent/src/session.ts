@@ -1,8 +1,9 @@
 import { v4 as uuid } from 'uuid'
 import type { PlanStep, WaitHumanApprovePayload } from './types'
-import { Workflow, WorkflowRuntimeContextNew } from './workflow'
+import { Workflow, WorkflowRuntimeContext } from './workflow'
 import type { ChatMessage } from '@vide/ai'
 import { WorkflowStream } from './event/stream'
+import type { WorkflowPlugin } from './plugin'
 
 export type SessionType = 'normal' | 'fork'
 
@@ -54,6 +55,7 @@ export class Session {
   // config context
   workspacePath: string | null
   autoApprove: boolean
+  plugins: WorkflowPlugin[]
 
   // workflow graph context
   activeBranch = 'main'
@@ -72,6 +74,7 @@ export class Session {
     origin?: SessionOrigin | null
     workspacePath?: string | null
     autoApprove?: boolean
+    plugins?: WorkflowPlugin[]
   }) {
     this.sessionId = options?.sessionId || uuid()
     this.activeBranch = options?.activeBranch || 'main'
@@ -79,6 +82,7 @@ export class Session {
     this.origin = options?.origin || null
     this.workspacePath = options?.workspacePath || null
     this.autoApprove = options?.autoApprove || false
+    this.plugins = options?.plugins || []
   }
 
   get currentBranch() {
@@ -92,12 +96,13 @@ export class Session {
   }
 
   createWorkflow(stream: WorkflowStream) {
-    const workflowRuntimeContext = new WorkflowRuntimeContextNew({
+    const workflowRuntimeContext = new WorkflowRuntimeContext({
       sessionId: this.sessionId,
       workspacePath: this.workspacePath,
       getAutoApprove: () => this.autoApprove,
       stream,
       buildLLMMessages: () => this.buildLLMMessages(),
+      plugins: this.plugins,
     })
     const workflowCommitNode: SessionWorkflowNode = {
       id: workflowRuntimeContext.workflowId,
@@ -155,6 +160,8 @@ export class Session {
         workflowId: targetCommitNode.id,
       },
       workspacePath: this.workspacePath,
+      autoApprove: this.autoApprove,
+      plugins: this.plugins,
     })
     forkedSession.branchs[forkedSession.activeBranch] = { head: null, source: null }
 
@@ -279,7 +286,7 @@ export class Session {
     }
   }
 
-  static resume(snapshot: SessionSnapshot) {
+  static resume(snapshot: SessionSnapshot, options?: { plugins?: WorkflowPlugin[] }) {
     const session = new Session({
       sessionId: snapshot.sessionId,
       activeBranch: snapshot.activeBranch,
@@ -287,6 +294,7 @@ export class Session {
       origin: snapshot.origin,
       workspacePath: snapshot.workspacePath,
       autoApprove: snapshot.autoApprove,
+      plugins: options?.plugins,
     })
     const workflowNodeMap = new Map<string, SessionWorkflowNode>()
 

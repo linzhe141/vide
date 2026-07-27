@@ -7,6 +7,7 @@ import {
   type SessionType,
   type SessionWorkflowSnapshot,
 } from './session'
+import type { WorkflowPlugin } from './plugin'
 
 type WorkflowData = {
   id: string
@@ -25,12 +26,14 @@ export class Agent {
     origin?: SessionOrigin | null
     workspacePath?: string | null
     autoApprove?: boolean
+    plugins?: WorkflowPlugin[]
   }) {
     const session = new Session({
       sessionType: options?.sessionType,
       origin: options?.origin,
       workspacePath: options?.workspacePath,
       autoApprove: options?.autoApprove,
+      plugins: options?.plugins,
     })
     session.branchs[session.activeBranch] = { head: null, source: null }
 
@@ -46,6 +49,7 @@ export class Agent {
     branches: SessionBranchSnapshot[]
     workflowData: WorkflowData[]
     autoApprove: boolean
+    plugins?: WorkflowPlugin[]
   }) {
     const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
       id: workflow.id,
@@ -65,7 +69,7 @@ export class Agent {
       autoApprove: data.autoApprove,
     }
 
-    return Session.resume(snapshot)
+    return Session.resume(snapshot, { plugins: data.plugins })
   }
 
   forkSession(session: Session, targetWorkflowId: string) {
