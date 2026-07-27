@@ -45,24 +45,20 @@ export interface WorkflowPlugin {
   transformEvent?: (
     event: WorkflowRuntimeEventWithCtx,
     api: WorkflowPluginApi
-  ) => Promise<WorkflowRuntimeEventWithCtx>
-  transformToolCalls?: (toolCalls: ToolCall[], api: WorkflowPluginApi) => Promise<ToolCall[]>
-  shouldWaitForToolCall?: (
-    payload: WorkflowToolCallHookPayload,
-    api: WorkflowPluginApi
-  ) => Promise<boolean>
+  ) => Promise<WorkflowRuntimeEventWithCtx | null | void>
+  transformToolCalls?: (toolCalls: ToolCall[], api: WorkflowPluginApi) => Promise<ToolCall[] | void>
   beforeToolCall?: (
     payload: WorkflowToolCallHookPayload,
     api: WorkflowPluginApi
-  ) => Promise<WorkflowBeforeToolCallResult>
+  ) => Promise<WorkflowBeforeToolCallResult | void>
   transformToolCallResult?: (
     payload: WorkflowToolCallResultHookPayload,
     api: WorkflowPluginApi
-  ) => Promise<WorkflowToolCallResultTransform>
+  ) => Promise<WorkflowToolCallResultTransform | void>
   transformToolCallError?: (
     payload: WorkflowToolCallErrorHookPayload,
     api: WorkflowPluginApi
-  ) => Promise<WorkflowToolCallErrorTransform>
+  ) => Promise<WorkflowToolCallErrorTransform | void>
 }
 
 export function approvalWorkflowPlugin(): WorkflowPlugin {
@@ -77,9 +73,6 @@ export function approvalWorkflowPlugin(): WorkflowPlugin {
           status: needHumanApprove ? 'waiting-human' : 'auto-approved',
         }
       })
-    },
-    async shouldWaitForToolCall({ tool }, api) {
-      return !!tool.approval?.required && api.runtime.autoApprove === false
     },
   }
 }

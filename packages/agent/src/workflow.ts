@@ -334,9 +334,7 @@ export class Workflow {
     const parsedArgs = safeParseToolCallArguments(toolCall.function.arguments)
     const tool = this.runtime.getToolByName(toolCall.function.name)
     const needWaitHumanApprove =
-      !!tool &&
-      !!parsedArgs &&
-      (await this.runtime.shouldWaitForToolCall({ tool, toolCall, args: parsedArgs }))
+      !!tool && !!parsedArgs && !!tool.approval?.required && this.runtime.autoApprove === false
     if (needWaitHumanApprove && !payload.hasApproval) {
       return {
         state: 'WAIT_HUMAN_APPROVE',
@@ -512,11 +510,11 @@ export class WorkflowRuntimeContext {
     } else {
       event.data = { ctx: this.workflowEventCtx }
     }
-    let transformedEvent: WorkflowRuntimeEventWithCtx = event
+    let transformedEvent: WorkflowRuntimeEventWithCtx | null = event
     for (const plugin of this.plugins) {
-      if (!plugin.transformEvent) continue
+      if (!plugin.transformEvent || !transformedEvent) continue
       const nextEvent = await plugin.transformEvent(transformedEvent, { runtime: this })
-      transformedEvent = nextEvent
+      transformedEvent = nextEvent === undefined ? transformedEvent : nextEvent
     }
     if (transformedEvent) {
       this.stream.push(transformedEvent)
@@ -535,19 +533,6 @@ export class WorkflowRuntimeContext {
       currentToolCalls = nextToolCalls ?? currentToolCalls
     }
     return currentToolCalls
-  }
-
-  async shouldWaitForToolCall(payload: WorkflowToolCallHookPayload) {
-    for (const plugin of this.plugins) {
-      // TODO
-      // plugin应该是针对某一个tool的，而不是所有的tool都要走这个hook
-      // 或者可以删除这个 hook，感觉意义不大
-      const result = await plugin.shouldWaitForToolCall?.(payload, { runtime: this })
-      if (typeof result === 'boolean') {
-        return result
-      }
-    }
-    return false
   }
 
   async runBeforeToolCallHooks(payload: WorkflowToolCallHookPayload) {
