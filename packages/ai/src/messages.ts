@@ -10,12 +10,17 @@ export type SystemChatMessage = ChatCompletionSystemMessageParam
 export type UserChatMessage = ChatCompletionUserMessageParam
 export type AssistantChatMessage = ChatCompletionAssistantMessageParam
 export type ToolChatMessage = ChatCompletionToolMessageParam
-
+export type ContextMessage = {
+  role: 'context'
+  type: string
+  content: string
+}
 export type ChatMessage =
   | SystemChatMessage
   | UserChatMessage
   | AssistantChatMessage
   | ToolChatMessage
+  | ContextMessage
 
 export type ToolApproval = {
   required?: boolean

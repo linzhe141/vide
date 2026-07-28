@@ -2,11 +2,12 @@ import { defineTool } from '../../tools/toolProvider'
 import type { PlanStep } from '../../types'
 import { SubAgent } from '..'
 import { v4 as uuid } from 'uuid'
-import { prompt } from './prompt'
+import { getPrompt } from './prompt'
 import type { Tool } from '@vide/ai'
 import type { WorkflowRuntimeContext } from '../../workflow'
 import { Grep } from '../../tools/grep'
 import { Read } from '../../tools/fileRead'
+import type { WorkflowPlugin } from '../../plugin'
 
 export const PLANNER_TOOL_NAMES = {
   SUBMIT_PLAN: `submit-plan`,
@@ -14,10 +15,55 @@ export const PLANNER_TOOL_NAMES = {
 
 export class PlannerAgent extends SubAgent {
   name = 'planner'
-  prompt = prompt()
+  prompt = getPrompt()
   description = 'Creates implementation plans from context and requirements'
 
   plan: PlanStep[] = []
+  executionMode = false
+
+  plugins: WorkflowPlugin[] = [
+    {
+      name: 'planner-plugin',
+      beforeWorkflowStart: async (_input, runtime) => {
+        const todos = this.plan.filter((i) => i.status !== 'completed')
+        if (todos.length > 0) {
+          runtime.workflowMessages.addContextMessage(
+            'planner',
+            `[EXECUTING PLAN - Full tool access enabled]
+
+Remaining steps:
+${todos.map((i, index) => `[${index + 1}] ${i.description}`).join('\n')}
+
+Execute each step in order.
+After completing a step, include a [DONE:n] tag in your response.`
+          )
+        }
+      },
+      afterWorkflowEnd: async (content, runtime) => {
+        if (this.executionMode) {
+          const doneTagMatch = content.match(/\[DONE:(\d+)\]/)
+          if (doneTagMatch) {
+            const doneIndex = parseInt(doneTagMatch[1], 10) - 1
+            if (doneIndex >= 0 && doneIndex < this.plan.length) {
+              this.plan[doneIndex].status = 'completed'
+            }
+          }
+          const hasCompletedAllSteps = this.plan.every((step) => step.status === 'completed')
+          if (hasCompletedAllSteps) {
+            this.executionMode = false
+            this.plan = []
+          } else {
+            // start the plan step
+            const firstPendingStep = this.plan.find((step) => step.status !== 'completed')
+            if (firstPendingStep) {
+              firstPendingStep.status = 'pending'
+              runtime.workflow.run(firstPendingStep.description)
+            }
+          }
+        }
+      },
+    },
+  ]
 
   registerTools(workflowRuntimeContext: WorkflowRuntimeContext): Tool[] {
     // only read level tools
@@ -63,7 +109,7 @@ Returns a plannerId and the created steps (with ids).
       }))
 
       this.plan = planSteps
-
+      this.executionMode = true
       return {
         reason: 'call-llm',
         result: {

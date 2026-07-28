@@ -82,26 +82,12 @@ export type WorkflowEvent = {
     : { eventName: K; data: (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
 
-export type WorkflowCustomEvent = {
-  eventName: string
-  data?: Record<string, any>
-}
-
-export type WorkflowEmitEvent = WorkflowEvent | WorkflowCustomEvent
-
 // 完整 + ctx
 export type WorkflowEventWithCtx = {
   [K in keyof typeof WorkflowEventChannels]: (typeof WorkflowEventChannels)[K] extends null
     ? { eventName: K; data: { ctx: WorkflowEventCtx } }
     : { eventName: K; data: { ctx: WorkflowEventCtx } & (typeof WorkflowEventChannels)[K] }
 }[keyof typeof WorkflowEventChannels]
-
-export type WorkflowCustomEventWithCtx = {
-  eventName: string
-  data: { ctx: WorkflowEventCtx } & Record<string, any>
-}
-
-export type WorkflowRuntimeEventWithCtx = WorkflowEventWithCtx | WorkflowCustomEventWithCtx
 
 // IPC 使用
 export type WorkflowIPCEvents = {

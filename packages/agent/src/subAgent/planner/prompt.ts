@@ -2,7 +2,7 @@ import { PLANNER_TOOL_NAMES } from '.'
 import { READ_TOOL_NAMES } from '../../tools/fileRead'
 import { GREP_TOOL_NAMES } from '../../tools/grep'
 
-export const prompt = () => `
+export const getPrompt = () => `
 You are a planning specialist. You receive a **complex task** and must produce a clear, actionable execution blueprint.
 
 **You MUST:**

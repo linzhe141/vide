@@ -57,7 +57,7 @@ type FnCallAI = (data: {
     onToolCallsStart?: () => void
     onToolCallName?: (data: { id: string; name: string }) => void
     onToolCallArguments?: (data: { id: string; arguments: string }) => void
-    onToolCallsEnd?: (toolCalls: ToolCall[]) => Promise<ToolCall[]>
+    onToolCallsEnd?: (toolCalls: ToolCall[]) => void
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 

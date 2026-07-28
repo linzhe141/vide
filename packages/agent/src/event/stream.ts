@@ -1,23 +1,23 @@
-import type { WorkflowRuntimeEventWithCtx } from './channels'
+import type { WorkflowEventWithCtx } from './channels'
 
 export class WorkflowStream {
   // sub agent 才存在
   namespace?: string
   mainWorkflowId?: string
 
-  stream: ReadableStream<WorkflowRuntimeEventWithCtx>
-  events: WorkflowRuntimeEventWithCtx[] = []
-  private controller!: ReadableStreamDefaultController<WorkflowRuntimeEventWithCtx>
+  stream: ReadableStream<WorkflowEventWithCtx>
+  events: WorkflowEventWithCtx[] = []
+  private controller!: ReadableStreamDefaultController<WorkflowEventWithCtx>
 
   constructor() {
-    this.stream = new ReadableStream<WorkflowRuntimeEventWithCtx>({
+    this.stream = new ReadableStream<WorkflowEventWithCtx>({
       start: (controller) => {
         this.controller = controller
       },
     })
   }
 
-  push(data: WorkflowRuntimeEventWithCtx) {
+  push(data: WorkflowEventWithCtx) {
     if (this.namespace) data.data.ctx.namespace = this.namespace
     if (this.mainWorkflowId) data.data.ctx.mainWorkflowId = this.mainWorkflowId
     this.events.push(data)
