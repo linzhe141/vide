@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import type { PlanStep, WaitHumanApprovePayload } from './types'
 import { Workflow, WorkflowRuntimeContext } from './workflow'
-import type { ChatMessage } from '@vide/ai'
+import type { AgentMessage, ChatMessage } from '@vide/ai'
 import { WorkflowStream } from './event/stream'
 import type { WorkflowPlugin } from './plugin'
 
@@ -15,7 +15,7 @@ export interface SessionOrigin {
 export interface SessionWorkflowNode {
   id: string
   stopStatus: 'finished' | 'error' | 'aborted'
-  messages: ChatMessage[]
+  messages: AgentMessage[]
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
 }
@@ -101,7 +101,7 @@ export class Session {
       workspacePath: this.workspacePath,
       getAutoApprove: () => this.autoApprove,
       stream,
-      buildLLMMessages: () => this.buildLLMMessages(),
+      buildAgentMessages: () => this.buildAgentMessages(),
       plugins: this.plugins,
     })
     const workflowCommitNode: SessionWorkflowNode = {
@@ -209,11 +209,11 @@ export class Session {
     }
   }
 
-  buildLLMMessages() {
+  buildAgentMessages() {
     const currentHead = this.currentBranch?.head ?? null
     if (!currentHead) return []
 
-    function traverse(node: SessionWorkflowNode, result: ChatMessage[] = []): ChatMessage[] {
+    function traverse(node: SessionWorkflowNode, result: AgentMessage[] = []): AgentMessage[] {
       if (node.stopStatus !== 'aborted' && node.stopStatus !== 'error') {
         result.unshift(...node.messages)
       }
@@ -344,6 +344,6 @@ export class SessionPlaner {
   }
 }
 
-function deepCloneMessages(messages: ChatMessage[]) {
-  return JSON.parse(JSON.stringify(messages)) as ChatMessage[]
+function deepCloneMessages(messages: AgentMessage[]) {
+  return JSON.parse(JSON.stringify(messages)) as AgentMessage[]
 }

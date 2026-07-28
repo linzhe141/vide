@@ -29,7 +29,7 @@ type FnProcessLLMStream = (
     onToolCallsStart?: () => void
     onToolCallName?: (data: { id: string; name: string }) => void
     onToolCallArguments?: (data: { id: string; arguments: string }) => void
-    onToolCallsEnd?: (toolCalls: ToolCall[]) => Promise<ToolCall[]>
+    onToolCallsEnd?: (toolCalls: ToolCall[]) => void
   }
 ) => AsyncGenerator<StreamContentChunk | StreamToolCallsChunk>
 
@@ -50,7 +50,7 @@ export const processLLMStream: FnProcessLLMStream = async function* (
 ) {
   let reasonContent = ''
   let content = ''
-  let toolCalls: ToolCall[] = []
+  const toolCalls: ToolCall[] = []
   let finishReason: FinishReason = null!
 
   const finishedToolCallName: { name: string; id: string }[] = []
@@ -151,9 +151,7 @@ export const processLLMStream: FnProcessLLMStream = async function* (
   }
 
   if (toolCalls.length > 0) {
-    if (onToolCallsEnd) {
-      toolCalls = await onToolCallsEnd(toolCalls.filter(Boolean))
-    }
+    onToolCallsEnd?.(toolCalls.filter(Boolean))
     console.log(JSON.stringify(toolCalls.filter(Boolean), null, 2))
     yield {
       tool_calls: toolCalls.filter(Boolean),

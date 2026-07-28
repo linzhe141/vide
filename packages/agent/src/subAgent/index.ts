@@ -1,7 +1,6 @@
 import type { Tool } from '@vide/ai'
 import { WorkflowStream } from '../event/stream'
 import { Workflow, WorkflowRuntimeContext } from '../workflow'
-import type { WorkflowPlugin } from '../plugin'
 
 export abstract class SubAgent {
   abstract name: string
@@ -15,7 +14,6 @@ export abstract class SubAgent {
       getAutoApprove: () => boolean
       // 启动子工作流时的主工作流ID
       mainWorkflowId: string
-      plugins?: WorkflowPlugin[]
     }
   ) {}
 
@@ -34,7 +32,6 @@ export abstract class SubAgent {
       sessionId: this.rootSessionConfig.sessionId,
       getAutoApprove: () => this.rootSessionConfig.getAutoApprove(),
       stream,
-      plugins: this.rootSessionConfig.plugins,
     })
 
     const workflow = new Workflow(workflowRuntimeContext, () =>

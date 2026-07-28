@@ -39,7 +39,7 @@ After completing a step, include a [DONE:n] tag in your response.`
           )
         }
       },
-      afterWorkflowEnd: async (content, runtime) => {
+      beforeWorkflowFinish: async (content, _runtime) => {
         if (this.executionMode) {
           const doneTagMatch = content.match(/\[DONE:(\d+)\]/)
           if (doneTagMatch) {
@@ -53,11 +53,11 @@ After completing a step, include a [DONE:n] tag in your response.`
             this.executionMode = false
             this.plan = []
           } else {
-            // start the plan step
+            // 返回下一步作为新的 payload，让 workflow 继续执行
             const firstPendingStep = this.plan.find((step) => step.status !== 'completed')
             if (firstPendingStep) {
               firstPendingStep.status = 'pending'
-              runtime.workflow.run(firstPendingStep.description)
+              return { input: firstPendingStep.description }
             }
           }
         }

@@ -1,4 +1,4 @@
-import type { ChatMessage, ToolCall } from '@vide/ai'
+import type { AgentMessage, ToolCall } from '@vide/ai'
 import type { WorkflowState } from './workflow'
 
 export type ToolApproval = {
@@ -11,7 +11,7 @@ export type UserInputStepPayload = {
 }
 
 export type CallLLMStepPayload = {
-  messages: ChatMessage[]
+  messages: AgentMessage[]
 }
 
 export type CallToolsStepPayload = {

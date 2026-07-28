@@ -11,15 +11,20 @@ export class CallSubAgent extends ToolProvider {
   constructor(runtime: WorkflowRuntimeContext) {
     super(runtime)
 
+    this.registerSubAgent()
+  }
+
+  registerSubAgent() {
     const subAgentsConfig = {
       sessionId: this.runtime.sessionId,
       workspacePath: this.runtime.workspacePath,
       getAutoApprove: () => this.runtime.getAutoApprove(),
       mainWorkflowId: this.runtime.workflowId,
-      plugins: this.runtime.plugins,
     }
 
-    this.subAgents = [new PlannerAgent(subAgentsConfig)]
+    const plannerAgent = new PlannerAgent(subAgentsConfig)
+    this.runtime.plugins.push(...plannerAgent.plugins)
+    this.subAgents = [plannerAgent]
   }
 
   get subAgentDescription() {

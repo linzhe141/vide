@@ -1,4 +1,4 @@
-import type { AssistantChatMessage, ChatMessage, ToolCall } from '@vide/ai'
+import type { AssistantChatMessage, AgentMessage, ToolCall } from '@vide/ai'
 
 export type WorkflowEventCtx = {
   sessionId: string
@@ -19,7 +19,7 @@ export const WorkflowEventChannels = {
   },
   'workflow-error': null as unknown as { error: any },
 
-  'workflow-llm-start': null as unknown as { messages: ChatMessage[] },
+  'workflow-llm-start': null as unknown as { messages: AgentMessage[] },
 
   'workflow-llm-reasoning-start': null,
   'workflow-llm-reasoning-delta': null as unknown as {

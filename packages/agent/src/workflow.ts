@@ -10,10 +10,10 @@ import type {
 import type {
   AssistantChatMessage,
   UserChatMessage,
-  ChatMessage,
   Tool,
   ToolCall,
   ToolResult,
+  AgentMessage,
 } from '@vide/ai'
 import { callAI } from './llm'
 import { registorTools as registorAllTools } from './tools/registor'
@@ -63,9 +63,17 @@ export class Workflow {
 
         // 完成状态
         if (nextStep.state === 'COMPLETED') {
-          await this.runtime.runAfterWorkflowEndHooks(
+          const continuePayload = await this.runtime.runBeforeWorkflowFinishHooks(
             (nextStep.payload as FinishedStepPayload).content
           )
+
+          // 如果 hook 返回新的 payload，继续执行而不是完成
+          if (continuePayload) {
+            payload = continuePayload
+            continue
+          }
+
+          // 否则才真正完成
           this.runtime.emit({
             eventName: 'workflow-finished',
             data: { content: (nextStep.payload as FinishedStepPayload).content },
@@ -141,12 +149,12 @@ export class Workflow {
     return {
       state: 'CALL_LLM',
       payload: {
-        messages: this.buildLLMMessages(),
+        messages: this.buildAgentMessages(),
       },
     }
   }
 
-  async handleCallLLM(messages: ChatMessage[]) {
+  async handleCallLLM(messages: AgentMessage[]) {
     this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
     const result = await callAI({
       workspace: this.runtime.workspacePath,
@@ -371,7 +379,7 @@ export class Workflow {
             }),
           })
         }
-        return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
+        return { state: 'CALL_LLM', payload: { messages: this.buildAgentMessages() } }
       }
       throw error
     }
@@ -387,7 +395,7 @@ export class Workflow {
     if (index + 1 < toolCalls.length) {
       return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
     } else {
-      return { state: 'CALL_LLM', payload: { messages: this.buildLLMMessages() } }
+      return { state: 'CALL_LLM', payload: { messages: this.buildAgentMessages() } }
     }
   }
 
@@ -432,11 +440,11 @@ export class Workflow {
     } else {
       // 所有工具处理完，回到LLM生成回应
       this.state = 'CALL_LLM'
-      return await this.runLoop({ messages: this.buildLLMMessages() })
+      return await this.runLoop({ messages: this.buildAgentMessages() })
     }
   }
-  buildLLMMessages() {
-    return this.runtime.buildLLMMessages()
+  buildAgentMessages() {
+    return this.runtime.buildAgentMessages()
   }
 }
 
@@ -451,7 +459,7 @@ export class WorkflowRuntimeContext {
 
   stream: WorkflowStream
   workflow: Workflow = null!
-  buildLLMMessages: () => ChatMessage[]
+  buildAgentMessages: () => AgentMessage[]
 
   getAutoApprove: () => boolean
   get autoApprove() {
@@ -468,7 +476,7 @@ export class WorkflowRuntimeContext {
     sessionId: string
     getAutoApprove: () => boolean
     stream: WorkflowStream
-    buildLLMMessages?: () => ChatMessage[]
+    buildAgentMessages?: () => AgentMessage[]
     plugins?: WorkflowPlugin[]
   }) {
     this.workspacePath = options.workspacePath
@@ -477,7 +485,8 @@ export class WorkflowRuntimeContext {
     this.workflowMessages = new WorkflowMessages()
     this.getAutoApprove = options.getAutoApprove
     this.stream = options.stream
-    this.buildLLMMessages = options.buildLLMMessages ?? (() => this.workflowMessages.getMessages())
+    this.buildAgentMessages =
+      options.buildAgentMessages ?? (() => this.workflowMessages.getMessages())
     this.plugins = options.plugins ?? []
   }
 
@@ -509,10 +518,15 @@ export class WorkflowRuntimeContext {
     }
   }
 
-  async runAfterWorkflowEndHooks(content: string) {
+  async runBeforeWorkflowFinishHooks(content: string): Promise<StepPayload | undefined> {
+    let lastResult: StepPayload | undefined = undefined
     for (const plugin of this.plugins) {
-      await plugin.afterWorkflowEnd?.(content, this)
+      const result = await plugin.beforeWorkflowFinish?.(content, this)
+      if (result) {
+        lastResult = result
+      }
     }
+    return lastResult
   }
 
   endStream() {
@@ -541,9 +555,9 @@ export class WorkflowRuntimeContext {
 }
 
 export class WorkflowMessages {
-  messages: ChatMessage[] = []
+  messages: AgentMessage[] = []
 
-  addMessage(message: ChatMessage) {
+  addMessage(message: AgentMessage) {
     this.messages.push(message)
   }
 

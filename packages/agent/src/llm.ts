@@ -13,6 +13,7 @@ import {
   type Tool,
   type ChatMessage,
   type ToolCall,
+  type AgentMessage,
 } from '@vide/ai'
 
 let model: string = null!
@@ -41,7 +42,7 @@ export function updateUserMemory(messages: ChatMessage[], feedback?: UserMemoryF
 }
 
 type FnCallAI = (data: {
-  messages: ChatMessage[]
+  messages: AgentMessage[]
   tools: Tool[]
   signal: AbortSignal
   workspace: string | null
@@ -104,7 +105,7 @@ export const callAI: FnCallAI = async function ({ messages, tools, signal, event
 }
 
 async function buildChatMessages(
-  messages: ChatMessage[],
+  messages: AgentMessage[],
   workspace: string | null
 ): Promise<ChatMessage[]> {
   const skillsChatMessage = await buildSkillsChatMessage()
@@ -128,7 +129,29 @@ async function buildChatMessages(
   if (skillsChatMessage) {
     // chatMessages.push(skillsChatMessage)
   }
-  chatMessages.push(...messages)
 
+  chatMessages.push(...convertToChatMessages(messages))
+
+  return chatMessages
+}
+
+function convertToChatMessages(messages: AgentMessage[]): ChatMessage[] {
+  const chatMessages: ChatMessage[] = []
+  for (const message of messages) {
+    if (
+      message.role === 'system' ||
+      message.role === 'user' ||
+      message.role === 'assistant' ||
+      message.role === 'tool'
+    ) {
+      chatMessages.push(message)
+    }
+    if (message.role === 'context') {
+      chatMessages.push({
+        role: 'user',
+        content: `[CONTEXT] ${message.type}: ${message.content}`,
+      })
+    }
+  }
   return chatMessages
 }

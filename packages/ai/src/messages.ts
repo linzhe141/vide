@@ -20,6 +20,12 @@ export type ChatMessage =
   | UserChatMessage
   | AssistantChatMessage
   | ToolChatMessage
+
+export type AgentMessage =
+  | SystemChatMessage
+  | UserChatMessage
+  | AssistantChatMessage
+  | ToolChatMessage
   | ContextMessage
 
 export type ToolApproval = {
