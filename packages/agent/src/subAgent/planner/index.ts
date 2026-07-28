@@ -25,46 +25,59 @@ export class PlannerAgent extends SubAgent {
     {
       name: 'planner-plugin',
       beforeWorkflowStart: async (_input, runtime) => {
-        const todos = this.plan.filter((i) => i.status !== 'completed')
-        if (todos.length > 0) {
-          runtime.workflowMessages.addContextMessage(
-            'planner',
-            `[EXECUTING PLAN - Full tool access enabled]
+        runtime.workflowMessages.addMessage({
+          role: 'system',
+          content: this.prompt,
+        })
+      },
+    },
+  ]
+
+  injectMainWorkflowPlugins(): WorkflowPlugin[] {
+    return [
+      {
+        name: 'main-planner-plugin',
+        beforeWorkflowStart: async (_input, runtime) => {
+          const todos = this.plan.filter((i) => i.status !== 'completed')
+          if (todos.length > 0) {
+            runtime.workflowMessages.addContextMessage(
+              'planner',
+              `[EXECUTING PLAN - Full tool access enabled]
 
 Remaining steps:
 ${todos.map((i, index) => `[${index + 1}] ${i.description}`).join('\n')}
 
 Execute each step in order.
 After completing a step, include a [DONE:n] tag in your response.`
-          )
-        }
-      },
-      beforeWorkflowFinish: async (content, _runtime) => {
-        if (this.executionMode) {
-          const doneTagMatch = content.match(/\[DONE:(\d+)\]/)
-          if (doneTagMatch) {
-            const doneIndex = parseInt(doneTagMatch[1], 10) - 1
-            if (doneIndex >= 0 && doneIndex < this.plan.length) {
-              this.plan[doneIndex].status = 'completed'
+            )
+          }
+        },
+        beforeWorkflowFinish: async (content, _runtime) => {
+          if (this.executionMode) {
+            const doneTagMatch = content.match(/\[DONE:(\d+)\]/)
+            if (doneTagMatch) {
+              const doneIndex = parseInt(doneTagMatch[1], 10) - 1
+              if (doneIndex >= 0 && doneIndex < this.plan.length) {
+                this.plan[doneIndex].status = 'completed'
+              }
+            }
+            const hasCompletedAllSteps = this.plan.every((step) => step.status === 'completed')
+            if (hasCompletedAllSteps) {
+              this.executionMode = false
+              this.plan = []
+            } else {
+              // 返回下一步作为新的 payload，让 workflow 继续执行
+              const firstPendingStep = this.plan.find((step) => step.status !== 'completed')
+              if (firstPendingStep) {
+                firstPendingStep.status = 'pending'
+                return { input: firstPendingStep.description }
+              }
             }
           }
-          const hasCompletedAllSteps = this.plan.every((step) => step.status === 'completed')
-          if (hasCompletedAllSteps) {
-            this.executionMode = false
-            this.plan = []
-          } else {
-            // 返回下一步作为新的 payload，让 workflow 继续执行
-            const firstPendingStep = this.plan.find((step) => step.status !== 'completed')
-            if (firstPendingStep) {
-              firstPendingStep.status = 'pending'
-              return { input: firstPendingStep.description }
-            }
-          }
-        }
+        },
       },
-    },
-  ]
-
+    ]
+  }
   registerTools(workflowRuntimeContext: WorkflowRuntimeContext): Tool[] {
     // only read level tools
     const grep = new Grep(workflowRuntimeContext)

@@ -1,12 +1,13 @@
 import type { Tool } from '@vide/ai'
 import { WorkflowStream } from '../event/stream'
 import { Workflow, WorkflowRuntimeContext } from '../workflow'
+import type { WorkflowPlugin } from '../plugin'
 
 export abstract class SubAgent {
   abstract name: string
   abstract prompt: string
   abstract description: string
-
+  abstract plugins: WorkflowPlugin[]
   constructor(
     public rootSessionConfig: {
       sessionId: string
@@ -32,6 +33,7 @@ export abstract class SubAgent {
       sessionId: this.rootSessionConfig.sessionId,
       getAutoApprove: () => this.rootSessionConfig.getAutoApprove(),
       stream,
+      plugins: this.plugins ?? [],
     })
 
     const workflow = new Workflow(workflowRuntimeContext, () =>

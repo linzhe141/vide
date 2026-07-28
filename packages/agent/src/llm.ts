@@ -111,12 +111,17 @@ async function buildChatMessages(
   const skillsChatMessage = await buildSkillsChatMessage()
   const userMemoryChatMessage = await buildUserMemoryChatMessage()
   // console.log(skillsChatMessage)
-  const chatMessages: ChatMessage[] = [
-    {
+  function getSystemMessages() {
+    const defaultSystemMessage: ChatMessage = {
       role: 'system',
       content: AgentSystemPrompt,
-    },
-  ]
+    }
+    if (messages.find((msg) => msg.role === 'system')) {
+      return messages.filter((msg) => msg.role === 'system')
+    }
+    return [defaultSystemMessage]
+  }
+  const chatMessages: ChatMessage[] = [...getSystemMessages()]
   if (workspace) {
     chatMessages.push({
       role: 'system',

@@ -23,7 +23,7 @@ export class CallSubAgent extends ToolProvider {
     }
 
     const plannerAgent = new PlannerAgent(subAgentsConfig)
-    this.runtime.plugins.push(...plannerAgent.plugins)
+    this.runtime.plugins.push(...plannerAgent.injectMainWorkflowPlugins())
     this.subAgents = [plannerAgent]
   }
 
@@ -39,7 +39,8 @@ export class CallSubAgent extends ToolProvider {
       description: `Call a sub-agent to handle specific tasks. Available sub-agents:
 ${this.subAgentDescription}
 
-Use this tool to delegate tasks to specialized agents.`,
+Use this tool to delegate tasks to specialized agents.
+if task has access to files, provide the file paths in the context parameter. do not provide the file content directly, as the sub-agent will read the files itself.`,
       parameters: {
         type: 'object',
         properties: {
@@ -53,7 +54,8 @@ Use this tool to delegate tasks to specialized agents.`,
           },
           context: {
             type: 'object',
-            description: 'Additional context data for the sub-agent',
+            description:
+              'Additional context data for the sub-agent, Example: { "file1": "path/to/file" }',
             additionalProperties: true,
           },
         },
