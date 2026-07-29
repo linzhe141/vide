@@ -15,7 +15,6 @@ type SessionEventContext = {
   sessionId?: string
   session?: Session
   currentBranch?: SessionBranch
-  planner?: Session['planner'][number]
   event: WorkflowState
 
   // operates
@@ -40,9 +39,6 @@ export function createSessionEventContext(
     : undefined
   // const workflowId = 'ctx' in event.data ? event.data.ctx.workflowId : undefined
 
-  const plannerId = 'plannerId' in event.data ? event.data.plannerId : undefined
-  const planner = session?.planner.find((p) => p.id === plannerId)
-
   function getWorkflow() {
     if (!session) return undefined
     const mainWorkflowId = event.data.ctx.mainWorkflowId || event.data.ctx.workflowId
@@ -63,7 +59,6 @@ export function createSessionEventContext(
     sessionId,
     session,
     currentBranch,
-    planner,
     event,
 
     // operates

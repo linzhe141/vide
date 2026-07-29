@@ -12,6 +12,19 @@ import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 
 export type { FileNode, SessionRowDto, WorkflowData }
 
+export type PlannerTodosUpdatedData = {
+  ctx: {
+    sessionId: string
+    workflowId: string
+    namespace?: string
+    mainWorkflowId?: string
+  }
+  planner: {
+    id: string
+    plan: PlanStep[]
+  }
+}
+
 export interface RenderChannel {
   // electron store
   'get-settings-store': () => Settings
@@ -143,4 +156,5 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
+  'planner-todos-updated': (data: PlannerTodosUpdatedData) => void
 } & WorkflowIPCEvents

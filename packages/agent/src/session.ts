@@ -113,6 +113,7 @@ export class Session {
     }
     this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
     const workflow = new Workflow(workflowRuntimeContext)
+    workflowRuntimeContext.workflow = workflow
     return {
       workflowCommitNode,
       workflow,

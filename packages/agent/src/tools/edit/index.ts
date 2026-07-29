@@ -20,15 +20,30 @@ export class Edit extends ToolProvider {
     type: 'function',
     function: {
       name: EDIT_TOOL_NAMES.SEARCH_REPLACE,
-      description: `
-  Search for text in a file using regular expression and replace all matches.
-  
-  The oldText is treated as a regular expression pattern with the 'g' flag.
-  All matches will be replaced with newText.
-  
-  The path can be either absolute or relative.
-  Returns a unified diff showing the changes made.
-  `,
+      description: `Search for text using a regular expression pattern and replace all matches in a file.
+Use this for pattern-based search-and-replace operations on **single-line text**.
+
+### How it works:
+- Uses the provided \`oldText\` as a regular expression pattern with the \`g\` (global) flag
+- Replaces **all matches** found with \`newText\`
+- Works best for single-line patterns
+- Returns a unified diff showing the changes made
+
+### Key characteristics:
+- Supports regex pattern matching
+- Global replacement across the entire file
+- Good for bulk changes that follow a pattern
+
+### ✅ When to use:
+- Bulk replacing text patterns across multiple lines (single-line matches)
+- Pattern-based refactoring (e.g., changing naming conventions)
+- Quick search-and-replace operations where regex is useful
+
+### ❌ When NOT to use:
+- Multi-line search/replace → use \`edit-file\`
+- Exact literal replacement when you don't need regex → use \`edit-file\`
+- Replacing large blocks of code → use \`edit-file\` or \`write-file\`
+`,
       parameters: {
         type: 'object',
         properties: {
@@ -124,18 +139,32 @@ export class Edit extends ToolProvider {
     type: 'function',
     function: {
       name: EDIT_TOOL_NAMES.EDIT_FILE,
-      description: `
-  Apply one or more exact text replacements to a file.
-  
-  Each edit replaces all occurrences of oldText with newText in the file. 
-  All edits are matched against the original file content (not incrementally). 
-  The text must match exactly including all whitespace, indentation, and newlines.
+      description: `Apply **targeted, localized edits** to specific sections of a file.
+Use this for making focused changes to existing code while preserving most of the file content.
 
-  Multiple edits must not overlap - if they do, merge them into one edit instead.
+### How it works:
+- Each edit replaces **all exact occurrences** of \`oldText\` with \`newText\`
+- All edits are applied against the **original file content** (not incrementally)
+- \`oldText\` must match **exactly**, including all whitespace, indentation, and line endings
+- Returns a unified diff showing all changes made
 
-  The path can be either absolute or relative.
-  Returns a unified diff showing the changes made.
-  `,
+### Key characteristics:
+- Changes are **localized** (not rewriting the entire file)
+- Multiple non-overlapping edits can be applied in one operation
+- Preserves git history better than full rewrite for small changes
+
+### ✅ When to use:
+- Refactoring specific function bodies
+- Fixing a bug in a localized section
+- Renaming variables/functions across multiple occurrences
+- Updating imports or configuration values
+- Day-to-day incremental code modifications
+
+### ❌ When NOT to use:
+- Creating a completely new file → use \`write-file\`
+- Rewriting the entire file → use \`write-file\`
+- Extensive changes with large overlapping sections → split into multiple edits or use \`write-file\`
+`,
       parameters: {
         type: 'object',
         properties: {

@@ -8,4 +8,7 @@ export interface WorkflowPlugin {
     content: string,
     runtime: WorkflowRuntimeContext
   ) => Promise<StepPayload | void>
+  afterCallSubAgent?: (content: string, runtime: WorkflowRuntimeContext) => Promise<string | void>
+  beforeAIStart?: (runtime: WorkflowRuntimeContext) => Promise<string | void>
+  afterAIEnd?: (assistantMessage: string, runtime: WorkflowRuntimeContext) => Promise<string | void>
 }

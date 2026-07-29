@@ -23,6 +23,7 @@ export class CallSubAgent extends ToolProvider {
     }
 
     const plannerAgent = new PlannerAgent(subAgentsConfig)
+    // inject main workflow plugins into the runtime
     this.runtime.plugins.push(...plannerAgent.injectMainWorkflowPlugins())
     this.subAgents = [plannerAgent]
   }
@@ -85,7 +86,10 @@ if task has access to files, provide the file paths in the context parameter. do
             result = event.data.content
           }
         }
-
+        const afterCallSubAgentHooksResult = await this.runtime.runAfterCallSubAgentHooks(result)
+        if (afterCallSubAgentHooksResult !== undefined) {
+          result = afterCallSubAgentHooksResult
+        }
         console.log(`Sub-agent "${agentName}" completed with result:`, result)
         return {
           reason: 'call-llm',

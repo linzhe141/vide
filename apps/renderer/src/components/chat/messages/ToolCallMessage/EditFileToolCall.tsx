@@ -152,7 +152,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Error
                 </div>
-                <pre className='rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
                   {typeof result.error === 'string'
                     ? result.error
                     : JSON.stringify(result.error, null, 2)}
@@ -307,7 +307,7 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Error
                 </div>
-                <pre className='rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
                   {typeof result.error === 'string'
                     ? result.error
                     : JSON.stringify(result.error, null, 2)}

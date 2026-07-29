@@ -3,6 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
 import type { Workflow, Session, SessionBranch } from './types'
+import type { PlannerTodosUpdatedData } from '@vide/main/ipcRenderer'
 
 type TreeNode = {
   workflow: Workflow
@@ -17,6 +18,7 @@ type SessionState = {
 type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
+    upsertPlanner: (data: PlannerTodosUpdatedData) => void
     buildFromDatabase: (data: Session) => void
     changeToolCallStatus: (data: {
       sessionId: string
@@ -77,6 +79,24 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       handleEvent(event) {
         set((state) => {
           handleWorkflowEvent(state, event)
+        })
+      },
+      upsertPlanner(data) {
+        set((state) => {
+          const session = state.sessions.find((item) => item.sessionId === data.ctx.sessionId)
+          if (!session) return
+
+          const plannerId = data.planner.id
+          const existingPlanner = session.planner.find((item) => item.id === plannerId)
+          if (existingPlanner) {
+            existingPlanner.plan = data.planner.plan
+            return
+          }
+
+          session.planner.push({
+            id: plannerId,
+            plan: data.planner.plan,
+          })
         })
       },
       buildFromDatabase(data) {

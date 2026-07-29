@@ -145,17 +145,17 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
                   Output
                 </div>
                 {bashResult?.stdout && (
-                  <pre className='bg-foreground/[0.04] text-text-secondary overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+                  <pre className='bg-foreground/[0.04] text-text-secondary overflow-auto overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
                     {bashResult.stdout}
                   </pre>
                 )}
                 {bashResult?.stderr && (
-                  <pre className='rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
                     {bashResult.stderr}
                   </pre>
                 )}
                 {result?.error !== undefined && (
-                  <pre className='rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
                     {JSON.stringify(result.error, null, 2)}
                   </pre>
                 )}

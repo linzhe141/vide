@@ -130,7 +130,8 @@ export class Workflow {
         return this.stateInput(payload as UserInputStepPayload)
       }
       case 'CALL_LLM': {
-        return this.stateCallLLM(payload as CallLLMStepPayload)
+        await this.runtime.runBeforeAIStart()
+        return this.stateCallLLM({ messages: this.runtime.buildAgentMessages() })
       }
       case 'CALL_TOOLS': {
         return this.stateCallTools(payload as CallToolsStepPayload)
@@ -242,6 +243,11 @@ export class Workflow {
 
     if (this.runtime.signal.aborted) {
       throw new AbortError()
+    }
+
+    const afterAIEndResult = await this.runtime.runAfterAIEnd(result.content)
+    if (afterAIEndResult !== undefined) {
+      result.content = afterAIEndResult
     }
     this.runtime.emit({ eventName: 'workflow-llm-end' })
     return result
@@ -485,6 +491,7 @@ export class WorkflowRuntimeContext {
     this.workflowMessages = new WorkflowMessages()
     this.getAutoApprove = options.getAutoApprove
     this.stream = options.stream
+    // 一个是session 级别的 所有messages， 一个是workflow 级别的 messages: 用于 sub-agent 运行时的 messages
     this.buildAgentMessages =
       options.buildAgentMessages ?? (() => this.workflowMessages.getMessages())
     this.plugins = options.plugins ?? []
@@ -501,6 +508,17 @@ export class WorkflowRuntimeContext {
       event.data = { ctx: this.workflowEventCtx }
     }
     this.stream.push(event)
+  }
+
+  emitCustom<T extends { eventName: string; data: Record<string, unknown> }>(data: T) {
+    const event = {
+      eventName: data.eventName,
+      data: {
+        ...data.data,
+        ctx: this.workflowEventCtx,
+      },
+    }
+    this.stream.push(event as any)
   }
   async runBeforeWorkflowStartHooks(input: string) {
     const newInputMessages: UserChatMessage = {
@@ -522,6 +540,34 @@ export class WorkflowRuntimeContext {
     let lastResult: StepPayload | undefined = undefined
     for (const plugin of this.plugins) {
       const result = await plugin.beforeWorkflowFinish?.(content, this)
+      if (result) {
+        lastResult = result
+      }
+    }
+    return lastResult
+  }
+
+  async runAfterCallSubAgentHooks(content: string): Promise<string | void> {
+    let lastResult: string | void = undefined
+    for (const plugin of this.plugins) {
+      const result = await plugin.afterCallSubAgent?.(content, this)
+      if (result) {
+        lastResult = result
+      }
+    }
+    return lastResult
+  }
+
+  async runBeforeAIStart(): Promise<void> {
+    for (const plugin of this.plugins) {
+      await plugin.beforeAIStart?.(this)
+    }
+  }
+
+  async runAfterAIEnd(assistantMessage: string): Promise<string | void> {
+    let lastResult: string | void = undefined
+    for (const plugin of this.plugins) {
+      const result = await plugin.afterAIEnd?.(assistantMessage, this)
       if (result) {
         lastResult = result
       }

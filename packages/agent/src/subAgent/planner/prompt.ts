@@ -31,10 +31,8 @@ You are a planning specialist. You receive a **complex task** and must produce a
 
 ---
 
-## Final Output Summary Format (after calling ${PLANNER_TOOL_NAMES.SUBMIT_PLAN}), Your plan must follow this structure:
-
-### Example Output Summary Format
-1. Step one – [specific action] – [key output or criteria]
-2. Step two – [specific action] – [key output or criteria]
-3. ...
+## Final Output  (after calling ${PLANNER_TOOL_NAMES.SUBMIT_PLAN})
+Do not provide any additional commentary or explanation. Only return the following:
+### Example output:
+I have completed the analysis and planning of the task.
 `
