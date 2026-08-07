@@ -8,7 +8,6 @@ import {
   processLLMStream as processStream,
 } from '@vide/ai'
 import { AgentSystemPrompt } from '../prompt/system'
-import { AbortError } from '../error'
 
 type FnCallAI = (data: {
   ai: AI
@@ -26,50 +25,35 @@ type FnCallAI = (data: {
     onTextEnd?: (content: string) => void
 
     onToolCallsStart?: () => void
-    onToolCallName?: (data: { id: string; name: string }) => void
-    onToolCallArguments?: (data: { id: string; arguments: string }) => void
     onToolCallsEnd?: (toolCalls: ToolCall[]) => void
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 
 export const callAI: FnCallAI = async function ({ ai, model, messages, tools, signal, events }) {
-  try {
-    console.log('singal in processLLMStream', signal)
-    let content = ''
-    let toolCalls: ToolCall[] = []
+  let content = ''
+  let toolCalls: ToolCall[] = []
 
-    const stream = ai.chat.completions.create(
-      {
-        messages,
-        model: model,
-        stream: true,
-        tools,
-        reasoning_effort: 'medium',
-      },
-      { signal }
-    )
+  const stream = ai.chat.completions.create(
+    {
+      messages,
+      model: model,
+      stream: true,
+      tools,
+      reasoning_effort: 'medium',
+    },
+    { signal }
+  )
 
-    for await (const chunk of processStream(stream as any, events)) {
-      if ('content' in chunk && chunk.content) {
-        content = chunk.content
-      }
-
-      if ('tool_calls' in chunk && chunk.tool_calls) {
-        toolCalls = chunk.tool_calls
-      }
+  for await (const chunk of processStream(stream as any, events)) {
+    if ('content' in chunk && chunk.content) {
+      content = chunk.content
     }
-    return { content, toolCalls }
-  } catch (error: any) {
-    console.error('Error in processLLMStream:', error)
-    if (error.name === 'AbortError') {
-      console.error('Stream was aborted by user')
-      // 统一抛出 AbortError，方便上层捕获和处理
-      throw new AbortError()
+
+    if ('tool_calls' in chunk && chunk.tool_calls) {
+      toolCalls = chunk.tool_calls
     }
-    console.error('Error in processLLMStream:', error)
-    // 其他错误继续往上抛
-    throw error
   }
+  return { content, toolCalls }
 }
 
 function isChatMessage(msg: AgentMessage): msg is ChatMessage {
@@ -86,7 +70,7 @@ export function buildAIMessages(messages: AgentMessage[]) {
   return [defaultSystemMessage, ...messages.filter(isChatMessage)]
 }
 
-interface ModelConfig {
+export interface ModelConfig {
   name: string
   baseURL: string
   apiKey: string

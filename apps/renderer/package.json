@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
+    "@lobehub/ui": "^5.29.0",
     "@shikijs/core": "^4.2.0",
     "@shikijs/langs": "^4.2.0",
     "clsx": "^2.1.1",

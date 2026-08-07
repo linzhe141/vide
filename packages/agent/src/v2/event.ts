@@ -5,14 +5,23 @@ export interface WorkflowStartEvent {
   input: string
 }
 
-export interface WorkflowStartEvent {
-  type: 'workflow.start'
-  input: string
-}
-
 export interface WorkflowCompletedEvent {
   type: 'workflow.completed'
   result: string
+}
+
+export interface WorkflowInterruptedEvent {
+  type: 'workflow.interrupted'
+}
+
+export interface WorkflowStepStartEvent {
+  type: 'workflow.step.start'
+  payload: unknown | undefined
+}
+
+export interface WorkflowStepEndEvent {
+  type: 'workflow.step.end'
+  result: unknown | undefined
 }
 
 export interface WorkflowLLMStartEvent {
@@ -47,8 +56,12 @@ export interface WorkflowLLMTextEndEvent {
   content: string
 }
 
-export interface WorkflowLLMToolCallEvent {
-  type: 'workflow.llm.tool.call'
+export interface WorkflowLLMToolCallProcessEvent {
+  type: 'workflow.llm.tool.call.process'
+}
+
+export interface WorkflowLLMToolCallEndEvent {
+  type: 'workflow.llm.tool.call.end'
   toolCall: ToolCall[]
 }
 
@@ -58,7 +71,7 @@ export interface WorkflowLLMEndEvent {
 
 export interface WorkflowLLMResultEvent {
   type: 'workflow.llm.result'
-  assistantChatMessage: AssistantChatMessage
+  result: AssistantChatMessage
 }
 
 export interface WorkflowLLMErrorEvent {
@@ -94,7 +107,10 @@ export interface WorkflowToolCallErrorEvent {
 
 export type WorkflowEvent =
   | WorkflowStartEvent
+  | WorkflowStepStartEvent
+  | WorkflowStepEndEvent
   | WorkflowCompletedEvent
+  | WorkflowInterruptedEvent
   | WorkflowLLMStartEvent
   | WorkflowLLMReasonStartEvent
   | WorkflowLLMReasonDeltaEvent
@@ -102,7 +118,8 @@ export type WorkflowEvent =
   | WorkflowLLMTextStartEvent
   | WorkflowLLMTextDeltaEvent
   | WorkflowLLMTextEndEvent
-  | WorkflowLLMToolCallEvent
+  | WorkflowLLMToolCallProcessEvent
+  | WorkflowLLMToolCallEndEvent
   | WorkflowLLMEndEvent
   | WorkflowLLMResultEvent
   | WorkflowLLMErrorEvent
