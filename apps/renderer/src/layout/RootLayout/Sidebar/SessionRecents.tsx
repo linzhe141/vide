@@ -2,20 +2,16 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { GitBranch, LoaderCircle } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
-import { useSessionStore, useSessionStoreActions } from '@/store/sessionStore'
+import { useSessionStore } from '@/store/sessionStore'
 
 export function SessionRecents() {
   const sessions = useSessionStore((state) => state.sessions)
-  const { mergeSessionsList } = useSessionStoreActions()
   const sortedSessions = useMemo(
     () => [...sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
     [sessions]
   )
 
-  const fetchChats = useCallback(async () => {
-    const result = await window.ipcRendererApi.invoke('get-sessions-list')
-    mergeSessionsList(result)
-  }, [mergeSessionsList])
+  const fetchChats = useCallback(async () => {}, [])
 
   useEffect(() => {
     fetchChats()
@@ -23,11 +19,8 @@ export function SessionRecents() {
 
   useEffect(() => {
     const disposers = [
-      window.ipcRendererApi.on('workflow-llm-start', () => {
+      window.ipcRendererApi.on('workflow.llm.start', () => {
         setTimeout(fetchChats, 250)
-      }),
-      window.ipcRendererApi.on('agent-session-forked', () => {
-        setTimeout(fetchChats, 50)
       }),
     ]
 

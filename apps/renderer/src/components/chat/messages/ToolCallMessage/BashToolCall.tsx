@@ -1,5 +1,5 @@
 ﻿import type { ToolCall } from '@vide/ai'
-import type { Workflow, ToolResultSessionMessage } from '@/store/sessionStore/types'
+import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
 import {
   Check,
   CheckCircle2,
@@ -18,8 +18,8 @@ import { useSessionStoreActions } from '@/store/sessionStore'
 
 type BashToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
-  originToolCalls: ToolCall[]
+  result?: ToolCallState['result']
+  originToolCalls: ToolCallSessionMessage['toolCalls']
   workflow: Workflow
 }
 
@@ -48,7 +48,7 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
     | undefined
 
   const humanApproveToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    const originIndex = originToolCalls.findIndex((t) => t.toolCall.id === tool.id)
     changeToolCallStatus({
       sessionId,
       workflowId: workflow.id,
@@ -60,13 +60,13 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
       workflowId: workflow.id,
       payload: {
         index: originIndex,
-        toolCalls: originToolCalls,
+        toolCalls: originToolCalls.map((item) => item.toolCall),
       },
     })
   }
 
   const humanRejectToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.id === tool.id)
+    const originIndex = originToolCalls.findIndex((t) => t.toolCall.id === tool.id)
     changeToolCallStatus({
       sessionId,
       workflowId: workflow.id,
@@ -78,7 +78,7 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
       workflowId: workflow.id,
       payload: {
         index: originIndex,
-        toolCalls: originToolCalls,
+        toolCalls: originToolCalls.map((item) => item.toolCall),
       },
     })
   }

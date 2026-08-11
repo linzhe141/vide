@@ -1,7 +1,10 @@
-﻿import { workflowEventNames, type WorkflowEventWithCtx } from '@vide/agent/event'
+﻿import { workflowV2EventNames, type WorkflowEvent } from '@vide/agent/event'
+
+type WorkflowEventWithCtx = WorkflowEvent & {
+  ctx: { sessionId: string | null; workflowId: string | null }
+}
 
 export type WorkflowState = WorkflowEventWithCtx
-
 export function createWorkflowStream(abortSignal: AbortSignal) {
   let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
   let currentSessionId: string | null = null
@@ -13,19 +16,15 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   const stream = new ReadableStream({
     start(controller) {
       abortSignal.addEventListener('abort', () => {
-        if (currentSessionId && currentWorkflowId) {
-          window.ipcRendererApi.invoke('agent-workflow-abort', {
-            sessionId: currentSessionId,
-            workflowId: currentWorkflowId,
-          })
-        }
+        controller.close()
+        cleanUp()
       })
 
-      workflowEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
+      workflowV2EventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: WorkflowEventWithCtx) => {
+          console.log('workflow event received', eventName, data)
           if (
-            eventName === 'workflow-start' &&
-            data.ctx.namespace === undefined &&
+            data.type === 'workflow.start' &&
             currentSessionId === null &&
             currentWorkflowId === null
           ) {
@@ -33,16 +32,14 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             currentWorkflowId = data.ctx.workflowId
           }
           if (currentSessionId === data.ctx.sessionId) {
-            console.log(eventName, data)
-            controller.enqueue({ eventName, data })
+            controller.enqueue(data)
           }
 
           if (
             currentSessionId === data.ctx.sessionId &&
-            data.ctx.namespace === undefined &&
-            (eventName === 'workflow-error' ||
-              eventName === 'workflow-aborted' ||
-              eventName === 'workflow-finished')
+            (data.type === 'workflow.llm.error' ||
+              data.type === 'workflow.completed' ||
+              data.type === 'workflow.interrupted')
           ) {
             controller.close()
             cleanUp()
@@ -71,33 +68,26 @@ export function resumeWorkflowStream(
   const stream = new ReadableStream({
     start(controller) {
       abortSignal.addEventListener('abort', () => {
-        if (sessionId && workflowId) {
-          window.ipcRendererApi.invoke('agent-workflow-abort', {
-            sessionId: sessionId,
-            workflowId: workflowId,
-          })
-        }
+        controller.close()
+        cleanUp()
       })
 
-      workflowEventNames.forEach((eventName) => {
-        const remove = window.ipcRendererApi.on(eventName, (data: any) => {
-          if (
-            eventName === 'workflow-start' &&
-            data.ctx.namespace === undefined &&
-            sessionId === null &&
-            workflowId === null
-          ) {
+      workflowV2EventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: WorkflowEventWithCtx) => {
+          if (data.type === 'workflow.start' && sessionId === null && workflowId === null) {
+            if (!data.ctx.sessionId || !data.ctx.workflowId) return
             sessionId = data.ctx.sessionId
             workflowId = data.ctx.workflowId
           }
           if (sessionId === data.ctx.sessionId) {
-            controller.enqueue({ eventName, data })
+            controller.enqueue(data)
           }
 
           if (
             sessionId === data.ctx.sessionId &&
-            data.ctx.namespace === undefined &&
-            (eventName === 'workflow-error' || eventName === 'workflow-aborted')
+            (data.type === 'workflow.llm.error' ||
+              data.type === 'workflow.completed' ||
+              data.type === 'workflow.interrupted')
           ) {
             controller.close()
             cleanUp()

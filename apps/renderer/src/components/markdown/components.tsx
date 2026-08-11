@@ -6,6 +6,7 @@ import { useChatLayout } from '@/layout/ChatLayout'
 export function A({ ...props }: PropsWithChildren) {
   const { showWebSearchResults } = useChatLayout()
 
+  // TODO 如果这里有多次的 web search 结果，无法定位属于哪一个
   // 把 [number](url) 有单独的样式
   const isWebSearchLink = /^\d+$/.test(props.children as string)
   if (isWebSearchLink) {

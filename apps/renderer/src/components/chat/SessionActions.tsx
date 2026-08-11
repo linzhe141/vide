@@ -3,7 +3,6 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  GitBranch,
   RefreshCcw,
   Sparkles,
   ThumbsDown,
@@ -12,22 +11,15 @@ import {
 import { useChatContext } from './ChatProvider'
 import { useSession, useSessionStoreActions, useWorkflowBranches } from '../../store/sessionStore'
 import { type Workflow } from '../../store/sessionStore/types'
-import { useNavigate } from 'react-router'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '@/ui/Button'
 
 export function SessionActions({ workflow }: { workflow: Workflow }) {
-  const { handleFork, handleRegenerate, sessionId } = useChatContext()
+  const { handleRegenerate, sessionId } = useChatContext()
   const { setWorkflowFeedback } = useSessionStoreActions()
-  const navigate = useNavigate()
   const [memoryQueued, setMemoryQueued] = useState(false)
   const [dislikeOpen, setDislikeOpen] = useState(false)
   const [dislikeReason, setDislikeReason] = useState('')
-
-  async function onClickFork() {
-    const nextSessionId = await handleFork(workflow.id)
-    navigate(`/chat/${nextSessionId}`)
-  }
 
   function onClickRegenerate() {
     const regenerateBranchName = createBranchPayload({
@@ -69,15 +61,6 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
     <div className='space-y-3'>
       <div className='space-y-3'>
         <div className='flex flex-wrap items-center gap-2'>
-          <button
-            type='button'
-            onClick={onClickFork}
-            className='border-foreground/10 bg-foreground/3 hover:bg-foreground/6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
-          >
-            <GitBranch size={13} />
-            Fork here
-          </button>
-
           <button
             type='button'
             onClick={onClickRegenerate}

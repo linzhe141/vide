@@ -12,8 +12,8 @@
       "types": "./src/types.ts"
     },
     "./event": {
-      "import": "./src/event/channels.ts",
-      "types": "./src/event/channels.ts"
+      "import": "./src/v2/event.ts",
+      "types": "./src/v2/event.ts"
     }
   },
   "dependencies": {

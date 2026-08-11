@@ -9,12 +9,11 @@ import React, {
   type PropsWithChildren,
 } from 'react'
 import { cn } from '../../lib/utils'
-import { useSessionWorkflows, useSessionPlanners, useSession } from '../../store/sessionStore'
+import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
-import { ArrowDown, ChevronDown, ChevronUp, FileText, GitBranch, ListChecks } from 'lucide-react'
+import { ArrowDown, FileText, GitBranch } from 'lucide-react'
 import { ArtifactsDisplay } from './ArtifactsDisplay'
-import { Planner, PlannersDisplay } from './PlannersDisplay'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
 import { useNavigate } from 'react-router'
 import { WebSearchDisplay } from './WebSearchDisplay'
@@ -24,8 +23,8 @@ interface ChatLayoutContextType {
   scrollToBottom: () => void
   open: boolean
   moving: boolean
-  type: 'Artifacts' | 'Planners' | 'WebSearch'
-  togglePane: (next: 'Artifacts' | 'Planners' | 'WebSearch') => void
+  type: 'Artifacts' | 'WebSearch'
+  togglePane: (next: 'Artifacts' | 'WebSearch') => void
   showWebSearchResults: () => void
   closePane?: () => void
 }
@@ -40,7 +39,7 @@ export function useChatLayout() {
 export function ChatLayoutProvider({ children }: PropsWithChildren) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<'Artifacts' | 'Planners' | 'WebSearch'>('Artifacts')
+  const [type, setType] = useState<'Artifacts' | 'WebSearch'>('Artifacts')
   const [moving, setMoving] = useState(false)
 
   const scrollToBottom = useCallback(() => {
@@ -55,7 +54,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
   }, [])
 
   const togglePane = useCallback(
-    (next: 'Artifacts' | 'Planners' | 'WebSearch') => {
+    (next: 'Artifacts' | 'WebSearch') => {
       startMoving()
 
       if (!open) {
@@ -112,13 +111,6 @@ export function ChatLayout({ children }: PropsWithChildren) {
         <div className='flex min-w-[550px] flex-1 flex-col'>
           {/* header */}
           <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
-            <ListChecks
-              size={14}
-              className={cn({
-                'text-primary': open && type === 'Planners',
-              })}
-              onClick={() => togglePane('Planners')}
-            />
             <FileText
               size={14}
               className={cn({
@@ -136,7 +128,6 @@ export function ChatLayout({ children }: PropsWithChildren) {
           className={cn('overflow-hidden transition-[width] duration-200', {
             'w-0': !open,
             'w-[1000px] border-l': open && type === 'Artifacts',
-            'w-[600px] border-l': open && type === 'Planners',
             'w-[520px] border-l': open && type === 'WebSearch',
           })}
         >
@@ -145,9 +136,6 @@ export function ChatLayout({ children }: PropsWithChildren) {
               sessionId={sessionId}
               className={cn({ 'whitespace-nowrap': moving })}
             />
-          )}
-          {type === 'Planners' && (
-            <PlannersDisplay className={cn({ 'whitespace-nowrap': moving })} />
           )}
           {type === 'WebSearch' && (
             <WebSearchDisplay className={cn({ 'whitespace-nowrap': moving })} />
@@ -226,65 +214,8 @@ export function ChatLayoutInput({
   children,
   className,
 }: PropsWithChildren<{ className?: string }>) {
-  const { sessionId } = useChatContext()
-  const planners = useSessionPlanners(sessionId)
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  // const pendingPlanner = planners?.[0] // for test
-  const pendingPlanner = planners?.find((i) => i.plan.some((i) => i.status !== 'completed'))
-
-  const todos =
-    pendingPlanner || planners?.filter((i) => i.plan.every((i) => i.status === 'completed'))?.pop() // pop() 获取最后一个
   return (
     <div className={cn('relative mx-auto w-full max-w-[920px]', className)}>
-      {todos && (
-        <div className='absolute bottom-full left-0 z-10 w-full'>
-          <div className='flex justify-center'>
-            <div
-              className={cn(
-                'border-border bg-background/80 w-9/10 rounded-xl rounded-b-none border border-b-0 transition-all duration-200',
-                !isExpanded && 'rounded-xl rounded-b-none'
-              )}
-            >
-              {/* Header with toggle */}
-              <div
-                className='flex items-center justify-between px-4 py-2'
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                <div className='text-muted-foreground flex items-center gap-2 text-xs font-medium'>
-                  <span>Tasks</span>
-                  <span className='bg-border/50 rounded-full px-1.5 py-0.5 text-[10px]'>
-                    {todos.plan.filter((i) => i.status !== 'completed').length}
-                  </span>
-                </div>
-                <button
-                  className='text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md p-1 transition-colors'
-                  aria-label={isExpanded ? 'Collapse tasks' : 'Expand tasks'}
-                >
-                  {isExpanded ? (
-                    <ChevronUp className='h-4 w-4' />
-                  ) : (
-                    <ChevronDown className='h-4 w-4' />
-                  )}
-                </button>
-              </div>
-
-              {/* Collapsible content */}
-              <div
-                className={cn(
-                  'overflow-hidden transition-all duration-200 ease-in-out',
-                  isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                )}
-              >
-                <div className='border-border border-t px-4 py-3'>
-                  <Planner planner={todos} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {children}
 
       <p className='text-text-info my-2 text-center text-xs'>

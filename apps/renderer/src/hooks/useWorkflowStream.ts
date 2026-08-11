@@ -5,13 +5,10 @@ import { useSessionStoreActions } from '../store/sessionStore'
 export function useWorkflowStream() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader | null>(null)
-  const plannerEventCleanupRef = useRef<(() => void) | null>(null)
   const [running, setRunning] = useState(false)
-  const { handleEvent, upsertPlanner } = useSessionStoreActions()
+  const { handleEvent } = useSessionStoreActions()
 
   const cleanup = () => {
-    plannerEventCleanupRef.current?.()
-    plannerEventCleanupRef.current = null
     readerRef.current?.cancel().catch(() => {})
     readerRef.current = null
     abortControllerRef.current = null
@@ -26,9 +23,6 @@ export function useWorkflowStream() {
       const stream = createWorkflowStream(abortController.signal)
       const reader = stream.getReader()
       readerRef.current = reader
-      plannerEventCleanupRef.current = window.ipcRendererApi.on('planner-todos-updated', (data) => {
-        upsertPlanner(data)
-      })
 
       try {
         window.ipcRendererApi.invoke('agent-session-send', {
@@ -51,7 +45,7 @@ export function useWorkflowStream() {
         cleanup()
       }
     },
-    [handleEvent, upsertPlanner]
+    [handleEvent]
   )
 
   const resumeRunningWorkflow = useCallback(
@@ -63,9 +57,6 @@ export function useWorkflowStream() {
       const stream = resumeWorkflowStream(sessionId, workflowId, abortController.signal)
       const reader = stream.getReader()
       readerRef.current = reader
-      plannerEventCleanupRef.current = window.ipcRendererApi.on('planner-todos-updated', (data) => {
-        upsertPlanner(data)
-      })
 
       try {
         window.ipcRendererApi.invoke('resume-running-workflow', {
@@ -88,7 +79,7 @@ export function useWorkflowStream() {
         cleanup()
       }
     },
-    [handleEvent, upsertPlanner]
+    [handleEvent]
   )
 
   const abort = useCallback(async () => {

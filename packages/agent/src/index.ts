@@ -3,6 +3,8 @@ export * from './session'
 export * from './workspace'
 export * from './tools/skill'
 export * from './plugin'
+export type { WorkflowEvent } from './v2/event'
+export { workflowV2EventNames } from './v2/event'
 export { createLLMClient, updateUserMemory } from './llm'
 export { createGenerateImageClient } from './image'
 

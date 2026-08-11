@@ -1,5 +1,5 @@
 import type { ToolCall } from '@vide/ai'
-import type { ToolResultSessionMessage } from '@/store/sessionStore/types'
+import type { ToolCallState } from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -17,7 +17,7 @@ import { CodeBlock } from '@/components/codeblock'
 
 type SearchReplaceToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 
 export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallProps) {
@@ -168,7 +168,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
 
 type EditFileToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 
 export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {

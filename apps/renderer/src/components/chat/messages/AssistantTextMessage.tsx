@@ -1,7 +1,6 @@
 import type {
   AssistantTextSessionMessage,
   ToolCallSessionMessage,
-  ToolResultSessionMessage,
 } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
@@ -16,16 +15,13 @@ export function AssistantTextMessage({
   message: AssistantTextSessionMessage
 }) {
   const webSearchToolMessage = workflow.messages.find(
-    (t) => t.role === 'tool-call' && t.toolCalls.find((c) => c.function.name === 'websearch')
+    (t) =>
+      t.role === 'tool-call' && t.toolCalls.find((c) => c.toolCall.function.name === 'websearch')
   )
-  const webSearchToolId = (webSearchToolMessage as ToolCallSessionMessage)?.toolCalls.find(
-    (c) => c.function.name === 'websearch'
-  )?.id
-
-  const webSearchToolResultMessage = workflow.messages.find(
-    (t) => t.role === 'tool-result' && t.toolCallId === webSearchToolId
-  ) as ToolResultSessionMessage | undefined
-  const webSearchToolResult = webSearchToolResultMessage?.result as WebSearchResult | undefined
+  const webSearchCallState = (
+    webSearchToolMessage as ToolCallSessionMessage | undefined
+  )?.toolCalls.find((c) => c.toolCall.function.name === 'websearch')
+  const webSearchToolResult = webSearchCallState?.result?.result as WebSearchResult | undefined
 
   const webSearchResults = webSearchToolResult?.results ?? []
 

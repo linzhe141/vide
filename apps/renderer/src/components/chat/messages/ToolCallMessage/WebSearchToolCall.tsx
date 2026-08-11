@@ -1,5 +1,5 @@
 import type { ToolCall } from '@vide/ai'
-import type { ToolResultSessionMessage } from '@/store/sessionStore/types'
+import type { ToolCallState } from '@/store/sessionStore/types'
 import { CheckCircle2, Clock3, Ellipsis, Search, XCircle } from 'lucide-react'
 import { cn, getSiteIcon } from '@/lib/utils'
 import { useChatLayout } from '@/layout/ChatLayout'
@@ -7,15 +7,16 @@ import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearc
 
 type WebSearchToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 
 function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
+  debugger
   const { select } = useWebSearchStoreActions()
   const { showWebSearchResults } = useChatLayout()
   const args = parseToolArguments(tool.function.arguments)
   const query = typeof args?.query === 'string' ? args.query : tool.function.arguments
-  const searchResult = result?.result as WebSearchResult | undefined
+  const searchResult = result?.result.result as WebSearchResult | undefined
   const results = searchResult?.results ?? []
   const isRunning = !result
   const isSuccess = result?.status === 'success'

@@ -1,14 +1,11 @@
 ﻿import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import type { Workflow } from '@/store/sessionStore/types'
+import type { ToolCallState } from '@/store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
-import { findToolResult } from '.'
 import { CodeBlock } from '../../../codeblock'
-function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: ToolCall }) {
+function ImageToolCall({ tool, result }: { tool: ToolCall; result?: ToolCallState['result'] }) {
   const [imageLoaded, setImageLoaded] = useState(false)
-
-  const result = findToolResult(workflow, toolCall.id)
   const isRunning = !result
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)

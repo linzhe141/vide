@@ -7,7 +7,7 @@ import type {
   WorkflowData,
   WebSearchConfig,
 } from '@vide/config'
-import type { WorkflowIPCEvents } from '@vide/agent/event'
+import type { WorkflowEvent } from '@vide/agent'
 import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 
 export type { FileNode, SessionRowDto, WorkflowData }
@@ -58,22 +58,6 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { sessionId: string; input: string }) => void
-  'agent-session-fork': (data: { sessionId: string; targetWorkflowId: string }) => Promise<{
-    sessionId: string
-    sessionType: 'normal' | 'fork'
-    origin: { sessionId: string; workflowId: string | null } | null
-    activeBranch: string
-    branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
-    planner: { id: string; plan: PlanStep[] }[]
-    workflowData: WorkflowData[]
-    artifacts: {
-      id: string
-      sessionId: string
-      artifactWorkspaceName: string
-      createdAt: number
-      updatedAt: number
-    }[]
-  }>
   'agent-workflow-regenerate': (data: {
     sessionId: string
     targetWorkflowId: string
@@ -90,7 +74,6 @@ export interface RenderChannel {
     workflowId: string
     payload: WaitHumanApprovePayload
   }) => void
-  'agent-workflow-abort': (data: { sessionId: string; workflowId: string }) => void
   'agent-update-user-memory': (data: {
     sessionId: string
     workflowId: string
@@ -157,4 +140,10 @@ export interface RenderChannel {
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
   'planner-todos-updated': (data: PlannerTodosUpdatedData) => void
-} & WorkflowIPCEvents
+} & {
+  [K in WorkflowEvent['type']]: (
+    data: Extract<WorkflowEvent, { type: K }> & {
+      ctx: { sessionId: string | null; workflowId: string | null }
+    }
+  ) => void
+}

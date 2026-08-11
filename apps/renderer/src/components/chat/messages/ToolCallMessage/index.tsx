@@ -1,8 +1,4 @@
-﻿import type {
-  Workflow,
-  ToolCallSessionMessage,
-  ToolResultSessionMessage,
-} from '@/store/sessionStore/types'
+﻿import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -26,14 +22,14 @@ type ToolCallViewProps = {
 }
 
 export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
-  const visibleTools = message.toolCalls.filter(shouldShowToolCall)
-  console.log('visibleToofdasfdasfasls', visibleTools, message.toolCalls)
+  const visibleTools = message.toolCalls.filter((item) => shouldShowToolCall(item.toolCall))
   if (!visibleTools.length) return null
   return (
     <div className='space-y-3'>
-      {visibleTools.map((tool) => {
+      {visibleTools.map((state) => {
+        const tool = state.toolCall
         if (tool.function.name === 'generate-image') {
-          return <ImageToolCall key={tool.id} workflow={workflow} toolCall={tool} />
+          return <ImageToolCall key={tool.id} tool={tool} result={state.result} />
         }
 
         if (tool.function.name === 'execute-bash-command') {
@@ -41,7 +37,7 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
             <BashToolCall
               key={tool.id}
               tool={tool}
-              result={findToolResult(workflow, tool.id)}
+              result={state.result}
               originToolCalls={message.toolCalls}
               workflow={workflow}
             />
@@ -49,41 +45,21 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
         }
 
         if (tool.function.name === 'websearch') {
-          return (
-            <WebSearchToolCall
-              key={tool.id}
-              tool={tool}
-              result={findToolResult(workflow, tool.id)}
-            />
-          )
+          return <WebSearchToolCall key={tool.id} tool={tool} result={state.result} />
         }
 
         if (tool.function.name === 'search-replace') {
-          return (
-            <SearchReplaceToolCall
-              key={tool.id}
-              tool={tool}
-              result={findToolResult(workflow, tool.id)}
-            />
-          )
+          return <SearchReplaceToolCall key={tool.id} tool={tool} result={state.result} />
         }
 
         if (tool.function.name === 'call-sub-agent') {
-          return <SubAgentToolCall key={tool.id} workflow={workflow} toolCall={tool} />
+          return <SubAgentToolCall key={tool.id} workflow={workflow} toolCallState={state} />
         }
 
         if (tool.function.name === 'edit-file') {
-          return (
-            <EditFileToolCall
-              key={tool.id}
-              tool={tool}
-              result={findToolResult(workflow, tool.id)}
-            />
-          )
+          return <EditFileToolCall key={tool.id} tool={tool} result={state.result} />
         }
-        return (
-          <ToolCallButton key={tool.id} tool={tool} result={findToolResult(workflow, tool.id)} />
-        )
+        return <ToolCallButton key={tool.id} tool={tool} result={state.result} />
       })}
     </div>
   )
@@ -101,7 +77,7 @@ function shouldShowToolCall(tool: ToolCall) {
 
 type ToolCallButtonProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   const [open, setOpen] = useState(false)
@@ -192,16 +168,4 @@ function formatDuration(durationMs?: number) {
   if (seconds < 10) return `${seconds.toFixed(1)}s`
 
   return `${Math.round(seconds)}s`
-}
-
-export function findToolResult(
-  workflow: Workflow,
-  toolCallId: string
-): ToolResultSessionMessage | undefined {
-  return [...workflow.messages]
-    .reverse()
-    .find(
-      (message): message is ToolResultSessionMessage =>
-        message.role === 'tool-result' && message.toolCallId === toolCallId
-    )
 }

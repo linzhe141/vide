@@ -3,6 +3,7 @@ import { WorkflowStream } from './stream'
 import { Workflow, type StepPayload, type StopReason } from './workflow'
 import { v4 as uuid } from 'uuid'
 import { Time } from '../tools/time'
+import { WebSearch } from '../tools/websearch'
 
 export type SessionType = 'normal' | 'fork'
 
@@ -34,6 +35,7 @@ export class Session {
   // workflow graph context
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
+  sessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
   // workflowMap: Map<string, Workflow> = new Map()
 
   // 这里可以存放 等待 human approve 的workflow
@@ -70,7 +72,7 @@ export class Session {
     const workflow = new Workflow({
       model: this.model,
       sessionId: this.id,
-      tools: [...new Time({} as any).getTools()],
+      tools: [...new Time({} as any).getTools(), ...new WebSearch({} as any).getTools()],
       stream,
       getAutoApprove: () => this._autoApprove,
       getSessionAgentMessages: () => this.buildAgentMessages(),
@@ -80,8 +82,9 @@ export class Session {
     stream.workflowId = workflow.id
 
     const workflowCommitNode = this.commitWorkflow(workflow)
+    this.sessionWorkflowNodes[workflow.id] = workflowCommitNode
 
-    workflow.runLoop({ state: 'INPUT', input }).then((stopReason) => {
+    workflow.run(input).then((stopReason) => {
       this.processWorkflowStopReason(stopReason, workflowCommitNode)
     })
 
@@ -135,7 +138,7 @@ export class Session {
     return workflowCommitNode
   }
 
-  createBranch(branchName: string, source: SessionWorkflowNode) {
+  createBranch(branchName: string, source: SessionWorkflowNode | null) {
     if (this.branchs[branchName]) {
       console.error(`Branch ${branchName} already exists`)
       return

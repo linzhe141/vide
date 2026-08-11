@@ -1,4 +1,4 @@
-import { FolderOpen, LoaderCircle, Send, Square, X, Zap } from 'lucide-react'
+import { FolderOpen, LoaderCircle, Send, X, Zap } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '../../../ui/Textarea'
 import { Button } from '../../../ui/Button'
@@ -6,7 +6,6 @@ import { Button } from '../../../ui/Button'
 export const ChatInput = memo(function ChatInput({
   running,
   onSend,
-  onAbort,
   workspacePath,
   onSelectWorkspace,
   onClearWorkspace,
@@ -15,7 +14,6 @@ export const ChatInput = memo(function ChatInput({
 }: {
   running: boolean
   onSend: (input: string) => void
-  onAbort?: () => void
   workspacePath?: string | null
   onSelectWorkspace?: () => void
   onClearWorkspace?: () => void
@@ -105,29 +103,18 @@ export const ChatInput = memo(function ChatInput({
             <Zap className='size-4' />
             <span>Auto approve</span>
           </button>
-          {running && onAbort ? (
-            <Button
-              onClick={onAbort}
-              className='flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-red-600'
-              title='Abort workflow'
-            >
-              <Square className='size-4 fill-current' />
-              <span>Abort</span>
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!input.trim() || running}
-              className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
-            >
-              {running ? (
-                <LoaderCircle className='size-5 animate-spin' />
-              ) : (
-                <Send className='size-5' />
-              )}
-              <span>Send</span>
-            </Button>
-          )}
+          <Button
+            onClick={handleSubmit}
+            disabled={!input.trim() || running}
+            className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
+          >
+            {running ? (
+              <LoaderCircle className='size-5 animate-spin' />
+            ) : (
+              <Send className='size-5' />
+            )}
+            <span>Send</span>
+          </Button>
         </div>
       </div>
     </div>

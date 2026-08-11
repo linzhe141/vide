@@ -23,13 +23,10 @@ export interface AssistantTextSessionMessage {
 export interface ToolCallSessionMessage {
   id: string
   role: 'tool-call'
-  toolCalls: ToolCall[]
+  toolCalls: ToolCallState[]
 }
 
-export interface ToolResultSessionMessage {
-  id: string
-  role: 'tool-result'
-  toolCallId: string
+export interface ToolCallResult {
   status: 'success' | 'error'
   result?: any
   error?: any
@@ -38,15 +35,9 @@ export interface ToolResultSessionMessage {
   durationMs?: number
 }
 
-export interface AskUserSessionMessage {
-  id: string
-  role: 'ask-user'
-  completed: boolean
-  submitValue: string[]
-  title: string
-  description: string
-  type: 'single' | 'multiple'
-  options: { label: string; value: string; description: string }[]
+export interface ToolCallState {
+  toolCall: ToolCall
+  result?: ToolCallResult
 }
 
 export interface ErrorSessionMessage {
@@ -65,8 +56,6 @@ export type SessionMessage =
   | AssistantReasonSessionMessage
   | AssistantTextSessionMessage
   | ToolCallSessionMessage
-  | ToolResultSessionMessage
-  | AskUserSessionMessage
   | ErrorSessionMessage
   | WorkflowSessionMessage
 
@@ -92,11 +81,6 @@ export type PlanStep = {
   id: string
   description: string
   status: 'pending' | 'running' | 'completed' | 'failed'
-}
-
-export type SessionPlanner = {
-  id: string
-  plan: PlanStep[]
 }
 
 export type SessionArtifact = {
@@ -138,6 +122,5 @@ export type Session = {
   branches: SessionBranch[]
   workflowNodesMap: Record<string, WorkflowNode>
   runtime: SessionRuntime
-  planner: SessionPlanner[]
   artifacts: SessionArtifact[]
 }

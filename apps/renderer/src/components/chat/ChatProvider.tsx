@@ -4,9 +4,7 @@ import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionSt
 
 interface ChatContextType {
   handleSend: (input: string) => Promise<void>
-  handleFork: (targetWorkflowId: string) => Promise<string>
   handleRegenerate: (regenerateWorkflowId: string, branchName: string, input: string) => void
-  handleAbort: () => Promise<void>
   running: boolean
   sessionId: string
 }
@@ -14,7 +12,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
-  const { send, abort } = useWorkflowStream()
+  const { send } = useWorkflowStream()
   const sessionRuntime = useSessionRuntime(sessionId)!
   const { regenerateWorkflow } = useSessionStoreActions()
 
@@ -24,17 +22,6 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
       await send(sessionId, input)
     },
     [send, sessionId, sessionRuntime]
-  )
-
-  const handleFork = useCallback(
-    async (targetWorkflowId: string) => {
-      const nextSession = await window.ipcRendererApi.invoke('agent-session-fork', {
-        sessionId,
-        targetWorkflowId,
-      })
-      return nextSession.sessionId
-    },
-    [sessionId]
   )
 
   const handleRegenerate = useCallback(
@@ -54,12 +41,10 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
     () => ({
       running: !!sessionRuntime?.running,
       handleSend,
-      handleFork,
       handleRegenerate,
-      handleAbort: abort,
       sessionId,
     }),
-    [abort, handleFork, handleSend, handleRegenerate, sessionId, sessionRuntime]
+    [handleSend, handleRegenerate, sessionId, sessionRuntime]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

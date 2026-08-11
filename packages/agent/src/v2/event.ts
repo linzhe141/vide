@@ -126,3 +126,26 @@ export type WorkflowEvent =
   | WorkflowToolCallStartEvent
   | WorkflowToolCallSuccessEvent
   | WorkflowToolCallErrorEvent
+
+export const workflowV2EventNames = [
+  'workflow.start',
+  'workflow.step.start',
+  'workflow.step.end',
+  'workflow.completed',
+  'workflow.interrupted',
+  'workflow.llm.start',
+  'workflow.llm.reason.start',
+  'workflow.llm.reason.delta',
+  'workflow.llm.reason.end',
+  'workflow.llm.text.start',
+  'workflow.llm.text.delta',
+  'workflow.llm.text.end',
+  'workflow.llm.tool.call.process',
+  'workflow.llm.tool.call.end',
+  'workflow.llm.end',
+  'workflow.llm.result',
+  'workflow.llm.error',
+  'workflow.tool.call.start',
+  'workflow.tool.call.success',
+  'workflow.tool.call.error',
+] as const satisfies readonly WorkflowEvent['type'][]

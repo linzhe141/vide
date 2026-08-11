@@ -160,7 +160,7 @@ export class Workflow {
       // Handle tool calls here
       // For simplicity, we just log them for now
       console.log('Tool calls:', toolCalls)
-      return { state: 'CALL_LLM' } // or another state based on your logic
+      return { state: 'CALL_TOOLS', toolCalls } // or another state based on your logic
     } else {
       return { state: 'COMPLETED', result: content }
     }
@@ -338,7 +338,7 @@ export class Workflow {
     this.messages.push({
       role: 'tool',
       tool_call_id: toolCall.id,
-      content: toolResult.result,
+      content: JSON.stringify(toolResult.result),
     })
 
     this.stream.push({

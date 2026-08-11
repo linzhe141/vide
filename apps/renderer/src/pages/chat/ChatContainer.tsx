@@ -11,7 +11,7 @@ import {
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 
 export function ChatContainer() {
-  const { handleSend, running, sessionId, handleAbort } = useChatContext()
+  const { handleSend, running, sessionId } = useChatContext()
   const { scrollToBottom } = useChatLayout()
   const session = useSession(sessionId)
   const { switchSessionAutoApprove } = useSessionStoreActions()
@@ -40,14 +40,13 @@ export function ChatContainer() {
       <ChatLayoutMessage>
         <MessageList />
       </ChatLayoutMessage>
-      <ChatLayoutInput className='absolute bottom-5 left-1/2 -translate-x-1/2 z-10'>
+      <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
         <div className='px-10'>
           <ChatInput
             running={running}
             workspacePath={session.workspacePath}
             autoApprove={session.autoApprove}
             onSend={onSend}
-            onAbort={handleAbort}
             onChangeAutoApprove={onChangeAutoApprove}
           />
         </div>
