@@ -14,6 +14,15 @@ export interface WorkflowInterruptedEvent {
   type: 'workflow.interrupted'
 }
 
+export interface WorkflowAbortedEvent {
+  type: 'workflow.aborted'
+}
+
+export interface WorkflowErrorEvent {
+  type: 'workflow.error'
+  error: any
+}
+
 export interface WorkflowStepStartEvent {
   type: 'workflow.step.start'
   payload: unknown | undefined
@@ -111,6 +120,8 @@ export type WorkflowEvent =
   | WorkflowStepEndEvent
   | WorkflowCompletedEvent
   | WorkflowInterruptedEvent
+  | WorkflowAbortedEvent
+  | WorkflowErrorEvent
   | WorkflowLLMStartEvent
   | WorkflowLLMReasonStartEvent
   | WorkflowLLMReasonDeltaEvent
@@ -133,6 +144,8 @@ export const workflowV2EventNames = [
   'workflow.step.end',
   'workflow.completed',
   'workflow.interrupted',
+  'workflow.aborted',
+  'workflow.error',
   'workflow.llm.start',
   'workflow.llm.reason.start',
   'workflow.llm.reason.delta',

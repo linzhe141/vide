@@ -59,6 +59,15 @@ export function handleWorkflowEvent(
       return
     }
 
+    case 'workflow.aborted': {
+      session.runtime.running = false
+      const workflow = session.workflowNodesMap[workflowId]?.workflow
+      if (!workflow) return
+      workflow.runtime.status = 'aborted'
+      workflow.runtime.waitingHuman = false
+      return
+    }
+
     case 'workflow.llm.error': {
       session.runtime.running = false
       const workflow = session.workflowNodesMap[workflowId]?.workflow

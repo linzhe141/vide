@@ -85,6 +85,7 @@ export interface RenderChannel {
   }) => Promise<void>
   'agent-session-switch-auto-approve': (data: { sessionId: string; autoApprove: boolean }) => void
   'agent-session-switch-thinking-mode': (data: { sessionId: string; thinkingMode: boolean }) => void
+  'agent-session-abort': (data: { sessionId: string }) => void
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
   // session message

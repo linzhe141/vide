@@ -4,6 +4,7 @@ import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionSt
 
 interface ChatContextType {
   handleSend: (input: string) => Promise<void>
+  handleStop: () => void
   handleRegenerate: (regenerateWorkflowId: string, branchName: string, input: string) => void
   running: boolean
   sessionId: string
@@ -12,7 +13,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
-  const { send } = useWorkflowStream()
+  const { send, abort } = useWorkflowStream()
   const sessionRuntime = useSessionRuntime(sessionId)!
   const { regenerateWorkflow } = useSessionStoreActions()
 
@@ -23,6 +24,10 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
     },
     [send, sessionId, sessionRuntime]
   )
+
+  const handleStop = useCallback(() => {
+    abort()
+  }, [abort])
 
   const handleRegenerate = useCallback(
     async (regenerateWorkflowId: string, branchName: string, input: string) => {
@@ -41,10 +46,11 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
     () => ({
       running: !!sessionRuntime?.running,
       handleSend,
+      handleStop,
       handleRegenerate,
       sessionId,
     }),
-    [handleSend, handleRegenerate, sessionId, sessionRuntime]
+    [handleSend, handleStop, handleRegenerate, sessionId, sessionRuntime]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

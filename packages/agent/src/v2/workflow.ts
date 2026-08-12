@@ -78,6 +78,15 @@ export class Workflow {
     return this.context.stream.signal
   }
 
+  abort() {
+    this.context.stream.abort()
+    // 是否需要发送到llm，如果发送是否需要持久化，并且前端是不需要显示
+    this.messages.push({
+      role: 'user',
+      content: 'Workflow aborted by user',
+    })
+  }
+
   async run(input: string) {
     this.stream.push({ type: 'workflow.start', input })
     return await this.runLoop({ state: 'INPUT', input })
@@ -91,22 +100,38 @@ export class Workflow {
     this.stepPayload = initialPayload
     this.state = initialPayload.state
     while (true) {
-      this.stream.push({ type: 'workflow.step.start', payload: this.stepPayload })
-      const nextStep = await this.runStep()
-      this.stream.push({ type: 'workflow.step.end', result: nextStep })
-      if (nextStep.state === 'COMPLETED') {
-        this.stream.push({ type: 'workflow.completed', result: nextStep.result })
-        this.stream.end()
-        return 'completed'
-      } else if (nextStep.state === 'INTERRUPT') {
-        // Handle interrupt logic here
-        console.log('Workflow interrupted:', nextStep)
-        this.stream.push({ type: 'workflow.interrupted' })
-        // not end the stream here, because we might want to continue later
-        return 'interrupted'
-      } else {
-        this.stepPayload = nextStep
-        this.state = nextStep.state
+      try {
+        this.signal.throwIfAborted()
+        this.stream.push({ type: 'workflow.step.start', payload: this.stepPayload })
+        const nextStep = await this.runStep()
+        this.stream.push({ type: 'workflow.step.end', result: nextStep })
+        if (nextStep.state === 'COMPLETED') {
+          this.stream.push({ type: 'workflow.completed', result: nextStep.result })
+          this.stream.end()
+          return 'completed'
+        } else if (nextStep.state === 'INTERRUPT') {
+          // Handle interrupt logic here waiting for continuation
+          console.log('Workflow interrupted:', nextStep)
+          this.stream.push({ type: 'workflow.interrupted' })
+          // not end the stream here, because we might want to continue later
+          return 'interrupted'
+        } else {
+          this.stepPayload = nextStep
+          this.state = nextStep.state
+        }
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') {
+          this.stream.push({ type: 'workflow.aborted' })
+          this.stream.end()
+          return 'aborted'
+        } else {
+          this.stream.push({
+            type: 'workflow.error',
+            error: e instanceof Error ? e.message : String(e),
+          })
+          this.stream.end()
+          return 'error'
+        }
       }
     }
   }

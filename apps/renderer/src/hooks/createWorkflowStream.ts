@@ -16,8 +16,11 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
   const stream = new ReadableStream({
     start(controller) {
       abortSignal.addEventListener('abort', () => {
-        controller.close()
-        cleanUp()
+        if (currentSessionId) {
+          window.ipcRendererApi.invoke('agent-session-abort', {
+            sessionId: currentSessionId,
+          })
+        }
       })
 
       workflowV2EventNames.forEach((eventName) => {
@@ -37,9 +40,10 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
           if (
             currentSessionId === data.ctx.sessionId &&
-            (data.type === 'workflow.llm.error' ||
+            (data.type === 'workflow.error' ||
               data.type === 'workflow.completed' ||
-              data.type === 'workflow.interrupted')
+              data.type === 'workflow.interrupted' ||
+              data.type === 'workflow.aborted')
           ) {
             controller.close()
             cleanUp()
@@ -85,9 +89,10 @@ export function resumeWorkflowStream(
 
           if (
             sessionId === data.ctx.sessionId &&
-            (data.type === 'workflow.llm.error' ||
+            (data.type === 'workflow.error' ||
               data.type === 'workflow.completed' ||
-              data.type === 'workflow.interrupted')
+              data.type === 'workflow.interrupted' ||
+              data.type === 'workflow.aborted')
           ) {
             controller.close()
             cleanUp()

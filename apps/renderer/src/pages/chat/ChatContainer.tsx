@@ -15,7 +15,7 @@ import {
 } from '../../store/sessionStore'
 
 export function ChatContainer() {
-  const { handleSend, running, sessionId } = useChatContext()
+  const { handleSend, handleStop, running, sessionId } = useChatContext()
   const { scrollToBottom } = useChatLayout()
   const session = useSession(sessionId)
   const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
@@ -67,6 +67,7 @@ export function ChatContainer() {
               autoApprove={session.autoApprove}
               thinkingMode={session.thinkingMode}
               onSend={onSend}
+              onStop={handleStop}
               onChangeAutoApprove={onChangeAutoApprove}
               onChangeThinkingMode={onChangeThinkingMode}
             />

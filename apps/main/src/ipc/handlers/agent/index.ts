@@ -71,6 +71,11 @@ export class AgentIpcMainService implements IpcMainService {
       session.thinkingMode = thinkingMode
     })
 
+    ipcMainApi.handle('agent-session-abort', async ({ sessionId }) => {
+      const session = await this.getSession(sessionId)
+      session.abort()
+    })
+
     // 在分支上切换到一个已经存在的工作流节点，重新生成后续的工作流
     //    a
     //   /

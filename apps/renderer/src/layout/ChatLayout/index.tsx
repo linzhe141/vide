@@ -172,7 +172,7 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
         ) : null}
         <div className='mx-auto max-w-[920px]'>{children}</div>
 
-        <div className='h-[500px]' ref={placeholderRef} />
+        <div className='h-[300px]' ref={placeholderRef} />
       </div>
 
       {workflows && (

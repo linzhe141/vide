@@ -9,17 +9,21 @@ export class WorkflowStream {
   sessionId: string | null = null
   workflowId: string | null = null
   signal: AbortSignal
+  private abortController = new AbortController()
   private controller!: ReadableStreamDefaultController<WorkflowEventContext>
   constructor() {
-    this.signal = new AbortController().signal
+    this.signal = this.abortController.signal
     this.stream = new ReadableStream<WorkflowEventContext>({
       start: (controller) => {
         this.controller = controller
       },
     })
-    this.signal.addEventListener('abort', () => {
-      this.controller.close()
-    })
+  }
+
+  // 触发中断：signal 会被传播到 LLM call，从而中断进行中的请求。
+  // 不在此处 close controller —— 由 workflow 在 push 终态事件后调用 end() 关闭，避免重复关闭。
+  abort() {
+    this.abortController.abort()
   }
 
   push(data: WorkflowEvent) {

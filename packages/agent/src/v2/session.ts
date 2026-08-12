@@ -106,6 +106,12 @@ export class Session {
     return stream
   }
 
+  // 中断当前分支上正在运行的 workflow
+  abort() {
+    const workflow = this.currentBranch?.head?.workflow
+    workflow?.abort()
+  }
+
   humanApprove(workflowId: string, continuePayload: StepPayload) {
     const workflowCommitNode = this.pendingSessionWorkflowNodes[workflowId]
     if (!workflowCommitNode) {

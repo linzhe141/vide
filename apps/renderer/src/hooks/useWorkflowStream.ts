@@ -83,9 +83,8 @@ export function useWorkflowStream() {
   )
 
   const abort = useCallback(async () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
+    abortControllerRef.current?.abort()
+    // 通知主进程真正中断 agent 的运行中的 workflow
   }, [])
 
   return {

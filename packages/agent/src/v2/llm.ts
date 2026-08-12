@@ -63,6 +63,7 @@ export const callAI: FnCallAI = async function ({
       toolCalls = chunk.tool_calls
     }
   }
+  signal.throwIfAborted()
   return { content, toolCalls }
 }
 
