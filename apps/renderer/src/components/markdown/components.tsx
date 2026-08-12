@@ -2,9 +2,11 @@ import type { PropsWithChildren } from 'react'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../codeblock'
 import { useChatLayout } from '@/layout/ChatLayout'
+import { useMarkdown } from './MarkdownProvider'
 
 export function A({ ...props }: PropsWithChildren) {
   const { showWebSearchResults } = useChatLayout()
+  const { onCitationClick } = useMarkdown()
 
   // TODO 如果这里有多次的 web search 结果，无法定位属于哪一个
   // 把 [number](url) 有单独的样式
@@ -13,7 +15,10 @@ export function A({ ...props }: PropsWithChildren) {
     return (
       <span
         className='bg-primary/20 mx-1 inline-block size-4 cursor-pointer rounded-full text-center text-[10px]'
-        onClick={showWebSearchResults}
+        onClick={() => {
+          onCitationClick?.()
+          showWebSearchResults()
+        }}
       >
         {props.children}
       </span>

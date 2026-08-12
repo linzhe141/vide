@@ -102,7 +102,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
 
 export function ChatLayout({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
-  const { open, type, moving, togglePane } = useChatLayout()
+  const { open, type, togglePane } = useChatLayout()
   return (
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
       <InitSession sessionId={sessionId} />
@@ -131,15 +131,8 @@ export function ChatLayout({ children }: PropsWithChildren) {
             'w-[520px] border-l': open && type === 'WebSearch',
           })}
         >
-          {type === 'Artifacts' && (
-            <ArtifactsDisplay
-              sessionId={sessionId}
-              className={cn({ 'whitespace-nowrap': moving })}
-            />
-          )}
-          {type === 'WebSearch' && (
-            <WebSearchDisplay className={cn({ 'whitespace-nowrap': moving })} />
-          )}
+          {type === 'Artifacts' && <ArtifactsDisplay sessionId={sessionId} />}
+          {type === 'WebSearch' && <WebSearchDisplay />}
         </div>
       </div>
     </div>

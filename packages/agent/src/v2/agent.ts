@@ -5,7 +5,11 @@ export class Agent {
     return {}
   }
 
-  createSession(data: { workspacePath: string | null; autoApprove: boolean }) {
+  createSession(data: {
+    workspacePath: string | null
+    autoApprove: boolean
+    thinkingMode: boolean
+  }) {
     const newSession = new Session()
     // 设置默认分支 main 的 head 和 source 为 null
     newSession.branchs[newSession.activeBranch] = { head: null, source: null }
@@ -13,6 +17,8 @@ export class Agent {
       newSession.workspacePath = data.workspacePath
     }
     newSession.autoApprove = data.autoApprove
+    newSession.thinkingMode = data.thinkingMode
+
     return newSession
   }
 }

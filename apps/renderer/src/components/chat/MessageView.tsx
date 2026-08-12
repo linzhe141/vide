@@ -3,6 +3,7 @@ import { UserInputMessage } from './messages/UserInputMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
 import { ToolCallMessage } from './messages/ToolCallMessage'
+import { AskUserQuestionMessage } from './messages/AskUserQuestionMessage'
 import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 
 export function MessageView({
@@ -25,9 +26,12 @@ export function MessageView({
     case 'tool-call':
       return <ToolCallMessage workflow={workflow} message={message} />
 
+    case 'ask-user-question':
+      return <AskUserQuestionMessage workflow={workflow} message={message} />
+
     case 'error':
       return (
-        <div className='rounded-[24px] border border-red-500/20 bg-red-500/6 px-4 py-3 text-sm text-red-600 dark:text-red-400'>
+        <div className='rounded-3xl border border-red-500/20 bg-red-500/6 px-4 py-3 text-sm text-red-600 dark:text-red-400'>
           <MarkdownRenderer animation={false}>
             {JSON.stringify(message.error, null, 2)}
           </MarkdownRenderer>

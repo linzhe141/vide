@@ -8,13 +8,18 @@ import {
   ChatLayoutMessage,
   useChatLayout,
 } from '../../layout/ChatLayout'
-import { useSession, useSessionStoreActions } from '../../store/sessionStore'
+import {
+  useHasPendingAskQuestion,
+  useSession,
+  useSessionStoreActions,
+} from '../../store/sessionStore'
 
 export function ChatContainer() {
   const { handleSend, running, sessionId } = useChatContext()
   const { scrollToBottom } = useChatLayout()
   const session = useSession(sessionId)
-  const { switchSessionAutoApprove } = useSessionStoreActions()
+  const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
+  const { switchSessionAutoApprove, switchSessionThinkingMode } = useSessionStoreActions()
   const onSend = useCallback(
     (text: string) => {
       handleSend(text)
@@ -34,23 +39,40 @@ export function ChatContainer() {
     },
     [session, switchSessionAutoApprove]
   )
+
+  const onChangeThinkingMode = useCallback(
+    (newValue: boolean) => {
+      if (!session) return
+      switchSessionThinkingMode(session.sessionId, newValue)
+      window.ipcRendererApi.invoke('agent-session-switch-thinking-mode', {
+        sessionId: session.sessionId,
+        thinkingMode: newValue,
+      })
+    },
+    [session, switchSessionThinkingMode]
+  )
+
   if (!session) return null
   return (
     <ChatLayout>
       <ChatLayoutMessage>
         <MessageList />
       </ChatLayoutMessage>
-      <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
-        <div className='px-10'>
-          <ChatInput
-            running={running}
-            workspacePath={session.workspacePath}
-            autoApprove={session.autoApprove}
-            onSend={onSend}
-            onChangeAutoApprove={onChangeAutoApprove}
-          />
-        </div>
-      </ChatLayoutInput>
+      {!hasPendingAskQuestion && (
+        <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
+          <div className='px-10'>
+            <ChatInput
+              running={running}
+              workspacePath={session.workspacePath}
+              autoApprove={session.autoApprove}
+              thinkingMode={session.thinkingMode}
+              onSend={onSend}
+              onChangeAutoApprove={onChangeAutoApprove}
+              onChangeThinkingMode={onChangeThinkingMode}
+            />
+          </div>
+        </ChatLayoutInput>
+      )}
     </ChatLayout>
   )
 }

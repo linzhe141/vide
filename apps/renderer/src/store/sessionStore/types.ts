@@ -40,6 +40,24 @@ export interface ToolCallState {
   result?: ToolCallResult
 }
 
+export type AskQuestionOption = {
+  label: string
+  value: string
+}
+
+export interface AskUserQuestionSessionMessage {
+  id: string
+  role: 'ask-user-question'
+  toolCallId: string
+  title: string
+  description?: string
+  options: AskQuestionOption[]
+  answer: {
+    selected: string
+    other?: string
+  } | null
+}
+
 export interface ErrorSessionMessage {
   id: string
   role: 'error'
@@ -56,6 +74,7 @@ export type SessionMessage =
   | AssistantReasonSessionMessage
   | AssistantTextSessionMessage
   | ToolCallSessionMessage
+  | AskUserQuestionSessionMessage
   | ErrorSessionMessage
   | WorkflowSessionMessage
 
@@ -112,6 +131,7 @@ export type Session = {
   sessionId: string
   title?: string
   autoApprove: boolean
+  thinkingMode: boolean
   createdAt?: number
   updatedAt?: number
   hydrated: boolean

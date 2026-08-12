@@ -5,7 +5,7 @@ import { useChatLayout } from '.'
 
 export function WebSearchDisplay({ className }: { className?: string }) {
   const selected = useSelectedWebSearch()
-  const results = selected?.result.results ?? []
+  const results = selected?.result?.results ?? []
   const { closePane } = useChatLayout()
 
   return (
@@ -15,11 +15,13 @@ export function WebSearchDisplay({ className }: { className?: string }) {
           <Search size={15} strokeWidth={1.9} />
         </div>
         <div className='min-w-0 flex-1'>
-          <div className='text-foreground truncate text-sm font-medium'>{selected?.query}</div>
+          <div className='text-foreground truncate text-sm font-medium'>
+            {selected?.result.query}
+          </div>
           <div className='text-text-secondary mt-0.5 flex items-center gap-2 text-xs'>
             <span>{results.length} results</span>
-            {selected?.result.didYouMean && (
-              <span>Did you mean: {selected?.result.didYouMean}</span>
+            {selected?.result?.didYouMean && (
+              <span>Did you mean: {selected?.result?.didYouMean}</span>
             )}
           </div>
         </div>
@@ -46,7 +48,7 @@ export function WebSearchDisplay({ className }: { className?: string }) {
 
 function WebSearchResultCard({ item }: { item: WebSearchResultItem }) {
   const content = (
-    <div className='border-border bg-background hover:border-primary/30 hover:bg-primary/4 overflow-hidden rounded-xl border p-3 transition'>
+    <div className='border-border bg-background hover:border-primary/30 hover:bg-primary/4 overflow-hidden rounded-xl border p-3'>
       <div className='flex items-start gap-3'>
         <div className='rounded-lg border'>
           <img src={getSiteIcon(item.link)} alt='' className='size-4 rounded-sm' />

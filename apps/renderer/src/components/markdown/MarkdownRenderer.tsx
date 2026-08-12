@@ -34,7 +34,12 @@ export function MarkdownRenderer({
   children,
   className,
   animation,
-}: ReactMarkdownOptions & { className?: string; animation: boolean }) {
+  onCitationClick,
+}: ReactMarkdownOptions & {
+  className?: string
+  animation: boolean
+  onCitationClick?: () => void
+}) {
   /**
    * ✅ 避免每次 render 重新 tokenize markdown
    */
@@ -43,7 +48,7 @@ export function MarkdownRenderer({
   }, [children])
 
   return (
-    <MarkdownProvider animation={animation}>
+    <MarkdownProvider animation={animation} onCitationClick={onCitationClick}>
       <article
         className={cn(
           'article-wrapper prose dark:prose-invert prose-zinc prose-sm max-w-none',

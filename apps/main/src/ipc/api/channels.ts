@@ -39,6 +39,7 @@ export interface RenderChannel {
   'agent-create-session': (data: {
     workspacePath: string | null
     autoApprove: boolean
+    thinkingMode: boolean
   }) => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<{
     sessionType: 'normal' | 'fork'
@@ -83,6 +84,7 @@ export interface RenderChannel {
     }
   }) => Promise<void>
   'agent-session-switch-auto-approve': (data: { sessionId: string; autoApprove: boolean }) => void
+  'agent-session-switch-thinking-mode': (data: { sessionId: string; thinkingMode: boolean }) => void
   'ask-user-question-submit': (data: { submitValue: string[]; workflowId: string }) => void
 
   // session message

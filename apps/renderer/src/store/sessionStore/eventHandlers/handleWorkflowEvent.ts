@@ -5,6 +5,8 @@ import type {
   AssistantReasonSessionMessage,
   AssistantTextSessionMessage,
   ToolCallSessionMessage,
+  AskQuestionOption,
+  AskUserQuestionSessionMessage,
 } from '../types'
 import type { WorkflowState } from '../../../hooks/createWorkflowStream'
 
@@ -135,10 +137,40 @@ export function handleWorkflowEvent(
     case 'workflow.llm.tool.call.end': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+
+      const askQuestionToolCalls = workflowEvent.toolCall.filter(
+        (toolCall) => toolCall.function.name === 'ask-user-question-generate'
+      )
+      if (askQuestionToolCalls.length) {
+        for (const toolCall of askQuestionToolCalls) {
+          const args = parseToolArguments(toolCall.function.arguments)
+          const title = typeof args?.title === 'string' ? args.title.trim() : ''
+          const description = typeof args?.description === 'string' ? args.description.trim() : ''
+          const options = sanitizeAskQuestionOptions(args?.options)
+          if (!title || !options.length) continue
+
+          const askUserQuestionMessage: AskUserQuestionSessionMessage = {
+            id: nanoid(),
+            role: 'ask-user-question',
+            toolCallId: toolCall.id,
+            title,
+            description: description || undefined,
+            options,
+            answer: null,
+          }
+          workflow.messages.push(askUserQuestionMessage)
+        }
+      }
+
+      const normalToolCalls = workflowEvent.toolCall.filter(
+        (toolCall) => toolCall.function.name !== 'ask-user-question-generate'
+      )
+      if (!normalToolCalls.length) return
+
       const toolCallMessage: ToolCallSessionMessage = {
         id: nanoid(),
         role: 'tool-call',
-        toolCalls: workflowEvent.toolCall.map((toolCall) => ({ toolCall })),
+        toolCalls: normalToolCalls.map((toolCall) => ({ toolCall })),
       }
       workflow.messages.push(toolCallMessage)
       return
@@ -246,4 +278,35 @@ function findToolCallState(workflow: Workflow, toolCallId: string) {
     if (toolCallState) return toolCallState
   }
   return undefined
+}
+
+function parseToolArguments(argumentsText: string) {
+  try {
+    return JSON.parse(argumentsText) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function sanitizeAskQuestionOptions(options: unknown): AskQuestionOption[] {
+  if (!Array.isArray(options)) return []
+
+  const normalized = options
+    .slice(0, 3)
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null
+      const label =
+        typeof (item as { label?: unknown }).label === 'string'
+          ? (item as { label: string }).label.trim()
+          : ''
+      const value =
+        typeof (item as { value?: unknown }).value === 'string'
+          ? (item as { value: string }).value.trim()
+          : ''
+      if (!label || !value) return null
+      return { label, value }
+    })
+    .filter((item): item is AskQuestionOption => item !== null)
+
+  return normalized
 }

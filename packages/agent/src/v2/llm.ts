@@ -15,6 +15,7 @@ type FnCallAI = (data: {
   messages: ChatMessage[]
   tools: Tool[]
   signal: AbortSignal
+  thinkingMode: boolean
   events: {
     onReasoningStart?: () => void
     onReasoningDelta?: (chunk: { delta: string; content: string }) => void
@@ -29,17 +30,26 @@ type FnCallAI = (data: {
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 
-export const callAI: FnCallAI = async function ({ ai, model, messages, tools, signal, events }) {
+export const callAI: FnCallAI = async function ({
+  ai,
+  model,
+  messages,
+  tools,
+  signal,
+  events,
+  thinkingMode,
+}) {
   let content = ''
   let toolCalls: ToolCall[] = []
-
+  // @ts-expect-error ignore 类型错误
   const stream = ai.chat.completions.create(
     {
       messages,
       model: model,
       stream: true,
       tools,
-      reasoning_effort: 'medium',
+      reasoning_effort: thinkingMode ? 'medium' : 'none',
+      thinking: { type: thinkingMode ? 'enabled' : 'disabled' },
     },
     { signal }
   )

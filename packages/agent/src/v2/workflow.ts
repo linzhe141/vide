@@ -64,6 +64,7 @@ export class Workflow {
       sessionId: string
       tools: Tool[]
       stream: WorkflowStream
+      thinkingMode: boolean
       getSessionAgentMessages: () => AgentMessage[]
       getAutoApprove: () => boolean
     }
@@ -180,6 +181,7 @@ export class Workflow {
       messages: aiMessages,
       tools: this.context.tools,
       signal: this.signal,
+      thinkingMode: this.context.thinkingMode,
       events: {
         onReasoningStart: () => {
           this.stream.push({ type: 'workflow.llm.reason.start' })

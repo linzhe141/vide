@@ -56,13 +56,11 @@ export type PlanStep = {
 
 export type AskUserQuestionOption = {
   label: string
-  description: string
   value: string
 }
 
 export type AskUserQuestion = {
   title: string
-  description: string
-  type: 'single' | 'multiple'
+  description?: string
   options: AskUserQuestionOption[]
 }

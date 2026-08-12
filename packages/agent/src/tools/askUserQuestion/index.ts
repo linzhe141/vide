@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck refactor
 import type { AskUserQuestion } from '../../types'
 import { defineTool, ToolProvider } from '../toolProvider'
 
@@ -20,34 +18,27 @@ Create a complete user question and pause the workflow for user input.
       parameters: {
         type: 'object',
         properties: {
-          type: {
-            type: 'string',
-            enum: ['single', 'multiple'],
-          },
           title: { type: 'string' },
           description: { type: 'string' },
           options: {
             type: 'array',
+            minItems: 1,
+            maxItems: 3,
             items: {
               type: 'object',
               properties: {
                 label: { type: 'string' },
-                description: { type: 'string' },
                 value: { type: 'string' },
               },
-              required: ['label', 'value', 'description'],
+              required: ['label', 'value'],
             },
           },
         },
-        required: ['type', 'title', 'description', 'options'],
+        required: ['title', 'options'],
       },
     },
 
     executor: async (question: AskUserQuestion) => {
-      await this.emit({
-        eventName: 'ask-user',
-        data: { workflowId: this.runtime.workflowId, question },
-      })
       return {
         reason: 'stop',
         result: { question },

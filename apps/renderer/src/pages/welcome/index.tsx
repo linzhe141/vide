@@ -9,6 +9,7 @@ export function Welcome() {
   const { createSession } = useSessionStoreActions()
   const [workspacePath, setWorkspacePath] = useState<string | null>(null)
   const [autoApprove, setAutoApprove] = useState(false)
+  const [thinkingMode, setThinkingMode] = useState(false)
   const navigate = useNavigate()
   const handleSend = async (input: string) => {
     context.firstInput = input
@@ -16,8 +17,9 @@ export function Welcome() {
     const sessionId = await window.ipcRendererApi.invoke('agent-create-session', {
       workspacePath,
       autoApprove,
+      thinkingMode,
     })
-    createSession({ sessionId, workspacePath, autoApprove })
+    createSession({ sessionId, workspacePath, autoApprove, thinkingMode })
     navigate('/chat/' + sessionId)
   }
 
@@ -49,6 +51,8 @@ export function Welcome() {
           onClearWorkspace={() => setWorkspacePath(null)}
           autoApprove={autoApprove}
           onChangeAutoApprove={setAutoApprove}
+          thinkingMode={thinkingMode}
+          onChangeThinkingMode={setThinkingMode}
         />
 
         {/* 提示建议 */}

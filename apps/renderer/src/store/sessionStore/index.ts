@@ -3,7 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
 import type { WorkflowState } from '../../hooks/createWorkflowStream'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import type { Workflow, Session, SessionBranch } from './types'
+import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
 type SessionState = {
   sessions: Session[]
@@ -16,10 +16,18 @@ type ChangeToolCallStatusData = {
   newStatus: ToolCall['status']
 }
 
+type UpdateAskQuestionAnswerData = {
+  sessionId: string
+  workflowId: string
+  messageId: string
+  answer: AskUserQuestionSessionMessage['answer']
+}
+
 type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
     changeToolCallStatus: (data: ChangeToolCallStatusData) => void
+    updateAskQuestionAnswer: (data: UpdateAskQuestionAnswerData) => void
 
     clearSessions: () => void
 
@@ -30,8 +38,10 @@ type SessionActions = {
       origin?: Session['origin']
       workspacePath?: string | null
       autoApprove?: boolean
+      thinkingMode?: boolean
     }) => void
     switchSessionAutoApprove: (sessionId: string, newValue: boolean) => void
+    switchSessionThinkingMode: (sessionId: string, newValue: boolean) => void
     regenerateWorkflow: (data: {
       sessionId: string
       sourceWorkflowId: string
@@ -71,6 +81,20 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const targetToolCall = toolCallMessage.find((t) => t.id === toolCallId)
           if (!targetToolCall) return
           targetToolCall.status = newStatus
+        })
+      },
+      updateAskQuestionAnswer(data: UpdateAskQuestionAnswerData) {
+        set((state) => {
+          const { sessionId, workflowId, messageId, answer } = data
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          const workflowNode = session.workflowNodesMap[workflowId]
+          if (!workflowNode) return
+          const targetMessage = workflowNode.workflow.messages.find(
+            (message) => message.role === 'ask-user-question' && message.id === messageId
+          )
+          if (!targetMessage || targetMessage.role !== 'ask-user-question') return
+          targetMessage.answer = answer
         })
       },
       clearSessions() {
@@ -113,6 +137,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         origin = null,
         workspacePath = null,
         autoApprove = false,
+        thinkingMode = false,
       }) {
         set((state) => {
           const activeBranch = 'main'
@@ -126,6 +151,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             sessionType,
             origin,
             workspacePath,
+            thinkingMode,
             activeBranch,
             branches: [
               {
@@ -154,6 +180,13 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const session = state.sessions.find((item) => item.sessionId === sessionId)
           if (!session) return
           session.autoApprove = newValue
+        })
+      },
+      switchSessionThinkingMode(sessionId, newValue) {
+        set((state) => {
+          const session = state.sessions.find((item) => item.sessionId === sessionId)
+          if (!session) return
+          session.thinkingMode = newValue
         })
       },
       regenerateWorkflow({ sessionId, sourceWorkflowId, branchName }) {
@@ -311,3 +344,21 @@ export const useActiveBranchPath = (sessionId: string) => {
 
 export const useSessionRuntime = (sessionId: string) =>
   useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId)?.runtime)
+
+export const useHasPendingAskQuestion = (sessionId: string) =>
+  useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    if (!session) return false
+
+    const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+    if (!activeBranch?.headWorkflowId) return false
+
+    const headWorkflowNode = session.workflowNodesMap[activeBranch.headWorkflowId]
+    if (!headWorkflowNode) return false
+
+    const latestMessage = [...headWorkflowNode.workflow.messages]
+      .reverse()
+      .find((message) => message.role !== 'workflow')
+
+    return latestMessage?.role === 'ask-user-question' && latestMessage.answer === null
+  })

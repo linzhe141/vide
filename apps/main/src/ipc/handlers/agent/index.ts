@@ -21,6 +21,7 @@ export class AgentIpcMainService implements IpcMainService {
       const session = this.agent.createSession({
         workspacePath,
         autoApprove: data.autoApprove,
+        thinkingMode: data.thinkingMode,
       })
       session.setupModel({
         name: settingsStore.get('llmConfig').model,
@@ -63,6 +64,11 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
       const session = await this.getSession(sessionId)
       session.autoApprove = autoApprove
+    })
+
+    ipcMainApi.handle('agent-session-switch-thinking-mode', async ({ sessionId, thinkingMode }) => {
+      const session = await this.getSession(sessionId)
+      session.thinkingMode = thinkingMode
     })
 
     // 在分支上切换到一个已经存在的工作流节点，重新生成后续的工作流

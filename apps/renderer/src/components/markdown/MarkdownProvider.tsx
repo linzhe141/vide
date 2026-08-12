@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, type PropsWithChildren } from 'reac
 
 interface MarkdownContextValue {
   animation: boolean
+  onCitationClick?: () => void
 }
 
 const MarkdownContext = createContext<MarkdownContextValue | undefined>(undefined)
@@ -17,11 +18,12 @@ export const useMarkdown = () => {
 export const MarkdownProvider = ({
   children,
   animation,
-}: PropsWithChildren<{ animation: boolean }>) => {
+  onCitationClick,
+}: PropsWithChildren<{ animation: boolean; onCitationClick?: () => void }>) => {
   /**
    * ✅ 防止 context 触发子组件全部 render
    */
-  const value = useMemo(() => ({ animation }), [animation])
+  const value = useMemo(() => ({ animation, onCitationClick }), [animation, onCitationClick])
 
   return <MarkdownContext.Provider value={value}>{children}</MarkdownContext.Provider>
 }

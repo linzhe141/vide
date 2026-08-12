@@ -11,7 +11,6 @@ type WebSearchToolCallProps = {
 }
 
 function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
-  debugger
   const { select } = useWebSearchStoreActions()
   const { showWebSearchResults } = useChatLayout()
   const args = parseToolArguments(tool.function.arguments)
@@ -22,7 +21,6 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-
   const handleClick = () => {
     if (!isSuccess || !searchResult) return
 

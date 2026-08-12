@@ -3,6 +3,7 @@ import { WorkflowStream } from './stream'
 import { Workflow, type StepPayload, type StopReason } from './workflow'
 import { v4 as uuid } from 'uuid'
 import { Time } from '../tools/time'
+import { AskUserQuestionTool } from '../tools/askUserQuestion'
 import { WebSearch } from '../tools/websearch'
 
 export type SessionType = 'normal' | 'fork'
@@ -31,8 +32,10 @@ export class Session {
   // config context
   private _workspacePath: string | null = null
   private _autoApprove: boolean = false
+  private _thinkingMode: boolean = false
 
   // workflow graph context
+  sessionType: SessionType = 'normal'
   activeBranch = 'main'
   branchs: Record<string, SessionBranch> = {}
   sessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
@@ -59,6 +62,13 @@ export class Session {
     this._autoApprove = value
   }
 
+  get thinkingMode(): boolean {
+    return this._thinkingMode
+  }
+  set thinkingMode(value: boolean) {
+    this._thinkingMode = value
+  }
+
   setupModel(model: { name: string; baseURL: string; apiKey: string }) {
     this.model = model
   }
@@ -72,8 +82,13 @@ export class Session {
     const workflow = new Workflow({
       model: this.model,
       sessionId: this.id,
-      tools: [...new Time({} as any).getTools(), ...new WebSearch({} as any).getTools()],
+      tools: [
+        ...new Time({} as any).getTools(),
+        ...new WebSearch({} as any).getTools(),
+        ...new AskUserQuestionTool({} as any).getTools(),
+      ],
       stream,
+      thinkingMode: this.thinkingMode,
       getAutoApprove: () => this._autoApprove,
       getSessionAgentMessages: () => this.buildAgentMessages(),
     })

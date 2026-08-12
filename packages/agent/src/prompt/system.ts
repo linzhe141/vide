@@ -91,7 +91,7 @@ CRITICAL CITATION RULE:
 
 You MUST cite sources using numeric markers that reference the search results.
 
-Format: [数字] (e.g., [1], [2], [3])
+Format: [number] (e.g., [1], [2], [3]), Do not output the raw URLs or Markdown links from web search results.
 
 Rules for citations:
 

@@ -1,4 +1,4 @@
-import { FolderOpen, LoaderCircle, Send, X, Zap } from 'lucide-react'
+import { Aperture, FolderOpen, LoaderCircle, Send, X, Zap } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '../../../ui/Textarea'
 import { Button } from '../../../ui/Button'
@@ -11,6 +11,8 @@ export const ChatInput = memo(function ChatInput({
   onClearWorkspace,
   autoApprove,
   onChangeAutoApprove,
+  thinkingMode,
+  onChangeThinkingMode,
 }: {
   running: boolean
   onSend: (input: string) => void
@@ -19,6 +21,8 @@ export const ChatInput = memo(function ChatInput({
   onClearWorkspace?: () => void
   autoApprove: boolean
   onChangeAutoApprove: (value: boolean) => void
+  thinkingMode: boolean
+  onChangeThinkingMode: (value: boolean) => void
 }) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -90,6 +94,19 @@ export const ChatInput = memo(function ChatInput({
           )}
         </div>
         <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => onChangeThinkingMode?.(!thinkingMode)}
+            className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
+              thinkingMode
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-text-secondary hover:text-foreground'
+            }`}
+            title='Auto approve bash commands for this workflow'
+          >
+            <Aperture className='size-4' />
+            <span>Thinking Mode</span>
+          </button>
           <button
             type='button'
             onClick={() => onChangeAutoApprove?.(!autoApprove)}
