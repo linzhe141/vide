@@ -8,22 +8,8 @@ import type {
   WebSearchConfig,
 } from '@vide/config'
 import type { WorkflowEvent } from '@vide/agent'
-import type { PlanStep, WaitHumanApprovePayload } from '@vide/agent/types'
 
 export type { FileNode, SessionRowDto, WorkflowData }
-
-export type PlannerTodosUpdatedData = {
-  ctx: {
-    sessionId: string
-    workflowId: string
-    namespace?: string
-    mainWorkflowId?: string
-  }
-  planner: {
-    id: string
-    plan: PlanStep[]
-  }
-}
 
 export interface RenderChannel {
   // electron store
@@ -47,7 +33,6 @@ export interface RenderChannel {
     origin: { sessionId: string; workflowId: string | null } | null
     activeBranch: string
     branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
-    planner: { id: string; plan: PlanStep[] }[]
     workflowData: WorkflowData[]
     autoApprove: boolean
     artifacts: {
@@ -65,16 +50,8 @@ export interface RenderChannel {
     branchName: string
     input?: string
   }) => void
-  'agent-human-approved': (data: {
-    sessionId: string
-    workflowId: string
-    payload: WaitHumanApprovePayload
-  }) => void
-  'agent-human-rejected': (data: {
-    sessionId: string
-    workflowId: string
-    payload: WaitHumanApprovePayload
-  }) => void
+  'agent-human-approved': (data: { sessionId: string; workflowId: string }) => void
+  'agent-human-rejected': (data: { sessionId: string; workflowId: string }) => void
   'agent-update-user-memory': (data: {
     sessionId: string
     workflowId: string
@@ -142,8 +119,8 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
-  'planner-todos-updated': (data: PlannerTodosUpdatedData) => void
 } & {
+  // agent workflow stream events
   [K in WorkflowEvent['type']]: (
     data: Extract<WorkflowEvent, { type: K }> & {
       ctx: { sessionId: string | null; workflowId: string | null }

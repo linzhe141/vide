@@ -46,16 +46,15 @@ export function handleWorkflowEvent(
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
       workflow.runtime.status = 'finished'
-      workflow.runtime.waitingHuman = false
       return
     }
 
     case 'workflow.interrupted': {
-      session.runtime.running = false
+      // ui 还是保持 running 的状态， 但是 workflow 的状态是 interrupted
+      session.runtime.running = true
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
-      workflow.runtime.status = 'aborted'
-      workflow.runtime.waitingHuman = false
+      workflow.runtime.status = 'interrupted'
       return
     }
 
@@ -64,7 +63,7 @@ export function handleWorkflowEvent(
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
       workflow.runtime.status = 'aborted'
-      workflow.runtime.waitingHuman = false
+
       return
     }
 
@@ -73,7 +72,7 @@ export function handleWorkflowEvent(
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
       workflow.runtime.status = 'error'
-      workflow.runtime.waitingHuman = false
+
       workflow.messages.push({
         id: nanoid(),
         role: 'error',
@@ -188,14 +187,13 @@ export function handleWorkflowEvent(
     case 'workflow.tool.call.start': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
-      workflow.runtime.waitingHuman = workflowEvent.toolCall.toolName === 'execute-bash-command'
       return
     }
 
     case 'workflow.tool.call.success': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
-      workflow.runtime.waitingHuman = false
+
       const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
       if (!toolCallState) return
       toolCallState.result = {
@@ -211,7 +209,7 @@ export function handleWorkflowEvent(
     case 'workflow.tool.call.error': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
-      workflow.runtime.waitingHuman = false
+
       const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
       if (!toolCallState) return
       toolCallState.result = {
@@ -240,7 +238,6 @@ function createWorkflow(workflowId: string, input: string): Workflow {
     ],
     runtime: {
       status: 'running',
-      waitingHuman: false,
     },
   }
   return newWorkflow
@@ -301,7 +298,6 @@ function sanitizeAskQuestionOptions(options: unknown): AskQuestionOption[] {
   if (!Array.isArray(options)) return []
 
   const normalized = options
-    .slice(0, 3)
     .map((item) => {
       if (!item || typeof item !== 'object') return null
       const label =

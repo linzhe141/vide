@@ -25,6 +25,9 @@ Write a complete file in one operation.
   If your content is longer, you must split it into chunks and use the \`append-file\` tool multiple times,
   then the final result will be a complete file.
 - The path can be absolute or relative.
+
+${this.runtime.workspacePath ? `Workspace: ${this.runtime.workspacePath}` : 'No workspace path set'}
+
       `.trim(),
       parameters: {
         type: 'object',
@@ -97,6 +100,9 @@ Append a chunk of content to a file.
 - Use this tool to write a file in multiple calls when the total content is too large to fit in a single \`write-file\` call.
 - Each call appends the provided content to the end of the file. After all chunks have been appended, the file is complete.
 - It is recommended to keep each chunk under ~${MAX_WRITE_CONTENT_LENGTH} characters so that each tool call remains within safe limits.
+
+${this.runtime.workspacePath ? `Workspace: ${this.runtime.workspacePath}` : 'No workspace path set'}
+
       `.trim(),
       parameters: {
         type: 'object',

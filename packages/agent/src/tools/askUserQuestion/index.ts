@@ -1,4 +1,3 @@
-import type { AskUserQuestion } from '../../types'
 import { defineTool, ToolProvider } from '../toolProvider'
 
 export const ASK_USER_TOOL_NAMES = {
@@ -38,7 +37,7 @@ Create a complete user question and pause the workflow for user input.
       },
     },
 
-    executor: async (question: AskUserQuestion) => {
+    executor: async (question: any) => {
       return {
         reason: 'stop',
         result: { question },

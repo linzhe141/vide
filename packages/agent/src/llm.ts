@@ -1,51 +1,21 @@
-import { AgentSystemPrompt } from './prompt/system'
-import { buildSkillsChatMessage } from './tools/skill'
-import { AbortError } from './error'
 import {
-  buildUserMemoryChatMessage,
-  updateUserMemoryFromConversation,
-  type UserMemoryFeedback,
-} from './memory/userMemory'
-import {
-  type AI,
-  createLLMClient as createAIClient,
-  processLLMStream as processStream,
-  type Tool,
-  type ChatMessage,
-  type ToolCall,
   type AgentMessage,
+  type AI,
+  type ChatMessage,
+  type Tool,
+  type ToolCall,
+  createLLMClient,
+  processLLMStream as processStream,
 } from '@vide/ai'
-
-let model: string = null!
-export let llmClient: AI = null!
-
-export function createLLMClient(options: { apiKey: string; baseURL: string; model: string }) {
-  llmClient = createAIClient({
-    apiKey: options.apiKey,
-    baseURL: options.baseURL,
-  })
-  model = options.model
-}
-
-export function updateUserMemory(messages: ChatMessage[], feedback?: UserMemoryFeedback) {
-  const activeClient = llmClient
-  const activeModel = model
-  if (!activeClient || !activeModel) {
-    throw new Error('LLM client is not initialized. Please goto LLM Settings.')
-  }
-  return updateUserMemoryFromConversation({
-    messages,
-    llmClient: activeClient,
-    model: activeModel,
-    feedback,
-  })
-}
+import { AgentSystemPrompt } from './prompt/system'
 
 type FnCallAI = (data: {
-  messages: AgentMessage[]
+  ai: AI
+  model: string
+  messages: ChatMessage[]
   tools: Tool[]
   signal: AbortSignal
-  workspace: string | null
+  thinkingMode: boolean
   events: {
     onReasoningStart?: () => void
     onReasoningDelta?: (chunk: { delta: string; content: string }) => void
@@ -56,107 +26,67 @@ type FnCallAI = (data: {
     onTextEnd?: (content: string) => void
 
     onToolCallsStart?: () => void
-    onToolCallName?: (data: { id: string; name: string }) => void
-    onToolCallArguments?: (data: { id: string; arguments: string }) => void
     onToolCallsEnd?: (toolCalls: ToolCall[]) => void
   }
 }) => Promise<{ content: string; toolCalls: ToolCall[] }>
 
-export const callAI: FnCallAI = async function ({ messages, tools, signal, events, workspace }) {
-  try {
-    console.log('singal in processLLMStream', signal)
-    let content = ''
-    let toolCalls: ToolCall[] = []
-    if (!llmClient) {
-      throw new Error('LLM client is not initialized. Please goto LLM Settings.')
-    }
-    const stream = llmClient.chat.completions.create(
-      {
-        messages: await buildChatMessages(messages, workspace),
-        model,
-        stream: true,
-        tools,
-        reasoning_effort: 'medium',
-      },
-      { signal }
-    )
+export const callAI: FnCallAI = async function ({
+  ai,
+  model,
+  messages,
+  tools,
+  signal,
+  events,
+  thinkingMode,
+}) {
+  let content = ''
+  let toolCalls: ToolCall[] = []
+  // @ts-expect-error ignore 类型错误
+  const stream = ai.chat.completions.create(
+    {
+      messages,
+      model: model,
+      stream: true,
+      tools,
+      reasoning_effort: thinkingMode ? 'medium' : 'none',
+      thinking: { type: thinkingMode ? 'enabled' : 'disabled' },
+    },
+    { signal }
+  )
 
-    for await (const chunk of processStream(stream as any, events)) {
-      if ('content' in chunk && chunk.content) {
-        content = chunk.content
-      }
+  for await (const chunk of processStream(stream as any, events)) {
+    if ('content' in chunk && chunk.content) {
+      content = chunk.content
+    }
 
-      if ('tool_calls' in chunk && chunk.tool_calls) {
-        toolCalls = chunk.tool_calls
-      }
+    if ('tool_calls' in chunk && chunk.tool_calls) {
+      toolCalls = chunk.tool_calls
     }
-    return { content, toolCalls }
-  } catch (error: any) {
-    console.error('Error in processLLMStream:', error)
-    if (error.name === 'AbortError') {
-      console.error('Stream was aborted by user')
-      // 统一抛出 AbortError，方便上层捕获和处理
-      throw new AbortError()
-    }
-    console.error('Error in processLLMStream:', error)
-    // 其他错误继续往上抛
-    throw error
   }
+  signal.throwIfAborted()
+  return { content, toolCalls }
 }
 
-async function buildChatMessages(
-  messages: AgentMessage[],
-  workspace: string | null
-): Promise<ChatMessage[]> {
-  const skillsChatMessage = await buildSkillsChatMessage()
-  const userMemoryChatMessage = await buildUserMemoryChatMessage()
-  // console.log(skillsChatMessage)
-  function getSystemMessages() {
-    const defaultSystemMessage: ChatMessage = {
-      role: 'system',
-      content: AgentSystemPrompt,
-    }
-    if (messages.find((msg) => msg.role === 'system')) {
-      return messages.filter((msg) => msg.role === 'system')
-    }
-    return [defaultSystemMessage]
+function isChatMessage(msg: AgentMessage): msg is ChatMessage {
+  // 排除 ContextMessage 的特征
+  return (
+    msg.role === 'assistant' || msg.role === 'user' || msg.role === 'tool' || msg.role === 'system'
+  )
+}
+export function buildAIMessages(messages: AgentMessage[]) {
+  const defaultSystemMessage: AgentMessage = {
+    role: 'system',
+    content: AgentSystemPrompt,
   }
-  const chatMessages: ChatMessage[] = [...getSystemMessages()]
-  if (workspace) {
-    chatMessages.push({
-      role: 'system',
-      content: `You are working in the workspace located at: ${workspace}`,
-    })
-  }
-  if (userMemoryChatMessage) {
-    chatMessages.push(userMemoryChatMessage)
-  }
-  if (skillsChatMessage) {
-    // chatMessages.push(skillsChatMessage)
-  }
-
-  chatMessages.push(...convertToChatMessages(messages))
-
-  return chatMessages
+  return [defaultSystemMessage, ...messages.filter(isChatMessage)]
 }
 
-function convertToChatMessages(messages: AgentMessage[]): ChatMessage[] {
-  const chatMessages: ChatMessage[] = []
-  for (const message of messages) {
-    if (
-      message.role === 'system' ||
-      message.role === 'user' ||
-      message.role === 'assistant' ||
-      message.role === 'tool'
-    ) {
-      chatMessages.push(message)
-    }
-    if (message.role === 'context') {
-      chatMessages.push({
-        role: 'user',
-        content: `[CONTEXT] ${message.type}: ${message.content}`,
-      })
-    }
-  }
-  return chatMessages
+export interface ModelConfig {
+  name: string
+  baseURL: string
+  apiKey: string
+}
+
+export function createAIClient(model: ModelConfig) {
+  return createLLMClient({ apiKey: model.apiKey, baseURL: model.baseURL })
 }

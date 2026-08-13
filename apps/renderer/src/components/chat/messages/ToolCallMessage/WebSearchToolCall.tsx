@@ -15,11 +15,12 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
   const { showWebSearchResults } = useChatLayout()
   const args = parseToolArguments(tool.function.arguments)
   const query = typeof args?.query === 'string' ? args.query : tool.function.arguments
-  const searchResult = result?.result.result as WebSearchResult | undefined
-  const results = searchResult?.results ?? []
   const isRunning = !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
+  const searchResult = result?.result?.result as WebSearchResult | undefined
+  const results = searchResult?.results ?? []
+
   const duration = formatDuration(result?.durationMs)
   const handleClick = () => {
     if (!isSuccess || !searchResult) return

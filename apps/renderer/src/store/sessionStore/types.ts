@@ -84,8 +84,7 @@ export type Workflow = {
   feedback: 'like' | 'dislike' | null
   messages: SessionMessage[]
   runtime: {
-    status: 'running' | 'finished' | 'error' | 'aborted'
-    waitingHuman: boolean
+    status: 'running' | 'finished' | 'error' | 'aborted' | 'interrupted' // 这里的 interrupted 是可恢复的中断， 也就是 human approve
   }
   nextSubWorkflow?: Workflow
   // 指向真正运行的子工作流

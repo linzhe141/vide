@@ -42,7 +42,6 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
             currentSessionId === data.ctx.sessionId &&
             (data.type === 'workflow.error' ||
               data.type === 'workflow.completed' ||
-              data.type === 'workflow.interrupted' ||
               data.type === 'workflow.aborted')
           ) {
             controller.close()
@@ -91,7 +90,6 @@ export function resumeWorkflowStream(
             sessionId === data.ctx.sessionId &&
             (data.type === 'workflow.error' ||
               data.type === 'workflow.completed' ||
-              data.type === 'workflow.interrupted' ||
               data.type === 'workflow.aborted')
           ) {
             controller.close()

@@ -43,6 +43,8 @@ Use this for pattern-based search-and-replace operations on **single-line text**
 - Multi-line search/replace → use \`edit-file\`
 - Exact literal replacement when you don't need regex → use \`edit-file\`
 - Replacing large blocks of code → use \`edit-file\` or \`write-file\`
+
+${this.runtime.workspacePath ? `Workspace: ${this.runtime.workspacePath}` : 'No workspace path set'}
 `,
       parameters: {
         type: 'object',
@@ -164,6 +166,8 @@ Use this for making focused changes to existing code while preserving most of th
 - Creating a completely new file → use \`write-file\`
 - Rewriting the entire file → use \`write-file\`
 - Extensive changes with large overlapping sections → split into multiple edits or use \`write-file\`
+
+${this.runtime.workspacePath ? `Workspace: ${this.runtime.workspacePath}` : 'No workspace path set'}
 `,
       parameters: {
         type: 'object',

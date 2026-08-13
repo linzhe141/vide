@@ -1,143 +1,155 @@
-import type {
-  CallLLMStepPayload,
-  CallToolsStepPayload,
-  CallToolStepPayload,
-  FinishedStepPayload,
-  StepPayload,
-  UserInputStepPayload,
-  WaitHumanApprovePayload,
-} from './types'
-import type {
-  AssistantChatMessage,
-  UserChatMessage,
-  Tool,
-  ToolCall,
-  ToolResult,
-  AgentMessage,
+import {
+  type AgentMessage,
+  type AI,
+  type AssistantChatMessage,
+  type Tool,
+  type ToolCall,
+  type ToolResult,
 } from '@vide/ai'
-import { callAI } from './llm'
-import { registorTools as registorAllTools } from './tools/registor'
-import type { WorkflowEvent, WorkflowEventCtx, WorkflowEventWithCtx } from './event/channels'
-import { v4 as uuid } from 'uuid'
-import { BASH_TOOL_NAMES } from './tools/bash'
-import { AbortError, ToolCallError } from './error'
-import type { WorkflowStream } from './event/stream'
-import { type WorkflowPlugin } from './plugin'
+import type { WorkflowStream } from './stream'
+import { buildAIMessages, callAI, createAIClient, type ModelConfig } from './llm'
+import { ToolCallError } from './error'
 
-export type WorkflowState =
-  | 'INPUT'
-  | 'CALL_LLM'
-  | 'CALL_TOOLS'
-  | 'WAIT_HUMAN_APPROVE'
-  | 'CALL_SINGLE_CALL'
-  | 'COMPLETED'
-type NextStep = {
-  state: WorkflowState
-  payload: StepPayload
+export type StepPayload =
+  | InputPayload
+  | ContextInputPayload
+  | CallLLMPayload
+  | CallToolsPayload
+  | CompletedPayload
+  | InterruptPayload
+
+export type InputPayload = {
+  state: 'INPUT'
+  input: string
 }
 
-export class Workflow {
-  state: WorkflowState = 'INPUT'
-  tools: Tool[] = []
+export type ContextInputPayload = {
+  state: 'CONTEXT_INPUT'
+  input: string
+}
 
+export type CallLLMPayload = {
+  state: 'CALL_LLM'
+}
+
+export type CallToolsPayload = {
+  state: 'CALL_TOOLS'
+  toolCalls: ToolCall[]
+  // 当 需要human approve 时，并且还是串行 存在这下标，表示需要继续执行的toolCall的下标
+  continueToolCallIndex?: number
+}
+
+export type CompletedPayload = {
+  state: 'COMPLETED'
+  result: string
+}
+
+export type InterruptPayload = {
+  state: 'INTERRUPT'
+  type: 'HUMAN_APPROVE' | 'HUMAN_REJECT'
+  reason: string
+  context: any
+}
+
+export type StopReason = 'completed' | 'error' | 'aborted' | 'interrupted'
+export class Workflow {
+  id: string = crypto.randomUUID()
+  state: StepPayload['state'] = 'INPUT'
+  messages: AgentMessage[] = []
+  ai: AI | null = null
+  stepPayload: StepPayload | null = null
   constructor(
-    public runtime: WorkflowRuntimeContext,
-    registerTools?: () => Tool[]
-  ) {
-    this.tools = registerTools ? registerTools() : registorAllTools(this.runtime)
+    public context: {
+      model: ModelConfig
+      sessionId: string
+      tools: Tool[]
+      stream: WorkflowStream
+      thinkingMode: boolean
+      getSessionAgentMessages: () => AgentMessage[]
+      getAutoApprove: () => boolean
+    }
+  ) {}
+
+  get stream() {
+    return this.context.stream
+  }
+
+  get signal() {
+    return this.context.stream.signal
+  }
+
+  abort() {
+    this.context.stream.abort()
+    // 是否需要发送到llm，如果发送是否需要持久化，并且前端是不需要显示
+    this.messages.push({
+      role: 'user',
+      content: 'Workflow aborted by user',
+    })
   }
 
   async run(input: string) {
-    await this.runtime.runBeforeWorkflowStartHooks(input)
-    this.runtime.emit({ eventName: 'workflow-start', data: { input } })
-    return await this.runLoop({ input } as UserInputStepPayload)
+    this.stream.push({ type: 'workflow.start', input })
+    return await this.runLoop({ state: 'INPUT', input })
   }
 
-  async runLoop(initialPayload: StepPayload) {
-    let payload: StepPayload = initialPayload
+  async continueRunLoop(payload: StepPayload) {
+    return await this.runLoop(payload)
+  }
 
+  async runLoop(initialPayload: StepPayload): Promise<StopReason | void> {
+    this.stepPayload = initialPayload
+    this.state = initialPayload.state
     while (true) {
       try {
-        this.runtime.throwIfAborted()
-        const nextStep = await this.runStep(payload)
-
-        // 完成状态
+        this.signal.throwIfAborted()
+        this.stream.push({ type: 'workflow.step.start', payload: this.stepPayload })
+        const nextStep = await this.runStep()
+        this.stream.push({ type: 'workflow.step.end', result: nextStep })
         if (nextStep.state === 'COMPLETED') {
-          const continuePayload = await this.runtime.runBeforeWorkflowFinishHooks(
-            (nextStep.payload as FinishedStepPayload).content
-          )
-
-          // 如果 hook 返回新的 payload，继续执行而不是完成
-          if (continuePayload) {
-            payload = continuePayload
-            continue
-          }
-
-          // 否则才真正完成
-          this.runtime.emit({
-            eventName: 'workflow-finished',
-            data: { content: (nextStep.payload as FinishedStepPayload).content },
-          })
-          this.runtime.endStream()
-          return 'COMPLETED'
-        }
-
-        // 等待人工审批
-        if (nextStep.state === 'WAIT_HUMAN_APPROVE') {
-          this.runtime.emit({
-            eventName: 'workflow-wait-human-approve',
-            data: {
-              data: nextStep.payload as WaitHumanApprovePayload,
-            },
-          })
-
-          // 需要 保持 状态，等待人工审批结果
+          this.stream.push({ type: 'workflow.completed', result: nextStep.result })
+          this.stream.end()
+          return 'completed'
+        } else if (nextStep.state === 'INTERRUPT') {
+          // Handle interrupt logic here waiting for continuation
+          console.log('Workflow interrupted:', nextStep)
+          this.stream.push({ type: 'workflow.interrupted' })
+          // not end the stream here, because we might want to continue later
+          return 'interrupted'
+        } else {
+          this.stepPayload = nextStep
           this.state = nextStep.state
-          return 'WAIT_HUMAN_APPROVE'
         }
-
-        // 继续执行下一步
-        this.state = nextStep.state
-        payload = nextStep.payload
-      } catch (error: any) {
-        if (error instanceof AbortError) {
-          this.runtime.workflowMessages.addAbortMessage()
-
-          this.runtime.emit({
-            eventName: 'workflow-aborted',
-            data: {
-              chunkData: {
-                reasoning: this.runtime.assistantReasoningChunk,
-                text: this.runtime.assistantChunk,
-              },
-            },
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') {
+          this.stream.push({ type: 'workflow.aborted' })
+          this.stream.end()
+          return 'aborted'
+        } else {
+          this.stream.push({
+            type: 'workflow.error',
+            error: e instanceof Error ? e.message : String(e),
           })
-          this.runtime.endStream()
-          return 'ABORTED'
+          this.stream.end()
+          return 'error'
         }
-        this.runtime.emit({
-          eventName: 'workflow-error',
-          data: { error },
-        })
-        this.runtime.endStream()
-        return 'ERROR'
       }
     }
   }
-  async runStep(payload: StepPayload): Promise<NextStep> {
+
+  // 这里只考虑基本的Agent loop
+  async runStep(): Promise<StepPayload> {
     switch (this.state) {
       case 'INPUT': {
-        return this.stateInput(payload as UserInputStepPayload)
+        return this.stateInput()
+      }
+      case 'CONTEXT_INPUT': {
+        return this.stateContextInput()
       }
       case 'CALL_LLM': {
-        await this.runtime.runBeforeAIStart()
-        return this.stateCallLLM({ messages: this.runtime.buildAgentMessages() })
+        return this.stateCallLLM()
       }
       case 'CALL_TOOLS': {
-        return this.stateCallTools(payload as CallToolsStepPayload)
-      }
-      case 'CALL_SINGLE_CALL': {
-        return this.stateCallSingleCall(payload as CallToolStepPayload)
+        return this.stateCallTools()
       }
       default: {
         throw new Error('Invalid state')
@@ -145,118 +157,22 @@ export class Workflow {
     }
   }
 
-  stateInput(payload: UserInputStepPayload): NextStep {
-    this.runtime.workflowMessages.addMessage({ role: 'user', content: payload.input })
-    return {
-      state: 'CALL_LLM',
-      payload: {
-        messages: this.buildAgentMessages(),
-      },
-    }
+  async stateInput(): Promise<StepPayload> {
+    const payload = this.stepPayload as InputPayload
+    this.messages.push({ role: 'user', content: payload.input })
+    return { state: 'CALL_LLM' }
   }
 
-  async handleCallLLM(messages: AgentMessage[]) {
-    this.runtime.emit({ eventName: 'workflow-llm-start', data: { messages } })
-    const result = await callAI({
-      workspace: this.runtime.workspacePath,
-      messages,
-      tools: this.tools,
-      signal: this.runtime.signal,
-      events: {
-        onReasoningStart: () => {
-          this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit({ eventName: 'workflow-llm-reasoning-start' })
-        },
-        onReasoningDelta: (chunk) => {
-          this.runtime.assistantReasoningChunk = chunk.content
-          this.runtime.emit({
-            eventName: 'workflow-llm-reasoning-delta',
-            data: {
-              chunk,
-            },
-          })
-        },
-        onReasoningEnd: (content) => {
-          this.runtime.assistantReasoningChunk = ''
-          this.runtime.emit({
-            eventName: 'workflow-llm-reasoning-end',
-            data: { content },
-          })
-        },
-        onTextStart: () => {
-          this.runtime.assistantChunk = ''
-          this.runtime.emit({
-            eventName: 'workflow-llm-text-start',
-          })
-        },
-        onTextDelta: (chunk) => {
-          this.runtime.assistantChunk = chunk.content
-          this.runtime.emit({
-            eventName: 'workflow-llm-text-delta',
-            data: { chunk },
-          })
-        },
-        onTextEnd: (content) => {
-          this.runtime.assistantChunk = ''
-          this.runtime.emit({
-            eventName: 'workflow-llm-text-end',
-            data: { content },
-          })
-        },
-        onToolCallsStart: () => {
-          this.runtime.emit({
-            eventName: 'workflow-llm-tool-calls-start',
-          })
-        },
-        onToolCallName: (data) => {
-          this.runtime.emit({
-            eventName: 'workflow-llm-tool-call-name',
-            data: { data },
-          })
-        },
-        onToolCallArguments: (data) => {
-          this.runtime.emit({
-            eventName: 'workflow-llm-tool-call-arguments',
-            data: { data },
-          })
-        },
-        onToolCallsEnd: (toolCalls) => {
-          const autoApprove = this.runtime.autoApprove
-          this.runtime.emit({
-            eventName: 'workflow-llm-tool-calls-end',
-            data: {
-              toolCalls: toolCalls.map((t) => {
-                return {
-                  ...t,
-                  status:
-                    t.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
-                    autoApprove === false
-                      ? 'waiting-human'
-                      : 'auto-approved',
-                }
-              }),
-            },
-          })
-        },
-      },
-    })
-
-    if (this.runtime.signal.aborted) {
-      throw new AbortError()
-    }
-
-    const afterAIEndResult = await this.runtime.runAfterAIEnd(result.content)
-    if (afterAIEndResult !== undefined) {
-      result.content = afterAIEndResult
-    }
-    this.runtime.emit({ eventName: 'workflow-llm-end' })
-    return result
+  async stateContextInput(): Promise<StepPayload> {
+    const payload = this.stepPayload as ContextInputPayload
+    // 将 context input 作为 user message 添加到 messages 中，并重新进入 CALL_LLM 状态
+    this.messages.push({ role: 'user', content: payload.input })
+    return { state: 'CALL_LLM' }
   }
 
-  async stateCallLLM(payload: CallLLMStepPayload): Promise<NextStep> {
-    // console.log(JSON.stringify(payload.messages, null, 2))
-    const { content, toolCalls } = await this.handleCallLLM(payload.messages)
-
+  async stateCallLLM(): Promise<StepPayload> {
+    const result = await this.handleCallLLM()
+    const { content, toolCalls } = result
     const assistantMessage: AssistantChatMessage = {
       role: 'assistant',
       content,
@@ -264,365 +180,203 @@ export class Workflow {
     if (toolCalls.length) {
       assistantMessage.tool_calls = toolCalls
     }
-    this.runtime.workflowMessages.addMessage(assistantMessage)
-
-    if (toolCalls.length) {
-      return { state: 'CALL_TOOLS', payload: { toolCalls } }
+    this.messages.push(assistantMessage)
+    const hasToolCalls = toolCalls && toolCalls.length > 0
+    if (hasToolCalls) {
+      // Handle tool calls here
+      // For simplicity, we just log them for now
+      console.log('Tool calls:', toolCalls)
+      return { state: 'CALL_TOOLS', toolCalls } // or another state based on your logic
     } else {
-      return { state: 'COMPLETED', payload: { content } }
+      return { state: 'COMPLETED', result: content }
     }
   }
 
-  stateCallTools(payload: CallToolsStepPayload): NextStep {
-    const toolCalls = payload.toolCalls
+  async handleCallLLM() {
+    const sessionAgentMessages = this.context.getSessionAgentMessages()
+    const aiMessages = buildAIMessages([...sessionAgentMessages, ...this.messages])
+    if (!this.ai) {
+      this.ai = createAIClient(this.context.model)
+    }
 
-    return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: 0 } }
+    this.stream.push({ type: 'workflow.llm.start' })
+    const result = await callAI({
+      model: this.context.model.name,
+      ai: this.ai,
+      messages: aiMessages,
+      tools: this.context.tools,
+      signal: this.signal,
+      thinkingMode: this.context.thinkingMode,
+      events: {
+        onReasoningStart: () => {
+          this.stream.push({ type: 'workflow.llm.reason.start' })
+        },
+        onReasoningDelta: (chunk) => {
+          this.stream.push({ type: 'workflow.llm.reason.delta', chunk: { delta: chunk.delta } })
+        },
+        onReasoningEnd: (content) => {
+          this.stream.push({ type: 'workflow.llm.reason.end', content })
+        },
+        onTextStart: () => {
+          this.stream.push({ type: 'workflow.llm.text.start' })
+        },
+        onTextDelta: (chunk) => {
+          this.stream.push({ type: 'workflow.llm.text.delta', chunk: { delta: chunk.delta } })
+        },
+        onTextEnd: (content) => {
+          this.stream.push({ type: 'workflow.llm.text.end', content })
+        },
+        onToolCallsStart: () => {
+          this.stream.push({ type: 'workflow.llm.tool.call.process' })
+        },
+        onToolCallsEnd: (toolCalls) => {
+          this.stream.push({ type: 'workflow.llm.tool.call.end', toolCall: toolCalls })
+        },
+      },
+    })
+    const { content, toolCalls } = result
+    const assistantMessage: AssistantChatMessage = {
+      role: 'assistant',
+      content,
+    }
+    if (toolCalls.length) {
+      assistantMessage.tool_calls = toolCalls
+    }
+    this.stream.push({ type: 'workflow.llm.end' })
+    this.stream.push({ type: 'workflow.llm.result', result: assistantMessage })
+    return result
+  }
+
+  async stateCallTools(): Promise<StepPayload> {
+    const payload = this.stepPayload as CallToolsPayload
+    let toolCalls = payload.toolCalls
+    if (payload.continueToolCallIndex != undefined) {
+      toolCalls = toolCalls.slice(payload.continueToolCallIndex)
+    }
+    if (!this.context.getAutoApprove()) {
+      return {
+        state: 'INTERRUPT',
+        type: 'HUMAN_APPROVE',
+        reason: 'Waiting for human approval to continue tool calls',
+        context: {
+          toolCalls: payload.toolCalls,
+          continueToolCallIndex: 0,
+        },
+      }
+    }
+    // 并行执行所有toolCalls
+    // const promiseOfCallToolResults = toolCalls.map(async (toolCall) => {
+    //   // Simulate tool execution
+    //   return { id: toolCall.id, result: 'Tool executed successfully' }
+    // })
+    // const toolResults = await Promise.all(promiseOfCallToolResults)
+    // for (const toolResult of toolResults) {
+    //   this.messages.push({
+    //     role: 'tool',
+    //     tool_call_id: toolResult.id,
+    //     content: toolResult.result,
+    //   })
+    // }
+    // console.log('Tool results:', toolResults)
+    // 串行执行所有toolCalls
+    for (let i = 0; i < toolCalls.length; i++) {
+      const toolCall = toolCalls[i]
+      if (!this.context.getAutoApprove()) {
+        return {
+          state: 'INTERRUPT',
+          type: 'HUMAN_APPROVE',
+          reason: 'Waiting for human approval to continue tool calls',
+          context: {
+            toolCalls: payload.toolCalls,
+            continueToolCallIndex: i,
+          },
+        }
+      } else {
+        let reason: ToolResult['reason']
+
+        try {
+          reason = await this.handleCallTool(toolCall)
+        } catch (error) {
+          // 这种ToolCallError直接让 LLM 尝试原因并 retry
+          if (error instanceof ToolCallError) {
+            const errorMessage = 'An exception occurred while executing toolCall: ' + error.message
+            this.messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: errorMessage,
+            })
+
+            this.stream.push({
+              type: 'workflow.tool.call.error',
+              toolCallResult: {
+                id: toolCall.id,
+                toolName: toolCall.function.name,
+                error: error.message,
+              },
+            })
+            // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
+            const pendingToolCalls = toolCalls.slice(i + 1)
+            for (const t of pendingToolCalls) {
+              this.messages.push({
+                role: 'tool',
+                tool_call_id: t.id,
+                content: JSON.stringify({
+                  result: 'Tool call skipped due to previous error',
+                }),
+              })
+            }
+            return { state: 'CALL_LLM' }
+          }
+          // 其他错误直接抛出
+          throw error
+        }
+        if (reason === 'stop') {
+          return { state: 'COMPLETED', result: 'Tool execution stopped the workflow' }
+        }
+      }
+    }
+    return { state: 'CALL_LLM' } // or another state based on your logic
   }
 
   async handleCallTool(toolCall: ToolCall): Promise<ToolResult['reason']> {
-    const toolName = toolCall.function.name
-    const tool = this.tools.find((t) => t.name === toolName)
+    const tool = this.context.tools.find((t) => t.name === toolCall.function.name)
     if (!tool) {
-      const errorMessage = `Tool not found: ${toolName}`
-      throw new ToolCallError(errorMessage)
+      throw new ToolCallError(`Tool ${toolCall.function.name} not found`)
     }
-    let args: Record<string, unknown>
 
+    let args: Record<string, unknown>
     try {
       args = JSON.parse(toolCall.function.arguments)
     } catch (error) {
-      console.log()
-      console.log(error)
-      console.log()
-
       throw new ToolCallError(
         `Failed to parse tool arguments: ${error instanceof Error ? error.message : String(error)}`
       )
     }
 
     const startedAt = Date.now()
-
-    this.runtime.emit({
-      eventName: 'workflow-tool-call-start',
-      data: {
-        toolCall: { id: toolCall.id, toolName, args },
-      },
+    this.stream.push({
+      type: 'workflow.tool.call.start',
+      toolCall: { id: toolCall.id, toolName: tool.name, args },
     })
-
     const toolResult = await tool.executor(args)
     const finishedAt = Date.now()
-    const reason = toolResult.reason
-    const result = toolResult.result
-    this.runtime.workflowMessages.addMessage({
+    this.messages.push({
       role: 'tool',
       tool_call_id: toolCall.id,
       content: JSON.stringify(toolResult.result),
     })
 
-    this.runtime.emit({
-      eventName: 'workflow-tool-call-success',
-      data: {
-        toolCallResult: {
-          id: toolCall.id,
-          toolName,
-          result,
-          startedAt,
-          finishedAt,
-          durationMs: finishedAt - startedAt,
-        },
+    this.stream.push({
+      type: 'workflow.tool.call.success',
+      toolCallResult: {
+        id: toolCall.id,
+        toolName: tool.name,
+        result: toolResult,
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt - startedAt,
       },
     })
-    return reason
-  }
-
-  async stateCallSingleCall(payload: CallToolStepPayload): Promise<NextStep> {
-    const toolCalls = payload.toolCalls
-    const index = payload.index
-    const toolCall = toolCalls[index]
-    const needWaitHumanApprove =
-      toolCall.function.name === BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND &&
-      this.runtime.autoApprove === false
-    if (needWaitHumanApprove && !payload.hasApproval) {
-      return {
-        state: 'WAIT_HUMAN_APPROVE',
-        payload: {
-          toolCalls,
-          index,
-        },
-      }
-    }
-    let reason: ToolResult['reason']
-    try {
-      reason = await this.handleCallTool(toolCall)
-    } catch (error: any) {
-      console.log(`Error executing tool ${toolCall.function.name}:`, error)
-      if (error instanceof ToolCallError) {
-        const errorMessage = 'An exception occurred while executing toolCall: ' + error.message
-        this.runtime.workflowMessages.addMessage({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: errorMessage,
-        })
-
-        this.runtime.emit({
-          eventName: 'workflow-tool-call-error',
-          data: {
-            toolCallResult: {
-              id: toolCall.id,
-              toolName: toolCall.function.name,
-              error: error.message,
-            },
-          },
-        })
-        // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
-        const pendingToolCalls = toolCalls.slice(index + 1)
-        for (const t of pendingToolCalls) {
-          this.runtime.workflowMessages.addMessage({
-            role: 'tool',
-            tool_call_id: t.id,
-            content: JSON.stringify({
-              result: 'Tool call skipped due to previous error',
-            }),
-          })
-        }
-        return { state: 'CALL_LLM', payload: { messages: this.buildAgentMessages() } }
-      }
-      throw error
-    }
-
-    if (reason === 'stop') {
-      return {
-        state: 'COMPLETED',
-        payload: {
-          content: 'Stop the current workflow',
-        },
-      }
-    }
-    if (index + 1 < toolCalls.length) {
-      return { state: 'CALL_SINGLE_CALL', payload: { toolCalls, index: index + 1 } }
-    } else {
-      return { state: 'CALL_LLM', payload: { messages: this.buildAgentMessages() } }
-    }
-  }
-
-  async approveHumanApprove(payload: WaitHumanApprovePayload) {
-    if (this.state !== 'WAIT_HUMAN_APPROVE') {
-      return
-    }
-    this.state = 'CALL_SINGLE_CALL'
-    const callToolStepPayload = payload as CallToolStepPayload
-    callToolStepPayload.hasApproval = true
-    return await this.runLoop(callToolStepPayload)
-  }
-  async rejectHumanApprove(payload: WaitHumanApprovePayload) {
-    if (this.state !== 'WAIT_HUMAN_APPROVE') {
-      return
-    }
-    const { toolCalls, index } = payload
-    const toolCall = toolCalls[index]
-
-    // 将拒绝信息添加到会话中
-    const rejectMessage = `Human rejected the execution of this tool call.`
-    this.runtime.workflowMessages.addMessage({
-      role: 'tool',
-      tool_call_id: toolCall.id,
-      content: rejectMessage,
-    })
-
-    this.runtime.emit({
-      eventName: 'workflow-tool-call-error',
-      data: {
-        toolCallResult: {
-          id: toolCall.id,
-          toolName: toolCall.function.name,
-          error: rejectMessage,
-        },
-      },
-    })
-    // 如果还有更多工具调用，继续执行下一个
-    if (index + 1 < toolCalls.length) {
-      this.state = 'CALL_SINGLE_CALL'
-      return await this.runLoop({ toolCalls, index: index + 1 })
-    } else {
-      // 所有工具处理完，回到LLM生成回应
-      this.state = 'CALL_LLM'
-      return await this.runLoop({ messages: this.buildAgentMessages() })
-    }
-  }
-  buildAgentMessages() {
-    return this.runtime.buildAgentMessages()
-  }
-}
-
-export class WorkflowRuntimeContext {
-  workspacePath: string | null
-  sessionId: string
-  workflowId: string
-  workflowMessages: WorkflowMessages
-  plugins: WorkflowPlugin[]
-
-  controller = new AbortController()
-
-  stream: WorkflowStream
-  workflow: Workflow = null!
-  buildAgentMessages: () => AgentMessage[]
-
-  getAutoApprove: () => boolean
-  get autoApprove() {
-    return this.getAutoApprove()
-  }
-  //
-
-  // 这两个只在 llm stream chunk 里用来存储当前的增量内容；为了 abort 进行存储
-  assistantChunk = ''
-  assistantReasoningChunk = ''
-
-  constructor(options: {
-    workspacePath: string | null
-    sessionId: string
-    getAutoApprove: () => boolean
-    stream: WorkflowStream
-    buildAgentMessages?: () => AgentMessage[]
-    plugins?: WorkflowPlugin[]
-  }) {
-    this.workspacePath = options.workspacePath
-    this.sessionId = options.sessionId
-    this.workflowId = uuid()
-    this.workflowMessages = new WorkflowMessages()
-    this.getAutoApprove = options.getAutoApprove
-    this.stream = options.stream
-    // 一个是session 级别的 所有messages， 一个是workflow 级别的 messages: 用于 sub-agent 运行时的 messages
-    this.buildAgentMessages =
-      options.buildAgentMessages ?? (() => this.workflowMessages.getMessages())
-    this.plugins = options.plugins ?? []
-  }
-
-  emit = (data: WorkflowEvent) => {
-    const event = { eventName: data.eventName } as WorkflowEventWithCtx
-    if ('data' in data) {
-      event.data = {
-        ...data.data,
-        ctx: this.workflowEventCtx,
-      }
-    } else {
-      event.data = { ctx: this.workflowEventCtx }
-    }
-    this.stream.push(event)
-  }
-
-  emitCustom<T extends { eventName: string; data: Record<string, unknown> }>(data: T) {
-    const event = {
-      eventName: data.eventName,
-      data: {
-        ...data.data,
-        ctx: this.workflowEventCtx,
-      },
-    }
-    this.stream.push(event as any)
-  }
-  async runBeforeWorkflowStartHooks(input: string) {
-    const newInputMessages: UserChatMessage = {
-      role: 'user',
-      content: input,
-    }
-    for (const plugin of this.plugins) {
-      const pluginResult = await plugin.beforeWorkflowStart?.(
-        newInputMessages.content as string,
-        this
-      )
-      if (pluginResult) {
-        newInputMessages.content = pluginResult
-      }
-    }
-  }
-
-  async runBeforeWorkflowFinishHooks(content: string): Promise<StepPayload | undefined> {
-    let lastResult: StepPayload | undefined = undefined
-    for (const plugin of this.plugins) {
-      const result = await plugin.beforeWorkflowFinish?.(content, this)
-      if (result) {
-        lastResult = result
-      }
-    }
-    return lastResult
-  }
-
-  async runAfterCallSubAgentHooks(content: string): Promise<string | void> {
-    let lastResult: string | void = undefined
-    for (const plugin of this.plugins) {
-      const result = await plugin.afterCallSubAgent?.(content, this)
-      if (result) {
-        lastResult = result
-      }
-    }
-    return lastResult
-  }
-
-  async runBeforeAIStart(): Promise<void> {
-    for (const plugin of this.plugins) {
-      await plugin.beforeAIStart?.(this)
-    }
-  }
-
-  async runAfterAIEnd(assistantMessage: string): Promise<string | void> {
-    let lastResult: string | void = undefined
-    for (const plugin of this.plugins) {
-      const result = await plugin.afterAIEnd?.(assistantMessage, this)
-      if (result) {
-        lastResult = result
-      }
-    }
-    return lastResult
-  }
-
-  endStream() {
-    this.stream.end()
-  }
-  get signal() {
-    return this.controller.signal
-  }
-  abort() {
-    this.controller.abort()
-  }
-
-  throwIfAborted() {
-    if (this.signal.aborted) {
-      throw new AbortError()
-    }
-  }
-
-  get workflowEventCtx(): WorkflowEventCtx {
-    return {
-      sessionId: this.sessionId,
-      workflowId: this.workflowId,
-      // parentWorkflowId: this.parentWorkflowId,
-    }
-  }
-}
-
-export class WorkflowMessages {
-  messages: AgentMessage[] = []
-
-  addMessage(message: AgentMessage) {
-    this.messages.push(message)
-  }
-
-  addAbortMessage() {
-    this.messages.push({
-      role: 'user',
-      content: 'The user aborted this workflow before it completed.',
-    })
-  }
-
-  getMessages() {
-    return this.messages
-  }
-
-  addContextMessage(type: string, content: string) {
-    this.messages.push({
-      role: 'context',
-      type,
-      content,
-    })
+    return toolResult.reason
   }
 }
