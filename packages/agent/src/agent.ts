@@ -1,8 +1,19 @@
 import { Session } from './session'
 
 export class Agent {
+  private webSearchConfig = {
+    apiKey: '',
+    apiUrl: '',
+  }
   get settings() {
-    return {}
+    return {
+      webSearchConfig: this.webSearchConfig,
+    }
+  }
+
+  setWebSearchConfig(config: { apiKey: string; apiUrl: string }) {
+    this.webSearchConfig.apiKey = config.apiKey
+    this.webSearchConfig.apiUrl = config.apiUrl
   }
 
   createSession(data: {
@@ -10,7 +21,7 @@ export class Agent {
     autoApprove: boolean
     thinkingMode: boolean
   }) {
-    const newSession = new Session()
+    const newSession = new Session(this.settings)
     // 设置默认分支 main 的 head 和 source 为 null
     newSession.branchs[newSession.activeBranch] = { head: null, source: null }
     if (data.workspacePath) {

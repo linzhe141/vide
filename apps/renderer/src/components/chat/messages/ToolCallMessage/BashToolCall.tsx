@@ -1,5 +1,5 @@
 ﻿import type { ToolCall } from '@vide/ai'
-import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
+import type { Workflow, ToolCallState } from '@/store/sessionStore/types'
 import {
   Check,
   CheckCircle2,
@@ -19,25 +19,26 @@ import { useSessionStoreActions } from '@/store/sessionStore'
 type BashToolCallProps = {
   tool: ToolCall
   result?: ToolCallState['result']
-  originToolCalls: ToolCallSessionMessage['toolCalls']
   workflow: Workflow
 }
 
-function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallProps) {
+function BashToolCall(props: BashToolCallProps) {
+  const { tool, workflow, result } = props
   const { sessionId } = useChatContext()
   const { changeToolCallStatus } = useSessionStoreActions()
   const [open, setOpen] = useState(false)
-  const isRunning = (tool.status === 'auto-approved' || tool.status === 'human-approved') && !result
-  const isSuccess = result?.status === 'success'
-  const isError = result?.status === 'error'
-  const duration = formatDuration(result?.durationMs)
+  const isRunning =
+    (tool.status === 'auto-approved' || tool.status === 'human-approved') && !props.result
+  const isSuccess = props.result?.status === 'success'
+  const isError = props.result?.status === 'error'
+  const duration = formatDuration(props.result?.durationMs)
 
   const args = parseToolArguments(tool.function.arguments)
   const command =
     typeof args?.command === 'string' && args.command.trim()
       ? args.command
       : tool.function.arguments
-  const bashResult = result?.result as
+  const bashResult = props.result?.result?.result as
     | {
         stdout?: string
         stderr?: string
@@ -48,7 +49,6 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
     | undefined
 
   const humanApproveToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.toolCall.id === tool.id)
     changeToolCallStatus({
       sessionId,
       workflowId: workflow.id,
@@ -58,15 +58,10 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
     window.ipcRendererApi.invoke('agent-human-approved', {
       sessionId,
       workflowId: workflow.id,
-      payload: {
-        index: originIndex,
-        toolCalls: originToolCalls.map((item) => item.toolCall),
-      },
     })
   }
 
   const humanRejectToolCall = () => {
-    const originIndex = originToolCalls.findIndex((t) => t.toolCall.id === tool.id)
     changeToolCallStatus({
       sessionId,
       workflowId: workflow.id,
@@ -76,10 +71,6 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
     window.ipcRendererApi.invoke('agent-human-rejected', {
       sessionId,
       workflowId: workflow.id,
-      payload: {
-        index: originIndex,
-        toolCalls: originToolCalls.map((item) => item.toolCall),
-      },
     })
   }
 
@@ -87,7 +78,7 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='group border-border/80 from-foreground/[0.04] to-background hover:border-primary/25 dark:from-foreground/[0.06] dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-gradient-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='group border-border/80 from-foreground/4 to-background hover:border-primary/25 dark:from-foreground/6 dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-gradient-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='bg-foreground/6 text-foreground dark:bg-foreground/10 shrink-0 rounded-2xl p-2'>
           <SquareTerminal size={17} strokeWidth={1.8} />
@@ -134,7 +125,7 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
                 <Play size={13} />
                 Command
               </div>
-              <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+              <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
                 {command}
               </pre>
             </section>
@@ -145,17 +136,17 @@ function BashToolCall({ tool, result, workflow, originToolCalls }: BashToolCallP
                   Output
                 </div>
                 {bashResult?.stdout && (
-                  <pre className='bg-foreground/[0.04] text-text-secondary overflow-auto overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+                  <pre className='bg-foreground/4 text-text-secondary overflow-auto overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
                     {bashResult.stdout}
                   </pre>
                 )}
                 {bashResult?.stderr && (
-                  <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                     {bashResult.stderr}
                   </pre>
                 )}
                 {result?.error !== undefined && (
-                  <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                     {JSON.stringify(result.error, null, 2)}
                   </pre>
                 )}

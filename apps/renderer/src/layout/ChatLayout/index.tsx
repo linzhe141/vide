@@ -12,11 +12,11 @@ import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
-import { ArrowDown, FileText, GitBranch } from 'lucide-react'
-import { ArtifactsDisplay } from './ArtifactsDisplay'
+import { ArrowDown, FolderTree, GitBranch } from 'lucide-react'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
 import { useNavigate } from 'react-router'
 import { WebSearchDisplay } from './WebSearchDisplay'
+import { WorkspaceExplorerPane } from './WorkspaceExplorer'
 
 interface ChatLayoutContextType {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
@@ -102,6 +102,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
 
 export function ChatLayout({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
+  const session = useSession(sessionId)
   const { open, type, togglePane } = useChatLayout()
   return (
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
@@ -111,7 +112,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
         <div className='flex min-w-[550px] flex-1 flex-col'>
           {/* header */}
           <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
-            <FileText
+            <FolderTree
               size={14}
               className={cn({
                 'text-primary': open && type === 'Artifacts',
@@ -131,7 +132,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
             'w-[520px] border-l': open && type === 'WebSearch',
           })}
         >
-          {type === 'Artifacts' && <ArtifactsDisplay sessionId={sessionId} />}
+          {type === 'Artifacts' && <WorkspaceExplorerPane workspacePath={session?.workspacePath} />}
           {type === 'WebSearch' && <WebSearchDisplay />}
         </div>
       </div>

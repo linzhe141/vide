@@ -10,7 +10,7 @@ const iconPath = path.join(__dirname, '../../../resources/logo.png')
 export class WindowManager {
   mainWindow: BrowserWindow = null!
   constructor(private app: AppManager) {}
-  
+
   createWindow() {
     const minHeight = 800
     const minWidth = 1200
@@ -23,6 +23,7 @@ export class WindowManager {
       icon: iconPath,
       titleBarStyle: 'hidden',
       webPreferences: {
+        webSecurity: false,
         preload: path.join(__dirname, '../preload/index.mjs'),
         nodeIntegration: true,
         contextIsolation: false,

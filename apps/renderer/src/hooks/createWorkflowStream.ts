@@ -25,7 +25,7 @@ export function createWorkflowStream(abortSignal: AbortSignal) {
 
       workflowV2EventNames.forEach((eventName) => {
         const remove = window.ipcRendererApi.on(eventName, (data: WorkflowEventWithCtx) => {
-          console.log('workflow event received', eventName, data)
+          // console.log('workflow event received', eventName, data)
           if (
             data.type === 'workflow.start' &&
             currentSessionId === null &&

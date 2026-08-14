@@ -46,8 +46,6 @@ export type CompletedPayload = {
 
 export type InterruptPayload = {
   state: 'INTERRUPT'
-  type: 'HUMAN_APPROVE' | 'HUMAN_REJECT'
-  reason: string
   context: any
 }
 
@@ -114,6 +112,8 @@ export class Workflow {
           console.log('Workflow interrupted:', nextStep)
           this.stream.push({ type: 'workflow.interrupted' })
           // not end the stream here, because we might want to continue later
+          this.stepPayload = nextStep
+          this.state = nextStep.state
           return 'interrupted'
         } else {
           this.stepPayload = nextStep
@@ -230,6 +230,16 @@ export class Workflow {
           this.stream.push({ type: 'workflow.llm.tool.call.process' })
         },
         onToolCallsEnd: (toolCalls) => {
+          for (const toolCall of toolCalls) {
+            if (
+              toolCall.function.name === 'execute-bash-command' &&
+              !this.context.getAutoApprove()
+            ) {
+              toolCall.status = 'waiting-human'
+            } else {
+              toolCall.status = 'auto-approved'
+            }
+          }
           this.stream.push({ type: 'workflow.llm.tool.call.end', toolCall: toolCalls })
         },
       },
@@ -242,6 +252,7 @@ export class Workflow {
     if (toolCalls.length) {
       assistantMessage.tool_calls = toolCalls
     }
+
     this.stream.push({ type: 'workflow.llm.end' })
     this.stream.push({ type: 'workflow.llm.result', result: assistantMessage })
     return result
@@ -253,17 +264,18 @@ export class Workflow {
     if (payload.continueToolCallIndex != undefined) {
       toolCalls = toolCalls.slice(payload.continueToolCallIndex)
     }
-    if (!this.context.getAutoApprove()) {
-      return {
-        state: 'INTERRUPT',
-        type: 'HUMAN_APPROVE',
-        reason: 'Waiting for human approval to continue tool calls',
-        context: {
-          toolCalls: payload.toolCalls,
-          continueToolCallIndex: 0,
-        },
-      }
-    }
+    // if (
+    //   toolCalls.find((t) => t.function.name === 'execute-bash-command') &&
+    //   !this.context.getAutoApprove()
+    // ) {
+    //   return {
+    //     state: 'INTERRUPT',
+    //     context: {
+    //       toolCalls: payload.toolCalls,
+    //       continueToolCallIndex: 0,
+    //     },
+    //   }
+    // }
     // 并行执行所有toolCalls
     // const promiseOfCallToolResults = toolCalls.map(async (toolCall) => {
     //   // Simulate tool execution
@@ -281,11 +293,9 @@ export class Workflow {
     // 串行执行所有toolCalls
     for (let i = 0; i < toolCalls.length; i++) {
       const toolCall = toolCalls[i]
-      if (!this.context.getAutoApprove()) {
+      if (toolCall.status === 'waiting-human') {
         return {
           state: 'INTERRUPT',
-          type: 'HUMAN_APPROVE',
-          reason: 'Waiting for human approval to continue tool calls',
           context: {
             toolCalls: payload.toolCalls,
             continueToolCallIndex: i,
@@ -316,13 +326,20 @@ export class Workflow {
             })
             // 由于中间某一个 toolcall 报错了， 跳过后续toolcall
             const pendingToolCalls = toolCalls.slice(i + 1)
+            const pendingError = 'Tool call skipped due to previous error'
             for (const t of pendingToolCalls) {
               this.messages.push({
                 role: 'tool',
                 tool_call_id: t.id,
-                content: JSON.stringify({
-                  result: 'Tool call skipped due to previous error',
-                }),
+                content: pendingError,
+              })
+              this.stream.push({
+                type: 'workflow.tool.call.error',
+                toolCallResult: {
+                  id: t.id,
+                  toolName: t.function.name,
+                  error: pendingError,
+                },
               })
             }
             return { state: 'CALL_LLM' }

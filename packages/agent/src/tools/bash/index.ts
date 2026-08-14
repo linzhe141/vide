@@ -13,8 +13,9 @@ export class Bash extends ToolProvider {
     type: 'function',
     function: {
       name: BASH_TOOL_NAMES.EXECUTE_BASH_COMMAND,
-      description:
-        'Execute a bash command and return the output. Set background to true for long-running commands such as dev servers.',
+      description: `Execute a bash command and return the output. Set background to true for long-running commands such as dev servers starting, installing packages etc.
+for long-running commands, the command will be started in the background and the result will be returned immediately. you do not need to wait for the command to finish, 
+and you can continue to use the agent while the command is running in the background.`,
       parameters: {
         type: 'object',
         properties: {
@@ -69,6 +70,7 @@ export class Bash extends ToolProvider {
           resolve({
             reason: 'call-llm',
             result: {
+              content: `Command started in background`,
               stdout: '',
               stderr: '',
               exitCode: 0,

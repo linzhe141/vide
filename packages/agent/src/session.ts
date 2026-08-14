@@ -1,8 +1,9 @@
 import type { AgentMessage } from '@vide/ai'
 import { WorkflowStream } from './stream'
-import { Workflow, type StepPayload, type StopReason } from './workflow'
+import { Workflow, type CallToolsPayload, type InterruptPayload, type StopReason } from './workflow'
 import { v4 as uuid } from 'uuid'
 import { getBuildInTools } from './tools/buildinTools'
+import type { Agent } from './agent'
 
 export type SessionType = 'normal' | 'fork'
 
@@ -41,6 +42,8 @@ export class Session {
 
   // 这里可以存放 等待 human approve 的workflow
   pendingSessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
+
+  constructor(public agentSettings: Agent['settings']) {}
 
   get currentBranch() {
     return this.branchs[this.activeBranch]
@@ -83,6 +86,7 @@ export class Session {
       tools: getBuildInTools({
         signal: stream.signal,
         workspacePath: this.workspacePath,
+        agentSettings: this.agentSettings,
       }),
       stream,
       thinkingMode: this.thinkingMode,
@@ -107,9 +111,10 @@ export class Session {
   abort() {
     const workflow = this.currentBranch?.head?.workflow
     workflow?.abort()
+    //TODO 对于 中断的 workflow，已经不再 while loop了， 需要特殊处理
   }
 
-  humanApprove(workflowId: string, continuePayload: StepPayload) {
+  humanApprove(workflowId: string) {
     const workflowCommitNode = this.pendingSessionWorkflowNodes[workflowId]
     if (!workflowCommitNode) {
       throw new Error(`No pending workflow found with ID: ${workflowId}`)
@@ -118,6 +123,15 @@ export class Session {
 
     const workflow = workflowCommitNode.workflow
 
+    const interruptPayload = workflow.stepPayload as InterruptPayload
+    const continuePayload: CallToolsPayload = {
+      state: 'CALL_TOOLS',
+      toolCalls: interruptPayload.context.toolCalls.map((i: any) => ({
+        ...i,
+        status: 'human-approved',
+      })),
+      continueToolCallIndex: interruptPayload.context.continueToolCallIndex,
+    }
     workflow.stepPayload = continuePayload
     workflow.continueRunLoop(workflow.stepPayload!).then((stopReason) => {
       this.processWorkflowStopReason(stopReason, workflowCommitNode)

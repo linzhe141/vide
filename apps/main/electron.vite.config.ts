@@ -1,6 +1,7 @@
 import { defineConfig } from 'electron-vite'
 import path from 'path'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
@@ -50,11 +51,10 @@ export default defineConfig({
       alias: [{ find: '@', replacement: path.resolve(__dirname, '../../apps/renderer/src') }],
     },
     plugins: [
-      react({
-        babel: {
-          plugins: ['babel-plugin-react-compiler'],
-        },
-      } as any),
+      react(),
+      await babel({
+        presets: [reactCompilerPreset()],
+      }),
       tailwindcss(),
     ],
     server: {

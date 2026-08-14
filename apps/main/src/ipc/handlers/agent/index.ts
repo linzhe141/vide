@@ -12,6 +12,10 @@ export class AgentIpcMainService implements IpcMainService {
 
   constructor(private appManager: AppManager) {
     this.agent = new Agent()
+    this.agent.setWebSearchConfig({
+      apiKey: settingsStore.get('webSearchConfig').apiKey,
+      apiUrl: settingsStore.get('webSearchConfig').searchUrl,
+    })
   }
 
   registerIpcMainHandle() {
@@ -71,6 +75,10 @@ export class AgentIpcMainService implements IpcMainService {
       session.thinkingMode = thinkingMode
     })
 
+    ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId }) => {
+      const session = await this.getSession(sessionId)
+      session.humanApprove(workflowId)
+    })
     ipcMainApi.handle('agent-session-abort', async ({ sessionId }) => {
       const session = await this.getSession(sessionId)
       session.abort()

@@ -34,13 +34,7 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 
         if (tool.function.name === 'execute-bash-command') {
           return (
-            <BashToolCall
-              key={tool.id}
-              tool={tool}
-              result={state.result}
-              originToolCalls={message.toolCalls}
-              workflow={workflow}
-            />
+            <BashToolCall key={tool.id} tool={tool} result={state.result} workflow={workflow} />
           )
         }
 

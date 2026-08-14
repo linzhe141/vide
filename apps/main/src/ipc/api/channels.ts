@@ -11,6 +11,45 @@ import type { WorkflowEvent } from '@vide/agent'
 
 export type { FileNode, SessionRowDto, WorkflowData }
 
+export type WorkspaceExplorerNode = {
+  name: string
+  type: 'file' | 'folder'
+  path: string
+  children?: WorkspaceExplorerNode[]
+}
+
+export type WorkspaceFilePreview =
+  | {
+      kind: 'folder'
+      path: string
+    }
+  | {
+      kind: 'text'
+      path: string
+      content: string
+      truncated: boolean
+    }
+  | {
+      kind: 'image'
+      path: string
+      fileUrl: string
+    }
+  | {
+      kind: 'video'
+      path: string
+      fileUrl: string
+    }
+  | {
+      kind: 'binary'
+      path: string
+      message: string
+    }
+  | {
+      kind: 'missing'
+      path: string
+      message: string
+    }
+
 export interface RenderChannel {
   // electron store
   'get-settings-store': () => Settings
@@ -90,6 +129,20 @@ export interface RenderChannel {
     artifactsPath: string
     skillsPath: string
   } | null>
+  'workspace-explorer-read-tree': (data: {
+    workspacePath: string
+  }) => Promise<WorkspaceExplorerNode>
+  'workspace-explorer-read-file': (data: {
+    workspacePath: string
+    targetPath: string
+    maxBytes?: number
+  }) => Promise<WorkspaceFilePreview>
+  'workspace-explorer-watch-start': (data: { workspacePath: string }) => Promise<void>
+  'workspace-explorer-watch-stop': (data: { workspacePath: string }) => Promise<void>
+  'workspace-explorer-sync-directory': (data: {
+    workspacePath: string
+    targetPath: string
+  }) => Promise<WorkspaceExplorerNode>
   'reveal-path-in-explorer': (data: { path: string }) => Promise<void>
   'get-skills-list': () => Promise<
     {
@@ -119,6 +172,12 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
+  'workspace-explorer-changed': (data: {
+    workspacePath: string
+    event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
+    path: string
+    tree: WorkspaceExplorerNode
+  }) => void
 } & {
   // agent workflow stream events
   [K in WorkflowEvent['type']]: (
