@@ -128,7 +128,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
         <div
           className={cn('overflow-hidden transition-[width] duration-200', {
             'w-0': !open,
-            'w-[1000px] border-l': open && type === 'Artifacts',
+            'w-[2000px] border-l': open && type === 'Artifacts',
             'w-[520px] border-l': open && type === 'WebSearch',
           })}
         >

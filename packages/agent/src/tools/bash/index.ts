@@ -54,8 +54,12 @@ and you can continue to use the agent while the command is running in the backgr
         let stdout = ''
         let stderr = ''
 
+        // signal
+
+        // timeout handler
         const abortHandler = () => {
           proc.kill('SIGKILL')
+          reject(new ToolCallError(`Command aborted`))
         }
         this.runtime.signal.addEventListener('abort', abortHandler, { once: true })
         const timeoutId = setTimeout(() => {

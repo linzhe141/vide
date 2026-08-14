@@ -184,7 +184,7 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
         <div className='text-text-secondary p-4 text-sm'>This session has no workspace path.</div>
       ) : (
         <div className='flex h-0 flex-1'>
-          <div className='border-border h-full w-[42%] overflow-auto border-r'>
+          <div className='border-border h-full w-[500px] overflow-auto border-r'>
             {treeError && !tree && <div className='p-3 text-sm text-red-500'>{treeError}</div>}
             {tree && (
               <WorkspaceFileTree

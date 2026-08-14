@@ -111,7 +111,11 @@ export class Session {
   abort() {
     const workflow = this.currentBranch?.head?.workflow
     workflow?.abort()
-    //TODO 对于 中断的 workflow，已经不再 while loop了， 需要特殊处理
+    //TODO 对于 INTERRUPT workflow，已经不再 while loop了， 需要手动抛出 abort stream event
+    if (workflow?.state === 'INTERRUPT') {
+      workflow.stream.push({ type: 'workflow.aborted' })
+      workflow.stream.end()
+    }
   }
 
   humanApprove(workflowId: string) {
@@ -198,7 +202,7 @@ export class Session {
     if (!targetWorkflow) return []
 
     function traverse(node: SessionWorkflowNode, result: AgentMessage[] = []): AgentMessage[] {
-      if (node.stopStatus !== 'aborted' && node.stopStatus !== 'error') {
+      if (node.stopStatus !== 'error') {
         result.unshift(...node.workflow.messages)
       }
       if (node.parent) {

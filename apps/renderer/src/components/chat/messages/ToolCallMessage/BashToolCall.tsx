@@ -76,56 +76,61 @@ function BashToolCall(props: BashToolCallProps) {
 
   return (
     <div className='space-y-2'>
-      <button
+      <div
         onClick={() => setOpen((value) => !value)}
-        className='group border-border/80 from-foreground/4 to-background hover:border-primary/25 dark:from-foreground/6 dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-gradient-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='border-border/80 bg-background flex w-full flex-col gap-2 rounded-lg border px-4 py-3 text-left'
       >
-        <div className='bg-foreground/6 text-foreground dark:bg-foreground/10 shrink-0 rounded-2xl p-2'>
-          <SquareTerminal size={17} strokeWidth={1.8} />
-        </div>
-        <div className='min-w-0 flex-1'>
-          <div className='flex items-center gap-3'>
-            <span className='text-foreground truncate font-mono text-[14px] font-medium'>
-              {command}
-            </span>
-            {tool.status === 'waiting-human' && (
-              <ApprovalActions onApprove={humanApproveToolCall} onReject={humanRejectToolCall} />
-            )}
-            {isSuccess && <StatusBadge variant='success' label='Done' />}
-            {isRunning && <StatusBadge variant='running' label='Running' />}
-            {isError && <StatusBadge variant='error' label='Failed' />}
+        {/* 第一行：图标 + 命令 + 状态徽章/操作按钮 */}
+        <div className='flex w-full items-center gap-3'>
+          <div className='bg-foreground/6 text-foreground shrink-0 rounded-md p-2'>
+            <SquareTerminal size={17} strokeWidth={1.8} />
           </div>
-          <div className='text-text-secondary mt-1 flex items-center gap-2 text-xs'>
+          <span className='text-foreground min-w-0 flex-1 truncate font-mono text-[14px] font-medium'>
+            {command}
+          </span>
+          {isSuccess && <StatusBadge variant='success' label='Done' />}
+          {isRunning && <StatusBadge variant='running' label='Running' />}
+          {isError && <StatusBadge variant='error' label='Failed' />}
+          <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
+            {duration && (
+              <span className='flex items-center gap-1.5'>
+                <Clock3 size={14} />
+                {duration}
+              </span>
+            )}
+            {isRunning && <Ellipsis size={16} className='animate-pulse' />}
+            {isSuccess && (
+              <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
+            )}
+            {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
+            {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </div>
+        </div>
+
+        {/* 第二行：元信息 + Approval 区域 */}
+        <div className='flex w-full items-center justify-between'>
+          <div className='text-text-secondary flex items-center gap-2 text-xs'>
             <Code2 size={12} />
             <span>Bash command</span>
             {typeof bashResult?.exitCode === 'number' && <span>exit {bashResult.exitCode}</span>}
           </div>
+          {(workflow.runtime.status === 'running' || workflow.runtime.status === 'interrupted') &&
+            tool.status === 'waiting-human' && (
+              <ApprovalActions onApprove={humanApproveToolCall} onReject={humanRejectToolCall} />
+            )}
         </div>
-        <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
-          {duration && (
-            <span className='flex items-center gap-1.5'>
-              <Clock3 size={14} />
-              {duration}
-            </span>
-          )}
-          {isRunning && <Ellipsis size={16} className='animate-pulse' />}
-          {isSuccess && (
-            <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
-          )}
-          {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </div>
-      </button>
+      </div>
 
+      {/* 详情区域 - 保留过渡动画 */}
       {open && (
-        <div className='border-border/80 bg-background/80 rounded-[22px] border p-4'>
+        <div className='border-border/80 bg-background/80 rounded-lg border p-4 transition-all duration-200 ease-in-out'>
           <div className='space-y-4'>
             <section className='space-y-2'>
               <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
                 <Play size={13} />
                 Command
               </div>
-              <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+              <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-md p-3 font-mono text-xs leading-6'>
                 {command}
               </pre>
             </section>
@@ -136,17 +141,17 @@ function BashToolCall(props: BashToolCallProps) {
                   Output
                 </div>
                 {bashResult?.stdout && (
-                  <pre className='bg-foreground/4 text-text-secondary overflow-auto overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+                  <pre className='bg-foreground/4 text-text-secondary overflow-auto overflow-x-auto rounded-md p-3 font-mono text-xs leading-6'>
                     {bashResult.stdout}
                   </pre>
                 )}
                 {bashResult?.stderr && (
-                  <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-md bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                     {bashResult.stderr}
                   </pre>
                 )}
                 {result?.error !== undefined && (
-                  <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
+                  <pre className='overflow-auto rounded-md bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                     {JSON.stringify(result.error, null, 2)}
                   </pre>
                 )}
@@ -161,25 +166,31 @@ function BashToolCall(props: BashToolCallProps) {
 
 function ApprovalActions({ onApprove, onReject }: { onApprove: () => void; onReject: () => void }) {
   return (
-    <span className='flex items-center gap-2 rounded-full bg-yellow-100 px-2 py-0.5 text-[12px] font-medium text-yellow-600 dark:bg-yellow-950/50 dark:text-yellow-300'>
-      Waiting for Approval
-      <Check
-        size={12}
-        className='ml-1 text-yellow-500 dark:text-yellow-300'
+    <div className='flex items-center gap-2 rounded-full bg-yellow-100 px-3 py-1 dark:bg-yellow-950/50'>
+      <span className='text-[12px] font-medium text-yellow-600 dark:text-yellow-300'>
+        Waiting for Approval
+      </span>
+      <button
         onClick={(e) => {
           e.stopPropagation()
           onApprove()
         }}
-      />
-      <XCircle
-        size={12}
-        className='ml-1 text-red-500 dark:text-red-300'
+        className='rounded-full bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700'
+        aria-label='Approve'
+      >
+        <Check size={14} />
+      </button>
+      <button
         onClick={(e) => {
           e.stopPropagation()
           onReject()
         }}
-      />
-    </span>
+        className='rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700'
+        aria-label='Reject'
+      >
+        <XCircle size={14} />
+      </button>
+    </div>
   )
 }
 
@@ -198,7 +209,9 @@ function StatusBadge({
         : 'bg-red-100 text-red-500 dark:bg-red-950/40 dark:text-red-300'
 
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${className}`}>{label}</span>
+    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-medium ${className}`}>
+      {label}
+    </span>
   )
 }
 

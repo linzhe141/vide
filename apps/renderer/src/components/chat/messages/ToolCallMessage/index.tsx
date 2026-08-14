@@ -1,4 +1,4 @@
-﻿import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
+import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -15,6 +15,7 @@ import BashToolCall from './BashToolCall'
 import WebSearchToolCall from './WebSearchToolCall'
 import { EditFileToolCall, SearchReplaceToolCall } from './EditFileToolCall'
 import { SubAgentToolCall } from './SubAgentToolCall'
+import TodoToolCall from './TodoToolCall'
 
 type ToolCallViewProps = {
   workflow: Workflow
@@ -53,6 +54,11 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
         if (tool.function.name === 'edit-file') {
           return <EditFileToolCall key={tool.id} tool={tool} result={state.result} />
         }
+
+        if (tool.function.name === 'todo_write') {
+          return <TodoToolCall key={tool.id} tool={tool} result={state.result} />
+        }
+
         return <ToolCallButton key={tool.id} tool={tool} result={state.result} />
       })}
     </div>
