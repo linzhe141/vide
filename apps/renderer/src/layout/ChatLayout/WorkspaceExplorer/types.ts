@@ -2,7 +2,9 @@ export type WorkspaceExplorerNode = {
   name: string
   type: 'file' | 'folder'
   path: string
+  target: string[]
   children?: WorkspaceExplorerNode[]
+  content?: WorkspaceFilePreview
 }
 
 export type WorkspaceFilePreview =
@@ -36,3 +38,13 @@ export type WorkspaceFilePreview =
       path: string
       message: string
     }
+
+export type WorkspaceFileChangedEvent = {
+  workspacePath: string
+  event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
+  path: string
+  target: string[]
+  parentTarget: string[]
+  name: string
+  type: 'file' | 'folder'
+}

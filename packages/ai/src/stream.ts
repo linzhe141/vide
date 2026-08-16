@@ -15,6 +15,13 @@ type StreamToolCallsChunk = {
   finishReason: 'tool_calls'
 }
 
+const normalizeFinishReason = (finishReason: FinishReason): FinishReason => {
+  if (finishReason === 'tool_calls' || finishReason === 'length') {
+    return finishReason
+  }
+  return 'stop'
+}
+
 type FnProcessLLMStream = (
   stream: LLMStream,
   events: {
@@ -93,11 +100,11 @@ export const processLLMStream: FnProcessLLMStream = async function* (
       yield {
         content,
         delta: delta.content,
-        finishReason: finishReason === 'tool_calls' ? 'tool_calls' : 'stop',
+        finishReason: normalizeFinishReason(finishReason),
       }
     }
 
-    if (chunkFinishReason === 'stop') {
+    if (chunkFinishReason === 'stop' || chunkFinishReason === 'length') {
       if (content) {
         onTextEnd?.(content)
         content = ''

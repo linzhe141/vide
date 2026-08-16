@@ -1,11 +1,15 @@
 import type { AppManager } from '@/appManager'
 import type { IpcMainService } from '@/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
-import { readWorkspacePreview, readWorkspaceTree, WorkspaceExplorerWatchRegistry } from './explorer'
+import {
+  getWorkspaceFileContent,
+  getWorkspaceFiles,
+  WorkspaceExplorerWatchRegistry,
+} from './explorer'
 
 export class WorkspaceIpcMainService implements IpcMainService {
   private workspaceExplorerWatchRegistry = new WorkspaceExplorerWatchRegistry((data) => {
-    ipcMainApi.send('workspace-explorer-changed', data)
+    ipcMainApi.send('workspace-file-changed', data)
   })
 
   constructor(private appManager: AppManager) {}
@@ -19,35 +23,28 @@ export class WorkspaceIpcMainService implements IpcMainService {
       return this.appManager.workspaceManager.selectWorkspace()
     })
 
-    ipcMainApi.handle('workspace-explorer-read-tree', async ({ workspacePath }) => {
-      return readWorkspaceTree(workspacePath)
+    ipcMainApi.handle('get-workspace-files', async ({ workspacePath, target }) => {
+      return getWorkspaceFiles({ workspacePath, target })
     })
 
     ipcMainApi.handle(
-      'workspace-explorer-read-file',
-      async ({ workspacePath, targetPath, maxBytes }) => {
-        return readWorkspacePreview({
+      'get-workspace-file-content',
+      async ({ workspacePath, target, maxBytes }) => {
+        return getWorkspaceFileContent({
           workspacePath,
-          targetPath,
+          target,
           maxBytes,
         })
       }
     )
 
-    ipcMainApi.handle('workspace-explorer-watch-start', async ({ workspacePath }) => {
+    ipcMainApi.handle('workspace-files-watch-start', async ({ workspacePath }) => {
       await this.workspaceExplorerWatchRegistry.start(workspacePath)
     })
 
-    ipcMainApi.handle('workspace-explorer-watch-stop', async ({ workspacePath }) => {
+    ipcMainApi.handle('workspace-files-watch-stop', async ({ workspacePath }) => {
       await this.workspaceExplorerWatchRegistry.stop(workspacePath)
     })
-
-    ipcMainApi.handle(
-      'workspace-explorer-sync-directory',
-      async ({ workspacePath, targetPath }) => {
-        return this.workspaceExplorerWatchRegistry.syncDirectory(workspacePath, targetPath)
-      }
-    )
 
     ipcMainApi.handle('reveal-path-in-explorer', async ({ path }) => {
       await this.appManager.workspaceManager.revealPath(path)

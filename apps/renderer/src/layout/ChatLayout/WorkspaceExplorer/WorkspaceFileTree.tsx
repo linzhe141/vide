@@ -6,7 +6,7 @@ type WorkspaceFileTreeProps = {
   root: WorkspaceExplorerNode
   selectedPath: string | null
   expandedPaths: Set<string>
-  onToggle: (path: string) => void
+  onToggle: (node: WorkspaceExplorerNode) => void
   onSelect: (node: WorkspaceExplorerNode) => void
 }
 
@@ -30,7 +30,7 @@ type TreeNodeProps = {
   level: number
   selectedPath: string | null
   expandedPaths: Set<string>
-  onToggle: (path: string) => void
+  onToggle: (node: WorkspaceExplorerNode) => void
   onSelect: (node: WorkspaceExplorerNode) => void
 }
 
@@ -52,7 +52,7 @@ function TreeNode({ node, level, selectedPath, expandedPaths, onToggle, onSelect
         style={{ paddingLeft: `${level * 14 + 8}px` }}
         onClick={() => {
           if (isFolder) {
-            onToggle(node.path)
+            onToggle(node)
           }
           onSelect(node)
         }}

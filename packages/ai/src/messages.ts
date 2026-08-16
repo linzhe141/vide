@@ -44,7 +44,7 @@ export interface ToolResult {
   result: any
 }
 
-export type FinishReason = 'stop' | 'tool_calls'
+export type FinishReason = 'stop' | 'length' | 'tool_calls'
 
 export type ToolCall = {
   function: { arguments: string; name: string }

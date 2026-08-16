@@ -1,5 +1,5 @@
-import fs from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import chokidar, { type FSWatcher } from 'chokidar'
@@ -7,6 +7,16 @@ import { isBinaryFile } from 'isbinaryfile'
 import type { WorkspaceExplorerNode, WorkspaceFilePreview } from '../../api/channels'
 
 type WorkspaceWatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
+
+type WorkspaceFileChangedEvent = {
+  workspacePath: string
+  event: WorkspaceWatchEvent
+  path: string
+  target: string[]
+  parentTarget: string[]
+  name: string
+  type: 'file' | 'folder'
+}
 
 const IMAGE_EXTENSIONS = new Set([
   '.png',
@@ -38,24 +48,9 @@ const DEFAULT_MAX_TEXT_BYTES = 512 * 1024
 const BINARY_SAMPLE_BYTES = 8 * 1024
 
 export class WorkspaceExplorerWatchRegistry {
-  private watchers = new Map<
-    string,
-    {
-      watcher: FSWatcher
-      refCount: number
-      tree: WorkspaceExplorerNode
-      queue: Promise<void>
-    }
-  >()
+  private watchers = new Map<string, { watcher: FSWatcher; refCount: number }>()
 
-  constructor(
-    private emitChange: (data: {
-      workspacePath: string
-      event: WorkspaceWatchEvent
-      path: string
-      tree: WorkspaceExplorerNode
-    }) => void
-  ) {}
+  constructor(private emitChange: (data: WorkspaceFileChangedEvent) => void) {}
 
   async start(workspacePath: string) {
     const rootPath = await resolveWorkspaceRoot(workspacePath)
@@ -66,10 +61,8 @@ export class WorkspaceExplorerWatchRegistry {
       return
     }
 
-    const tree = await readWorkspaceTree(rootPath)
-
     const watcher = chokidar.watch(rootPath, {
-      ignored: (targetPath) => shouldIgnorePath(targetPath.toString()),
+      ignored: (targetPath) => shouldIgnorePath(targetPath.toString(), rootPath),
       ignoreInitial: true,
       awaitWriteFinish: {
         stabilityThreshold: 150,
@@ -80,32 +73,13 @@ export class WorkspaceExplorerWatchRegistry {
     watcher.on('all', (event, changedPath) => {
       if (!isWorkspaceWatchEvent(event)) return
       const resolvedChangedPath = path.resolve(changedPath)
-      const state = this.watchers.get(rootPath)
-      if (!state) return
-
-      state.queue = state.queue
-        .then(async () => {
-          if (event !== 'change') {
-            state.tree = await syncTreeForEvent(rootPath, state.tree, event, resolvedChangedPath)
-          }
-
-          this.emitChange({
-            workspacePath: rootPath,
-            event,
-            path: resolvedChangedPath,
-            tree: state.tree,
-          })
-        })
-        .catch(() => {
-          // keep watcher queue alive
-        })
+      if (shouldIgnorePath(resolvedChangedPath, rootPath)) return
+      this.emitChange(createWatchEvent(rootPath, event, resolvedChangedPath))
     })
 
     this.watchers.set(rootPath, {
       watcher,
       refCount: 1,
-      tree,
-      queue: Promise.resolve(),
     })
   }
 
@@ -115,45 +89,33 @@ export class WorkspaceExplorerWatchRegistry {
     if (!current) return
 
     current.refCount -= 1
-    if (current.refCount > 0) {
-      return
-    }
+    if (current.refCount > 0) return
 
     await current.watcher.close()
     this.watchers.delete(rootPath)
   }
-
-  async syncDirectory(workspacePath: string, targetPath: string) {
-    const rootPath = await resolveWorkspaceRoot(workspacePath)
-    const resolvedTargetPath = resolvePathInsideWorkspace(rootPath, targetPath)
-    const syncDirectoryPath = await resolveSyncDirectoryPath(resolvedTargetPath)
-
-    const state = this.watchers.get(rootPath)
-    if (!state) {
-      return readWorkspaceTree(rootPath)
-    }
-
-    state.tree = await syncDirectoryNode(rootPath, state.tree, syncDirectoryPath)
-    return state.tree
-  }
 }
 
-export async function readWorkspaceTree(workspacePath: string): Promise<WorkspaceExplorerNode> {
-  const rootPath = await resolveWorkspaceRoot(workspacePath)
-  const node = await buildWorkspaceTree(rootPath, rootPath)
-  if (!node) {
-    throw new Error(`Workspace path is not readable: ${rootPath}`)
-  }
-  return node
-}
-
-export async function readWorkspacePreview(data: {
+export async function getWorkspaceFiles(data: {
   workspacePath: string
-  targetPath: string
+  target: string[]
+}): Promise<WorkspaceExplorerNode[]> {
+  const rootPath = await resolveWorkspaceRoot(data.workspacePath)
+  const directoryPath = resolveTargetInsideWorkspace(rootPath, data.target)
+  const stat = await fs.stat(directoryPath)
+  if (!stat.isDirectory()) {
+    throw new Error(`Target is not a directory: ${directoryPath}`)
+  }
+  return readDirectoryChildren(rootPath, directoryPath)
+}
+
+export async function getWorkspaceFileContent(data: {
+  workspacePath: string
+  target: string[]
   maxBytes?: number
 }): Promise<WorkspaceFilePreview> {
   const rootPath = await resolveWorkspaceRoot(data.workspacePath)
-  const targetPath = resolvePathInsideWorkspace(rootPath, data.targetPath)
+  const targetPath = resolveTargetInsideWorkspace(rootPath, data.target)
 
   let stat
   try {
@@ -213,6 +175,38 @@ export async function readWorkspacePreview(data: {
   }
 }
 
+async function readDirectoryChildren(rootPath: string, directoryPath: string) {
+  let entries: Dirent[] = []
+  try {
+    entries = await fs.readdir(directoryPath, { withFileTypes: true })
+  } catch {
+    return []
+  }
+
+  const children: WorkspaceExplorerNode[] = []
+  for (const entry of entries) {
+    if (IGNORED_NAMES.has(entry.name) || entry.isSymbolicLink()) continue
+    children.push(createNode(rootPath, path.join(directoryPath, entry.name), entry))
+  }
+
+  children.sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+
+  return children
+}
+
+function createNode(rootPath: string, targetPath: string, entry?: Dirent): WorkspaceExplorerNode {
+  const type = entry?.isDirectory() ? 'folder' : 'file'
+  return {
+    name: path.basename(targetPath),
+    type,
+    path: targetPath,
+    target: getTarget(rootPath, targetPath),
+  }
+}
+
 async function readTextFilePreviewChunk(targetPath: string, fileSize: number, maxBytes: number) {
   const handle = await fs.open(targetPath, 'r')
 
@@ -255,87 +249,6 @@ async function readTextFilePreviewChunk(targetPath: string, fileSize: number, ma
   }
 }
 
-async function buildWorkspaceTree(
-  rootPath: string,
-  currentPath: string
-): Promise<WorkspaceExplorerNode | null> {
-  if (shouldIgnorePath(currentPath, rootPath)) {
-    return null
-  }
-
-  let stat
-  try {
-    stat = await fs.lstat(currentPath)
-  } catch {
-    return null
-  }
-
-  if (stat.isSymbolicLink()) {
-    return null
-  }
-
-  if (!stat.isDirectory()) {
-    return {
-      name: path.basename(currentPath),
-      type: 'file',
-      path: currentPath,
-    }
-  }
-
-  let entries: Dirent[] = []
-  try {
-    entries = await fs.readdir(currentPath, { withFileTypes: true })
-  } catch {
-    // ignore unreadable directories
-  }
-
-  const children: WorkspaceExplorerNode[] = []
-  for (const entry of entries) {
-    if (IGNORED_NAMES.has(entry.name)) {
-      continue
-    }
-    const childPath = path.join(currentPath, entry.name)
-    const childNode = await buildWorkspaceTree(rootPath, childPath)
-    if (childNode) {
-      children.push(childNode)
-    }
-  }
-
-  children.sort((a, b) => {
-    if (a.type !== b.type) {
-      return a.type === 'folder' ? -1 : 1
-    }
-    return a.name.localeCompare(b.name)
-  })
-
-  return {
-    name:
-      currentPath === rootPath ? path.basename(rootPath) || rootPath : path.basename(currentPath),
-    type: 'folder',
-    path: currentPath,
-    children,
-  }
-}
-
-function shouldIgnorePath(targetPath: string, rootPath?: string) {
-  const normalized = normalizePath(targetPath)
-
-  if (rootPath) {
-    const rootNormalized = normalizePath(rootPath)
-    const rel = path.posix.relative(rootNormalized, normalized)
-    if (rel.startsWith('..')) {
-      return true
-    }
-  }
-
-  const segments = normalized.split('/').filter(Boolean)
-  return segments.some((segment) => IGNORED_NAMES.has(segment))
-}
-
-function normalizePath(targetPath: string) {
-  return path.resolve(targetPath).replace(/\\/g, '/')
-}
-
 async function resolveWorkspaceRoot(workspacePath: string) {
   if (!workspacePath) {
     throw new Error('Workspace path is required for explorer operations.')
@@ -350,13 +263,50 @@ async function resolveWorkspaceRoot(workspacePath: string) {
   return resolvedPath
 }
 
-function resolvePathInsideWorkspace(workspacePath: string, targetPath: string) {
-  const resolvedTarget = path.resolve(targetPath)
+function resolveTargetInsideWorkspace(workspacePath: string, target: string[]) {
+  const resolvedTarget = path.resolve(workspacePath, ...target)
   const rel = path.relative(workspacePath, resolvedTarget)
   if (rel.startsWith('..') || path.isAbsolute(rel)) {
     throw new Error('Target path is outside the active workspace.')
   }
   return resolvedTarget
+}
+
+function shouldIgnorePath(targetPath: string, rootPath: string) {
+  const normalized = normalizePath(targetPath)
+  const rootNormalized = normalizePath(rootPath)
+  const rel = path.posix.relative(rootNormalized, normalized)
+  if (rel.startsWith('..')) return true
+
+  const segments = normalized.split('/').filter(Boolean)
+  return segments.some((segment) => IGNORED_NAMES.has(segment))
+}
+
+function createWatchEvent(
+  rootPath: string,
+  event: WorkspaceWatchEvent,
+  changedPath: string
+): WorkspaceFileChangedEvent {
+  const target = getTarget(rootPath, changedPath)
+  return {
+    workspacePath: rootPath,
+    event,
+    path: changedPath,
+    target,
+    parentTarget: target.slice(0, -1),
+    name: path.basename(changedPath),
+    type: event === 'addDir' || event === 'unlinkDir' ? 'folder' : 'file',
+  }
+}
+
+function getTarget(rootPath: string, targetPath: string) {
+  const relativePath = path.relative(rootPath, targetPath)
+  if (!relativePath) return []
+  return relativePath.split(path.sep).filter(Boolean)
+}
+
+function normalizePath(targetPath: string) {
+  return path.resolve(targetPath).replace(/\\/g, '/')
 }
 
 function isWorkspaceWatchEvent(value: string): value is WorkspaceWatchEvent {
@@ -367,124 +317,4 @@ function isWorkspaceWatchEvent(value: string): value is WorkspaceWatchEvent {
     value === 'unlink' ||
     value === 'unlinkDir'
   )
-}
-
-async function syncTreeForEvent(
-  rootPath: string,
-  currentTree: WorkspaceExplorerNode,
-  event: WorkspaceWatchEvent,
-  changedPath: string
-) {
-  if (shouldIgnorePath(changedPath, rootPath)) {
-    return currentTree
-  }
-
-  if (changedPath === rootPath) {
-    const rootTree = await buildWorkspaceTree(rootPath, rootPath)
-    return rootTree ?? currentTree
-  }
-
-  const parentPath = path.dirname(changedPath)
-
-  if (event === 'add' || event === 'addDir' || event === 'unlink' || event === 'unlinkDir') {
-    return syncDirectoryNode(rootPath, currentTree, parentPath)
-  }
-
-  return currentTree
-}
-
-async function syncDirectoryNode(
-  rootPath: string,
-  currentTree: WorkspaceExplorerNode,
-  directoryPath: string
-): Promise<WorkspaceExplorerNode> {
-  if (!isPathInsideWorkspace(rootPath, directoryPath)) {
-    return currentTree
-  }
-
-  const targetNode = findNodeByPath(currentTree, directoryPath)
-  if (targetNode && targetNode.type === 'folder') {
-    targetNode.children = await buildDirectoryChildren(rootPath, directoryPath)
-    return currentTree
-  }
-
-  let fallbackPath = directoryPath
-  while (fallbackPath !== rootPath) {
-    fallbackPath = path.dirname(fallbackPath)
-    const fallbackNode = findNodeByPath(currentTree, fallbackPath)
-    if (fallbackNode && fallbackNode.type === 'folder') {
-      fallbackNode.children = await buildDirectoryChildren(rootPath, fallbackPath)
-      return currentTree
-    }
-  }
-
-  const rebuilt = await buildWorkspaceTree(rootPath, rootPath)
-  return rebuilt ?? currentTree
-}
-
-async function buildDirectoryChildren(rootPath: string, directoryPath: string) {
-  let entries: Dirent[]
-  try {
-    entries = await fs.readdir(directoryPath, { withFileTypes: true })
-  } catch {
-    return []
-  }
-
-  const children: WorkspaceExplorerNode[] = []
-  for (const entry of entries) {
-    if (IGNORED_NAMES.has(entry.name)) {
-      continue
-    }
-
-    const childPath = path.join(directoryPath, entry.name)
-    const childNode = await buildWorkspaceTree(rootPath, childPath)
-    if (childNode) {
-      children.push(childNode)
-    }
-  }
-
-  children.sort((a, b) => {
-    if (a.type !== b.type) {
-      return a.type === 'folder' ? -1 : 1
-    }
-    return a.name.localeCompare(b.name)
-  })
-
-  return children
-}
-
-function findNodeByPath(
-  node: WorkspaceExplorerNode,
-  targetPath: string
-): WorkspaceExplorerNode | null {
-  if (node.path === targetPath) {
-    return node
-  }
-
-  if (!node.children?.length) {
-    return null
-  }
-
-  for (const child of node.children) {
-    const found = findNodeByPath(child, targetPath)
-    if (found) {
-      return found
-    }
-  }
-
-  return null
-}
-
-function isPathInsideWorkspace(rootPath: string, targetPath: string) {
-  const rel = path.relative(rootPath, targetPath)
-  return !(rel.startsWith('..') || path.isAbsolute(rel))
-}
-
-async function resolveSyncDirectoryPath(targetPath: string) {
-  try {
-    const stat = await fs.stat(targetPath)
-    return stat.isDirectory() ? targetPath : path.dirname(targetPath)
-  } catch {
-    return path.dirname(targetPath)
-  }
 }

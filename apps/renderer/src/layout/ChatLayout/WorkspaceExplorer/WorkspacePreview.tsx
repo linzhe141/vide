@@ -1,4 +1,4 @@
-import { AlertCircle, FileText, Folder, Image as ImageIcon, Video } from 'lucide-react'
+import { AlertCircle, ExternalLink, FileText, Folder, Image as ImageIcon, Video } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { WorkspaceFilePreview } from './types'
 
@@ -57,6 +57,20 @@ export function WorkspacePreview({ preview, error }: WorkspacePreviewProps) {
     )
   }
 
+  if (preview.kind === 'missing') {
+    return (
+      <div className='flex h-full flex-col'>
+        <PreviewHeader icon={<AlertCircle size={14} className='text-red-500' />} path={preview.path} deleted />
+        <PaneState
+          title='File deleted'
+          description={preview.message}
+          icon={<AlertCircle size={16} className='text-red-500' />}
+          error
+        />
+      </div>
+    )
+  }
+
   if (preview.kind === 'text') {
     return (
       <div className='flex h-full flex-col'>
@@ -82,11 +96,29 @@ export function WorkspacePreview({ preview, error }: WorkspacePreviewProps) {
   )
 }
 
-function PreviewHeader({ icon, path }: { icon: ReactNode; path: string }) {
+function PreviewHeader({ icon, path, deleted }: { icon: ReactNode; path: string; deleted?: boolean }) {
+  const openContainingFolder = () => {
+    const separatorIndex = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
+    const directoryPath = separatorIndex > 0 ? path.slice(0, separatorIndex) : path
+    window.ipcRendererApi.invoke('reveal-path-in-explorer', { path: directoryPath })
+  }
+
   return (
     <div className='border-border text-text-secondary flex items-center gap-2 border-b px-3 py-2 text-xs'>
       {icon}
-      <span className='truncate'>{path}</span>
+      <span className={deleted ? 'truncate text-red-500 line-through' : 'truncate'}>
+        {deleted && 'Deleted '}
+        {path}
+      </span>
+      <button
+        type='button'
+        className='text-text-secondary hover:text-foreground ml-auto shrink-0 rounded p-1 transition'
+        onClick={openContainingFolder}
+        title='Open containing folder'
+        aria-label='Open containing folder'
+      >
+        <ExternalLink size={14} />
+      </button>
     </div>
   )
 }

@@ -15,7 +15,9 @@ export type WorkspaceExplorerNode = {
   name: string
   type: 'file' | 'folder'
   path: string
+  target: string[]
   children?: WorkspaceExplorerNode[]
+  content?: WorkspaceFilePreview
 }
 
 export type WorkspaceFilePreview =
@@ -129,20 +131,17 @@ export interface RenderChannel {
     artifactsPath: string
     skillsPath: string
   } | null>
-  'workspace-explorer-read-tree': (data: {
+  'get-workspace-files': (data: {
     workspacePath: string
-  }) => Promise<WorkspaceExplorerNode>
-  'workspace-explorer-read-file': (data: {
+    target: string[]
+  }) => Promise<WorkspaceExplorerNode[]>
+  'get-workspace-file-content': (data: {
     workspacePath: string
-    targetPath: string
+    target: string[]
     maxBytes?: number
   }) => Promise<WorkspaceFilePreview>
-  'workspace-explorer-watch-start': (data: { workspacePath: string }) => Promise<void>
-  'workspace-explorer-watch-stop': (data: { workspacePath: string }) => Promise<void>
-  'workspace-explorer-sync-directory': (data: {
-    workspacePath: string
-    targetPath: string
-  }) => Promise<WorkspaceExplorerNode>
+  'workspace-files-watch-start': (data: { workspacePath: string }) => Promise<void>
+  'workspace-files-watch-stop': (data: { workspacePath: string }) => Promise<void>
   'reveal-path-in-explorer': (data: { path: string }) => Promise<void>
   'get-skills-list': () => Promise<
     {
@@ -172,11 +171,14 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
-  'workspace-explorer-changed': (data: {
+  'workspace-file-changed': (data: {
     workspacePath: string
     event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
     path: string
-    tree: WorkspaceExplorerNode
+    target: string[]
+    parentTarget: string[]
+    name: string
+    type: 'file' | 'folder'
   }) => void
 } & {
   // agent workflow stream events

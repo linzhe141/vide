@@ -49,6 +49,8 @@ export const callAI: FnCallAI = async function ({
       stream: true,
       tools,
       reasoning_effort: thinkingMode ? 'medium' : 'none',
+      // max_completion_tokens: 10,
+      // max_tokens: 10,
       thinking: { type: thinkingMode ? 'enabled' : 'disabled' },
     },
     { signal }

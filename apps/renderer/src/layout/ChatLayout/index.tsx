@@ -113,9 +113,10 @@ export function ChatLayout({ children }: PropsWithChildren) {
           {/* header */}
           <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
             <FolderTree
-              size={14}
+              size={16}
               className={cn({
                 'text-primary': open && type === 'Artifacts',
+                'cursor-pointer': true,
               })}
               onClick={() => togglePane('Artifacts')}
             />

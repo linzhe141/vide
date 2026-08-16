@@ -78,11 +78,12 @@ export class Workflow {
 
   abort() {
     this.context.stream.abort()
-    // 是否需要发送到llm，如果发送是否需要持久化，并且前端是不需要显示
-    this.messages.push({
-      role: 'user',
-      content: 'Workflow aborted by user',
-    })
+    // 加这个有几率导致toolcall 和result之间插入 user message, 导致openai cient 无反应
+    // // 是否需要发送到llm，如果发送是否需要持久化，并且前端是不需要显示
+    // this.messages.push({
+    //   role: 'user',
+    //   content: 'Workflow aborted by user',
+    // })
   }
 
   async run(input: string) {
