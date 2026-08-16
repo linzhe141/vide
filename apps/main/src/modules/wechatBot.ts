@@ -85,9 +85,7 @@ const HELP_TEXT = [
 ].join('\n')
 
 /** 识别到的微信指令 */
-type WechatCommand =
-  | { kind: 'reply'; text: string }
-  | { kind: 'agent' }
+type WechatCommand = { kind: 'reply'; text: string } | { kind: 'agent' }
 
 export class WechatBot {
   /** 微信用到的 agent 会话元数据（Session 本体在 AgentManager。keyed by sessionId） */
@@ -300,7 +298,13 @@ export class WechatBot {
   }
 
   private async handleInbound(msg: WechatInboundMessage): Promise<void> {
-    // 只处理真正的用户消息（message_state != 发送中；item 文本优先）
+    // 只处理用户消息 (message_type === 1)
+    if (msg.message_type !== 1) {
+      logger.debug('ignoring non-user message, type:', msg.message_type)
+      return
+    }
+
+    // 提取文本内容
     let text: string | undefined
     for (const item of msg.item_list ?? []) {
       const candidate = item as { type?: number; text_item?: { text?: string } }
@@ -314,20 +318,46 @@ export class WechatBot {
     this.lastMessageAt = Date.now()
     this.messageCount++
 
-    if (!text || !from) return
+    if (!text || !from || !contextToken) {
+      logger.warn('handleInbound: missing required fields', {
+        text: !!text,
+        from: !!from,
+        contextToken: !!contextToken,
+      })
+      return
+    }
+
+    logger.info('wechat received message', {
+      from,
+      textLength: text.length,
+      hasContextToken: !!contextToken,
+    })
 
     // 先判断是不是本地指令
     const cmd = this.handleCommand(text)
     if (cmd.kind === 'reply') {
-      await this.sendText(from, cmd.text, contextToken)
+      try {
+        await this.sendText(from, cmd.text, contextToken)
+      } catch (err) {
+        logger.error('wechat sendText error (command reply):', err)
+      }
       return
     }
 
     // agent 路径：先立刻回"思考中"，再跑 agent，结束后一次性回完整正文
-    await this.sendText(from, '🧠 思考中…', contextToken)
+    try {
+      await this.sendText(from, '🧠 思考中…', contextToken)
+    } catch (err) {
+      logger.error('wechat sendText thinking error:', err)
+    }
+
     const finalText = await this.runAgent(text)
     if (finalText) {
-      await this.sendText(from, finalText, contextToken)
+      try {
+        await this.sendText(from, finalText, contextToken)
+      } catch (err) {
+        logger.error('wechat sendText agent result error:', err)
+      }
     }
   }
 
@@ -411,7 +441,9 @@ export class WechatBot {
 
     const llm = settingsStore.get('llmConfig')
     if (!llm.model || !llm.baseUrl || !llm.apiKey) {
-      throw new Error('尚未配置 LLM（API Key / Base URL / Model）。请在应用的"LLM 设置"里配置后再使用。')
+      throw new Error(
+        '尚未配置 LLM（API Key / Base URL / Model）。请在应用的"LLM 设置"里配置后再使用。'
+      )
     }
 
     const sessionId = this.agentManager.createSession({
@@ -474,23 +506,36 @@ export class WechatBot {
   // ============================================================
 
   private async sendText(toUserId: string, text: string, contextToken?: string): Promise<void> {
+    if (!contextToken) {
+      throw new Error('context_token 是必填字段，不能为空')
+    }
+
     const payload = {
       msg: {
         to_user_id: toUserId,
         message_type: 2,
         message_state: 2,
-        ...(contextToken ? { context_token: contextToken } : {}),
+        context_token: contextToken,
         item_list: [{ type: 1, text_item: { text } }],
       },
     }
+
+    logger.info('wechat sendText', {
+      toUserId,
+      textLength: text.length,
+      hasContextToken: !!contextToken,
+    })
+
     const res = await this.postJson('/ilink/bot/sendmessage', payload)
     if (!res.ok) {
-      throw new Error(`sendmessage HTTP ${res.status}: ${await res.text()}`)
+      const errorText = await res.text()
+      throw new Error(`sendmessage HTTP ${res.status}: ${errorText}`)
     }
-    const data = (await res.json()) as { ret?: number }
+    const data = (await res.json()) as { ret?: number; [k: string]: unknown }
     if (data.ret !== undefined && data.ret !== 0) {
-      throw new Error(`sendmessage ret=${data.ret}`)
+      throw new Error(`sendmessage ret=${data.ret}: ${JSON.stringify(data)}`)
     }
+    logger.info('wechat sendText success')
   }
 
   // ============================================================
