@@ -12,19 +12,22 @@ import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
-import { ArrowDown, FolderTree, GitBranch } from 'lucide-react'
+import { ArrowDown, FileClock, FolderTree, GitBranch } from 'lucide-react'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
 import { useNavigate } from 'react-router'
 import { WebSearchDisplay } from './WebSearchDisplay'
 import { WorkspaceExplorerPane } from './WorkspaceExplorer'
+import { SessionLogPane } from './SessionLogPane'
+
+type ChatSidePaneType = 'Artifacts' | 'WebSearch' | 'Logs'
 
 interface ChatLayoutContextType {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   scrollToBottom: () => void
   open: boolean
   moving: boolean
-  type: 'Artifacts' | 'WebSearch'
-  togglePane: (next: 'Artifacts' | 'WebSearch') => void
+  type: ChatSidePaneType
+  togglePane: (next: ChatSidePaneType) => void
   showWebSearchResults: () => void
   closePane?: () => void
 }
@@ -39,7 +42,7 @@ export function useChatLayout() {
 export function ChatLayoutProvider({ children }: PropsWithChildren) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<'Artifacts' | 'WebSearch'>('Artifacts')
+  const [type, setType] = useState<ChatSidePaneType>('Artifacts')
   const [moving, setMoving] = useState(false)
 
   const scrollToBottom = useCallback(() => {
@@ -54,7 +57,7 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
   }, [])
 
   const togglePane = useCallback(
-    (next: 'Artifacts' | 'WebSearch') => {
+    (next: ChatSidePaneType) => {
       startMoving()
 
       if (!open) {
@@ -111,15 +114,31 @@ export function ChatLayout({ children }: PropsWithChildren) {
         {/* 主区域 */}
         <div className='flex min-w-[550px] flex-1 flex-col'>
           {/* header */}
-          <div className='text-text-secondary flex h-10 items-center justify-end gap-2 px-5'>
-            <FolderTree
-              size={16}
-              className={cn({
-                'text-primary': open && type === 'Artifacts',
-                'cursor-pointer': true,
-              })}
+          <div className='text-text-secondary flex h-10 items-center justify-end gap-1.5 px-5'>
+            <button
+              type='button'
+              className={cn(
+                'hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition',
+                open && type === 'Logs' && 'bg-primary/10 text-primary'
+              )}
+              onClick={() => togglePane('Logs')}
+              title='Session log'
+              aria-label='Session log'
+            >
+              <FileClock size={16} />
+            </button>
+            <button
+              type='button'
+              className={cn(
+                'hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition',
+                open && type === 'Artifacts' && 'bg-primary/10 text-primary'
+              )}
               onClick={() => togglePane('Artifacts')}
-            />
+              title='Workspace files'
+              aria-label='Workspace files'
+            >
+              <FolderTree size={16} />
+            </button>
           </div>
 
           <div className='relative flex h-0 flex-1 flex-col overflow-hidden'>{children}</div>
@@ -131,10 +150,12 @@ export function ChatLayout({ children }: PropsWithChildren) {
             'w-0': !open,
             'w-[2000px] border-l': open && type === 'Artifacts',
             'w-[520px] border-l': open && type === 'WebSearch',
+            'w-[680px] border-l': open && type === 'Logs',
           })}
         >
           {type === 'Artifacts' && <WorkspaceExplorerPane workspacePath={session?.workspacePath} />}
           {type === 'WebSearch' && <WebSearchDisplay />}
+          {type === 'Logs' && <SessionLogPane />}
         </div>
       </div>
     </div>

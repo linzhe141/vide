@@ -64,6 +64,13 @@ export interface ErrorSessionMessage {
   error: any
 }
 
+export type WorkflowLogEvent = {
+  id: string
+  type: string
+  createdAt: number
+  payload?: unknown
+}
+
 // sub agent messages
 export type WorkflowSessionMessage = {
   role: 'workflow'
@@ -82,6 +89,7 @@ export type Workflow = {
   id: string
   input: string
   feedback: 'like' | 'dislike' | null
+  events?: WorkflowLogEvent[]
   messages: SessionMessage[]
   runtime: {
     status: 'running' | 'finished' | 'error' | 'aborted' | 'interrupted' // 这里的 interrupted 是可恢复的中断， 也就是 human approve

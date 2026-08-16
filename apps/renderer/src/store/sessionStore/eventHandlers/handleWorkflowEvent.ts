@@ -24,6 +24,7 @@ export function handleWorkflowEvent(
   switch (workflowEvent.type) {
     case 'workflow.start': {
       const newWorkflow = createWorkflow(workflowId, workflowEvent.input)
+      appendWorkflowLogEvent(newWorkflow, workflowEvent)
       const currentBranch = session.branches.find((item) => item.name === session.activeBranch)
       if (!currentBranch) return
 
@@ -45,6 +46,7 @@ export function handleWorkflowEvent(
       session.runtime.running = false
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       workflow.runtime.status = 'finished'
       return
     }
@@ -54,6 +56,7 @@ export function handleWorkflowEvent(
       session.runtime.running = true
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       workflow.runtime.status = 'interrupted'
       return
     }
@@ -62,8 +65,18 @@ export function handleWorkflowEvent(
       session.runtime.running = false
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       workflow.runtime.status = 'aborted'
 
+      return
+    }
+
+    case 'workflow.error': {
+      session.runtime.running = false
+      const workflow = session.workflowNodesMap[workflowId]?.workflow
+      if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
+      workflow.runtime.status = 'error'
       return
     }
 
@@ -71,6 +84,7 @@ export function handleWorkflowEvent(
       session.runtime.running = false
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       workflow.runtime.status = 'error'
 
       workflow.messages.push({
@@ -88,6 +102,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-reason'
       ) as AssistantReasonSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       reasoningMessage.reasoning = true
       return
     }
@@ -98,6 +113,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-reason'
       ) as AssistantReasonSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       reasoningMessage.content += workflowEvent.chunk.delta
       return
     }
@@ -108,6 +124,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-reason'
       ) as AssistantReasonSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       reasoningMessage.reasoning = false
       return
     }
@@ -118,6 +135,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-text'
       ) as AssistantTextSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       textMessage.streaming = true
       return
     }
@@ -128,6 +146,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-text'
       ) as AssistantTextSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       textMessage.content += workflowEvent.chunk.delta
       return
     }
@@ -138,6 +157,7 @@ export function handleWorkflowEvent(
         workflowId,
         'assistant-text'
       ) as AssistantTextSessionMessage
+      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
       textMessage.streaming = false
       return
     }
@@ -145,6 +165,7 @@ export function handleWorkflowEvent(
     case 'workflow.llm.tool.call.end': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
 
       const askQuestionToolCalls = workflowEvent.toolCall.filter(
         (toolCall) => toolCall.function.name === 'ask-user-question-generate'
@@ -187,12 +208,14 @@ export function handleWorkflowEvent(
     case 'workflow.tool.call.start': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       return
     }
 
     case 'workflow.tool.call.success': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
 
       const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
       if (!toolCallState) return
@@ -209,6 +232,7 @@ export function handleWorkflowEvent(
     case 'workflow.tool.call.error': {
       const workflow = session.workflowNodesMap[workflowId]?.workflow
       if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
 
       const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
       if (!toolCallState) return
@@ -216,6 +240,18 @@ export function handleWorkflowEvent(
         status: 'error',
         error: workflowEvent.toolCallResult.error,
       }
+      return
+    }
+
+    case 'workflow.step.start':
+    case 'workflow.step.end':
+    case 'workflow.llm.start':
+    case 'workflow.llm.tool.call.process':
+    case 'workflow.llm.end':
+    case 'workflow.llm.result': {
+      const workflow = session.workflowNodesMap[workflowId]?.workflow
+      if (!workflow) return
+      appendWorkflowLogEvent(workflow, workflowEvent)
       return
     }
 
@@ -229,6 +265,7 @@ function createWorkflow(workflowId: string, input: string): Workflow {
     id: workflowId,
     input,
     feedback: null,
+    events: [],
     messages: [
       {
         id: nanoid(),
@@ -241,6 +278,28 @@ function createWorkflow(workflowId: string, input: string): Workflow {
     },
   }
   return newWorkflow
+}
+
+function appendWorkflowLogEvent(workflow: Workflow, workflowEvent: WorkflowState) {
+  if (
+    workflowEvent.type === 'workflow.llm.reason.delta' ||
+    workflowEvent.type === 'workflow.llm.text.delta'
+  ) {
+    return
+  }
+
+  workflow.events ??= []
+  workflow.events.push({
+    id: nanoid(),
+    type: workflowEvent.type,
+    createdAt: Date.now(),
+    payload: sanitizeWorkflowEventPayload(workflowEvent),
+  })
+}
+
+function sanitizeWorkflowEventPayload(workflowEvent: WorkflowState) {
+  const { ctx: _ctx, ...payload } = workflowEvent
+  return payload
 }
 
 function ensureLastMessage(
