@@ -19,6 +19,7 @@ export function Layout() {
             <LinkMenuItem label='LLM settings' link='/settings/llm'></LinkMenuItem>
             <LinkMenuItem label='Generate Image' link='/settings/generateImage'></LinkMenuItem>
             <LinkMenuItem label='Web Search' link='/settings/webSearch'></LinkMenuItem>
+            <LinkMenuItem label='WeChat Bot' link='/settings/wechat'></LinkMenuItem>
           </LinkMenu>
         </div>
       </div>

@@ -6,6 +6,8 @@ import type {
   SessionRowDto,
   WorkflowData,
   WebSearchConfig,
+  WechatBotRuntimeStatus,
+  WechatBotSessionRecord,
 } from '@vide/config'
 import type { WorkflowEvent } from '@vide/agent'
 
@@ -116,6 +118,14 @@ export interface RenderChannel {
   ) => Promise<{ success: true } | { success: false; error: any }>
   'submit-generate-image-settings': (data: GenerateImageConfig) => void
   'submit-web-search-settings': (data: WebSearchConfig) => void
+
+  // wechat bot
+  'wechat-get-qrcode': () => Promise<{ ok: true }>
+  'wechat-start-bot': () => { ok: true } | { ok: false; error: string }
+  'wechat-stop-bot': () => Promise<void>
+  'wechat-logout': () => Promise<void>
+  'wechat-get-runtime-status': () => WechatBotRuntimeStatus
+  'wechat-get-recent-sessions': () => WechatBotSessionRecord[]
   // only dev
   'dev-delete-database-rows': () => void
 
@@ -171,6 +181,11 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
+  'wechat-sessions-changed': (data: {
+    activeSessionId: string | null
+    sessions: WechatBotSessionRecord[]
+    status: WechatBotRuntimeStatus
+  }) => void
   'workspace-file-changed': (data: {
     workspacePath: string
     event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'

@@ -11,6 +11,7 @@ import { GenerateImageSettings } from '../pages/settings/generateImage'
 import { Chat } from '../pages/chat'
 import { LlmSettings } from '../pages/settings/llm'
 import { WebSearchSettings } from '../pages/settings/webSearch'
+import { WechatBotSettings } from '../pages/settings/wechat'
 import { SkillsPage } from '../pages/skills'
 
 export const router = createHashRouter([
@@ -42,6 +43,10 @@ export const router = createHashRouter([
           {
             path: 'webSearch',
             Component: WebSearchSettings,
+          },
+          {
+            path: 'wechat',
+            Component: WechatBotSettings,
           },
         ],
       },

@@ -20,6 +20,10 @@ export const settingsStore = new ElectronStore<Settings>({
       apiKey: '',
       searchUrl: '',
     },
+    wechatBotConfig: {
+      botToken: '',
+      activeSessionId: null,
+    },
   },
   name: 'settings',
   fileExtension: 'json',

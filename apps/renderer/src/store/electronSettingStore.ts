@@ -7,6 +7,7 @@ import type {
   Theme,
   ThemeColor,
   WebSearchConfig,
+  WechatBotConfig,
 } from '@vide/config'
 
 type State = {
@@ -15,6 +16,7 @@ type State = {
   llmConfig: LLMConfig
   generateImageConfig: GenerateImageConfig
   webSearchConfig: WebSearchConfig
+  wechatBotConfig: WechatBotConfig
 }
 
 type Actions = {
@@ -23,6 +25,7 @@ type Actions = {
   setLLMConfig: (config: LLMConfig) => void
   setGenerateImageConfig: (config: GenerateImageConfig) => void
   setWebSearchConfig: (config: WebSearchConfig) => void
+  setWechatBotConfig: (config: WechatBotConfig) => void
 }
 
 export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> = null!
@@ -46,6 +49,9 @@ export async function createElectronSettingStore() {
         },
         setWebSearchConfig: (config) => {
           set({ webSearchConfig: config })
+        },
+        setWechatBotConfig: (config) => {
+          set({ wechatBotConfig: config })
         },
       }),
       (data: any) => window.ipcRendererApi.invoke('dispatch-settings-store', data)

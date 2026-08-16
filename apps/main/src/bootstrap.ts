@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { initApp } from './initApp'
 import { logger } from './logger'
+import { disposeWechatBot } from './modules/wechatBotManager'
 
 const PROTOCOL_SCHEME = 'vide'
 
@@ -43,6 +44,7 @@ export async function start() {
 
   app.on('before-quit', () => {
     logger.info('App is quitting, performing cleanup...')
+    disposeWechatBot()
   })
 
   app.on('window-all-closed', () => {
