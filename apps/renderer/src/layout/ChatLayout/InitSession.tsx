@@ -1,19 +1,22 @@
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import { useChatContext } from '../../components/chat/ChatProvider'
 
 /**
- * 在进入 chat 页时处理“第一句输入”的暂存逻辑。
+ * 在进入 chat 页时处理“首条输入”的暂存以及持久化 session 的加载。
  *
- * 会话的创建/重建不再通过 loadSession 主动拉取（已移除），而是由全局
- * useAgentSessionEvent 监听 background-create-session 事件驱动 sessionStore/historyStore。
- * 这里只负责把 welcome 页暂存的首条输入发出去。
+ * - 新会话：welcome 页暂存的首条输入在这里发出去；会话占位由全局
+ *   useAgentSessionEvent 监听到 background-create-session 后写入 sessionStore。
+ * - 已存在的持久化会话（重启后 / 从历史列表进入）：通过 loadSession 从 SQLite
+ *   拉取完整数据（agent messages + workflow logs），并派生到 UI 侧的 message。
  */
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
-  const { createSession } = useSessionStoreActions()
+  const { createSession, loadSession } = useSessionStoreActions()
   const currentSession = useSession(sessionId)
+  const loadedRef = useRef(false)
+
   useEffect(() => {
     const firstInput = context.firstInput
 
@@ -25,8 +28,13 @@ export function InitSession({ sessionId }: { sessionId: string }) {
       handleSend(firstInput)
       return
     }
-    // 非首条输入：会话由 background-create-session 事件创建，这里无需额外处理
-  }, [sessionId, handleSend, createSession, currentSession])
+
+    // 非首条输入：若是尚未加载的持久化 session，则从 SQLite 拉取
+    if (!currentSession && !loadedRef.current) {
+      loadedRef.current = true
+      void loadSession(sessionId)
+    }
+  }, [sessionId, handleSend, createSession, loadSession, currentSession])
 
   return null
 }

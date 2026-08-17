@@ -5,6 +5,7 @@ import type { AppManager } from '@/appManager'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
 import { settingsStore } from '@/modules/settingsStore'
 import { logger } from '@/logger'
+import { SessionRepository } from '@/modules/sessionRepository'
 
 export class AgentManager {
   agent: Agent
@@ -21,7 +22,7 @@ export class AgentManager {
   init() {}
 
   /** 创建并注册一个 agent session，返回 session id。 */
-  createSession(data: {
+  async createSession(data: {
     workspacePath: string | null
     autoApprove: boolean
     thinkingMode: boolean
@@ -39,6 +40,21 @@ export class AgentManager {
     })
     this.sessions.set(session.id, session)
     logger.info('agent-manager create-session ', session.id)
+
+    await SessionRepository.ensureSession({
+      id: session.id,
+      title: data.title ?? '',
+      type: session.sessionType ?? 'normal',
+      workspacePath: session.workspacePath,
+      autoApprove: session.autoApprove,
+      thinkingMode: session.thinkingMode,
+    })
+    await SessionRepository.upsertBranch({
+      sessionId: session.id,
+      name: session.activeBranch,
+      headWorkflowId: null,
+      sourceWorkflowId: null,
+    })
 
     // 通知 renderer：新增一个 session（前台/后台入口都走这条广播，
     // 前端 useAgentSessionEvent 统一在 sessionStore/historyStore 落盘）
@@ -59,15 +75,78 @@ export class AgentManager {
   }
 
   /** 首次拿到用户输入时，用它当 session 标题，并广播给 renderer 更新 history。 */
-  private ensureSessionTitle(session: Session, input: string) {
+  private async ensureSessionTitle(session: Session, input: string) {
     if (session.title || !input) return
     session.title = input.trim().slice(0, 60)
     session.updatedAt = Date.now()
+    await SessionRepository.setSessionTitle(session.id, session.title)
     ipcMainApi.send('session-title', {
       type: 'session-title',
       sessionId: session.id,
       title: session.title,
     })
+  }
+
+  /** 统一处理 workflow stream 事件：广播给 renderer + 持久化日志/消息/状态。 */
+  private async persistWorkflowEvent(
+    session: Session,
+    event: WorkflowEvent & { ctx: { sessionId: string | null; workflowId: string | null } }
+  ) {
+    const workflowId = event.ctx.workflowId
+    // 落日志（不含 ctx 的事件载荷）
+    const { ctx: _ctx, ...payload } = event
+    const node = workflowId ? session.sessionWorkflowNodes[workflowId] : undefined
+
+    if (workflowId && node) {
+      try {
+        await SessionRepository.appendWorkflowLog(workflowId, event.type, payload)
+      } catch (error) {
+        logger.error('appendWorkflowLog error', error)
+      }
+    }
+
+    switch (event.type) {
+      case 'workflow.start': {
+        if (workflowId && node) {
+          const parentId = node.parent?.workflow.id ?? null
+          await SessionRepository.createWorkflow({
+            workflowId,
+            sessionId: session.id,
+            parentWorkflowId: parentId,
+            input: event.input,
+          })
+          // 更新活动分支 head（生成新 workflow 后切换 head）
+          await SessionRepository.upsertBranch({
+            sessionId: session.id,
+            name: session.activeBranch,
+            headWorkflowId: workflowId,
+          })
+        }
+        break
+      }
+      case 'workflow.completed':
+      case 'workflow.aborted':
+      case 'workflow.error': {
+        if (workflowId && node) {
+          const messageRows = node.workflow.messages
+          try {
+            await SessionRepository.saveWorkflowMessages(workflowId, messageRows)
+          } catch (error) {
+            logger.error('saveWorkflowMessages error', error)
+          }
+          const stopStatus =
+            event.type === 'workflow.completed'
+              ? ('finished' as const)
+              : event.type === 'workflow.aborted'
+                ? ('aborted' as const)
+                : ('error' as const)
+          await SessionRepository.finishWorkflow(workflowId, stopStatus)
+        }
+        break
+      }
+      default:
+        break
+    }
   }
 
   getSession(sessionId: string): Session {
@@ -84,7 +163,7 @@ export class AgentManager {
 
   async prompt(sessionId: string, input: string): Promise<string> {
     const session = this.getSession(sessionId)
-    this.ensureSessionTitle(session, input)
+    await this.ensureSessionTitle(session, input)
     const stream = session.prompt(input)
     let finalText = ''
     for await (const event of stream) {
@@ -92,6 +171,7 @@ export class AgentManager {
         ctx: { sessionId: string | null; workflowId: string | null }
       }
       ipcMainApi.send(v2Event.type as any, v2Event as any)
+      await this.persistWorkflowEvent(session, v2Event)
 
       switch (event.type) {
         case 'workflow.llm.text.end':
@@ -109,7 +189,7 @@ export class AgentManager {
 
   async backgroundPrompt(sessionId: string, input: string): Promise<string> {
     const session = this.getSession(sessionId)
-    this.ensureSessionTitle(session, input)
+    await this.ensureSessionTitle(session, input)
     const stream = session.prompt(input)
     ipcMainApi.send('agent-session-background-send', { sessionId })
     let finalText = ''
@@ -118,6 +198,7 @@ export class AgentManager {
         ctx: { sessionId: string | null; workflowId: string | null }
       }
       ipcMainApi.send(v2Event.type as any, v2Event as any)
+      await this.persistWorkflowEvent(session, v2Event)
       switch (event.type) {
         case 'workflow.llm.text.end':
           finalText = event.content ?? ''

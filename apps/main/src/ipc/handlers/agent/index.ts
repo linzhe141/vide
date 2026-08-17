@@ -1,8 +1,8 @@
-import type { Session } from '@vide/agent'
 import { logger } from '@/logger'
 import type { AppManager } from '@/appManager'
 import type { IpcMainService } from '@/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
+import { SessionRepository } from '@/modules/sessionRepository'
 
 /**
  * 桌面端 agent IPC。真正的 session 注册/运行逻辑收敛在 AppManager.agentManager，
@@ -18,7 +18,7 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-create-session', async (data) => {
       const workspacePath = data.workspacePath ?? null
       await this.appManager.workspaceManager.ensureVideHome(workspacePath)
-      const sessionId = agentManager.createSession({
+      const sessionId = await agentManager.createSession({
         workspacePath,
         autoApprove: data.autoApprove,
         thinkingMode: data.thinkingMode,
@@ -34,8 +34,8 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('agent-resume-session', async ({ sessionId }) => {
-      const session = agentManager.getSession(sessionId)
-      return this.buildSessionPayload(session)
+      // 会话数据优先从 SQLite 持久化存储中加载（session/workflow/branch/agent message/log）。
+      return SessionRepository.loadSessionData(sessionId)
     })
 
     ipcMainApi.handle('query-workflow-is-completed', async ({ sessionId, workflowId }) => {
@@ -51,11 +51,13 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
       const session = agentManager.getSession(sessionId)
       session.autoApprove = autoApprove
+      await SessionRepository.setSessionAutoApprove(sessionId, autoApprove)
     })
 
     ipcMainApi.handle('agent-session-switch-thinking-mode', async ({ sessionId, thinkingMode }) => {
       const session = agentManager.getSession(sessionId)
       session.thinkingMode = thinkingMode
+      await SessionRepository.setSessionThinkingMode(sessionId, thinkingMode)
     })
 
     ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId }) => {
@@ -77,9 +79,19 @@ export class AgentIpcMainService implements IpcMainService {
         if (!targetNode) return
 
         const parentNode = targetNode.parent
+        const sourceWorkflow = parentNode ? parentNode.workflow.id : targetNode.parent?.workflow?.id ?? null
 
-        session.createBranch(branchName, parentNode!)
+        session.createBranch(branchName, parentNode ?? null)
         session.switchBranch(branchName)
+
+        await SessionRepository.upsertBranch({
+          sessionId,
+          name: branchName,
+          headWorkflowId:
+            session.currentBranch?.head?.workflow.id ?? (parentNode?.workflow.id ?? null),
+          sourceWorkflowId: sourceWorkflow,
+        })
+        await SessionRepository.switchBranch(sessionId, branchName)
       }
     )
 
@@ -87,36 +99,5 @@ export class AgentIpcMainService implements IpcMainService {
       // v2 in-memory mode: no persistence side effects.
     })
   }
-
-  private buildSessionPayload(session: Session) {
-    const branches = Object.entries(session.branchs).map(([name, branch]) => ({
-      name,
-      headWorkflowId: branch.head?.workflow.id ?? null,
-      sourceWorkflowId: branch.source?.workflow.id ?? null,
-    }))
-
-    const workflowData = Object.values(session.sessionWorkflowNodes).map((node) => ({
-      id: node.workflow.id,
-      userInput:
-        node.workflow.messages.find((message) => message.role === 'user')?.content?.toString() ??
-        '',
-      parentWorkflowId: node.parent?.workflow.id ?? null,
-      stopStatus: (node.stopStatus ?? 'finished') as 'finished' | 'aborted' | 'error',
-      feedback: null,
-      messages: [],
-      askUserSubmitValue: undefined,
-    }))
-
-    return {
-      sessionType: 'normal' as const,
-      title: '',
-      origin: null,
-      activeBranch: session.activeBranch,
-      branches,
-      planner: [],
-      workflowData,
-      autoApprove: session.autoApprove,
-      artifacts: [],
-    }
-  }
 }
+

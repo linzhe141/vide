@@ -5,6 +5,7 @@ import type { SessionEvent } from '@vide/agent/event'
 import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
 import { handleSessionEvent } from './eventHandlers/handleSessionEvent'
+import { deriveSessionFromData } from './deriveSession'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
 type SessionState = {
@@ -33,6 +34,9 @@ type SessionActions = {
     updateAskQuestionAnswer: (data: UpdateAskQuestionAnswerData) => void
 
     clearSessions: () => void
+
+    /** 从 SQLite 加载一个已持久化的 session，并派生其 UI 态（workflow/message/log）。 */
+    loadSession: (sessionId: string) => Promise<void>
 
     switchBranch: (sessionId: string, branchName: string) => void
     createSession: (data: {
@@ -106,6 +110,19 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           state.sessions = []
         })
       },
+      async loadSession(sessionId) {
+        const data = await window.ipcRendererApi.invoke('agent-resume-session', { sessionId })
+        if (!data) return
+        const derived = deriveSessionFromData(data)
+        set((state) => {
+          const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
+          if (existingIndex >= 0) {
+            state.sessions[existingIndex] = derived
+          } else {
+            state.sessions.push(derived)
+          }
+        })
+      },
       switchBranch(sessionId, branchName) {
         set((state) => {
           const session = state.sessions.find((item) => item.sessionId === sessionId)
@@ -161,7 +178,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             runtime: {
               running: false,
             },
-            artifacts: [],
           }
           const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
           if (existingIndex >= 0) {

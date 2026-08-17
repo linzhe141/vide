@@ -3,13 +3,11 @@ import type { IpcMainService } from '@/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/db/databaseManager'
 import {
-  artifacts,
-  askUserQuestions,
-  planners,
   sessionBranches,
   sessions,
-  sessionWorkflowMessages,
   sessionWorkflows,
+  workflowLogs,
+  workflowMessages,
 } from '@/db/schema'
 
 export class DevIpcMainService implements IpcMainService {
@@ -17,21 +15,12 @@ export class DevIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('dev-delete-database-rows', async () => {
-      await this.appManager.databaseManager.execute('PRAGMA foreign_keys = OFF', [], 'run')
-      try {
-        await db.delete(sessionWorkflowMessages)
-        await db.delete(askUserQuestions)
-
-        await db.delete(sessionBranches)
-        await db.delete(sessionWorkflows)
-
-        await db.delete(planners)
-        await db.delete(artifacts)
-
-        await db.delete(sessions)
-      } finally {
-        await this.appManager.databaseManager.execute('PRAGMA foreign_keys = ON', [], 'run')
-      }
+      // 按外键依赖顺序删除（先子表后父表），清空所有 session 持久化数据
+      await db.delete(workflowLogs)
+      await db.delete(workflowMessages)
+      await db.delete(sessionBranches)
+      await db.delete(sessionWorkflows)
+      await db.delete(sessions)
     })
   }
 }

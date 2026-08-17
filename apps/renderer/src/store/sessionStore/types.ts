@@ -109,14 +109,6 @@ export type PlanStep = {
   status: 'pending' | 'running' | 'completed' | 'failed'
 }
 
-export type SessionArtifact = {
-  id: string
-  sessionId: string
-  artifactWorkspaceName: string
-  createdAt: number
-  updatedAt: number
-}
-
 export type WorkflowNode = {
   workflow: Workflow
   children: string[]
@@ -138,5 +130,4 @@ export type Session = {
   branches: SessionBranch[]
   workflowNodesMap: Record<string, WorkflowNode>
   runtime: SessionRuntime
-  artifacts: SessionArtifact[]
 }

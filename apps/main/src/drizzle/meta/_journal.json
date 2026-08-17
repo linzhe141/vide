@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1780381109677,
-      "tag": "0000_flowery_deathstrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1783955440076,
-      "tag": "0001_last_northstar",
+      "when": 1786983005868,
+      "tag": "0000_needy_black_cat",
       "breakpoints": true
     }
   ]

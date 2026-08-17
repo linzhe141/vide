@@ -221,7 +221,7 @@ export class WechatBot {
       hasContextToken: !!contextToken,
     })
 
-    const cmd = this.handleCommand(text)
+    const cmd = await this.handleCommand(text)
     if (cmd.kind === 'reply') {
       try {
         await this.sendText(senderId, cmd.text, contextToken)
@@ -247,7 +247,7 @@ export class WechatBot {
     }
   }
 
-  private handleCommand(text: string): WechatCommand {
+  private async handleCommand(text: string): Promise<WechatCommand> {
     const cmd = normalizeCommand(text)
 
     if (cmd === 'help' || cmd === '/help' || cmd === '帮助') {
@@ -259,7 +259,7 @@ export class WechatBot {
     }
 
     if (cmd === 'new session' || cmd === '/new' || cmd === '新建会话') {
-      const sessionId = this.createAgentSession()
+      const sessionId = await this.createAgentSession()
       this.activeSessionId = sessionId
       this.notifyChanged()
       return {
@@ -306,7 +306,7 @@ export class WechatBot {
     return lines.join('\n')
   }
 
-  private createAgentSession(): string {
+  private async createAgentSession(): Promise<string> {
     if (this.recordMap.size >= MAX_WECHAT_SESSIONS) {
       const oldest = [...this.recordMap.values()].sort((a, b) => a.lastUsedAt - b.lastUsedAt)[0]
       if (oldest) this.recordMap.delete(oldest.sessionId)
@@ -319,7 +319,7 @@ export class WechatBot {
       )
     }
 
-    const sessionId = this.agentManager.createSession({
+    const sessionId = await this.agentManager.createSession({
       workspacePath: null,
       autoApprove: AUTO_APPROVE,
       thinkingMode: THINKING_MODE,
@@ -334,7 +334,7 @@ export class WechatBot {
     return sessionId
   }
 
-  private getOrCreateActiveSessionId(): string {
+  private async getOrCreateActiveSessionId(): Promise<string> {
     if (this.activeSessionId && this.agentManager.hasSession(this.activeSessionId)) {
       const rec = this.recordMap.get(this.activeSessionId)
       if (!rec) {
@@ -349,14 +349,14 @@ export class WechatBot {
       }
       return this.activeSessionId
     }
-    const sessionId = this.createAgentSession()
+    const sessionId = await this.createAgentSession()
     this.activeSessionId = sessionId
     this.notifyChanged()
     return sessionId
   }
 
   private async runAgent(input: string): Promise<string> {
-    const sessionId = this.getOrCreateActiveSessionId()
+    const sessionId = await this.getOrCreateActiveSessionId()
     try {
       const finalText = await this.agentManager.backgroundPrompt(sessionId, input)
       if (!finalText) {

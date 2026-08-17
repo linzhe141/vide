@@ -1,11 +1,16 @@
 import { relations } from 'drizzle-orm'
-import {
-  integer,
-  sqliteTable,
-  text,
-  uniqueIndex,
-  type AnySQLiteColumn,
-} from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+
+/**
+ * 会话 / 工作流 / 分支 / agent 消息 / 工作流日志 的持久化表结构。
+ *
+ * 约定：
+ * - 不做数据库层的自引用外键（parentWorkflowId / originSessionId / headWorkflowId /
+ *   sourceWorkflowId 等均为普通 text 列，无 FK 约束），关系由代码维护。
+ * - worklfow 的消息以「agent message」的形式落库（OpenAI 格式的 AgentMessage），
+ *   前端在 load session data 后自行派生到 UI 侧的 message。
+ * - workflow_logs 保存每个 workflow stream 的完整事件日志，前端按需展示。
+ */
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
@@ -13,13 +18,13 @@ export const sessions = sqliteTable('sessions', {
   type: text('type', { enum: ['normal', 'fork'] })
     .notNull()
     .default('normal'),
-  originSessionId: text('origin_session_id').references((): AnySQLiteColumn => sessions.id),
-  originWorkflowId: text('origin_workflow_id').references(
-    (): AnySQLiteColumn => sessionWorkflows.id
-  ),
+  // 普通 text 列，不用 FK（避免自引用）。由代码维护 fork 关系。
+  originSessionId: text('origin_session_id'),
+  originWorkflowId: text('origin_workflow_id'),
   workspacePath: text('workspace_path'),
   activeBranch: text('active_branch').notNull().default('main'),
   autoApprove: integer('auto_approve', { mode: 'boolean' }).notNull().default(false),
+  thinkingMode: integer('thinking_mode', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 })
@@ -29,9 +34,8 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
   sessionId: text('session_id')
     .notNull()
     .references(() => sessions.id),
-  parentWorkflowId: text('parent_workflow_id').references(
-    (): AnySQLiteColumn => sessionWorkflows.id
-  ),
+  // 普通 text 列，不用 FK（避免自引用）。由代码维护父子关系。
+  parentWorkflowId: text('parent_workflow_id'),
   stopStatus: text('stop_status', { enum: ['finished', 'error', 'aborted'] }),
   feedback: text('feedback', { enum: ['like', 'dislike'] }),
   input: text('input').notNull(),
@@ -47,8 +51,9 @@ export const sessionBranches = sqliteTable(
       .notNull()
       .references(() => sessions.id),
     name: text('name').notNull(),
-    headWorkflowId: text('head_workflow_id').references(() => sessionWorkflows.id),
-    sourceWorkflowId: text('source_workflow_id').references(() => sessionWorkflows.id),
+    // 普通 text 列，不用 FK（避免自引用）。由代码维护分支图。
+    headWorkflowId: text('head_workflow_id'),
+    sourceWorkflowId: text('source_workflow_id'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
@@ -60,7 +65,13 @@ export const sessionBranches = sqliteTable(
   })
 )
 
-export const sessionWorkflowMessages = sqliteTable('session_workflow_messages', {
+/**
+ * workflow 下的 agent message（OpenAI 格式）。
+ * role 为 agent 侧角色：system / user / assistant / tool / context。
+ * content 为 content 字段的文本快照（便于查看），payload 为完整 AgentMessage 的 JSON 序列化，
+ * 前端 load 时直接 JSON.parse(payload) 还原成 AgentMessage 再派生 UI 消息。
+ */
+export const workflowMessages = sqliteTable('workflow_messages', {
   id: text('id').primaryKey(),
   workflowId: text('workflow_id')
     .notNull()
@@ -72,59 +83,29 @@ export const sessionWorkflowMessages = sqliteTable('session_workflow_messages', 
   updatedAt: integer('updated_at').notNull(),
 })
 
-export const artifacts = sqliteTable('artifacts', {
-  id: text('id').primaryKey(),
-  sessionId: text('session_id')
-    .notNull()
-    .references(() => sessions.id),
-  artifactWorkspaceName: text('artifact_workspace_name').notNull(),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-})
-
-export const planners = sqliteTable('planners', {
-  id: text('id').primaryKey(),
-  sessionId: text('session_id')
-    .notNull()
-    .references(() => sessions.id),
-  planJson: text('plan_json'),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-})
-
-export const askUserQuestions = sqliteTable('ask_user_questions', {
+/**
+ * workflow 的完整 stream 日志（每个事件一条）。
+ * eventName 对应 WorkflowEvent['type']；payload 为不含 ctx 的事件载荷的 JSON 序列化。
+ * 前端 load 后根据日志选择性地展示。
+ */
+export const workflowLogs = sqliteTable('workflow_logs', {
   id: text('id').primaryKey(),
   workflowId: text('workflow_id')
     .notNull()
     .references(() => sessionWorkflows.id),
-  draftJson: text('draft_json'),
-  answerJson: text('answer_json'),
+  eventName: text('event_name').notNull(),
+  payload: text('payload'),
   createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
 })
 
 export const sessionsRelations = relations(sessions, ({ many }) => ({
   workflows: many(sessionWorkflows),
-  planners: many(planners),
-  sessionBranches: many(sessionBranches),
+  branches: many(sessionBranches),
 }))
 
-export const sessionWorkflowsRelations = relations(sessionWorkflows, ({ one, many }) => ({
-  session: one(sessions, {
-    fields: [sessionWorkflows.sessionId],
-    references: [sessions.id],
-  }),
-  parentWorkflow: one(sessionWorkflows, {
-    fields: [sessionWorkflows.parentWorkflowId],
-    references: [sessionWorkflows.id],
-    relationName: 'workflow_parent_child',
-  }),
-  childWorkflows: many(sessionWorkflows, {
-    relationName: 'workflow_parent_child',
-  }),
-  sessionWorkflowMessages: many(sessionWorkflowMessages),
-  askUserQuestions: one(askUserQuestions),
-  sessionBranchesAsHead: many(sessionBranches),
+export const sessionWorkflowsRelations = relations(sessionWorkflows, ({ many }) => ({
+  messages: many(workflowMessages),
+  logs: many(workflowLogs),
 }))
 
 export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => ({
@@ -132,42 +113,18 @@ export const sessionBranchesRelations = relations(sessionBranches, ({ one }) => 
     fields: [sessionBranches.sessionId],
     references: [sessions.id],
   }),
-  headWorkflow: one(sessionWorkflows, {
-    fields: [sessionBranches.headWorkflowId],
-    references: [sessionWorkflows.id],
-    relationName: 'branch_head_workflow',
-  }),
-  sourceWorkflow: one(sessionWorkflows, {
-    fields: [sessionBranches.sourceWorkflowId],
-    references: [sessionWorkflows.id],
-    relationName: 'branch_source_workflow',
-  }),
 }))
 
-export const sessionWorkflowMessagesRelations = relations(sessionWorkflowMessages, ({ one }) => ({
-  sessionWorkflow: one(sessionWorkflows, {
-    fields: [sessionWorkflowMessages.workflowId],
+export const workflowMessagesRelations = relations(workflowMessages, ({ one }) => ({
+  workflow: one(sessionWorkflows, {
+    fields: [workflowMessages.workflowId],
     references: [sessionWorkflows.id],
   }),
 }))
 
-export const plannersRelations = relations(planners, ({ one }) => ({
-  sessions: one(sessions, {
-    fields: [planners.sessionId],
-    references: [sessions.id],
-  }),
-}))
-
-export const artifactsRelations = relations(artifacts, ({ one }) => ({
-  sessions: one(sessions, {
-    fields: [artifacts.sessionId],
-    references: [sessions.id],
-  }),
-}))
-
-export const askUserQuestionsRelations = relations(askUserQuestions, ({ one }) => ({
-  sessionWorkflow: one(sessionWorkflows, {
-    fields: [askUserQuestions.workflowId],
+export const workflowLogsRelations = relations(workflowLogs, ({ one }) => ({
+  workflow: one(sessionWorkflows, {
+    fields: [workflowLogs.workflowId],
     references: [sessionWorkflows.id],
   }),
 }))

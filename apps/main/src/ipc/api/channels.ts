@@ -4,13 +4,13 @@ import type {
   LLMConfig,
   FileNode,
   SessionRowDto,
-  WorkflowData,
+  SessionDataDto,
   WebSearchConfig,
   WechatBotRuntimeStatus,
 } from '@vide/config'
 import type { WorkflowEvent, SessionEvent } from '@vide/agent'
 
-export type { FileNode, SessionRowDto, WorkflowData }
+export type { FileNode, SessionRowDto, SessionDataDto }
 
 export type WorkspaceExplorerNode = {
   name: string
@@ -69,22 +69,7 @@ export interface RenderChannel {
     autoApprove: boolean
     thinkingMode: boolean
   }) => Promise<string>
-  'agent-resume-session': (data: { sessionId: string }) => Promise<{
-    sessionType: 'normal' | 'fork'
-    title: string
-    origin: { sessionId: string; workflowId: string | null } | null
-    activeBranch: string
-    branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
-    workflowData: WorkflowData[]
-    autoApprove: boolean
-    artifacts: {
-      id: string
-      sessionId: string
-      artifactWorkspaceName: string
-      createdAt: number
-      updatedAt: number
-    }[]
-  }>
+  'agent-resume-session': (data: { sessionId: string }) => Promise<SessionDataDto | null>
   'agent-session-send': (data: { sessionId: string; input: string }) => void
   'agent-workflow-regenerate': (data: {
     sessionId: string
@@ -159,16 +144,6 @@ export interface RenderChannel {
     }[]
   >
 
-  'get-session-artifacts': (data: { sessionId: string }) => Promise<
-    {
-      id: string
-      sessionId: string
-      artifactWorkspaceName: string
-      createdAt: number
-      file: FileNode
-      updatedAt: number
-    }[]
-  >
   //
   'query-workflow-is-completed': (data: {
     sessionId: string
