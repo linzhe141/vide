@@ -45,17 +45,24 @@ export type AskQuestionOption = {
   value: string
 }
 
+export type AskQuestionAnswer = {
+  selected: string
+  other?: string
+}
+
+export type AskUserQuestionItem = {
+  id: string
+  title: string
+  description?: string
+  options: AskQuestionOption[]
+  answer: AskQuestionAnswer | null
+}
+
 export interface AskUserQuestionSessionMessage {
   id: string
   role: 'ask-user-question'
   toolCallId: string
-  title: string
-  description?: string
-  options: AskQuestionOption[]
-  answer: {
-    selected: string
-    other?: string
-  } | null
+  questions: AskUserQuestionItem[]
 }
 
 export interface ErrorSessionMessage {

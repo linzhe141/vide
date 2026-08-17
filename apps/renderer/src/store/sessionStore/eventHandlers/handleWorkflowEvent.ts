@@ -6,6 +6,7 @@ import type {
   AssistantTextSessionMessage,
   ToolCallSessionMessage,
   AskQuestionOption,
+  AskUserQuestionItem,
   AskUserQuestionSessionMessage,
 } from '../types'
 import type { WorkflowState } from '../../../hooks/useAgentSessionEvent'
@@ -173,19 +174,14 @@ export function handleWorkflowEvent(
       if (askQuestionToolCalls.length) {
         for (const toolCall of askQuestionToolCalls) {
           const args = parseToolArguments(toolCall.function.arguments)
-          const title = typeof args?.title === 'string' ? args.title.trim() : ''
-          const description = typeof args?.description === 'string' ? args.description.trim() : ''
-          const options = sanitizeAskQuestionOptions(args?.options)
-          if (!title || !options.length) continue
+          const questions = sanitizeAskUserQuestions(args?.questions)
+          if (!questions.length) continue
 
           const askUserQuestionMessage: AskUserQuestionSessionMessage = {
             id: nanoid(),
             role: 'ask-user-question',
             toolCallId: toolCall.id,
-            title,
-            description: description || undefined,
-            options,
-            answer: null,
+            questions,
           }
           workflow.messages.push(askUserQuestionMessage)
         }
@@ -351,6 +347,40 @@ function parseToolArguments(argumentsText: string) {
   } catch {
     return null
   }
+}
+
+function sanitizeAskUserQuestions(questions: unknown): AskUserQuestionItem[] {
+  if (!Array.isArray(questions)) return []
+
+  const normalized = questions
+    .map((item): AskUserQuestionItem | null => {
+      if (!item || typeof item !== 'object') return null
+      const question = item as {
+        id?: unknown
+        title?: unknown
+        description?: unknown
+        options?: unknown
+        answer?: unknown
+      }
+      const id =
+        typeof question.id === 'string' && question.id.trim() ? question.id.trim() : nanoid()
+      const title = typeof question.title === 'string' ? question.title.trim() : ''
+      const description =
+        typeof question.description === 'string' ? question.description.trim() : ''
+      const options = sanitizeAskQuestionOptions(question.options)
+      if (!title || !options.length) return null
+      const result: AskUserQuestionItem = {
+        id,
+        title,
+        options,
+        answer: null,
+      }
+      if (description) result.description = description
+      return result
+    })
+    .filter((item): item is AskUserQuestionItem => item !== null)
+
+  return normalized
 }
 
 function sanitizeAskQuestionOptions(options: unknown): AskQuestionOption[] {

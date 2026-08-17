@@ -12,35 +12,55 @@ export class AskUserQuestionTool extends ToolProvider {
     function: {
       name: ASK_USER_TOOL_NAMES.GENERATE,
       description: `
-Create a complete user question and pause the workflow for user input.
+Create multiple user questions at once and pause the workflow for user input.
+Useful when you need to ask several questions in sequence.
 `,
       parameters: {
         type: 'object',
         properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
-          options: {
+          questions: {
             type: 'array',
             minItems: 1,
-            maxItems: 3,
+            maxItems: 10, // 限制最多10个问题
             items: {
               type: 'object',
               properties: {
-                label: { type: 'string' },
-                value: { type: 'string' },
+                id: {
+                  type: 'string',
+                  description: 'Unique identifier for this question',
+                },
+                title: { type: 'string' },
+                description: { type: 'string' },
+                options: {
+                  type: 'array',
+                  minItems: 1,
+                  maxItems: 3,
+                  items: {
+                    type: 'object',
+                    properties: {
+                      label: { type: 'string' },
+                      value: { type: 'string' },
+                    },
+                    required: ['label', 'value'],
+                  },
+                },
               },
-              required: ['label', 'value'],
+              required: ['id', 'title', 'options'],
             },
           },
         },
-        required: ['title', 'options'],
+        required: ['questions'],
       },
     },
 
-    executor: async (question: any) => {
+    executor: async (params: { questions: any[] }) => {
+      // 批量返回所有问题
       return {
         reason: 'stop',
-        result: { question },
+        result: {
+          questions: params.questions,
+          total: params.questions.length,
+        },
       }
     },
   })

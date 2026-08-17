@@ -23,7 +23,8 @@ type UpdateAskQuestionAnswerData = {
   sessionId: string
   workflowId: string
   messageId: string
-  answer: AskUserQuestionSessionMessage['answer']
+  questionId: string
+  answer: AskUserQuestionSessionMessage['questions'][number]['answer']
 }
 
 type SessionActions = {
@@ -93,7 +94,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       updateAskQuestionAnswer(data: UpdateAskQuestionAnswerData) {
         set((state) => {
-          const { sessionId, workflowId, messageId, answer } = data
+          const { sessionId, workflowId, messageId, questionId, answer } = data
           const session = state.sessions.find((item) => item.sessionId === sessionId)
           if (!session) return
           const workflowNode = session.workflowNodesMap[workflowId]
@@ -102,7 +103,11 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             (message) => message.role === 'ask-user-question' && message.id === messageId
           )
           if (!targetMessage || targetMessage.role !== 'ask-user-question') return
-          targetMessage.answer = answer
+          const targetQuestion = targetMessage.questions.find(
+            (question) => question.id === questionId
+          )
+          if (!targetQuestion) return
+          targetQuestion.answer = answer
         })
       },
       clearSessions() {
@@ -372,5 +377,8 @@ export const useHasPendingAskQuestion = (sessionId: string) =>
       .reverse()
       .find((message) => message.role !== 'workflow')
 
-    return latestMessage?.role === 'ask-user-question' && latestMessage.answer === null
+    return (
+      latestMessage?.role === 'ask-user-question' &&
+      latestMessage.questions.some((question) => question.answer === null)
+    )
   })

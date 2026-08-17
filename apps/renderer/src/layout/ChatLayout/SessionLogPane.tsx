@@ -431,13 +431,18 @@ function logEntryFromMessage(message: SessionMessage, index: number): LogEntry |
     }
   }
   if (message.role === 'ask-user-question') {
+    const answeredCount = message.questions.filter((q) => q.answer !== null).length
+    const allAnswered = message.questions.length > 0 && answeredCount === message.questions.length
     return {
       id: message.id,
       type: 'workflow.interrupted',
-      title: message.answer ? 'User answered question' : 'Waiting for user answer',
-      description: message.title,
-      tone: message.answer ? 'success' : 'warning',
-      payload: message.answer,
+      title: allAnswered ? 'User answered questions' : 'Waiting for user answers',
+      description: message.questions.map((q) => q.title).join(' / '),
+      tone: allAnswered ? 'success' : 'warning',
+      payload: message.questions.map((q) => ({
+        title: q.title,
+        answer: q.answer,
+      })),
     }
   }
   if (message.role === 'error') {
