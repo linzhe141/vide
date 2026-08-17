@@ -1,4 +1,5 @@
 import { useSessionWorkflows } from '../../store/sessionStore'
+import React from 'react'
 import { type Workflow } from '../../store/sessionStore/types'
 
 import { useChatContext } from './ChatProvider'
@@ -13,13 +14,13 @@ export function MessageList() {
   return (
     <div className='mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-10'>
       {workflows?.map((workflow) => (
-        <>
+        <React.Fragment key={workflow.id}>
           <WorkflowView key={workflow.id} workflow={workflow} />
           {workflow.runtime.status === 'aborted' && <AbortedStatus />}
           {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
           {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
           <RegeneratedBranchSwitcher workflow={workflow} />
-        </>
+        </React.Fragment>
       ))}
     </div>
   )

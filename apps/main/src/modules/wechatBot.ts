@@ -362,7 +362,7 @@ export class WechatBot {
   private async runAgent(input: string): Promise<string> {
     const sessionId = this.getOrCreateActiveSessionId()
     try {
-      const finalText = await this.agentManager.prompt(sessionId, input)
+      const finalText = await this.agentManager.backgroundPrompt(sessionId, input)
       if (!finalText) {
         return '🤖 agent 没有返回文本内容。'
       }

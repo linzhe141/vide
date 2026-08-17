@@ -5,19 +5,22 @@ import { useChatContext } from '../../components/chat/ChatProvider'
 
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
-  const { createSession } = useSessionStoreActions()
+  const { createSession, loadSession } = useSessionStoreActions()
   const currentSession = useSession(sessionId)
   useEffect(() => {
     const firstInput = context.firstInput
 
     if (firstInput) {
       context.firstInput = ''
+      if (!currentSession) {
+        createSession({ sessionId })
+      }
       handleSend(firstInput)
       return
+    } else {
+      loadSession(sessionId)
     }
-    if (!currentSession) {
-      createSession({ sessionId })
-    }
-  }, [sessionId, handleSend, createSession, currentSession])
+  }, [sessionId, handleSend, createSession, currentSession, loadSession])
+
   return null
 }

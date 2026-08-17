@@ -105,3 +105,49 @@ export function resumeWorkflowStream(
   })
   return stream
 }
+
+export function createBackgroundPromptWorkflowStream(sessionId: string, abortSignal: AbortSignal) {
+  let eventListeners: ReturnType<typeof window.ipcRendererApi.on>[] = []
+  let currentWorkflowId: string | null = null
+
+  function cleanUp() {
+    eventListeners.forEach((remove) => remove())
+    eventListeners = []
+  }
+  const stream = new ReadableStream({
+    start(controller) {
+      abortSignal.addEventListener('abort', () => {
+        controller.close()
+        cleanUp()
+      })
+
+      workflowV2EventNames.forEach((eventName) => {
+        const remove = window.ipcRendererApi.on(eventName, (data: WorkflowEventWithCtx) => {
+          if (data.type === 'workflow.start') {
+            if (!data.ctx.sessionId || !data.ctx.workflowId) return
+            currentWorkflowId = data.ctx.workflowId
+          }
+          if (sessionId === data.ctx.sessionId && currentWorkflowId === data.ctx.workflowId) {
+            controller.enqueue(data)
+          }
+
+          if (
+            sessionId === data.ctx.sessionId &&
+            currentWorkflowId === data.ctx.workflowId &&
+            (data.type === 'workflow.error' ||
+              data.type === 'workflow.completed' ||
+              data.type === 'workflow.aborted')
+          ) {
+            controller.close()
+            cleanUp()
+          }
+        })
+        eventListeners.push(remove)
+      })
+    },
+    cancel() {
+      cleanUp()
+    },
+  })
+  return stream
+}

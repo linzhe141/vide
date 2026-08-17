@@ -33,6 +33,12 @@ export class AgentIpcMainService implements IpcMainService {
       void agentManager.prompt(sessionId, input)
     })
 
+    ipcMainApi.handle('load-session', async ({ sessionId }) => {
+      // 通过 AgentManager.loadSession 序列化 session 并通过 'session-loaded' 广播到 renderer，
+      // 前端再根据该数据还原成 UI 的 message / workflow 结构。
+      return agentManager.loadSession(sessionId)
+    })
+
     ipcMainApi.handle('agent-resume-session', async ({ sessionId }) => {
       const session = agentManager.getSession(sessionId)
       return this.buildSessionPayload(session)

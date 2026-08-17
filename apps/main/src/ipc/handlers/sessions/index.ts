@@ -15,8 +15,15 @@ export class SessionIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('get-sessions-list', async () => {
-      const rows = await db.select().from(sessions).orderBy(desc(sessions.createdAt))
-      return rows as SessionRowDto[]
+      // const rows = await db.select().from(sessions).orderBy(desc(sessions.createdAt))
+      // return rows as SessionRowDto[]
+      return Array.from(this.appManager.agentManager.sessions).map(([sessionId, session]) => {
+        return {
+          id: sessionId,
+          createdAt: 0, // TODO
+          updatedAt: 0, // TODO
+        } as SessionRowDto
+      })
     })
 
     ipcMainApi.handle('get-session-artifacts', async ({ sessionId }) => {

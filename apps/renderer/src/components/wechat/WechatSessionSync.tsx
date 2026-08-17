@@ -1,18 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSessionStore, useSessionStoreActions } from '@/store/sessionStore'
 import type { WechatBotSessionRecord, WechatBotRuntimeStatus } from '@vide/config'
+import { createBackgroundPromptWorkflowStream } from '@/hooks/createWorkflowStream'
 
-/**
- * 把微信 Bot 驱动的 agent 会话同步进前端 sessionStore。
- *
- * 微信只是 agent 的另一个入口：它创建/切换的 session 与桌面端是同一个
- * agent session（AgentManager 注册表）。此处把 wechat-sessions-changed
- * 里出现的 session id 在 sessionStore 里物化，这样 AgentManager.prompt
- * 广播的 workflow 事件才能在桌面 UI 里渲染出来 —— 实现"UI 正常更新"。
- */
 export function WechatSessionSync() {
   const existing = useSessionStore((state) => state.sessions)
-  const { createSession } = useSessionStoreActions()
+  const { createSession, handleEvent } = useSessionStoreActions()
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const readerRef = useRef<ReadableStreamDefaultReader | null>(null)
 
   useEffect(() => {
     const dispose = window.ipcRendererApi.on(
@@ -34,6 +29,38 @@ export function WechatSessionSync() {
     return () => dispose()
   }, [existing, createSession])
 
+  useEffect(() => {
+    const cleanup = () => {
+      readerRef.current?.cancel().catch(() => {})
+      readerRef.current = null
+      abortControllerRef.current = null
+    }
+
+    const remove = window.ipcRendererApi.on('agent-session-background-send', async (data) => {
+      const sessionId = data.sessionId
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+      const stream = createBackgroundPromptWorkflowStream(sessionId, abortController.signal)
+      const reader = stream.getReader()
+      readerRef.current = reader
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          if (!value) continue
+          handleEvent(value)
+        }
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.error(err)
+        }
+      } finally {
+        reader.releaseLock()
+        cleanup()
+      }
+    })
+    return remove
+  }, [handleEvent])
   return null
 }
-

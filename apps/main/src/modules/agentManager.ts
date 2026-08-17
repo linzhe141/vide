@@ -3,17 +3,10 @@ import type { Session } from '@vide/agent'
 import type { WorkflowEvent } from '@vide/agent'
 import type { AppManager } from '@/appManager'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
+import type { LoadedSessionPayload } from '@/ipc/api/channels'
 import { settingsStore } from '@/modules/settingsStore'
 import { logger } from '@/logger'
 
-/**
- * Agent 会话注册中心。
- *
- * 桌面端 IPC（AgentIpcMainService）与微信 Bot（WechatBot）共用同一套
- * Agent / Session 实例：微信只是 agent 的另一个入口，创建/驱动的 session
- * 与桌面端是同一个 session，运行事件统一广播到 renderer，从而桌面 UI
- * 与微信会话保持同步更新。
- */
 export class AgentManager {
   agent: Agent
   sessions = new Map<string, Session>()
@@ -29,7 +22,11 @@ export class AgentManager {
   init() {}
 
   /** 创建并注册一个 agent session，返回 session id。 */
-  createSession(data: { workspacePath: string | null; autoApprove: boolean; thinkingMode: boolean }) {
+  createSession(data: {
+    workspacePath: string | null
+    autoApprove: boolean
+    thinkingMode: boolean
+  }) {
     const session = this.agent.createSession({
       workspacePath: data.workspacePath,
       autoApprove: data.autoApprove,
@@ -57,12 +54,6 @@ export class AgentManager {
     return this.sessions.has(sessionId)
   }
 
-  /**
-   * 向指定 session 发起一次 prompt 并运行到结束。
-   *  - 遍历 workflow stream，把每个事件广播到 renderer（桌面 UI 同步更新）
-   *  - 收集并返回 agent 的最终文本（供微信等入口回复）
-   * @returns agent 最终文本
-   */
   async prompt(sessionId: string, input: string): Promise<string> {
     const session = this.getSession(sessionId)
     const stream = session.prompt(input)
@@ -87,7 +78,65 @@ export class AgentManager {
     return finalText
   }
 
+  async backgroundPrompt(sessionId: string, input: string): Promise<string> {
+    const session = this.getSession(sessionId)
+    const stream = session.prompt(input)
+    ipcMainApi.send('agent-session-background-send', { sessionId })
+    let finalText = ''
+    for await (const event of stream) {
+      const v2Event = event as WorkflowEvent & {
+        ctx: { sessionId: string | null; workflowId: string | null }
+      }
+      ipcMainApi.send(v2Event.type as any, v2Event as any)
+      switch (event.type) {
+        case 'workflow.llm.text.end':
+          finalText = event.content ?? ''
+          break
+        case 'workflow.completed':
+          finalText = typeof event.result === 'string' ? event.result : finalText
+          break
+        default:
+          break
+      }
+    }
+    return finalText
+  }
+
   listSessionIds(): string[] {
     return [...this.sessions.keys()]
+  }
+
+  /**
+   * 把内存中的 agent session 序列化为前端可还原的数据结构，并通过 IPC 返回给 renderer。
+   *
+   * 这里采用 invoke/return 的 request-response 方式（前端主动调用 load-session 并拿到返回值），
+   * 不同于 prompt 里按事件流广播的方式。并且透传的是后端的 workflow messages
+   * （AgentMessage，openai chat 格式），与前端 UI 的 SessionMessage 结构不同，
+   * 需要由前端 sessionStore.loadSession 统一还原成 UI message。
+   */
+  loadSession(sessionId: string): LoadedSessionPayload {
+    const session = this.getSession(sessionId)
+
+    return {
+      sessionId,
+      autoApprove: session.autoApprove,
+      thinkingMode: session.thinkingMode,
+      workspacePath: session.workspacePath,
+      activeBranch: session.activeBranch,
+      branches: Object.entries(session.branchs).map(([branchName, branch]) => ({
+        name: branchName,
+        headWorkflowId: branch.head?.workflow.id ?? null,
+        sourceWorkflowId: branch.source?.workflow.id ?? null,
+      })),
+      workflowNodes: Object.values(session.sessionWorkflowNodes).map((node) => ({
+        workflow: {
+          id: node.workflow.id,
+          stopStatus: (node.stopStatus ?? null) as 'finished' | 'error' | 'aborted' | null,
+          messages: node.workflow.messages,
+        },
+        children: node.children.map((child) => child.workflow.id),
+        parent: node.parent?.workflow.id ?? null,
+      })),
+    }
   }
 }

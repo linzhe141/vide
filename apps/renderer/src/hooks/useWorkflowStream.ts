@@ -82,6 +82,36 @@ export function useWorkflowStream() {
     [handleEvent]
   )
 
+  // useEffect(() => {
+  //   const remove = window.ipcRendererApi.on('agent-session-background-send', async (data) => {
+  //     const sessionId = data.sessionId
+  //     setRunning(true)
+  //     const abortController = new AbortController()
+  //     abortControllerRef.current = abortController
+  //     const stream = createBackgroundPromptWorkflowStream(sessionId, abortController.signal)
+  //     const reader = stream.getReader()
+  //     readerRef.current = reader
+
+  //     try {
+  //       while (true) {
+  //         const { value, done } = await reader.read()
+  //         if (done) break
+  //         if (!value) continue
+  //         handleEvent(value)
+  //       }
+  //     } catch (err: any) {
+  //       if (err?.name !== 'AbortError') {
+  //         console.error(err)
+  //       }
+  //     } finally {
+  //       setRunning(false)
+  //       reader.releaseLock()
+  //       cleanup()
+  //     }
+  //   })
+  //   return remove
+  // }, [handleEvent])
+
   const abort = useCallback(async () => {
     abortControllerRef.current?.abort()
     // 通知主进程真正中断 agent 的运行中的 workflow

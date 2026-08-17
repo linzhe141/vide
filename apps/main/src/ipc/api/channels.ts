@@ -10,8 +10,32 @@ import type {
   WechatBotSessionRecord,
 } from '@vide/config'
 import type { WorkflowEvent } from '@vide/agent'
+import type { AgentMessage } from '@vide/ai'
 
 export type { FileNode, SessionRowDto, WorkflowData }
+
+/**
+ * 后端内存中 agent session 在加载时发送到前端的完整数据。
+ * workflow.messages 透传的是后端的 AgentMessage（openai chat 格式），
+ * 需要由前端 sessionStore.loadSession 还原为 UI 的 SessionMessage。
+ */
+export type LoadedSessionPayload = {
+  sessionId: string
+  autoApprove: boolean
+  thinkingMode: boolean
+  workspacePath: string | null
+  activeBranch: string
+  branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
+  workflowNodes: {
+    workflow: {
+      id: string
+      stopStatus: 'finished' | 'error' | 'aborted' | null
+      messages: AgentMessage[]
+    }
+    children: string[]
+    parent: string | null
+  }[]
+}
 
 export type WorkspaceExplorerNode = {
   name: string
@@ -87,6 +111,7 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { sessionId: string; input: string }) => void
+  'load-session': (data: { sessionId: string }) => Promise<LoadedSessionPayload>
   'agent-workflow-regenerate': (data: {
     sessionId: string
     targetWorkflowId: string
@@ -195,6 +220,7 @@ export type MainChannel = {
     name: string
     type: 'file' | 'folder'
   }) => void
+  'agent-session-background-send': (data: { sessionId: string }) => void
 } & {
   // agent workflow stream events
   [K in WorkflowEvent['type']]: (

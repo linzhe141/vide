@@ -52,28 +52,32 @@ export function ChatContainer() {
     [session, switchSessionThinkingMode]
   )
 
-  if (!session) return null
+  // if (!session) return null
   return (
     <ChatLayout>
-      <ChatLayoutMessage>
-        <MessageList />
-      </ChatLayoutMessage>
-      {!hasPendingAskQuestion && (
-        <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
-          <div className='px-10'>
-            <ChatInput
-              running={running}
-              workspacePath={session.workspacePath}
-              autoApprove={session.autoApprove}
-              thinkingMode={session.thinkingMode}
-              onSend={onSend}
-              onStop={handleStop}
-              onChangeAutoApprove={onChangeAutoApprove}
-              onChangeThinkingMode={onChangeThinkingMode}
-            />
-          </div>
-        </ChatLayoutInput>
-      )}
+      {session ? (
+        <>
+          <ChatLayoutMessage>
+            <MessageList />
+          </ChatLayoutMessage>
+          {!hasPendingAskQuestion && (
+            <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
+              <div className='px-10'>
+                <ChatInput
+                  running={running}
+                  workspacePath={session.workspacePath}
+                  autoApprove={session.autoApprove}
+                  thinkingMode={session.thinkingMode}
+                  onSend={onSend}
+                  onStop={handleStop}
+                  onChangeAutoApprove={onChangeAutoApprove}
+                  onChangeThinkingMode={onChangeThinkingMode}
+                />
+              </div>
+            </ChatLayoutInput>
+          )}
+        </>
+      ) : null}
     </ChatLayout>
   )
 }

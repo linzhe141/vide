@@ -3,15 +3,19 @@ import { GitBranch, LoaderCircle } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useSessionStore } from '@/store/sessionStore'
+import { useHistoryItems, useHistoryStoreActions } from '@/store/historyStore'
 
 export function SessionRecents() {
-  const sessions = useSessionStore((state) => state.sessions)
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
-    [sessions]
+  const historyItems = useHistoryItems()
+  const historyActions = useHistoryStoreActions()
+  const sortedHistory = useMemo(
+    () => [...historyItems].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
+    [historyItems]
   )
 
-  const fetchChats = useCallback(async () => {}, [])
+  const fetchChats = useCallback(() => {
+    void historyActions.fetch()
+  }, [historyActions])
 
   useEffect(() => {
     fetchChats()
@@ -31,38 +35,55 @@ export function SessionRecents() {
 
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
-      {sortedSessions.map((session) => (
-        <NavLink
-          key={session.sessionId}
-          to={`/chat/${session.sessionId}`}
-          className={({ isActive }) =>
-            cn(
-              'rounded-md px-3 py-1.5',
-              'text-sm',
-              'text-text-secondary',
-              'transition-colors',
-              'hover:bg-foreground/5 hover:text-foreground',
-              isActive && 'bg-foreground/8 text-foreground font-medium'
-            )
-          }
-        >
-          <div className='flex items-center gap-2'>
-            {session.sessionType === 'fork' ? (
-              <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
-                <GitBranch size={11} />
-              </span>
-            ) : null}
-            <span className='block flex-1 truncate'>{session.title || 'Untitled'}</span>
-            {session.runtime.running ? (
-              <LoaderCircle size={13} className='text-text-info animate-spin' />
-            ) : null}
-          </div>
-        </NavLink>
+      {sortedHistory.map((history) => (
+        <HistoryNavItem
+          key={history.sessionId}
+          sessionId={history.sessionId}
+          title={history.title}
+        />
       ))}
 
-      {sortedSessions.length === 0 && (
+      {sortedHistory.length === 0 && (
         <div className='text-text-info px-3 py-4 text-sm'>No active sessions</div>
       )}
     </div>
+  )
+}
+
+function HistoryNavItem({ sessionId, title }: { sessionId: string; title: string }) {
+  const running = useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    return session?.runtime.running ?? false
+  })
+  const sessionType = useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    return session?.sessionType ?? null
+  })
+
+  return (
+    <NavLink
+      key={sessionId}
+      to={`/chat/${sessionId}`}
+      className={({ isActive }) =>
+        cn(
+          'rounded-md px-3 py-1.5',
+          'text-sm',
+          'text-text-secondary',
+          'transition-colors',
+          'hover:bg-foreground/5 hover:text-foreground',
+          isActive && 'bg-foreground/8 text-foreground font-medium'
+        )
+      }
+    >
+      <div className='flex items-center gap-2'>
+        {sessionType === 'fork' ? (
+          <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
+            <GitBranch size={11} />
+          </span>
+        ) : null}
+        <span className='block flex-1 truncate'>{title || 'Untitled'}</span>
+        {running ? <LoaderCircle size={13} className='text-text-info animate-spin' /> : null}
+      </div>
+    </NavLink>
   )
 }
