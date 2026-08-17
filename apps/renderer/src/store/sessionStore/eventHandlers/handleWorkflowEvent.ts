@@ -1,4 +1,4 @@
-﻿import { nanoid } from 'nanoid'
+import { nanoid } from 'nanoid'
 import type {
   Workflow,
   Session,
@@ -8,7 +8,7 @@ import type {
   AskQuestionOption,
   AskUserQuestionSessionMessage,
 } from '../types'
-import type { WorkflowState } from '../../../hooks/createWorkflowStream'
+import type { WorkflowState } from '../../../hooks/useAgentSessionEvent'
 
 export function handleWorkflowEvent(
   storeState: { sessions: Session[] },

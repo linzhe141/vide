@@ -1,9 +1,8 @@
 import { createContext, useContext, type PropsWithChildren, useCallback, useMemo } from 'react'
-import { useWorkflowStream } from '../../hooks/useWorkflowStream'
 import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionStore'
 
 interface ChatContextType {
-  handleSend: (input: string) => Promise<void>
+  handleSend: (input: string) => void
   handleStop: () => void
   handleRegenerate: (regenerateWorkflowId: string, branchName: string, input: string) => void
   running: boolean
@@ -13,21 +12,23 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
-  const { send, abort } = useWorkflowStream()
   const sessionRuntime = useSessionRuntime(sessionId)!
   const { regenerateWorkflow } = useSessionStoreActions()
 
+  // workflow 事件由全局 useAgentSessionEvent 统一分发到 session store，
+  // 这里只是 fire-and-forget 触发主进程，不再自己开 stream / 监听 ipc
   const handleSend = useCallback(
-    async (input: string) => {
+    (input: string) => {
       if (sessionRuntime.running) return
-      await send(sessionId, input)
+      window.ipcRendererApi.invoke('agent-session-send', { sessionId, input })
+      return
     },
-    [send, sessionId, sessionRuntime]
+    [sessionId, sessionRuntime]
   )
 
   const handleStop = useCallback(() => {
-    abort()
-  }, [abort])
+    window.ipcRendererApi.invoke('agent-session-abort', { sessionId })
+  }, [sessionId])
 
   const handleRegenerate = useCallback(
     async (regenerateWorkflowId: string, branchName: string, input: string) => {
@@ -37,9 +38,9 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
         branchName,
       })
       regenerateWorkflow({ sessionId, sourceWorkflowId: regenerateWorkflowId, branchName })
-      await send(sessionId, input)
+      window.ipcRendererApi.invoke('agent-session-send', { sessionId, input })
     },
-    [regenerateWorkflow, send, sessionId]
+    [regenerateWorkflow, sessionId]
   )
 
   const value: ChatContextType = useMemo(

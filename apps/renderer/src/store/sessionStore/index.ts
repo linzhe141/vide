@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
-import type { WorkflowState } from '../../hooks/createWorkflowStream'
+import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
 import { reconstructSession } from './loadSession'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
