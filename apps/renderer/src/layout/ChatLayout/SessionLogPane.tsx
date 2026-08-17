@@ -3,7 +3,6 @@ import {
   Bot,
   CheckCircle2,
   Circle,
-  Clock3,
   FileClock,
   MessageSquareText,
   PencilLine,
@@ -32,7 +31,10 @@ export function SessionLogPane({ className }: { className?: string }) {
   const { closePane } = useChatLayout()
   const { sessionId } = useChatContext()
   const workflows = useSessionWorkflows(sessionId) ?? []
-  const totalEvents = workflows.reduce((sum, workflow) => sum + getWorkflowEntries(workflow).length, 0)
+  const totalEvents = workflows.reduce(
+    (sum, workflow) => sum + getWorkflowEntries(workflow).length,
+    0
+  )
   const toolEvents = workflows.reduce(
     (sum, workflow) =>
       sum + getWorkflowEntries(workflow).filter((entry) => entry.type.includes('tool')).length,
@@ -114,7 +116,12 @@ function SummaryCard({
         danger && 'border-danger/25 bg-danger/8'
       )}
     >
-      <div className={cn('text-lg leading-6 font-semibold', danger ? 'text-danger' : 'text-foreground')}>
+      <div
+        className={cn(
+          'text-lg leading-6 font-semibold',
+          danger ? 'text-danger' : 'text-foreground'
+        )}
+      >
         {value}
       </div>
       <div className='text-text-secondary text-[11px]'>{label}</div>
@@ -150,7 +157,7 @@ function WorkflowLogSection({
       </div>
 
       <div className='px-3 py-3'>
-        <div className='relative space-y-2 before:absolute before:top-3 before:bottom-3 before:left-[17px] before:w-px before:bg-border'>
+        <div className='before:bg-border relative space-y-2 before:absolute before:top-3 before:bottom-3 before:left-[17px] before:w-px'>
           {entries.map((entry) => (
             <LogRow key={entry.id} entry={entry} />
           ))}
@@ -176,7 +183,12 @@ function LogRow({ entry }: { entry: LogEntry }) {
         <div className='flex min-w-0 items-start justify-between gap-3'>
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
-              <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase', toneClass(entry.tone, 'badge'))}>
+              <span
+                className={cn(
+                  'rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+                  toneClass(entry.tone, 'badge')
+                )}
+              >
                 {eventLabel(entry.type)}
               </span>
               <span className='text-foreground truncate text-sm font-medium'>{entry.title}</span>
@@ -215,7 +227,12 @@ function StatusPill({ status }: { status: Workflow['runtime']['status'] }) {
           : 'warning'
 
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', toneClass(tone, 'badge'))}>
+    <span
+      className={cn(
+        'rounded-full px-2 py-0.5 text-[10px] font-medium capitalize',
+        toneClass(tone, 'badge')
+      )}
+    >
       {status}
     </span>
   )
@@ -224,7 +241,8 @@ function StatusPill({ status }: { status: Workflow['runtime']['status'] }) {
 function EventIcon({ type, tone }: { type: string; tone: LogEntry['tone'] }) {
   const className = cn('size-3.5', toneClass(tone, 'text'))
   if (type.includes('error')) return <AlertCircle className={className} />
-  if (type.includes('completed') || type.includes('success')) return <CheckCircle2 className={className} />
+  if (type.includes('completed') || type.includes('success'))
+    return <CheckCircle2 className={className} />
   if (type.includes('aborted')) return <XCircle className={className} />
   if (type.includes('tool')) return <TerminalSquare className={className} />
   if (type.includes('llm')) return <Bot className={className} />
@@ -257,13 +275,24 @@ function logEntryFromEvent(event: WorkflowLogEvent): LogEntry {
     return createEntry(event, 'Workflow aborted', undefined, 'danger')
   }
   if (event.type === 'workflow.interrupted') {
-    return createEntry(event, 'Workflow interrupted', 'Waiting for user approval or input.', 'warning')
+    return createEntry(
+      event,
+      'Workflow interrupted',
+      'Waiting for user approval or input.',
+      'warning'
+    )
   }
   if (event.type.includes('error')) {
     return createEntry(event, 'Error', getText(payload?.error), 'danger', payload?.error)
   }
   if (event.type === 'workflow.tool.call.start') {
-    return createEntry(event, `Tool started: ${toolCall?.toolName ?? 'unknown'}`, undefined, 'primary', toolCall?.args)
+    return createEntry(
+      event,
+      `Tool started: ${toolCall?.toolName ?? 'unknown'}`,
+      undefined,
+      'primary',
+      toolCall?.args
+    )
   }
   if (event.type === 'workflow.tool.call.success') {
     return createEntry(
@@ -275,17 +304,35 @@ function logEntryFromEvent(event: WorkflowLogEvent): LogEntry {
     )
   }
   if (event.type === 'workflow.tool.call.error') {
-    return createEntry(event, `Tool failed: ${toolCallResult?.toolName ?? 'unknown'}`, undefined, 'danger', toolCallResult?.error)
+    return createEntry(
+      event,
+      `Tool failed: ${toolCallResult?.toolName ?? 'unknown'}`,
+      undefined,
+      'danger',
+      toolCallResult?.error
+    )
   }
   if (event.type === 'workflow.llm.tool.call.end') {
     const toolCalls = Array.isArray(payload?.toolCall) ? payload.toolCall.length : 0
-    return createEntry(event, 'Tool calls requested', `${toolCalls} calls`, 'primary', payload?.toolCall)
+    return createEntry(
+      event,
+      'Tool calls requested',
+      `${toolCalls} calls`,
+      'primary',
+      payload?.toolCall
+    )
   }
   if (event.type.includes('llm')) {
     return createEntry(event, llmTitle(event.type), getContentSummary(payload), 'muted')
   }
   if (event.type.includes('step')) {
-    return createEntry(event, event.type.endsWith('start') ? 'Step started' : 'Step finished', undefined, 'default', payload)
+    return createEntry(
+      event,
+      event.type.endsWith('start') ? 'Step started' : 'Step finished',
+      undefined,
+      'default',
+      payload
+    )
   }
   return createEntry(event, event.type, undefined, 'default', payload)
 }
@@ -328,7 +375,12 @@ function deriveEntriesFromMessages(workflow: Workflow): LogEntry[] {
     id: `${workflow.id}:status`,
     type: `workflow.${workflow.runtime.status}`,
     title: `Workflow ${workflow.runtime.status}`,
-    tone: workflow.runtime.status === 'finished' ? 'success' : workflow.runtime.status === 'running' ? 'primary' : 'danger',
+    tone:
+      workflow.runtime.status === 'finished'
+        ? 'success'
+        : workflow.runtime.status === 'running'
+          ? 'primary'
+          : 'danger',
   })
 
   return entries
@@ -368,7 +420,9 @@ function logEntryFromMessage(message: SessionMessage, index: number): LogEntry |
       type: 'workflow.tool.call',
       title: 'Tool calls',
       description: `${message.toolCalls.length} calls`,
-      tone: message.toolCalls.some((item) => item.result?.status === 'error') ? 'danger' : 'primary',
+      tone: message.toolCalls.some((item) => item.result?.status === 'error')
+        ? 'danger'
+        : 'primary',
       payload: message.toolCalls.map((item) => ({
         name: item.toolCall.function.name,
         status: item.result?.status ?? 'pending',
@@ -409,8 +463,18 @@ function logEntryFromMessage(message: SessionMessage, index: number): LogEntry |
 }
 
 function llmTitle(type: string) {
-  if (type.includes('reason')) return type.endsWith('start') ? 'Reasoning started' : type.endsWith('end') ? 'Reasoning completed' : 'Reasoning delta'
-  if (type.includes('text')) return type.endsWith('start') ? 'Text started' : type.endsWith('end') ? 'Text completed' : 'Text delta'
+  if (type.includes('reason'))
+    return type.endsWith('start')
+      ? 'Reasoning started'
+      : type.endsWith('end')
+        ? 'Reasoning completed'
+        : 'Reasoning delta'
+  if (type.includes('text'))
+    return type.endsWith('start')
+      ? 'Text started'
+      : type.endsWith('end')
+        ? 'Text completed'
+        : 'Text delta'
   if (type.endsWith('start')) return 'LLM started'
   if (type.endsWith('end')) return 'LLM completed'
   if (type.endsWith('result')) return 'LLM result'

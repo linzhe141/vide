@@ -1,9 +1,9 @@
-﻿import type { AppManager } from '@/appManager'
+import type { AppManager } from '@/appManager'
 import type { IpcMainService } from '@/ipc'
 import { ipcMainApi } from '../../api/ipcMain'
 import { db } from '@/db/databaseManager'
 import { artifacts, sessions } from '@/db/schema'
-import { desc, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { FileNode, SessionRowDto } from '../../api/channels'
 import fs from 'fs/promises'
 import path from 'path'
@@ -15,13 +15,16 @@ export class SessionIpcMainService implements IpcMainService {
 
   registerIpcMainHandle() {
     ipcMainApi.handle('get-sessions-list', async () => {
-      // const rows = await db.select().from(sessions).orderBy(desc(sessions.createdAt))
-      // return rows as SessionRowDto[]
       return Array.from(this.appManager.agentManager.sessions).map(([sessionId, session]) => {
         return {
           id: sessionId,
-          createdAt: 0, // TODO
-          updatedAt: 0, // TODO
+          title: session.title,
+          type: (session.sessionType as 'normal' | 'fork') ?? 'normal',
+          originSessionId: null,
+          originWorkflowId: null,
+          workspacePath: session.workspacePath,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
         } as SessionRowDto
       })
     })

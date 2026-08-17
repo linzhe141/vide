@@ -97,15 +97,10 @@ export class WechatBot {
 
     ipcMainApi.handle('wechat-logout', async () => {
       await this.logout()
-      this.emitSessionsChanged()
     })
 
     ipcMainApi.handle('wechat-get-runtime-status', () => {
       return this.getRuntimeStatus()
-    })
-
-    ipcMainApi.handle('wechat-get-recent-sessions', () => {
-      return this.getRecentSessions(20)
     })
   }
 
@@ -185,6 +180,7 @@ export class WechatBot {
         })
         logger.info('wechat scan confirmed, starting bot')
         this.start()
+        ipcMainApi.send('weixin-bot-auth-success')
         this.notifyChanged()
       } else {
         this.qrcode = ''
@@ -393,19 +389,6 @@ export class WechatBot {
 
   private notifyChanged(): void {
     this.onChanged()
-    this.emitSessionsChanged()
-  }
-
-  private emitSessionsChanged(): void {
-    try {
-      ipcMainApi.send('wechat-sessions-changed', {
-        activeSessionId: this.getRuntimeStatus().activeSessionId,
-        sessions: this.getRecentSessions(20),
-        status: this.getRuntimeStatus(),
-      })
-    } catch (err) {
-      console.warn('wechat-sessions-changed send failed', err)
-    }
   }
 
   private tryAutoStartOnBoot(): void {

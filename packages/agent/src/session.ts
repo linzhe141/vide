@@ -28,6 +28,11 @@ export class Session {
   id: string = uuid()
   model: { name: string; baseURL: string; apiKey: string } | null = null
 
+  // metadata (UI 侧由 historyStore 维护展示，这里仅是后端侧的最小持久/事件来源)
+  title: string = ''
+  createdAt = Date.now()
+  updatedAt = Date.now()
+
   // config context
   private _workspacePath: string | null = null
   private _autoApprove: boolean = false

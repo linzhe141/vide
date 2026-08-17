@@ -3,7 +3,6 @@ import type { Session } from '@vide/agent'
 import type { WorkflowEvent } from '@vide/agent'
 import type { AppManager } from '@/appManager'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
-import type { LoadedSessionPayload } from '@/ipc/api/channels'
 import { settingsStore } from '@/modules/settingsStore'
 import { logger } from '@/logger'
 
@@ -26,6 +25,7 @@ export class AgentManager {
     workspacePath: string | null
     autoApprove: boolean
     thinkingMode: boolean
+    title?: string
   }) {
     const session = this.agent.createSession({
       workspacePath: data.workspacePath,
@@ -39,7 +39,35 @@ export class AgentManager {
     })
     this.sessions.set(session.id, session)
     logger.info('agent-manager create-session ', session.id)
+
+    // 通知 renderer：新增一个 session（前台/后台入口都走这条广播，
+    // 前端 useAgentSessionEvent 统一在 sessionStore/historyStore 落盘）
+    ipcMainApi.send('background-create-session', {
+      type: 'background-create-session',
+      sessionId: session.id,
+      title: data.title ?? '',
+      workspacePath: session.workspacePath,
+      autoApprove: session.autoApprove,
+      thinkingMode: session.thinkingMode,
+      sessionType: session.sessionType ?? 'normal',
+      origin: null,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    })
+
     return session.id
+  }
+
+  /** 首次拿到用户输入时，用它当 session 标题，并广播给 renderer 更新 history。 */
+  private ensureSessionTitle(session: Session, input: string) {
+    if (session.title || !input) return
+    session.title = input.trim().slice(0, 60)
+    session.updatedAt = Date.now()
+    ipcMainApi.send('session-title', {
+      type: 'session-title',
+      sessionId: session.id,
+      title: session.title,
+    })
   }
 
   getSession(sessionId: string): Session {
@@ -56,6 +84,7 @@ export class AgentManager {
 
   async prompt(sessionId: string, input: string): Promise<string> {
     const session = this.getSession(sessionId)
+    this.ensureSessionTitle(session, input)
     const stream = session.prompt(input)
     let finalText = ''
     for await (const event of stream) {
@@ -80,6 +109,7 @@ export class AgentManager {
 
   async backgroundPrompt(sessionId: string, input: string): Promise<string> {
     const session = this.getSession(sessionId)
+    this.ensureSessionTitle(session, input)
     const stream = session.prompt(input)
     ipcMainApi.send('agent-session-background-send', { sessionId })
     let finalText = ''
@@ -104,39 +134,5 @@ export class AgentManager {
 
   listSessionIds(): string[] {
     return [...this.sessions.keys()]
-  }
-
-  /**
-   * 把内存中的 agent session 序列化为前端可还原的数据结构，并通过 IPC 返回给 renderer。
-   *
-   * 这里采用 invoke/return 的 request-response 方式（前端主动调用 load-session 并拿到返回值），
-   * 不同于 prompt 里按事件流广播的方式。并且透传的是后端的 workflow messages
-   * （AgentMessage，openai chat 格式），与前端 UI 的 SessionMessage 结构不同，
-   * 需要由前端 sessionStore.loadSession 统一还原成 UI message。
-   */
-  loadSession(sessionId: string): LoadedSessionPayload {
-    const session = this.getSession(sessionId)
-
-    return {
-      sessionId,
-      autoApprove: session.autoApprove,
-      thinkingMode: session.thinkingMode,
-      workspacePath: session.workspacePath,
-      activeBranch: session.activeBranch,
-      branches: Object.entries(session.branchs).map(([branchName, branch]) => ({
-        name: branchName,
-        headWorkflowId: branch.head?.workflow.id ?? null,
-        sourceWorkflowId: branch.source?.workflow.id ?? null,
-      })),
-      workflowNodes: Object.values(session.sessionWorkflowNodes).map((node) => ({
-        workflow: {
-          id: node.workflow.id,
-          stopStatus: (node.stopStatus ?? null) as 'finished' | 'error' | 'aborted' | null,
-          messages: node.workflow.messages,
-        },
-        children: node.children.map((child) => child.workflow.id),
-        parent: node.parent?.workflow.id ?? null,
-      })),
-    }
   }
 }

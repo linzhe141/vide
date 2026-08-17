@@ -114,6 +114,44 @@ export interface WorkflowToolCallErrorEvent {
   }
 }
 
+export interface SessionBackgroundCreateEvent {
+  type: 'background-create-session'
+  sessionId: string
+  title: string
+  workspacePath: string | null
+  autoApprove: boolean
+  thinkingMode: boolean
+  sessionType: 'normal' | 'fork'
+  origin: { sessionId: string; workflowId: string | null } | null
+  createdAt: number
+  updatedAt: number
+}
+
+export interface SessionTitleEvent {
+  type: 'session-title'
+  sessionId: string
+  title: string
+}
+
+export interface SessionUpdatedEvent {
+  type: 'session-updated'
+  sessionId: string
+  title: string
+  createdAt: number
+  updatedAt: number
+}
+
+export type SessionEvent =
+  | SessionBackgroundCreateEvent
+  | SessionTitleEvent
+  | SessionUpdatedEvent
+
+export const sessionEventNames = [
+  'background-create-session',
+  'session-title',
+  'session-updated',
+] as const satisfies readonly SessionEvent['type'][]
+
 export type WorkflowEvent =
   | WorkflowStartEvent
   | WorkflowStepStartEvent

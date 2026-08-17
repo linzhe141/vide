@@ -1,12 +1,10 @@
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
 import LOGOIMG from './logo.png'
-import { useSessionStoreActions } from '../../store/sessionStore'
 import { ChatInput } from '../../components/chat/ChatInput'
 import { useState } from 'react'
 
 export function Welcome() {
-  const { createSession } = useSessionStoreActions()
   const [workspacePath, setWorkspacePath] = useState<string | null>(null)
   const [autoApprove, setAutoApprove] = useState(false)
   const [thinkingMode, setThinkingMode] = useState(false)
@@ -14,12 +12,13 @@ export function Welcome() {
   const handleSend = async (input: string) => {
     context.firstInput = input
     context.firstInputAutoApprove = autoApprove
+    // 创建 session（后端会广播 background-create-session，由全局 useAgentSessionEvent
+    // 写入 sessionStore/historyStore），这里只拿 sessionId 去导航。
     const sessionId = await window.ipcRendererApi.invoke('agent-create-session', {
       workspacePath,
       autoApprove,
       thinkingMode,
     })
-    createSession({ sessionId, workspacePath, autoApprove, thinkingMode })
     navigate('/chat/' + sessionId)
   }
 

@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
+import type { SessionEvent } from '@vide/agent/event'
 import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import { reconstructSession } from './loadSession'
+import { handleSessionEvent } from './eventHandlers/handleSessionEvent'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
 type SessionState = {
@@ -27,17 +28,15 @@ type UpdateAskQuestionAnswerData = {
 type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
+    handleSessionEvent: (event: SessionEvent) => void
     changeToolCallStatus: (data: ChangeToolCallStatusData) => void
     updateAskQuestionAnswer: (data: UpdateAskQuestionAnswerData) => void
 
-    loadSession: (sessionId: string) => Promise<void>
     clearSessions: () => void
 
     switchBranch: (sessionId: string, branchName: string) => void
     createSession: (data: {
       sessionId: string
-      sessionType?: Session['sessionType']
-      origin?: Session['origin']
       workspacePath?: string | null
       autoApprove?: boolean
       thinkingMode?: boolean
@@ -59,7 +58,7 @@ type SessionActions = {
 }
 
 export const useSessionStore = create<SessionState & SessionActions>()(
-  immer((set, get) => ({
+  immer((set) => ({
     sessions: [],
     //
     actions: {
@@ -67,6 +66,9 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         set((state) => {
           handleWorkflowEvent(state, event)
         })
+      },
+      handleSessionEvent(event) {
+        handleSessionEvent(event)
       },
       changeToolCallStatus(data: ChangeToolCallStatusData) {
         set((state) => {
@@ -97,26 +99,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           )
           if (!targetMessage || targetMessage.role !== 'ask-user-question') return
           targetMessage.answer = answer
-        })
-      },
-      async loadSession(sessionId) {
-        // 如果 session store 中已存在该 session，无需重新加载
-        const existing = get().sessions.find((item) => item.sessionId === sessionId)
-        if (existing) return
-
-        // 主动向 IPC 请求后端返回该 session 的完整数据，再由前端还原成 UI 结构
-        const payload = await window.ipcRendererApi.invoke('load-session', { sessionId })
-
-        set((state) => {
-          const session = reconstructSession(payload)
-          const existIndex = state.sessions.findIndex(
-            (item) => item.sessionId === payload.sessionId
-          )
-          if (existIndex >= 0) {
-            state.sessions[existIndex] = session
-          } else {
-            state.sessions.push(session)
-          }
         })
       },
       clearSessions() {
@@ -155,8 +137,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       createSession({
         sessionId,
-        sessionType = 'normal',
-        origin = null,
         workspacePath = null,
         autoApprove = false,
         thinkingMode = false,
@@ -166,11 +146,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const newSession: Session = {
             sessionId,
             autoApprove,
-            title: '',
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            sessionType,
-            origin,
             workspacePath,
             thinkingMode,
             activeBranch,

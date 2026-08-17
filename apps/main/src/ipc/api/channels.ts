@@ -7,35 +7,10 @@ import type {
   WorkflowData,
   WebSearchConfig,
   WechatBotRuntimeStatus,
-  WechatBotSessionRecord,
 } from '@vide/config'
-import type { WorkflowEvent } from '@vide/agent'
-import type { AgentMessage } from '@vide/ai'
+import type { WorkflowEvent, SessionEvent } from '@vide/agent'
 
 export type { FileNode, SessionRowDto, WorkflowData }
-
-/**
- * 后端内存中 agent session 在加载时发送到前端的完整数据。
- * workflow.messages 透传的是后端的 AgentMessage（openai chat 格式），
- * 需要由前端 sessionStore.loadSession 还原为 UI 的 SessionMessage。
- */
-export type LoadedSessionPayload = {
-  sessionId: string
-  autoApprove: boolean
-  thinkingMode: boolean
-  workspacePath: string | null
-  activeBranch: string
-  branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
-  workflowNodes: {
-    workflow: {
-      id: string
-      stopStatus: 'finished' | 'error' | 'aborted' | null
-      messages: AgentMessage[]
-    }
-    children: string[]
-    parent: string | null
-  }[]
-}
 
 export type WorkspaceExplorerNode = {
   name: string
@@ -111,7 +86,6 @@ export interface RenderChannel {
     }[]
   }>
   'agent-session-send': (data: { sessionId: string; input: string }) => void
-  'load-session': (data: { sessionId: string }) => Promise<LoadedSessionPayload>
   'agent-workflow-regenerate': (data: {
     sessionId: string
     targetWorkflowId: string
@@ -150,7 +124,6 @@ export interface RenderChannel {
   'wechat-stop-bot': () => Promise<void>
   'wechat-logout': () => Promise<void>
   'wechat-get-runtime-status': () => WechatBotRuntimeStatus
-  'wechat-get-recent-sessions': () => WechatBotSessionRecord[]
   // only dev
   'dev-delete-database-rows': () => void
 
@@ -206,11 +179,9 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
-  'wechat-sessions-changed': (data: {
-    activeSessionId: string | null
-    sessions: WechatBotSessionRecord[]
-    status: WechatBotRuntimeStatus
-  }) => void
+
+  'weixin-bot-auth-success': () => void
+
   'workspace-file-changed': (data: {
     workspacePath: string
     event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
@@ -220,12 +191,16 @@ export type MainChannel = {
     name: string
     type: 'file' | 'folder'
   }) => void
+
+  // agent：后台入口（如微信 Bot）触发一次发送
   'agent-session-background-send': (data: { sessionId: string }) => void
 } & {
-  // agent workflow stream events
-  [K in WorkflowEvent['type']]: (
-    data: Extract<WorkflowEvent, { type: K }> & {
-      ctx: { sessionId: string | null; workflowId: string | null }
-    }
-  ) => void
+  // agent workflow + session 级事件（统一的 mapped type，避免多个合并类型互相干扰）
+  [K in WorkflowEvent['type'] | SessionEvent['type']]: K extends SessionEvent['type']
+    ? (data: Extract<SessionEvent, { type: K }>) => void
+    : K extends WorkflowEvent['type']
+      ? (data: Extract<WorkflowEvent, { type: K }> & {
+          ctx: { sessionId: string | null; workflowId: string | null }
+        }) => void
+      : never
 }

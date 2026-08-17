@@ -10,6 +10,7 @@ import React, {
 } from 'react'
 import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
+import { useHistoryItems } from '../../store/historyStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
 import { ArrowDown, FileClock, FolderTree, GitBranch } from 'lucide-react'
@@ -164,7 +165,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
   const { sessionId, running } = useChatContext()
-  const session = useSession(sessionId)
+  const historyItem = useHistoryItems().find((item) => item.sessionId === sessionId)
   const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
@@ -187,10 +188,10 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
   return (
     <>
       <div ref={scrollContainerRef} className='relative h-0 flex-1 overflow-auto'>
-        {session?.sessionType === 'fork' && session.origin ? (
+        {historyItem?.type === 'fork' && historyItem.origin ? (
           <ForkOriginFooter
-            originSessionId={session.origin.sessionId}
-            originWorkflowId={session.origin.workflowId}
+            originSessionId={historyItem.origin.sessionId}
+            originWorkflowId={historyItem.origin.workflowId}
           />
         ) : null}
         <div className='mx-auto max-w-[920px]'>{children}</div>

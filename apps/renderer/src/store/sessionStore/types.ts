@@ -1,29 +1,4 @@
 import type { ToolCall } from '@vide/ai'
-import type { AgentMessage } from '@vide/ai'
-
-/**
- * 后端通过 'session-loaded' 广播的完整 session 加载数据。
- * workflow.messages 为后端 AgentMessage（openai chat 格式），需经 loadSession 还原为 UI SessionMessage。
- * 与 apps/main/src/ipc/api/channels.ts 中的 LoadedSessionPayload 保持一致。
- */
-export interface LoadedSessionPayload {
-  sessionId: string
-  autoApprove: boolean
-  thinkingMode: boolean
-  workspacePath: string | null
-  activeBranch: string
-  branches: { name: string; headWorkflowId: string | null; sourceWorkflowId: string | null }[]
-  workflowNodes: {
-    workflow: {
-      id: string
-      stopStatus: 'finished' | 'error' | 'aborted' | null
-      messages: AgentMessage[]
-    }
-    children: string[]
-    parent: string | null
-  }[]
-}
-
 
 export interface UserInputSessionMessage {
   id: string
@@ -154,20 +129,10 @@ export type SessionBranch = {
   sourceWorkflowId: string | null
 }
 
-export type SessionOrigin = {
-  sessionId: string
-  workflowId: string | null
-}
-
 export type Session = {
   sessionId: string
-  title?: string
   autoApprove: boolean
   thinkingMode: boolean
-  createdAt?: number
-  updatedAt?: number
-  sessionType: 'normal' | 'fork'
-  origin: SessionOrigin | null
   workspacePath?: string | null
   activeBranch: string
   branches: SessionBranch[]

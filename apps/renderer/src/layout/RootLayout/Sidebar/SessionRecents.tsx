@@ -40,6 +40,7 @@ export function SessionRecents() {
           key={history.sessionId}
           sessionId={history.sessionId}
           title={history.title}
+          type={history.type}
         />
       ))}
 
@@ -50,14 +51,18 @@ export function SessionRecents() {
   )
 }
 
-function HistoryNavItem({ sessionId, title }: { sessionId: string; title: string }) {
+function HistoryNavItem({
+  sessionId,
+  title,
+  type,
+}: {
+  sessionId: string
+  title: string
+  type: 'normal' | 'fork'
+}) {
   const running = useSessionStore((state) => {
     const session = state.sessions.find((item) => item.sessionId === sessionId)
     return session?.runtime.running ?? false
-  })
-  const sessionType = useSessionStore((state) => {
-    const session = state.sessions.find((item) => item.sessionId === sessionId)
-    return session?.sessionType ?? null
   })
 
   return (
@@ -76,7 +81,7 @@ function HistoryNavItem({ sessionId, title }: { sessionId: string; title: string
       }
     >
       <div className='flex items-center gap-2'>
-        {sessionType === 'fork' ? (
+        {type === 'fork' ? (
           <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
             <GitBranch size={11} />
           </span>
