@@ -377,8 +377,46 @@ export const useHasPendingAskQuestion = (sessionId: string) =>
       .reverse()
       .find((message) => message.role !== 'workflow')
 
-    return (
-      latestMessage?.role === 'ask-user-question' &&
-      latestMessage.questions.some((question) => question.answer === null)
-    )
+    // ask-question 属于某个 workflow，提交答案会产生下一个 workflow（子节点）。
+    // head workflow 是 active branch 最新的 workflow，后面不会有子节点，
+    // 因此 head 若以 ask-question 结尾 → 该问题尚未提交 → 隐藏下方 ChatInput（不能两个输入入口）。
+    return latestMessage?.role === 'ask-user-question'
+  })
+
+/**
+ * 取 active branch 上、紧跟在 `workflowId` 之后的「下一个 workflow」（子节点）。
+ *
+ * ask-question 属于某个 workflow，用户提交答案必然产生下一个 workflow（子节点）；
+ * 因此「该 workflow 后面还有 workflow」= 已回答。此处直接从活动分支的 head 往回
+ * 收集线性链再定位子节点，纯图遍历、与数组顺序无关。
+ *
+ * 返回 undefined 表示该 workflow 是活动分支的最新（head）节点，没有子节点。
+ */
+export const useSessionWorkflowNext = (
+  sessionId: string,
+  workflowId: string
+): Workflow | undefined =>
+  useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    if (!session || !workflowId) return undefined
+
+    const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+    if (!activeBranch?.headWorkflowId) return undefined
+
+    // 从 head 往回沿 parent 收集线性链：chain[0]=head(最新) ... chain[last]=root(最旧)。
+    // 某节点的子节点在链上更靠近 head，即出现在更小 index。
+    const chain: string[] = []
+    let currentId: string | undefined = activeBranch.headWorkflowId
+    const visited = new Set<string>()
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId)
+      chain.push(currentId)
+      currentId = session.workflowNodesMap[currentId]?.parent ?? undefined
+    }
+
+    const selfIndex = chain.indexOf(workflowId)
+    // selfIndex===0 表示该 workflow 就是 head，其后无节点。
+    const nextId = selfIndex > 0 ? chain[selfIndex - 1] : undefined
+    if (!nextId) return undefined
+    return session.workflowNodesMap[nextId]?.workflow
   })

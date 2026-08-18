@@ -41,7 +41,7 @@ export class Session {
   // workflow graph context
   sessionType: SessionType = 'normal'
   activeBranch = 'main'
-  branchs: Record<string, SessionBranch> = {}
+  branches: Record<string, SessionBranch> = {}
   sessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
   // workflowMap: Map<string, Workflow> = new Map()
 
@@ -51,13 +51,13 @@ export class Session {
   constructor(public agentSettings: Agent['settings']) {}
 
   get currentBranch() {
-    return this.branchs[this.activeBranch]
+    return this.branches[this.activeBranch]
   }
 
   get workspacePath(): string | null {
     return this._workspacePath
   }
-  set workspacePath(path: string) {
+  set workspacePath(path: string | null) {
     this._workspacePath = path
   }
 
@@ -180,18 +180,18 @@ export class Session {
   }
 
   createBranch(branchName: string, source: SessionWorkflowNode | null) {
-    if (this.branchs[branchName]) {
+    if (this.branches[branchName]) {
       console.error(`Branch ${branchName} already exists`)
       return
     }
-    this.branchs[branchName] = {
+    this.branches[branchName] = {
       head: source,
       source,
     }
   }
 
   switchBranch(branchName: string) {
-    if (!this.branchs[branchName]) {
+    if (!this.branches[branchName]) {
       console.error(`Branch ${branchName} does not exist`)
       return
     }

@@ -113,7 +113,7 @@ export type WorkflowLogDto = {
 export type SessionWorkflowData = {
   id: string
   parentWorkflowId: string | null
-  stopStatus: 'finished' | 'error' | 'aborted' | null
+  stopStatus: 'completed' | 'error' | 'aborted' | 'interrupted' | null
   feedback: 'like' | 'dislike' | null
   input: string
   agentMessages: WorkflowAgentMessageDto[]

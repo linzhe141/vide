@@ -6,12 +6,21 @@ import { ipcMainApi } from '@/ipc/api/ipcMain'
 import { settingsStore } from '@/modules/settingsStore'
 import { logger } from '@/logger'
 import { SessionRepository } from '@/modules/sessionRepository'
+import { SessionLoader } from '@/modules/sessionLoader'
+import { WorkflowPersister } from '@/modules/workflowPersister'
+
+type StreamEvent = WorkflowEvent & {
+  ctx: { sessionId: string | null; workflowId: string | null }
+}
 
 export class AgentManager {
   agent: Agent
   sessions = new Map<string, Session>()
+  /** 已从 DB 还原过的 session id，避免重复加载。 */
+  private loaded = new Set<string>()
+  private persister = new WorkflowPersister()
 
-  constructor(private app: AppManager) {
+  constructor(_app: AppManager) {
     this.agent = new Agent()
     this.agent.setWebSearchConfig({
       apiKey: settingsStore.get('webSearchConfig').apiKey,
@@ -56,8 +65,6 @@ export class AgentManager {
       sourceWorkflowId: null,
     })
 
-    // 通知 renderer：新增一个 session（前台/后台入口都走这条广播，
-    // 前端 useAgentSessionEvent 统一在 sessionStore/historyStore 落盘）
     ipcMainApi.send('background-create-session', {
       type: 'background-create-session',
       sessionId: session.id,
@@ -74,6 +81,32 @@ export class AgentManager {
     return session.id
   }
 
+  /**
+   * 确保某个 session 已在内存中。若为持久化 session（App 重启后从 DB 还原），
+   * 则通过 SessionLoader 重建内存 Session + Workflow 图后注册进 this.sessions。
+   * 已加载过或没有 DB 记录的 session 为 no-op。
+   */
+  async ensureSessionLoaded(sessionId: string): Promise<void> {
+    if (this.sessions.has(sessionId) || this.loaded.has(sessionId)) return
+
+    this.loaded.add(sessionId)
+    let session: Session | null = null
+    try {
+      session = await SessionLoader.loadSession(sessionId, this.agent.settings)
+    } catch (error) {
+      logger.error('agent-manager ensureSessionLoaded error', sessionId, error)
+    }
+    if (!session) return
+
+    session.setupModel({
+      name: settingsStore.get('llmConfig').model,
+      baseURL: settingsStore.get('llmConfig').baseUrl,
+      apiKey: settingsStore.get('llmConfig').apiKey,
+    })
+    this.sessions.set(session.id, session)
+    logger.info('agent-manager restored-session ', session.id)
+  }
+
   /** 首次拿到用户输入时，用它当 session 标题，并广播给 renderer 更新 history。 */
   private async ensureSessionTitle(session: Session, input: string) {
     if (session.title || !input) return
@@ -87,66 +120,32 @@ export class AgentManager {
     })
   }
 
-  /** 统一处理 workflow stream 事件：广播给 renderer + 持久化日志/消息/状态。 */
-  private async persistWorkflowEvent(
-    session: Session,
-    event: WorkflowEvent & { ctx: { sessionId: string | null; workflowId: string | null } }
-  ) {
-    const workflowId = event.ctx.workflowId
-    // 落日志（不含 ctx 的事件载荷）
-    const { ctx: _ctx, ...payload } = event
-    const node = workflowId ? session.sessionWorkflowNodes[workflowId] : undefined
+  /**
+   * 统一处理 workflow stream：
+   * - 每个事件广播给 renderer（实时 UI）；
+   * - 交给 WorkflowPersister 缓冲，终态一次性持久化（agent messages + 完整日志）；
+   * - 抽取最终文本（workflow.llm.text.end / workflow.completed.result）。
+   */
+  private async runPrompt(session: Session, input: string): Promise<string> {
+    const stream = session.prompt(input)
+    let finalText = ''
+    for await (const event of stream) {
+      const v2Event = event as StreamEvent
+      ipcMainApi.send(v2Event.type as any, v2Event as any)
+      await this.persister.consume(session, v2Event)
 
-    if (workflowId && node) {
-      try {
-        await SessionRepository.appendWorkflowLog(workflowId, event.type, payload)
-      } catch (error) {
-        logger.error('appendWorkflowLog error', error)
+      switch (event.type) {
+        case 'workflow.llm.text.end':
+          finalText = event.content ?? ''
+          break
+        case 'workflow.completed':
+          finalText = typeof event.result === 'string' ? event.result : finalText
+          break
+        default:
+          break
       }
     }
-
-    switch (event.type) {
-      case 'workflow.start': {
-        if (workflowId && node) {
-          const parentId = node.parent?.workflow.id ?? null
-          await SessionRepository.createWorkflow({
-            workflowId,
-            sessionId: session.id,
-            parentWorkflowId: parentId,
-            input: event.input,
-          })
-          // 更新活动分支 head（生成新 workflow 后切换 head）
-          await SessionRepository.upsertBranch({
-            sessionId: session.id,
-            name: session.activeBranch,
-            headWorkflowId: workflowId,
-          })
-        }
-        break
-      }
-      case 'workflow.completed':
-      case 'workflow.aborted':
-      case 'workflow.error': {
-        if (workflowId && node) {
-          const messageRows = node.workflow.messages
-          try {
-            await SessionRepository.saveWorkflowMessages(workflowId, messageRows)
-          } catch (error) {
-            logger.error('saveWorkflowMessages error', error)
-          }
-          const stopStatus =
-            event.type === 'workflow.completed'
-              ? ('finished' as const)
-              : event.type === 'workflow.aborted'
-                ? ('aborted' as const)
-                : ('error' as const)
-          await SessionRepository.finishWorkflow(workflowId, stopStatus)
-        }
-        break
-      }
-      default:
-        break
-    }
+    return finalText
   }
 
   getSession(sessionId: string): Session {
@@ -162,55 +161,16 @@ export class AgentManager {
   }
 
   async prompt(sessionId: string, input: string): Promise<string> {
-    const session = this.getSession(sessionId)
-    await this.ensureSessionTitle(session, input)
-    const stream = session.prompt(input)
-    let finalText = ''
-    for await (const event of stream) {
-      const v2Event = event as WorkflowEvent & {
-        ctx: { sessionId: string | null; workflowId: string | null }
-      }
-      ipcMainApi.send(v2Event.type as any, v2Event as any)
-      await this.persistWorkflowEvent(session, v2Event)
-
-      switch (event.type) {
-        case 'workflow.llm.text.end':
-          finalText = event.content ?? ''
-          break
-        case 'workflow.completed':
-          finalText = typeof event.result === 'string' ? event.result : finalText
-          break
-        default:
-          break
-      }
-    }
-    return finalText
+    await this.ensureSessionLoaded(sessionId)
+    await this.ensureSessionTitle(this.getSession(sessionId), input)
+    return this.runPrompt(this.getSession(sessionId), input)
   }
 
   async backgroundPrompt(sessionId: string, input: string): Promise<string> {
-    const session = this.getSession(sessionId)
-    await this.ensureSessionTitle(session, input)
-    const stream = session.prompt(input)
+    await this.ensureSessionLoaded(sessionId)
+    await this.ensureSessionTitle(this.getSession(sessionId), input)
     ipcMainApi.send('agent-session-background-send', { sessionId })
-    let finalText = ''
-    for await (const event of stream) {
-      const v2Event = event as WorkflowEvent & {
-        ctx: { sessionId: string | null; workflowId: string | null }
-      }
-      ipcMainApi.send(v2Event.type as any, v2Event as any)
-      await this.persistWorkflowEvent(session, v2Event)
-      switch (event.type) {
-        case 'workflow.llm.text.end':
-          finalText = event.content ?? ''
-          break
-        case 'workflow.completed':
-          finalText = typeof event.result === 'string' ? event.result : finalText
-          break
-        default:
-          break
-      }
-    }
-    return finalText
+    return this.runPrompt(this.getSession(sessionId), input)
   }
 
   listSessionIds(): string[] {

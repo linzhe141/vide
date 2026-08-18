@@ -21,7 +21,7 @@ Useful when you need to ask several questions in sequence.
           questions: {
             type: 'array',
             minItems: 1,
-            maxItems: 10, // 限制最多10个问题
+            maxItems: 4, // 限制最多4个问题
             items: {
               type: 'object',
               properties: {

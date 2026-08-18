@@ -204,7 +204,7 @@ export class WechatBot {
         }
       } catch (err) {
         this.lastError = String(err)
-        logger.warn('wechat getupdates error:', this.lastError)
+        // logger.warn('wechat getupdates error:', this.lastError)
         if (this.stopPolling) break
         await sleep(1000)
       }

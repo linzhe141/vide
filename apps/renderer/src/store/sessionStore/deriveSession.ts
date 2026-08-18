@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import type { AgentMessage, ToolCall } from '@vide/ai'
 import type { SessionDataDto, SessionWorkflowData, WorkflowLogDto } from '@vide/config'
 import type {
+  AskUserQuestionSessionMessage,
   Session,
   SessionBranch,
   SessionMessage,
@@ -10,6 +11,7 @@ import type {
   WorkflowLogEvent,
   WorkflowNode,
 } from './types'
+import { ASK_USER_QUESTION_TOOL_NAME, sanitizeAskUserQuestions } from './askQuestion'
 
 /**
  * 依据 SQLite 持久化的 session data（agent messages + workflow logs）派生前端 UI 态：
@@ -62,14 +64,23 @@ export function deriveSessionFromData(data: SessionDataDto): Session {
 function deriveWorkflow(wf: SessionWorkflowData): Workflow {
   const decoded = decodeAgentMessages(wf.agentMessages)
 
-  const runtimeStatus: Workflow['runtime']['status'] =
-    wf.stopStatus === 'finished'
-      ? 'finished'
-      : wf.stopStatus === 'aborted'
-        ? 'aborted'
-        : wf.stopStatus === 'error'
-          ? 'error'
-          : 'running'
+  let runtimeStatus: Workflow['runtime']['status']
+  switch (wf.stopStatus) {
+    case 'completed':
+      runtimeStatus = 'finished'
+      break
+    case 'aborted':
+      runtimeStatus = 'aborted'
+      break
+    case 'error':
+      runtimeStatus = 'error'
+      break
+    case 'interrupted':
+      runtimeStatus = 'interrupted'
+      break
+    default:
+      runtimeStatus = 'running'
+  }
 
   const workflow: Workflow = {
     id: wf.id,
@@ -142,6 +153,8 @@ function deriveMessages(
   for (const { message } of agentMessages) {
     switch (message.role) {
       case 'user': {
+        // 提交答案会产生下一个 workflow（子节点），其 input 即该答案 JSON，由 deriveWorkflow
+        // 以 user 消息形式展示。本 workflow 内不直接出现答案 user 消息。
         scrollInto({
           id: nanoid(),
           role: 'user',
@@ -153,7 +166,8 @@ function deriveMessages(
         const content = typeof message.content === 'string' ? message.content : ''
         const toolCalls = message.tool_calls ?? []
         if (toolCalls.length) {
-          const states: ToolCallState[] = toolCalls.map((tc) => {
+          const states: ToolCallState[] = []
+          for (const tc of toolCalls) {
             const toolCall: ToolCall = {
               id: tc.id,
               type: 'function',
@@ -165,11 +179,29 @@ function deriveMessages(
               },
               status: 'auto-approved',
             }
+            // ask-user-question 生成独立的提问卡片，不进入通用 tool-call 卡片。
+            // （卡片是否只读由 active branch 是否存在「下一个 workflow」决定，见 MessageList。）
+            if (toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME) {
+              const questions = sanitizeAskUserQuestions(
+                parseToolArguments(toolCall.function.arguments)?.questions
+              )
+              if (questions.length) {
+                scrollInto({
+                  id: nanoid(),
+                  role: 'ask-user-question',
+                  toolCallId: toolCall.id,
+                  questions,
+                })
+              }
+              continue
+            }
             const state: ToolCallState = { toolCall }
             toolCallStates.set(tc.id, state)
-            return state
-          })
-          scrollInto({ id: nanoid(), role: 'tool-call', toolCalls: states })
+            states.push(state)
+          }
+          if (states.length) {
+            scrollInto({ id: nanoid(), role: 'tool-call', toolCalls: states })
+          }
         }
         if (content) {
           scrollInto({ id: nanoid(), role: 'assistant-text', content, streaming: false })
@@ -311,6 +343,15 @@ function parsePayload(payload: string | null): unknown {
   if (!payload) return null
   try {
     return JSON.parse(payload)
+  } catch {
+    return null
+  }
+}
+
+/** 解析 tool call 的 arguments JSON。 */
+function parseToolArguments(argumentsText: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(argumentsText) as Record<string, unknown>
   } catch {
     return null
   }

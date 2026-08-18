@@ -39,6 +39,7 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('query-workflow-is-completed', async ({ sessionId, workflowId }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
       const session = agentManager.getSession(sessionId)
       const node = session.sessionWorkflowNodes[workflowId]
       return !!node?.stopStatus
@@ -49,22 +50,26 @@ export class AgentIpcMainService implements IpcMainService {
     })
 
     ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
       const session = agentManager.getSession(sessionId)
       session.autoApprove = autoApprove
       await SessionRepository.setSessionAutoApprove(sessionId, autoApprove)
     })
 
     ipcMainApi.handle('agent-session-switch-thinking-mode', async ({ sessionId, thinkingMode }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
       const session = agentManager.getSession(sessionId)
       session.thinkingMode = thinkingMode
       await SessionRepository.setSessionThinkingMode(sessionId, thinkingMode)
     })
 
     ipcMainApi.handle('agent-human-approved', async ({ sessionId, workflowId }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
       const session = agentManager.getSession(sessionId)
       session.humanApprove(workflowId)
     })
     ipcMainApi.handle('agent-session-abort', async ({ sessionId }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
       const session = agentManager.getSession(sessionId)
       session.abort()
     })
@@ -74,6 +79,7 @@ export class AgentIpcMainService implements IpcMainService {
       'agent-workflow-regenerate',
       async ({ sessionId, targetWorkflowId, branchName, input }) => {
         logger.info('agent-workflow-regenerate ', sessionId, branchName, targetWorkflowId, input)
+        await agentManager.ensureSessionLoaded(sessionId)
         const session = agentManager.getSession(sessionId)
         const targetNode = session.sessionWorkflowNodes[targetWorkflowId]
         if (!targetNode) return

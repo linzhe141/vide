@@ -36,7 +36,9 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
     .references(() => sessions.id),
   // 普通 text 列，不用 FK（避免自引用）。由代码维护父子关系。
   parentWorkflowId: text('parent_workflow_id'),
-  stopStatus: text('stop_status', { enum: ['finished', 'error', 'aborted'] }),
+  stopStatus: text('stop_status', {
+    enum: ['completed', 'error', 'aborted', 'interrupted'],
+  }),
   feedback: text('feedback', { enum: ['like', 'dislike'] }),
   input: text('input').notNull(),
   createdAt: integer('created_at').notNull(),

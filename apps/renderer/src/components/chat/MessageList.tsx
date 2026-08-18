@@ -15,7 +15,7 @@ export function MessageList() {
     <div className='mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-10'>
       {workflows?.map((workflow) => (
         <React.Fragment key={workflow.id}>
-          <WorkflowView key={workflow.id} workflow={workflow} />
+          <WorkflowView workflow={workflow} />
           {workflow.runtime.status === 'aborted' && <AbortedStatus />}
           {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
           {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}

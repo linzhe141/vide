@@ -171,11 +171,11 @@ export type MainChannel = {
   'agent-session-background-send': (data: { sessionId: string }) => void
 } & {
   // agent workflow + session 级事件（统一的 mapped type，避免多个合并类型互相干扰）
-  [K in WorkflowEvent['type'] | SessionEvent['type']]: K extends SessionEvent['type']
-    ? (data: Extract<SessionEvent, { type: K }>) => void
-    : K extends WorkflowEvent['type']
-      ? (data: Extract<WorkflowEvent, { type: K }> & {
-          ctx: { sessionId: string | null; workflowId: string | null }
-        }) => void
-      : never
+  [K in SessionEvent['type']]: (data: Extract<SessionEvent, { type: K }>) => void
+} & {
+  [K in WorkflowEvent['type']]: (
+    data: Extract<WorkflowEvent, { type: K }> & {
+      ctx: { sessionId: string | null; workflowId: string | null }
+    }
+  ) => void
 }

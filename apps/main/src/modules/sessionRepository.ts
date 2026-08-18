@@ -11,14 +11,6 @@ import {
   workflowMessages,
 } from '@/db/schema'
 
-/**
- * 会话持久化仓库。
- *
- * 负责将 session / workflow / branch / agent message / workflow log 落库，
- * 以及 load 单个 session 的完整持久化数据（SessionDataDto）。
- * - workflow 的消息以「agent message」形式整段保存，前端 load 后再派生 UI 消息。
- * - 表之间不做数据库层自引用外键，关系（parentWorkflowId / headWorkflowId 等）由代码维护。
- */
 export class SessionRepository {
   static async ensureSession(data: {
     id: string
@@ -153,7 +145,10 @@ export class SessionRepository {
     })
   }
 
-  static async finishWorkflow(workflowId: string, stopStatus: 'finished' | 'error' | 'aborted') {
+  static async finishWorkflow(
+    workflowId: string,
+    stopStatus: 'completed' | 'error' | 'aborted' | 'interrupted'
+  ) {
     await db
       .update(sessionWorkflows)
       .set({ stopStatus, updatedAt: Date.now() })
@@ -174,10 +169,7 @@ export class SessionRepository {
    * 整段保存一个 workflow 的 agent messages（先删后插，保证与内存态一致）。
    * messages 为 OpenAI 格式的 AgentMessage[]。
    */
-  static async saveWorkflowMessages(
-    workflowId: string,
-    messages: AgentMessage[]
-  ): Promise<void> {
+  static async saveWorkflowMessages(workflowId: string, messages: AgentMessage[]): Promise<void> {
     await db.delete(workflowMessages).where(eq(workflowMessages.workflowId, workflowId))
 
     if (!messages.length) return
@@ -211,6 +203,24 @@ export class SessionRepository {
       payload: payload === undefined ? null : JSON.stringify(payload),
       createdAt,
     })
+  }
+
+  /** 一次性追加 workflow 的完整事件日志（终态落库，避免每个 chunk 都写库）。 */
+  static async insertWorkflowLogs(
+    workflowId: string,
+    entries: { eventName: string; payload: unknown; createdAt: number }[]
+  ): Promise<void> {
+    if (!entries.length) return
+    const time = Date.now()
+    await db.insert(workflowLogs).values(
+      entries.map((entry, index) => ({
+        id: uuid(),
+        workflowId,
+        eventName: entry.eventName,
+        payload: entry.payload === undefined ? null : JSON.stringify(entry.payload),
+        createdAt: entry.createdAt ?? time + index,
+      }))
+    )
   }
 
   /** 列表用：返回所有 session 的轻量元数据。 */

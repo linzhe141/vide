@@ -5,10 +5,12 @@ import type {
   AssistantReasonSessionMessage,
   AssistantTextSessionMessage,
   ToolCallSessionMessage,
-  AskQuestionOption,
-  AskUserQuestionItem,
   AskUserQuestionSessionMessage,
 } from '../types'
+import {
+  ASK_USER_QUESTION_TOOL_NAME,
+  sanitizeAskUserQuestions,
+} from '../askQuestion'
 import type { WorkflowState } from '../../../hooks/useAgentSessionEvent'
 
 export function handleWorkflowEvent(
@@ -169,7 +171,7 @@ export function handleWorkflowEvent(
       appendWorkflowLogEvent(workflow, workflowEvent)
 
       const askQuestionToolCalls = workflowEvent.toolCall.filter(
-        (toolCall) => toolCall.function.name === 'ask-user-question-generate'
+        (toolCall) => toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME
       )
       if (askQuestionToolCalls.length) {
         for (const toolCall of askQuestionToolCalls) {
@@ -188,7 +190,7 @@ export function handleWorkflowEvent(
       }
 
       const normalToolCalls = workflowEvent.toolCall.filter(
-        (toolCall) => toolCall.function.name !== 'ask-user-question-generate'
+        (toolCall) => toolCall.function.name !== ASK_USER_QUESTION_TOOL_NAME
       )
       if (!normalToolCalls.length) return
 
@@ -349,58 +351,3 @@ function parseToolArguments(argumentsText: string) {
   }
 }
 
-function sanitizeAskUserQuestions(questions: unknown): AskUserQuestionItem[] {
-  if (!Array.isArray(questions)) return []
-
-  const normalized = questions
-    .map((item): AskUserQuestionItem | null => {
-      if (!item || typeof item !== 'object') return null
-      const question = item as {
-        id?: unknown
-        title?: unknown
-        description?: unknown
-        options?: unknown
-        answer?: unknown
-      }
-      const id =
-        typeof question.id === 'string' && question.id.trim() ? question.id.trim() : nanoid()
-      const title = typeof question.title === 'string' ? question.title.trim() : ''
-      const description =
-        typeof question.description === 'string' ? question.description.trim() : ''
-      const options = sanitizeAskQuestionOptions(question.options)
-      if (!title || !options.length) return null
-      const result: AskUserQuestionItem = {
-        id,
-        title,
-        options,
-        answer: null,
-      }
-      if (description) result.description = description
-      return result
-    })
-    .filter((item): item is AskUserQuestionItem => item !== null)
-
-  return normalized
-}
-
-function sanitizeAskQuestionOptions(options: unknown): AskQuestionOption[] {
-  if (!Array.isArray(options)) return []
-
-  const normalized = options
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null
-      const label =
-        typeof (item as { label?: unknown }).label === 'string'
-          ? (item as { label: string }).label.trim()
-          : ''
-      const value =
-        typeof (item as { value?: unknown }).value === 'string'
-          ? (item as { value: string }).value.trim()
-          : ''
-      if (!label || !value) return null
-      return { label, value }
-    })
-    .filter((item): item is AskQuestionOption => item !== null)
-
-  return normalized
-}
