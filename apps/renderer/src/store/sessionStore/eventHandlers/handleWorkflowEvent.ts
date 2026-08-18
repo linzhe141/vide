@@ -7,10 +7,7 @@ import type {
   ToolCallSessionMessage,
   AskUserQuestionSessionMessage,
 } from '../types'
-import {
-  ASK_USER_QUESTION_TOOL_NAME,
-  sanitizeAskUserQuestions,
-} from '../askQuestion'
+import { ASK_USER_QUESTION_TOOL_NAME, sanitizeAskUserQuestions } from '../askQuestion'
 import type { WorkflowState } from '../../../hooks/useAgentSessionEvent'
 
 export function handleWorkflowEvent(
@@ -24,238 +21,208 @@ export function handleWorkflowEvent(
   const session = storeState.sessions.find((item) => item.sessionId === sessionId)
   if (!session) return
 
-  switch (workflowEvent.type) {
-    case 'workflow.start': {
-      const newWorkflow = createWorkflow(workflowId, workflowEvent.input)
-      appendWorkflowLogEvent(newWorkflow, workflowEvent)
-      const currentBranch = session.branches.find((item) => item.name === session.activeBranch)
-      if (!currentBranch) return
-
+  // 所有 event 都要记录（不做任何过滤），统一在本函数末尾一次性写入 workflow.events，
+  // 保证与后端持久化（WorkflowPersister）写入的事件流完全一致。
+  // workflow.start 需要先创建 workflow 再绑定；其余事件挂到已存在的 workflow 上。
+  let workflow: Workflow
+  if (workflowEvent.type === 'workflow.start') {
+    workflow = createWorkflow(workflowId, workflowEvent.input)
+    const currentBranch = session.branches.find((item) => item.name === session.activeBranch)
+    if (currentBranch) {
       const parentId = currentBranch.headWorkflowId
-      session.workflowNodesMap[newWorkflow.id] = {
-        workflow: newWorkflow,
+      session.workflowNodesMap[workflow.id] = {
+        workflow,
         children: [],
         parent: parentId,
       }
       if (parentId && session.workflowNodesMap[parentId]) {
-        session.workflowNodesMap[parentId].children.push(newWorkflow.id)
+        session.workflowNodesMap[parentId].children.push(workflow.id)
       }
-      currentBranch.headWorkflowId = newWorkflow.id
+      currentBranch.headWorkflowId = workflow.id
       session.runtime.running = true
-      return
     }
-
-    case 'workflow.completed': {
-      session.runtime.running = false
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      workflow.runtime.status = 'finished'
-      return
-    }
-
-    case 'workflow.interrupted': {
-      // ui 还是保持 running 的状态， 但是 workflow 的状态是 interrupted
-      session.runtime.running = true
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      workflow.runtime.status = 'interrupted'
-      return
-    }
-
-    case 'workflow.aborted': {
-      session.runtime.running = false
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      workflow.runtime.status = 'aborted'
-
-      return
-    }
-
-    case 'workflow.error': {
-      session.runtime.running = false
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      workflow.runtime.status = 'error'
-      return
-    }
-
-    case 'workflow.llm.error': {
-      session.runtime.running = false
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      workflow.runtime.status = 'error'
-
-      workflow.messages.push({
-        id: nanoid(),
-        role: 'error',
-        error:
-          workflowEvent.error instanceof Error ? workflowEvent.error.message : workflowEvent.error,
-      })
-      return
-    }
-
-    case 'workflow.llm.reason.start': {
-      const reasoningMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-reason'
-      ) as AssistantReasonSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      reasoningMessage.reasoning = true
-      return
-    }
-
-    case 'workflow.llm.reason.delta': {
-      const reasoningMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-reason'
-      ) as AssistantReasonSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      reasoningMessage.content += workflowEvent.chunk.delta
-      return
-    }
-
-    case 'workflow.llm.reason.end': {
-      const reasoningMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-reason'
-      ) as AssistantReasonSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      reasoningMessage.reasoning = false
-      return
-    }
-
-    case 'workflow.llm.text.start': {
-      const textMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-text'
-      ) as AssistantTextSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      textMessage.streaming = true
-      return
-    }
-
-    case 'workflow.llm.text.delta': {
-      const textMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-text'
-      ) as AssistantTextSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      textMessage.content += workflowEvent.chunk.delta
-      return
-    }
-
-    case 'workflow.llm.text.end': {
-      const textMessage = ensureLastMessage(
-        session,
-        workflowId,
-        'assistant-text'
-      ) as AssistantTextSessionMessage
-      appendWorkflowLogEvent(session.workflowNodesMap[workflowId].workflow, workflowEvent)
-      textMessage.streaming = false
-      return
-    }
-
-    case 'workflow.llm.tool.call.end': {
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-
-      const askQuestionToolCalls = workflowEvent.toolCall.filter(
-        (toolCall) => toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME
-      )
-      if (askQuestionToolCalls.length) {
-        for (const toolCall of askQuestionToolCalls) {
-          const args = parseToolArguments(toolCall.function.arguments)
-          const questions = sanitizeAskUserQuestions(args?.questions)
-          if (!questions.length) continue
-
-          const askUserQuestionMessage: AskUserQuestionSessionMessage = {
-            id: nanoid(),
-            role: 'ask-user-question',
-            toolCallId: toolCall.id,
-            questions,
-          }
-          workflow.messages.push(askUserQuestionMessage)
-        }
-      }
-
-      const normalToolCalls = workflowEvent.toolCall.filter(
-        (toolCall) => toolCall.function.name !== ASK_USER_QUESTION_TOOL_NAME
-      )
-      if (!normalToolCalls.length) return
-
-      const toolCallMessage: ToolCallSessionMessage = {
-        id: nanoid(),
-        role: 'tool-call',
-        toolCalls: normalToolCalls.map((toolCall) => ({ toolCall })),
-      }
-      workflow.messages.push(toolCallMessage)
-      return
-    }
-
-    case 'workflow.tool.call.start': {
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      return
-    }
-
-    case 'workflow.tool.call.success': {
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-
-      const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
-      if (!toolCallState) return
-      toolCallState.result = {
-        status: 'success',
-        result: workflowEvent.toolCallResult.result,
-        startedAt: workflowEvent.toolCallResult.startedAt,
-        finishedAt: workflowEvent.toolCallResult.finishedAt,
-        durationMs: workflowEvent.toolCallResult.durationMs,
-      }
-      return
-    }
-
-    case 'workflow.tool.call.error': {
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-
-      const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
-      if (!toolCallState) return
-      toolCallState.result = {
-        status: 'error',
-        error: workflowEvent.toolCallResult.error,
-      }
-      return
-    }
-
-    case 'workflow.step.start':
-    case 'workflow.step.end':
-    case 'workflow.llm.start':
-    case 'workflow.llm.tool.call.process':
-    case 'workflow.llm.end':
-    case 'workflow.llm.result': {
-      const workflow = session.workflowNodesMap[workflowId]?.workflow
-      if (!workflow) return
-      appendWorkflowLogEvent(workflow, workflowEvent)
-      return
-    }
-
-    default:
-      return
+  } else {
+    const existing = session.workflowNodesMap[workflowId]?.workflow
+    if (!existing) return
+    workflow = existing
   }
+
+  if (workflowEvent.type !== 'workflow.start') {
+    switch (workflowEvent.type) {
+      case 'workflow.completed': {
+        session.runtime.running = false
+        workflow.runtime.status = 'finished'
+        break
+      }
+
+      case 'workflow.interrupted': {
+        // ui 还是保持 running 的状态， 但是 workflow 的状态是 interrupted
+        session.runtime.running = true
+        workflow.runtime.status = 'interrupted'
+        break
+      }
+
+      case 'workflow.aborted': {
+        session.runtime.running = false
+        workflow.runtime.status = 'aborted'
+        break
+      }
+
+      case 'workflow.error': {
+        session.runtime.running = false
+        workflow.runtime.status = 'error'
+        break
+      }
+
+      case 'workflow.llm.error': {
+        session.runtime.running = false
+        workflow.runtime.status = 'error'
+        workflow.messages.push({
+          id: nanoid(),
+          role: 'error',
+          error:
+            workflowEvent.error instanceof Error
+              ? workflowEvent.error.message
+              : workflowEvent.error,
+        })
+        break
+      }
+
+      case 'workflow.llm.reason.start': {
+        const reasoningMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-reason'
+        ) as AssistantReasonSessionMessage
+        reasoningMessage.reasoning = true
+        break
+      }
+
+      case 'workflow.llm.reason.delta': {
+        const reasoningMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-reason'
+        ) as AssistantReasonSessionMessage
+        reasoningMessage.content += workflowEvent.chunk.delta
+        break
+      }
+
+      case 'workflow.llm.reason.end': {
+        const reasoningMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-reason'
+        ) as AssistantReasonSessionMessage
+        reasoningMessage.reasoning = false
+        break
+      }
+
+      case 'workflow.llm.text.start': {
+        const textMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-text'
+        ) as AssistantTextSessionMessage
+        textMessage.streaming = true
+        break
+      }
+
+      case 'workflow.llm.text.delta': {
+        const textMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-text'
+        ) as AssistantTextSessionMessage
+        textMessage.content += workflowEvent.chunk.delta
+        break
+      }
+
+      case 'workflow.llm.text.end': {
+        const textMessage = ensureLastMessage(
+          session,
+          workflowId,
+          'assistant-text'
+        ) as AssistantTextSessionMessage
+        textMessage.streaming = false
+        break
+      }
+
+      case 'workflow.llm.tool.call.end': {
+        const askQuestionToolCalls = workflowEvent.toolCall.filter(
+          (toolCall) => toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME
+        )
+        if (askQuestionToolCalls.length) {
+          for (const toolCall of askQuestionToolCalls) {
+            const args = parseToolArguments(toolCall.function.arguments)
+            const questions = sanitizeAskUserQuestions(args?.questions)
+            if (!questions.length) continue
+
+            const askUserQuestionMessage: AskUserQuestionSessionMessage = {
+              id: nanoid(),
+              role: 'ask-user-question',
+              toolCallId: toolCall.id,
+              questions,
+            }
+            workflow.messages.push(askUserQuestionMessage)
+          }
+        }
+
+        const normalToolCalls = workflowEvent.toolCall.filter(
+          (toolCall) => toolCall.function.name !== ASK_USER_QUESTION_TOOL_NAME
+        )
+        if (normalToolCalls.length) {
+          const toolCallMessage: ToolCallSessionMessage = {
+            id: nanoid(),
+            role: 'tool-call',
+            toolCalls: normalToolCalls.map((toolCall) => ({ toolCall })),
+          }
+          workflow.messages.push(toolCallMessage)
+        }
+        break
+      }
+
+      case 'workflow.tool.call.start':
+        break
+
+      case 'workflow.tool.call.success': {
+        const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
+        if (toolCallState) {
+          toolCallState.result = {
+            status: 'success',
+            result: workflowEvent.toolCallResult.result,
+            startedAt: workflowEvent.toolCallResult.startedAt,
+            finishedAt: workflowEvent.toolCallResult.finishedAt,
+            durationMs: workflowEvent.toolCallResult.durationMs,
+          }
+        }
+        break
+      }
+
+      case 'workflow.tool.call.error': {
+        const toolCallState = findToolCallState(workflow, workflowEvent.toolCallResult.id)
+        if (toolCallState) {
+          toolCallState.result = {
+            status: 'error',
+            error: workflowEvent.toolCallResult.error,
+          }
+        }
+        break
+      }
+
+      default:
+        break
+    }
+  }
+
+  // 统一入口：所有 event 原样记录，与持久化数据完全一致（不做任何过滤）。
+  workflow.events ??= []
+  workflow.events.push({
+    id: nanoid(),
+    type: workflowEvent.type,
+    createdAt: Date.now(),
+    payload: sanitizeWorkflowEventPayload(workflowEvent),
+  })
 }
 
 function createWorkflow(workflowId: string, input: string): Workflow {
@@ -276,23 +243,6 @@ function createWorkflow(workflowId: string, input: string): Workflow {
     },
   }
   return newWorkflow
-}
-
-function appendWorkflowLogEvent(workflow: Workflow, workflowEvent: WorkflowState) {
-  if (
-    workflowEvent.type === 'workflow.llm.reason.delta' ||
-    workflowEvent.type === 'workflow.llm.text.delta'
-  ) {
-    return
-  }
-
-  workflow.events ??= []
-  workflow.events.push({
-    id: nanoid(),
-    type: workflowEvent.type,
-    createdAt: Date.now(),
-    payload: sanitizeWorkflowEventPayload(workflowEvent),
-  })
 }
 
 function sanitizeWorkflowEventPayload(workflowEvent: WorkflowState) {
@@ -350,4 +300,3 @@ function parseToolArguments(argumentsText: string) {
     return null
   }
 }
-
