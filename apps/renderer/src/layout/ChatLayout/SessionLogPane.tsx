@@ -9,19 +9,28 @@ export function SessionLogPane({ className }: { className?: string }) {
   const { closePane } = useChatLayout()
   const { sessionId } = useChatContext()
   const workflows = useSessionWorkflows(sessionId) ?? []
+  const totalEvents = workflows.reduce(
+    (count, workflow) => count + getVisibleEvents(workflow).length,
+    0
+  )
 
   return (
     <div className={cn('bg-background flex h-full flex-col', className)}>
-      <div className='border-border flex items-center gap-3 border-b px-4 py-3'>
-        <div className='bg-primary/8 text-primary border-primary/10 rounded-lg border p-1.5'>
+      <div className='border-border bg-background/92 supports-backdrop-filter:bg-background/80 flex items-center gap-3 border-b px-4 py-3 backdrop-blur'>
+        <div className='bg-primary/8 text-primary border-primary/10 rounded-xl border p-1.5 shadow-sm'>
           <FileClock size={15} strokeWidth={1.9} />
         </div>
-        <div className='text-foreground min-w-0 flex-1 truncate text-sm font-medium'>
-          Session log
+        <div className='min-w-0 flex-1'>
+          <div className='text-foreground truncate text-sm font-medium'>Session log</div>
+          <div className='text-text-secondary mt-0.5 flex items-center gap-2 text-xs'>
+            <span>{workflows.length} workflows</span>
+            <span className='bg-border/80 h-1 w-1 rounded-full' aria-hidden='true' />
+            <span>{totalEvents} events</span>
+          </div>
         </div>
         <button
           type='button'
-          className='text-text-secondary hover:text-foreground rounded p-1 transition'
+          className='text-text-secondary hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition'
           onClick={() => closePane?.()}
           title='Close pane'
           aria-label='Close pane'
@@ -30,10 +39,16 @@ export function SessionLogPane({ className }: { className?: string }) {
         </button>
       </div>
 
-      <div className='h-0 flex-1 overflow-auto px-4 py-4'>
+      <div className='bg-foreground/1.5 h-0 flex-1 overflow-auto px-4 py-4'>
         {workflows.length === 0 ? (
-          <div className='border-border text-text-secondary rounded-xl border p-4 text-sm'>
-            No workflow logs yet.
+          <div className='border-border bg-background/82 mx-auto mt-8 max-w-sm rounded-2xl border px-5 py-6 text-center shadow-sm'>
+            <div className='bg-primary/8 text-primary border-primary/10 mx-auto flex size-10 items-center justify-center rounded-2xl border'>
+              <FileClock size={18} strokeWidth={1.8} />
+            </div>
+            <div className='text-foreground mt-3 text-sm font-medium'>No workflow logs yet</div>
+            <div className='text-text-secondary mt-1 text-sm leading-6'>
+              Workflow events will appear here after the session starts using tools or models.
+            </div>
           </div>
         ) : (
           <div className='space-y-4'>
@@ -48,11 +63,12 @@ export function SessionLogPane({ className }: { className?: string }) {
 }
 
 function WorkflowLogSection({ index, workflow }: { index: number; workflow: Workflow }) {
-  debugger
+  const events = getVisibleEvents(workflow)
+
   return (
-    <section className='border-border/80 bg-foreground/[0.018] overflow-hidden rounded-2xl border'>
-      <div className='border-border/70 bg-background/70 flex items-start gap-3 border-b px-4 py-3'>
-        <div className='bg-primary/10 text-primary mt-0.5 rounded-lg p-1.5'>
+    <section className='border-border/80 bg-background/86 overflow-hidden rounded-[20px] border shadow-sm'>
+      <div className='border-border/70 from-background via-background to-foreground/2.5 flex items-start gap-3 border-b bg-linear-to-r px-4 py-3.5'>
+        <div className='bg-primary/10 text-primary border-primary/10 mt-0.5 rounded-xl border p-1.5'>
           <MessageSquareText size={14} />
         </div>
         <div className='min-w-0 flex-1'>
@@ -63,17 +79,22 @@ function WorkflowLogSection({ index, workflow }: { index: number; workflow: Work
           <div className='text-text-secondary mt-1 line-clamp-2 text-xs leading-5'>
             {workflow.input}
           </div>
+          <div className='text-text-info mt-2 flex items-center gap-2 text-[11px]'>
+            <span>{events.length} entries</span>
+            <span className='bg-border h-1 w-1 rounded-full' aria-hidden='true' />
+            <span>{lastEventLabel(events)}</span>
+          </div>
         </div>
-        <span className='text-text-info font-mono text-[11px]'>{shortId(workflow.id)}</span>
+        <span className='bg-foreground/4 text-text-info rounded-full px-2 py-1 font-mono text-[10px]'>
+          {shortId(workflow.id)}
+        </span>
       </div>
 
       <div className='px-3 py-3'>
-        <div className='relative space-y-2 before:absolute before:top-3 before:bottom-3 before:left-[17px] before:w-px'>
-          {(workflow.events ?? []).map((event) => {
-            // 不需要展示的事件（如流式 delta）在 map 里直接跳过
-            if (!shouldLog(event.type)) return null
-            return <LogRow key={event.id} event={event} />
-          })}
+        <div className='before:bg-border/70 relative space-y-2.5 before:absolute before:top-3 before:bottom-3 before:left-4.25 before:w-px'>
+          {events.map((event) => (
+            <LogRow key={event.id} event={event} />
+          ))}
         </div>
       </div>
     </section>
@@ -86,19 +107,41 @@ function shouldLog(type: string) {
 }
 
 function LogRow({ event }: { event: WorkflowLogEvent }) {
+  const tone = eventTone(event.type)
+
   return (
-    <div className='border-border/60 bg-background/75 min-w-0 rounded-xl border px-3 py-2.5'>
-      <div className='flex min-w-0 items-start justify-between gap-3'>
-        <span className='text-foreground truncate font-mono text-xs'>{eventLabel(event.type)}</span>
-        <span className='text-text-info shrink-0 font-mono text-[10px]'>
-          {formatTime(event.createdAt)}
-        </span>
+    <div className='relative pl-8'>
+      <span
+        className={cn(
+          'bg-background absolute top-3 left-2.75 size-3 rounded-full border-2',
+          toneClass(tone, 'border')
+        )}
+        aria-hidden='true'
+      />
+      <div className='border-border/60 bg-background/82 hover:border-border min-w-0 rounded-xl border px-3 py-2.5 transition'>
+        <div className='flex min-w-0 items-start justify-between gap-3'>
+          <div className='min-w-0'>
+            <div className='flex items-center gap-2'>
+              <span className={cn('truncate font-mono text-xs', toneClass(tone, 'text'))}>
+                {eventLabel(event.type)}
+              </span>
+              <span
+                className={cn('rounded-full px-1.5 py-0.5 text-[10px]', toneClass(tone, 'badge'))}
+              >
+                {eventGroup(event.type)}
+              </span>
+            </div>
+          </div>
+          <span className='text-text-info shrink-0 font-mono text-[10px]'>
+            {formatTime(event.createdAt)}
+          </span>
+        </div>
+        {event.payload !== undefined && (
+          <pre className='bg-foreground/[0.035] text-text-secondary mt-2 max-h-32 overflow-auto rounded-lg p-2 font-mono text-[11px] leading-5'>
+            {stringifyPayload(event.payload)}
+          </pre>
+        )}
       </div>
-      {event.payload !== undefined && (
-        <pre className='bg-foreground/[0.035] text-text-secondary mt-2 max-h-32 overflow-auto rounded-lg p-2 font-mono text-[11px] leading-5'>
-          {stringifyPayload(event.payload)}
-        </pre>
-      )}
     </div>
   )
 }
@@ -141,6 +184,15 @@ function shortId(id: string) {
   return id.slice(0, 8)
 }
 
+function getVisibleEvents(workflow: Workflow) {
+  return (workflow.events ?? []).filter((event) => shouldLog(event.type))
+}
+
+function lastEventLabel(events: WorkflowLogEvent[]) {
+  if (events.length === 0) return 'No activity'
+  return `Last update ${formatTime(events[events.length - 1].createdAt)}`
+}
+
 function stringifyPayload(value: unknown) {
   if (typeof value === 'string') return value
   try {
@@ -151,6 +203,20 @@ function stringifyPayload(value: unknown) {
 }
 
 type Tone = 'default' | 'primary' | 'success' | 'danger' | 'warning' | 'muted'
+
+function eventGroup(type: string) {
+  if (type.includes('.tool.')) return 'tool'
+  if (type.includes('.llm.')) return 'llm'
+  if (type.includes('.message.')) return 'message'
+  return 'flow'
+}
+
+function eventTone(type: string): Tone {
+  if (type.includes('error') || type.includes('abort')) return 'danger'
+  if (type.includes('finish') || type.includes('complete')) return 'success'
+  if (type.includes('.tool.') || type.includes('.llm.')) return 'primary'
+  return 'muted'
+}
 
 function toneClass(tone: Tone, target: 'text' | 'border' | 'badge') {
   const map = {
