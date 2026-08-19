@@ -1,5 +1,6 @@
 import { FolderOpen, RefreshCw, X } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { Group, Panel, Separator } from 'react-resizable-panels'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   useWorkspaceExplorerActions,
@@ -17,6 +18,7 @@ type WorkspaceExplorerPaneProps = {
 
 export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExplorerPaneProps) {
   const { closePane } = useChatLayout()
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const root = useWorkspaceExplorerStore((state) => state.root)
   const treeError = useWorkspaceExplorerStore((state) => state.treeError)
   const selectedPath = useWorkspaceExplorerStore((state) => state.selectedPath)
@@ -25,6 +27,8 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
   const expandedPathList = useWorkspaceExplorerStore((state) => state.expandedPaths)
   const showFileTreePane = useWorkspaceExplorerStore((state) => state.showFileTreePane)
   const actions = useWorkspaceExplorerActions()
+  const [isCompact, setIsCompact] = useState(false)
+  const [compactView, setCompactView] = useState<'tree' | 'preview'>('tree')
 
   const workspaceName = useMemo(() => {
     if (!workspacePath) return 'No workspace selected'
@@ -41,13 +45,52 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
     }
   }, [actions, workspacePath])
 
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+
+    const observer = new ResizeObserver(([entry]) => {
+      const nextIsCompact = entry.contentRect.width < 820
+      setIsCompact(nextIsCompact)
+      if (nextIsCompact && selectedPath) {
+        setCompactView('preview')
+      }
+    })
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [selectedPath])
+
+  const treePane = (
+    <div className='mt-2 flex min-w-0 flex-col overflow-hidden'>
+      {treeError && !root && <div className='p-3 text-sm text-red-500'>{treeError}</div>}
+      <div className='h-0 flex-1 overflow-auto'>
+        {root ? (
+          <WorkspaceFileTree
+            root={root}
+            selectedPath={selectedPath}
+            expandedPaths={expandedPaths}
+            onToggle={actions.toggleDirectory}
+            onSelect={(node) => {
+              actions.selectNode(node)
+              if (isCompact) {
+                setCompactView('preview')
+              }
+            }}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+
+  const previewPane = <WorkspacePreview preview={preview} error={previewError} />
+
   return (
-    <div className={cn('bg-background flex h-full flex-col', className)}>
+    <div ref={containerRef} className={cn('bg-background flex h-full flex-col', className)}>
       <div className='border-border flex items-center gap-3 border-b px-4 py-3'>
         <button
           type='button'
           className='bg-primary/8 text-primary border-primary/10 rounded-lg border p-1.5'
-          onClick={actions.toggleFileTreePane}
           title='Toggle file tree'
           aria-label='Toggle file tree'
         >
@@ -81,27 +124,56 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
 
       {!workspacePath ? (
         <div className='text-text-secondary p-4 text-sm'>This session has no workspace path.</div>
-      ) : (
-        <div className='flex h-0 flex-1'>
-          {showFileTreePane && (
-            <div className='border-border h-full w-125 overflow-auto border-r'>
-              {treeError && !root && <div className='p-3 text-sm text-red-500'>{treeError}</div>}
-              {root && (
-                <WorkspaceFileTree
-                  root={root}
-                  selectedPath={selectedPath}
-                  expandedPaths={expandedPaths}
-                  onToggle={actions.toggleDirectory}
-                  onSelect={actions.selectNode}
-                />
-              )}
+      ) : isCompact ? (
+        <div className='flex h-0 flex-1 flex-col'>
+          <div className='border-border text-text-secondary flex items-center justify-between border-b px-4 py-2 text-xs'>
+            <span>{compactView === 'tree' ? 'Workspace files' : 'Preview'}</span>
+            <div className='border-border bg-background flex overflow-hidden rounded-full border'>
+              <button
+                type='button'
+                className={cn(
+                  'px-3 py-1.5 transition',
+                  compactView === 'tree' ? 'bg-primary/10 text-primary' : 'hover:text-foreground'
+                )}
+                onClick={() => setCompactView('tree')}
+              >
+                Files
+              </button>
+              <button
+                type='button'
+                className={cn(
+                  'px-3 py-1.5 transition',
+                  compactView === 'preview' ? 'bg-primary/10 text-primary' : 'hover:text-foreground'
+                )}
+                onClick={() => setCompactView('preview')}
+              >
+                Preview
+              </button>
             </div>
-          )}
+          </div>
 
-          <div className='h-full flex-1 overflow-hidden'>
-            <WorkspacePreview preview={preview} error={previewError} />
+          <div className='h-0 flex-1 overflow-hidden'>
+            {compactView === 'tree' ? treePane : previewPane}
           </div>
         </div>
+      ) : (
+        <Group orientation='horizontal' className='h-0 flex-1'>
+          {showFileTreePane && (
+            <>
+              <Panel
+                defaultSize='320px'
+                minSize='240px'
+                maxSize='540px'
+                className='border-border border-r'
+              >
+                {treePane}
+              </Panel>
+              <Separator className='group relative w-3 cursor-col-resize bg-transparent'></Separator>
+            </>
+          )}
+
+          <Panel minSize='320px'>{previewPane}</Panel>
+        </Group>
       )}
     </div>
   )

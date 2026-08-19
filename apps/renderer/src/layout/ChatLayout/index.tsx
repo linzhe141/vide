@@ -141,9 +141,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
         {isPaneOpen && activePanel ? (
           <Group className='flex-1'>
             <Panel minSize={`${MAIN_PANEL_MIN_WIDTH}px`}>{mainPane}</Panel>
-            <Separator className='group relative w-3 cursor-col-resize bg-transparent'>
-              <span className='bg-border/70 group-hover:bg-primary/30 absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition' />
-            </Separator>
+            <Separator className='group relative w-3 cursor-col-resize bg-transparent'></Separator>
             <Panel
               defaultSize={`${activePanel.defaultWidth}px`}
               minSize={`${activePanel.minWidth}px`}
