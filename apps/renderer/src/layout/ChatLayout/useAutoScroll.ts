@@ -1,7 +1,24 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useSessionRuntime, useSessionWorkflows } from '@/store/sessionStore'
 
-export function useAutoScroll() {
+type UseAutoScrollOptions = {
+  sessionId: string
+  threshold?: number
+}
+
+export function useAutoScroll({ sessionId, threshold = 100 }: UseAutoScrollOptions) {
   const ref = useRef<HTMLDivElement>(null)
+  const runtime = useSessionRuntime(sessionId)
+  const sessionWorkflows = useSessionWorkflows(sessionId)
+  const workflows = useMemo(() => sessionWorkflows ?? [], [sessionWorkflows])
+
+  const updateNearBottom = useCallback(
+    (el: HTMLDivElement) => {
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight
+      el.dataset.nearBottom = distance <= threshold ? 'true' : 'false'
+    },
+    [threshold]
+  )
 
   // 标记是否接近底部
   useEffect(() => {
@@ -9,35 +26,36 @@ export function useAutoScroll() {
     if (!el) return
 
     const handleScroll = () => {
-      const distance = el.scrollHeight - el.scrollTop - el.clientHeight
-      el.dataset.nearBottom = distance <= 100 ? 'true' : 'false'
+      updateNearBottom(el)
     }
 
-    el.addEventListener('scroll', handleScroll)
+    el.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
 
     return () => el.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [updateNearBottom])
 
-  // streaming 时自动滚动
-  // useEffect(() => {
-  //   const unsub = useSessionStore.subscribe((s) => {
-  //     if (!s.streaming) return
-  //     const el = ref.current
-  //     if (!el) return
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
 
-  //     if (el.dataset.nearBottom === 'true') {
-  //       el.scrollTop = el.scrollHeight
-  //     }
-  //   })
-  //   return unsub
-  // }, [])
+    if (!runtime?.running) {
+      updateNearBottom(el)
+      return
+    }
+
+    if (el.dataset.nearBottom !== 'false') {
+      el.scrollTop = el.scrollHeight
+      updateNearBottom(el)
+    }
+  }, [runtime?.running, updateNearBottom, workflows])
 
   const scrollToBottom = useCallback(() => {
     const el = ref.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [])
+    updateNearBottom(el)
+  }, [updateNearBottom])
 
   return { ref, scrollToBottom }
 }

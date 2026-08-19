@@ -1,36 +1,43 @@
 import React, {
   createContext,
   useContext,
-  useRef,
   useEffect,
+  useRef,
   useState,
   useCallback,
   useMemo,
   type PropsWithChildren,
 } from 'react'
+import { Group, Panel, Separator } from 'react-resizable-panels'
 import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useHistoryItems } from '../../store/historyStore'
 import { useChatContext } from '../../components/chat/ChatProvider'
 import { InitSession } from './InitSession'
-import { ArrowDown, FileClock, FolderTree, GitBranch } from 'lucide-react'
+import { ArrowDown, GitBranch } from 'lucide-react'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
 import { useNavigate } from 'react-router'
-import { WebSearchDisplay } from './WebSearchDisplay'
-import { WorkspaceExplorerPane } from './WorkspaceExplorer'
-import { SessionLogPane } from './SessionLogPane'
+import {
+  getChatPanelDefinition,
+  toolbarChatPanelDefinitions,
+  webSearchPanelId,
+  type ChatPanelDefinition,
+  type ChatPanelId,
+} from './panels'
+import { useAutoScroll } from './useAutoScroll'
 
-type ChatSidePaneType = 'Artifacts' | 'WebSearch' | 'Logs'
+const MAIN_PANEL_MIN_WIDTH = 550
 
 interface ChatLayoutContextType {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   scrollToBottom: () => void
-  open: boolean
-  moving: boolean
-  type: ChatSidePaneType
-  togglePane: (next: ChatSidePaneType) => void
+  isPaneOpen: boolean
+  activePanelId: ChatPanelId | null
+  activePanel: ChatPanelDefinition | null
+  togglePane: (next: ChatPanelId) => void
+  openPanel: (next: ChatPanelId) => void
   showWebSearchResults: () => void
-  closePane?: () => void
+  closePane: () => void
 }
 
 const ChatLayoutContext = createContext<ChatLayoutContextType | null>(null)
@@ -41,61 +48,52 @@ export function useChatLayout() {
 }
 
 export function ChatLayoutProvider({ children }: PropsWithChildren) {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
-  const [open, setOpen] = useState(false)
-  const [type, setType] = useState<ChatSidePaneType>('Artifacts')
-  const [moving, setMoving] = useState(false)
-
-  const scrollToBottom = useCallback(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-    }
-  }, [])
-
-  const startMoving = useCallback(() => {
-    setMoving(true)
-    setTimeout(() => setMoving(false), 200)
-  }, [])
-
-  const togglePane = useCallback(
-    (next: ChatSidePaneType) => {
-      startMoving()
-
-      if (!open) {
-        setType(next)
-        setOpen(true)
-        return
-      }
-
-      if (type === next) {
-        setOpen(false)
-      } else {
-        setType(next)
-      }
-    },
-    [open, startMoving, type]
+  const { sessionId } = useChatContext()
+  const { ref: scrollContainerRef, scrollToBottom } = useAutoScroll({ sessionId })
+  const [activePanelId, setActivePanelId] = useState<ChatPanelId | null>(null)
+  const activePanel = useMemo(
+    () => (activePanelId ? getChatPanelDefinition(activePanelId) : null),
+    [activePanelId]
   )
 
+  const togglePane = useCallback((next: ChatPanelId) => {
+    setActivePanelId((current) => (current === next ? null : next))
+  }, [])
+
+  const openPanel = useCallback((next: ChatPanelId) => {
+    setActivePanelId(next)
+  }, [])
+
+  const closePane = useCallback(() => {
+    setActivePanelId(null)
+  }, [])
+
   const showWebSearchResults = useCallback(() => {
-    startMoving()
-    setType('WebSearch')
-    setOpen(true)
-  }, [startMoving])
+    openPanel(webSearchPanelId)
+  }, [openPanel])
 
   const chatLayoutProvideValue = useMemo(
     () => ({
       scrollContainerRef,
       scrollToBottom,
-      open,
-      moving,
-      type,
+      isPaneOpen: activePanelId !== null,
+      activePanelId,
+      activePanel,
       togglePane,
+      openPanel,
       showWebSearchResults,
-      closePane: () => {
-        setOpen(false)
-      },
+      closePane,
     }),
-    [open, moving, scrollToBottom, showWebSearchResults, togglePane, type]
+    [
+      activePanel,
+      activePanelId,
+      closePane,
+      openPanel,
+      scrollContainerRef,
+      scrollToBottom,
+      showWebSearchResults,
+      togglePane,
+    ]
   )
   return (
     <ChatLayoutContext.Provider value={chatLayoutProvideValue}>
@@ -107,57 +105,57 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
 export function ChatLayout({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
-  const { open, type, togglePane } = useChatLayout()
+  const { isPaneOpen, activePanel, activePanelId, togglePane } = useChatLayout()
+
+  const mainPane = (
+    <div className='flex h-full min-w-0 flex-1 flex-col'>
+      <div className='text-text-secondary flex h-10 items-center justify-end gap-1.5 px-5'>
+        {toolbarChatPanelDefinitions.map((panel) => {
+          const Icon = panel.icon
+          return (
+            <button
+              key={panel.id}
+              type='button'
+              className={cn(
+                'hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition',
+                activePanelId === panel.id && 'bg-primary/10 text-primary'
+              )}
+              onClick={() => togglePane(panel.id)}
+              title={panel.title}
+              aria-label={panel.title}
+            >
+              <Icon size={16} />
+            </button>
+          )
+        })}
+      </div>
+
+      <div className='relative flex h-0 flex-1 flex-col overflow-hidden'>{children}</div>
+    </div>
+  )
+
   return (
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
       <InitSession sessionId={sessionId} />
       <div className='flex h-0 flex-1'>
-        {/* 主区域 */}
-        <div className='flex min-w-[550px] flex-1 flex-col'>
-          {/* header */}
-          <div className='text-text-secondary flex h-10 items-center justify-end gap-1.5 px-5'>
-            <button
-              type='button'
-              className={cn(
-                'hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition',
-                open && type === 'Logs' && 'bg-primary/10 text-primary'
-              )}
-              onClick={() => togglePane('Logs')}
-              title='Session log'
-              aria-label='Session log'
+        {isPaneOpen && activePanel ? (
+          <Group className='flex-1'>
+            <Panel minSize={`${MAIN_PANEL_MIN_WIDTH}px`}>{mainPane}</Panel>
+            <Separator className='group relative w-3 cursor-col-resize bg-transparent'>
+              <span className='bg-border/70 group-hover:bg-primary/30 absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition' />
+            </Separator>
+            <Panel
+              defaultSize={`${activePanel.defaultWidth}px`}
+              minSize={`${activePanel.minWidth}px`}
+              maxSize={activePanel.maxWidth ? `${activePanel.maxWidth}px` : undefined}
+              className='border-border bg-background min-w-0 border-l'
             >
-              <FileClock size={16} />
-            </button>
-            <button
-              type='button'
-              className={cn(
-                'hover:bg-foreground/5 hover:text-foreground rounded-lg p-1.5 transition',
-                open && type === 'Artifacts' && 'bg-primary/10 text-primary'
-              )}
-              onClick={() => togglePane('Artifacts')}
-              title='Workspace files'
-              aria-label='Workspace files'
-            >
-              <FolderTree size={16} />
-            </button>
-          </div>
-
-          <div className='relative flex h-0 flex-1 flex-col overflow-hidden'>{children}</div>
-        </div>
-
-        {/* side pane */}
-        <div
-          className={cn('overflow-hidden transition-[width] duration-200', {
-            'w-0': !open,
-            'w-[2000px] border-l': open && type === 'Artifacts',
-            'w-[520px] border-l': open && type === 'WebSearch',
-            'w-[680px] border-l': open && type === 'Logs',
-          })}
-        >
-          {type === 'Artifacts' && <WorkspaceExplorerPane workspacePath={session?.workspacePath} />}
-          {type === 'WebSearch' && <WebSearchDisplay />}
-          {type === 'Logs' && <SessionLogPane />}
-        </div>
+              <activePanel.Component session={session} />
+            </Panel>
+          </Group>
+        ) : (
+          <div className='flex min-w-0 flex-1'>{mainPane}</div>
+        )}
       </div>
     </div>
   )
@@ -194,9 +192,9 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
             originWorkflowId={historyItem.origin.workflowId}
           />
         ) : null}
-        <div className='mx-auto max-w-[920px]'>{children}</div>
+        <div className='mx-auto max-w-230'>{children}</div>
 
-        <div className='h-[300px]' ref={placeholderRef} />
+        <div className='h-75' ref={placeholderRef} />
       </div>
 
       {workflows && (
@@ -214,11 +212,11 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
       {showToBottomButton && (
         <button
           onClick={scrollToBottom}
-          className={`bg-background absolute bottom-[240px] left-1/2 -translate-x-1/2 overflow-hidden rounded-full p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${running ? 'border-0' : 'border-border border'} `}
+          className={`bg-background absolute bottom-60 left-1/2 -translate-x-1/2 overflow-hidden rounded-full p-3 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${running ? 'border-0' : 'border-border border'} `}
           aria-label='Scroll to bottom'
         >
           {running && <span className='spin-ring absolute inset-0 rounded-full'></span>}
-          <span className='relative z-[2]'>
+          <span className='relative z-2'>
             <ArrowDown size={18} className='text-foreground' />
           </span>
         </button>
@@ -232,7 +230,7 @@ export function ChatLayoutInput({
   className,
 }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={cn('relative mx-auto w-full max-w-[920px]', className)}>
+    <div className={cn('relative mx-auto w-full max-w-230', className)}>
       {children}
 
       <p className='text-text-info my-2 text-center text-xs'>
@@ -252,7 +250,7 @@ function ForkOriginFooter(props: { originSessionId: string; originWorkflowId: st
     : `/chat/${props.originSessionId}`
 
   return (
-    <div className='border-primary/20 bg-background sticky top-0 z-10 mx-auto max-w-[920px] rounded-3xl border px-5 py-4'>
+    <div className='border-primary/20 bg-background sticky top-0 z-10 mx-auto max-w-230 rounded-3xl border px-5 py-4'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <div>
           <div className='text-foreground text-sm font-medium'>Forked session</div>

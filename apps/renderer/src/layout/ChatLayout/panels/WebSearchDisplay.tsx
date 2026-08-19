@@ -1,7 +1,7 @@
 import { ExternalLink, Search, X } from 'lucide-react'
-import { cn, getSiteIcon } from '../../lib/utils'
-import { useSelectedWebSearch, type WebSearchResultItem } from '../../store/webSearchStore'
-import { useChatLayout } from '.'
+import { cn, getSiteIcon } from '@/lib/utils'
+import { useSelectedWebSearch, type WebSearchResultItem } from '@/store/webSearchStore'
+import { useChatLayout } from '..'
 
 export function WebSearchDisplay({ className }: { className?: string }) {
   const selected = useSelectedWebSearch()
@@ -28,9 +28,7 @@ export function WebSearchDisplay({ className }: { className?: string }) {
         <div>
           <X
             className='text-text-secondary hover:text-foreground size-4.5 cursor-pointer'
-            onClick={() => {
-              closePane?.()
-            }}
+            onClick={closePane}
           />
         </div>
       </div>
