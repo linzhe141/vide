@@ -70,7 +70,11 @@ export interface RenderChannel {
     thinkingMode: boolean
   }) => Promise<string>
   'agent-resume-session': (data: { sessionId: string }) => Promise<SessionDataDto | null>
-  'agent-session-send': (data: { sessionId: string; input: string }) => void
+  'agent-session-send': (data: {
+    sessionId: string
+    input: string
+    inputSource: 'desktop' | 'wechat-bot'
+  }) => void
   'agent-workflow-regenerate': (data: {
     sessionId: string
     targetWorkflowId: string

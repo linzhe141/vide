@@ -28,6 +28,8 @@ export type LLMConfig = Settings['llmConfig']
 export type GenerateImageConfig = Settings['generateImageConfig']
 export type WebSearchConfig = Settings['webSearchConfig']
 
+export type SessionSource = 'desktop' | 'wechat-bot'
+
 /**
  * 微信 ClawBot / iLink Bot 持久化状态。
  * API Base URL、Bot Type、Auto-approve、Thinking mode 均为内置常量，无需用户配置。
@@ -76,6 +78,7 @@ export type SessionRowDto = {
   id: string
   title: string
   type: 'normal' | 'fork'
+  sessionSource: SessionSource
   originSessionId: string | null
   originWorkflowId: string | null
   workspacePath: string | null
@@ -113,6 +116,7 @@ export type WorkflowLogDto = {
 export type SessionWorkflowData = {
   id: string
   parentWorkflowId: string | null
+  inputSource: SessionSource
   stopStatus: 'completed' | 'error' | 'aborted' | 'interrupted' | null
   feedback: 'like' | 'dislike' | null
   input: string
@@ -133,6 +137,7 @@ export type SessionDataDto = {
   id: string
   title: string
   type: 'normal' | 'fork'
+  sessionSource: SessionSource
   origin: { sessionId: string; workflowId: string | null } | null
   activeBranch: string
   autoApprove: boolean

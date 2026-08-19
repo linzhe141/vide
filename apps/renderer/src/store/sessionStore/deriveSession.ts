@@ -2,7 +2,6 @@ import { nanoid } from 'nanoid'
 import type { AgentMessage, ToolCall } from '@vide/ai'
 import type { SessionDataDto, SessionWorkflowData, WorkflowLogDto } from '@vide/config'
 import type {
-  AskUserQuestionSessionMessage,
   Session,
   SessionBranch,
   SessionMessage,
@@ -28,9 +27,7 @@ export function deriveSessionFromData(data: SessionDataDto): Session {
     const node: WorkflowNode = {
       workflow,
       parent: wf.parentWorkflowId,
-      children: data.workflows
-        .filter((w) => w.parentWorkflowId === wf.id)
-        .map((w) => w.id),
+      children: data.workflows.filter((w) => w.parentWorkflowId === wf.id).map((w) => w.id),
     }
     workflowNodesMap[wf.id] = node
   }
@@ -45,12 +42,11 @@ export function deriveSessionFromData(data: SessionDataDto): Session {
 
   const activeBranch = branches.find((b) => b.name === data.activeBranch)
   const headId = activeBranch?.headWorkflowId ?? null
-  const running =
-    !!headId &&
-    workflowNodesMap[headId]?.workflow.runtime.status === 'running'
+  const running = !!headId && workflowNodesMap[headId]?.workflow.runtime.status === 'running'
 
   return {
     sessionId: data.id,
+    sessionSource: data.sessionSource,
     autoApprove: data.autoApprove,
     thinkingMode: data.thinkingMode,
     workspacePath: data.workspacePath,
@@ -85,6 +81,7 @@ function deriveWorkflow(wf: SessionWorkflowData): Workflow {
   const workflow: Workflow = {
     id: wf.id,
     input: wf.input,
+    inputSource: wf.inputSource,
     feedback: wf.feedback,
     events: deriveLogEvents(wf.logs),
     messages: deriveMessages(decoded, wf.logs),
@@ -172,7 +169,8 @@ function deriveMessages(
               id: tc.id,
               type: 'function',
               function: {
-                name: (tc as { function?: { name: string; arguments: string } }).function?.name ?? '',
+                name:
+                  (tc as { function?: { name: string; arguments: string } }).function?.name ?? '',
                 arguments:
                   (tc as { function?: { name: string; arguments: string } }).function?.arguments ??
                   '',

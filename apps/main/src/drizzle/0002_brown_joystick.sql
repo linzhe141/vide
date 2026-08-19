@@ -1,0 +1,1 @@
+ALTER TABLE `session_workflows` ADD `input_source` text DEFAULT 'desktop' NOT NULL;

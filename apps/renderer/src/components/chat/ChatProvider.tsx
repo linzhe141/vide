@@ -11,7 +11,11 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
   const handleSend = useCallback(
     (input: string) => {
       if (sessionRuntime.running) return
-      window.ipcRendererApi.invoke('agent-session-send', { sessionId, input })
+      window.ipcRendererApi.invoke('agent-session-send', {
+        sessionId,
+        input,
+        inputSource: 'desktop',
+      })
       return
     },
     [sessionId, sessionRuntime]
@@ -29,7 +33,11 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
         branchName,
       })
       regenerateWorkflow({ sessionId, sourceWorkflowId: regenerateWorkflowId, branchName })
-      window.ipcRendererApi.invoke('agent-session-send', { sessionId, input })
+      window.ipcRendererApi.invoke('agent-session-send', {
+        sessionId,
+        input,
+        inputSource: 'desktop',
+      })
     },
     [regenerateWorkflow, sessionId]
   )

@@ -86,8 +86,12 @@ export class Workflow {
     // })
   }
 
-  async run(input: string) {
-    this.stream.push({ type: 'workflow.start', input })
+  async run(input: string, options?: { inputSource?: 'desktop' | 'wechat-bot' }) {
+    this.stream.push({
+      type: 'workflow.start',
+      input,
+      inputSource: options?.inputSource ?? 'desktop',
+    })
     return await this.runLoop({ state: 'INPUT', input })
   }
 

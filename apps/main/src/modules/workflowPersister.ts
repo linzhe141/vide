@@ -29,7 +29,10 @@ type SessionStopStatus = 'completed' | 'error' | 'aborted' | 'interrupted'
  */
 export class WorkflowPersister {
   /** workflowId -> 累积的 { eventName, payload } 日志条目（终态一次性写入）。 */
-  private logBuffer = new Map<string, { eventName: string; payload: unknown; createdAt: number }[]>()
+  private logBuffer = new Map<
+    string,
+    { eventName: string; payload: unknown; createdAt: number }[]
+  >()
 
   async consume(session: Session, event: PersistableEvent): Promise<void> {
     const workflowId = event.ctx.workflowId
@@ -46,6 +49,8 @@ export class WorkflowPersister {
           workflowId,
           sessionId: session.id,
           parentWorkflowId: parentId,
+          inputSource:
+            (event as { inputSource?: 'desktop' | 'wechat-bot' }).inputSource ?? 'desktop',
           input: (event as { input: string }).input,
         })
         await SessionRepository.upsertBranch({

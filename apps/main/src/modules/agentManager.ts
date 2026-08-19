@@ -8,10 +8,13 @@ import { logger } from '@/logger'
 import { SessionRepository } from '@/modules/sessionRepository'
 import { SessionLoader } from '@/modules/sessionLoader'
 import { WorkflowPersister } from '@/modules/workflowPersister'
+import type { SessionSource } from '@vide/config'
 
 type StreamEvent = WorkflowEvent & {
   ctx: { sessionId: string | null; workflowId: string | null }
 }
+
+type PromptObserver = (event: StreamEvent) => void | Promise<void>
 
 export class AgentManager {
   agent: Agent
@@ -36,6 +39,7 @@ export class AgentManager {
     autoApprove: boolean
     thinkingMode: boolean
     title?: string
+    sessionSource?: SessionSource
   }) {
     const session = this.agent.createSession({
       workspacePath: data.workspacePath,
@@ -54,6 +58,7 @@ export class AgentManager {
       id: session.id,
       title: data.title ?? '',
       type: session.sessionType ?? 'normal',
+      sessionSource: data.sessionSource ?? 'desktop',
       workspacePath: session.workspacePath,
       autoApprove: session.autoApprove,
       thinkingMode: session.thinkingMode,
@@ -69,6 +74,7 @@ export class AgentManager {
       type: 'background-create-session',
       sessionId: session.id,
       title: data.title ?? '',
+      sessionSource: data.sessionSource ?? 'desktop',
       workspacePath: session.workspacePath,
       autoApprove: session.autoApprove,
       thinkingMode: session.thinkingMode,
@@ -126,11 +132,19 @@ export class AgentManager {
    * - 交给 WorkflowPersister 缓冲，终态一次性持久化（agent messages + 完整日志）；
    * - 抽取最终文本（workflow.llm.text.end / workflow.completed.result）。
    */
-  private async runPrompt(session: Session, input: string): Promise<string> {
-    const stream = session.prompt(input)
+  private async runPrompt(
+    session: Session,
+    input: string,
+    onEvent?: PromptObserver,
+    inputSource: SessionSource = 'desktop'
+  ): Promise<string> {
+    const stream = session.prompt(input, { inputSource })
     let finalText = ''
     for await (const event of stream) {
       const v2Event = event as StreamEvent
+      if (onEvent) {
+        await onEvent(v2Event)
+      }
       ipcMainApi.send(v2Event.type as any, v2Event as any)
       await this.persister.consume(session, v2Event)
 
@@ -160,17 +174,26 @@ export class AgentManager {
     return this.sessions.has(sessionId)
   }
 
-  async prompt(sessionId: string, input: string): Promise<string> {
+  async prompt(
+    sessionId: string,
+    input: string,
+    inputSource: SessionSource = 'desktop'
+  ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
     await this.ensureSessionTitle(this.getSession(sessionId), input)
-    return this.runPrompt(this.getSession(sessionId), input)
+    return this.runPrompt(this.getSession(sessionId), input, undefined, inputSource)
   }
 
-  async backgroundPrompt(sessionId: string, input: string): Promise<string> {
+  async backgroundPrompt(
+    sessionId: string,
+    input: string,
+    onEvent?: PromptObserver,
+    inputSource: SessionSource = 'desktop'
+  ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
     await this.ensureSessionTitle(this.getSession(sessionId), input)
     ipcMainApi.send('agent-session-background-send', { sessionId })
-    return this.runPrompt(this.getSession(sessionId), input)
+    return this.runPrompt(this.getSession(sessionId), input, onEvent, inputSource)
   }
 
   listSessionIds(): string[] {

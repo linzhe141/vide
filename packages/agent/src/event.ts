@@ -3,6 +3,7 @@ import type { AssistantChatMessage, ToolCall } from '@vide/ai'
 export interface WorkflowStartEvent {
   type: 'workflow.start'
   input: string
+  inputSource: 'desktop' | 'wechat-bot'
 }
 
 export interface WorkflowCompletedEvent {
@@ -118,6 +119,7 @@ export interface SessionBackgroundCreateEvent {
   type: 'background-create-session'
   sessionId: string
   title: string
+  sessionSource: 'desktop' | 'wechat-bot'
   workspacePath: string | null
   autoApprove: boolean
   thinkingMode: boolean
@@ -141,10 +143,7 @@ export interface SessionUpdatedEvent {
   updatedAt: number
 }
 
-export type SessionEvent =
-  | SessionBackgroundCreateEvent
-  | SessionTitleEvent
-  | SessionUpdatedEvent
+export type SessionEvent = SessionBackgroundCreateEvent | SessionTitleEvent | SessionUpdatedEvent
 
 export const sessionEventNames = [
   'background-create-session',

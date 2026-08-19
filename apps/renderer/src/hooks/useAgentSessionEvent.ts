@@ -5,6 +5,7 @@ import {
   type SessionEvent,
   type WorkflowEvent,
 } from '@vide/agent/event'
+import { useHistoryStore } from '../store/historyStore'
 import { useSessionStoreActions } from '../store/sessionStore'
 
 export type WorkflowState = WorkflowEvent & {
@@ -25,10 +26,11 @@ export type WorkflowState = WorkflowEvent & {
  * 简单地维护 IPC 监听，不需要在每次 send 时重新注册/注销。
  */
 export function useAgentSessionEvent() {
-  const { handleEvent, handleSessionEvent } = useSessionStoreActions()
+  const { handleEvent, createSession } = useSessionStoreActions()
 
   useEffect(() => {
     const disposers: (() => void)[] = []
+    const historyActions = useHistoryStore.getState().actions
 
     // workflow 级事件：统一交给 sessionStore 做 workflow 增量更新
     for (const eventName of workflowV2EventNames) {
@@ -43,7 +45,51 @@ export function useAgentSessionEvent() {
     for (const eventName of sessionEventNames) {
       disposers.push(
         window.ipcRendererApi.on(eventName, (data: SessionEvent) => {
-          handleSessionEvent(data)
+          switch (data.type) {
+            case 'background-create-session': {
+              historyActions.upsert({
+                sessionId: data.sessionId,
+                title: data.title ?? '',
+                type: data.sessionType ?? 'normal',
+                sessionSource: data.sessionSource,
+                origin: data.origin ?? null,
+                createdAt: data.createdAt ?? Date.now(),
+                updatedAt: data.updatedAt ?? Date.now(),
+              })
+
+              createSession({
+                sessionId: data.sessionId,
+                sessionSource: data.sessionSource,
+                workspacePath: data.workspacePath,
+                autoApprove: data.autoApprove,
+                thinkingMode: data.thinkingMode,
+              })
+              return
+            }
+
+            case 'session-title': {
+              historyActions.updateTitle(data.sessionId, data.title)
+              return
+            }
+
+            case 'session-updated': {
+              const item = useHistoryStore
+                .getState()
+                .items.find((it) => it.sessionId === data.sessionId)
+              if (!item) return
+
+              historyActions.upsert({
+                ...item,
+                title: data.title ?? item.title,
+                createdAt: data.createdAt ?? item.createdAt,
+                updatedAt: data.updatedAt ?? item.updatedAt,
+              })
+              return
+            }
+
+            default:
+              return
+          }
         })
       )
     }
@@ -51,5 +97,5 @@ export function useAgentSessionEvent() {
     return () => {
       disposers.forEach((remove) => remove())
     }
-  }, [handleEvent, handleSessionEvent])
+  }, [createSession, handleEvent])
 }

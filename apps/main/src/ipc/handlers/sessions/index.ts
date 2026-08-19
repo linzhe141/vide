@@ -17,6 +17,7 @@ export class SessionIpcMainService implements IpcMainService {
             id: row.id,
             title: row.title ?? '',
             type: row.type,
+            sessionSource: row.sessionSource,
             originSessionId: row.originSessionId,
             originWorkflowId: row.originWorkflowId,
             workspacePath: row.workspacePath,

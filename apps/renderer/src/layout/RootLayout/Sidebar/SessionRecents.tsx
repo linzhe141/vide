@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { GitBranch, LoaderCircle } from 'lucide-react'
+import { GitBranch, LoaderCircle, MessageCircle } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useSessionStore } from '@/store/sessionStore'
@@ -41,6 +41,7 @@ export function SessionRecents() {
           sessionId={history.sessionId}
           title={history.title}
           type={history.type}
+          sessionSource={history.sessionSource}
         />
       ))}
 
@@ -55,10 +56,12 @@ function HistoryNavItem({
   sessionId,
   title,
   type,
+  sessionSource,
 }: {
   sessionId: string
   title: string
   type: 'normal' | 'fork'
+  sessionSource: 'desktop' | 'wechat-bot'
 }) {
   const running = useSessionStore((state) => {
     const session = state.sessions.find((item) => item.sessionId === sessionId)
@@ -84,6 +87,11 @@ function HistoryNavItem({
         {type === 'fork' ? (
           <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
             <GitBranch size={11} />
+          </span>
+        ) : null}
+        {sessionSource === 'wechat-bot' ? (
+          <span className='inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:text-emerald-300'>
+            <MessageCircle size={11} />
           </span>
         ) : null}
         <span className='block flex-1 truncate'>{title || 'Untitled'}</span>

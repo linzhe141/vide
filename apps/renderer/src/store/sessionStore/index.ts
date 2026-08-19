@@ -1,10 +1,9 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
-import type { SessionEvent } from '@vide/agent/event'
+import type { SessionSource } from '@vide/config'
 import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import { handleSessionEvent } from './eventHandlers/handleSessionEvent'
 import { deriveSessionFromData } from './deriveSession'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
@@ -30,7 +29,6 @@ type UpdateAskQuestionAnswerData = {
 type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
-    handleSessionEvent: (event: SessionEvent) => void
     changeToolCallStatus: (data: ChangeToolCallStatusData) => void
     updateAskQuestionAnswer: (data: UpdateAskQuestionAnswerData) => void
 
@@ -42,6 +40,7 @@ type SessionActions = {
     switchBranch: (sessionId: string, branchName: string) => void
     createSession: (data: {
       sessionId: string
+      sessionSource?: SessionSource
       workspacePath?: string | null
       autoApprove?: boolean
       thinkingMode?: boolean
@@ -71,9 +70,6 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         set((state) => {
           handleWorkflowEvent(state, event)
         })
-      },
-      handleSessionEvent(event) {
-        handleSessionEvent(event)
       },
       changeToolCallStatus(data: ChangeToolCallStatusData) {
         set((state) => {
@@ -159,6 +155,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
       createSession({
         sessionId,
+        sessionSource = 'desktop',
         workspacePath = null,
         autoApprove = false,
         thinkingMode = false,
@@ -167,6 +164,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const activeBranch = 'main'
           const newSession: Session = {
             sessionId,
+            sessionSource,
             autoApprove,
             workspacePath,
             thinkingMode,

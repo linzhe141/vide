@@ -1,4 +1,5 @@
 import type { ToolCall } from '@vide/ai'
+import type { SessionSource } from '@vide/config'
 
 export interface UserInputSessionMessage {
   id: string
@@ -95,6 +96,7 @@ export type SessionMessage =
 export type Workflow = {
   id: string
   input: string
+  inputSource: SessionSource
   feedback: 'like' | 'dislike' | null
   events?: WorkflowLogEvent[]
   messages: SessionMessage[]
@@ -130,6 +132,7 @@ export type SessionBranch = {
 
 export type Session = {
   sessionId: string
+  sessionSource: SessionSource
   autoApprove: boolean
   thinkingMode: boolean
   workspacePath?: string | null

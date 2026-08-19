@@ -18,6 +18,9 @@ export const sessions = sqliteTable('sessions', {
   type: text('type', { enum: ['normal', 'fork'] })
     .notNull()
     .default('normal'),
+  sessionSource: text('session_source', { enum: ['desktop', 'wechat-bot'] })
+    .notNull()
+    .default('desktop'),
   // 普通 text 列，不用 FK（避免自引用）。由代码维护 fork 关系。
   originSessionId: text('origin_session_id'),
   originWorkflowId: text('origin_workflow_id'),
@@ -36,6 +39,9 @@ export const sessionWorkflows = sqliteTable('session_workflows', {
     .references(() => sessions.id),
   // 普通 text 列，不用 FK（避免自引用）。由代码维护父子关系。
   parentWorkflowId: text('parent_workflow_id'),
+  inputSource: text('input_source', { enum: ['desktop', 'wechat-bot'] })
+    .notNull()
+    .default('desktop'),
   stopStatus: text('stop_status', {
     enum: ['completed', 'error', 'aborted', 'interrupted'],
   }),

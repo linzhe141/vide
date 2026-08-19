@@ -5,6 +5,7 @@ export type HistoryItem = {
   sessionId: string
   title: string
   type: 'normal' | 'fork'
+  sessionSource: 'desktop' | 'wechat-bot'
   origin: { sessionId: string; workflowId: string | null } | null
   createdAt: number
   updatedAt: number
@@ -42,6 +43,7 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set) => ({
             sessionId: row.id,
             title: row.title,
             type: row.type ?? 'normal',
+            sessionSource: row.sessionSource,
             origin:
               row.originSessionId != null
                 ? { sessionId: row.originSessionId, workflowId: row.originWorkflowId }

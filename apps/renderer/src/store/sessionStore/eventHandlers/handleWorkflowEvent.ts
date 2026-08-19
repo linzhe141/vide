@@ -26,7 +26,7 @@ export function handleWorkflowEvent(
   // workflow.start 需要先创建 workflow 再绑定；其余事件挂到已存在的 workflow 上。
   let workflow: Workflow
   if (workflowEvent.type === 'workflow.start') {
-    workflow = createWorkflow(workflowId, workflowEvent.input)
+    workflow = createWorkflow(workflowId, workflowEvent.input, workflowEvent.inputSource)
     const currentBranch = session.branches.find((item) => item.name === session.activeBranch)
     if (currentBranch) {
       const parentId = currentBranch.headWorkflowId
@@ -225,10 +225,15 @@ export function handleWorkflowEvent(
   })
 }
 
-function createWorkflow(workflowId: string, input: string): Workflow {
+function createWorkflow(
+  workflowId: string,
+  input: string,
+  inputSource: 'desktop' | 'wechat-bot'
+): Workflow {
   const newWorkflow: Workflow = {
     id: workflowId,
     input,
+    inputSource,
     feedback: null,
     events: [],
     messages: [

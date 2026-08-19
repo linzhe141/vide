@@ -1,7 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import type { AgentMessage } from '@vide/ai'
-import type { SessionDataDto } from '@vide/config'
+import type { SessionDataDto, SessionSource } from '@vide/config'
 import { db } from '@/db/databaseManager'
 import {
   sessionBranches,
@@ -16,6 +16,7 @@ export class SessionRepository {
     id: string
     title?: string | null
     type: 'normal' | 'fork'
+    sessionSource?: SessionSource
     originSessionId?: string | null
     originWorkflowId?: string | null
     workspacePath?: string | null
@@ -32,6 +33,7 @@ export class SessionRepository {
         .set({
           title: data.title ?? existing.title,
           type: data.type ?? existing.type,
+          sessionSource: data.sessionSource ?? existing.sessionSource,
           originSessionId: data.originSessionId ?? existing.originSessionId,
           originWorkflowId: data.originWorkflowId ?? existing.originWorkflowId,
           workspacePath: data.workspacePath ?? existing.workspacePath,
@@ -47,6 +49,7 @@ export class SessionRepository {
       id: data.id,
       title: data.title ?? '',
       type: data.type,
+      sessionSource: data.sessionSource ?? 'desktop',
       originSessionId: data.originSessionId ?? null,
       originWorkflowId: data.originWorkflowId ?? null,
       workspacePath: data.workspacePath ?? null,
@@ -132,6 +135,7 @@ export class SessionRepository {
     workflowId: string
     sessionId: string
     parentWorkflowId: string | null
+    inputSource: SessionSource
     input: string
   }): Promise<void> {
     const time = Date.now()
@@ -139,6 +143,7 @@ export class SessionRepository {
       id: data.workflowId,
       sessionId: data.sessionId,
       parentWorkflowId: data.parentWorkflowId,
+      inputSource: data.inputSource,
       input: data.input,
       createdAt: time,
       updatedAt: time,
@@ -229,6 +234,7 @@ export class SessionRepository {
       id: string
       title: string | null
       type: 'normal' | 'fork'
+      sessionSource: SessionSource
       originSessionId: string | null
       originWorkflowId: string | null
       workspacePath: string | null
@@ -243,6 +249,7 @@ export class SessionRepository {
         id: sessions.id,
         title: sessions.title,
         type: sessions.type,
+        sessionSource: sessions.sessionSource,
         originSessionId: sessions.originSessionId,
         originWorkflowId: sessions.originWorkflowId,
         workspacePath: sessions.workspacePath,
@@ -291,6 +298,7 @@ export class SessionRepository {
         return {
           id: workflow.id,
           parentWorkflowId: workflow.parentWorkflowId,
+          inputSource: workflow.inputSource,
           stopStatus: workflow.stopStatus,
           feedback: workflow.feedback,
           input: workflow.input,
@@ -317,6 +325,7 @@ export class SessionRepository {
       id: session.id,
       title: session.title ?? '',
       type: session.type,
+      sessionSource: session.sessionSource,
       origin:
         session.originSessionId != null
           ? { sessionId: session.originSessionId, workflowId: session.originWorkflowId }

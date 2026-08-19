@@ -22,15 +22,16 @@ export class AgentIpcMainService implements IpcMainService {
         workspacePath,
         autoApprove: data.autoApprove,
         thinkingMode: data.thinkingMode,
+        sessionSource: 'desktop',
       })
       logger.info('agent-create-session ', sessionId)
       return sessionId
     })
 
-    ipcMainApi.handle('agent-session-send', async ({ sessionId, input }) => {
+    ipcMainApi.handle('agent-session-send', async ({ sessionId, input, inputSource }) => {
       logger.info('agent-session-send ', sessionId, input)
       // fire-and-forget：事件由 AgentManager.prompt 广播到 renderer
-      void agentManager.prompt(sessionId, input)
+      void agentManager.prompt(sessionId, input, inputSource ?? 'desktop')
     })
 
     ipcMainApi.handle('agent-resume-session', async ({ sessionId }) => {
@@ -85,7 +86,9 @@ export class AgentIpcMainService implements IpcMainService {
         if (!targetNode) return
 
         const parentNode = targetNode.parent
-        const sourceWorkflow = parentNode ? parentNode.workflow.id : targetNode.parent?.workflow?.id ?? null
+        const sourceWorkflow = parentNode
+          ? parentNode.workflow.id
+          : (targetNode.parent?.workflow?.id ?? null)
 
         session.createBranch(branchName, parentNode ?? null)
         session.switchBranch(branchName)
@@ -94,7 +97,7 @@ export class AgentIpcMainService implements IpcMainService {
           sessionId,
           name: branchName,
           headWorkflowId:
-            session.currentBranch?.head?.workflow.id ?? (parentNode?.workflow.id ?? null),
+            session.currentBranch?.head?.workflow.id ?? parentNode?.workflow.id ?? null,
           sourceWorkflowId: sourceWorkflow,
         })
         await SessionRepository.switchBranch(sessionId, branchName)
@@ -106,4 +109,3 @@ export class AgentIpcMainService implements IpcMainService {
     })
   }
 }
-

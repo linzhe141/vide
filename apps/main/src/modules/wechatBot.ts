@@ -1,4 +1,5 @@
 import type { WechatBotRuntimeStatus, WechatBotSessionRecord } from '@vide/config'
+import type { WorkflowEvent } from '@vide/agent'
 import type { AgentManager } from '@/modules/agentManager'
 import { shell } from 'electron'
 import { logger } from '@/logger'
@@ -14,6 +15,7 @@ const THINKING_MODE = false
 /** 最多保留的微信侧会话数量 */
 const MAX_WECHAT_SESSIONS = 30
 const MAX_TEXT_CHARS_PER_MESSAGE = 1800
+const ASK_USER_QUESTION_TOOL_NAME = 'ask-user-question-generate'
 
 /** 允许用户在微信里通过文本触发的指令（大小写不敏感、自动去空格） */
 function normalizeCommand(text: string): string {
@@ -237,7 +239,7 @@ export class WechatBot {
       logger.error('wechat sendText thinking error:', err)
     }
 
-    const finalText = await this.runAgent(text)
+    const finalText = await this.runAgent(senderId, contextToken, text)
     if (finalText) {
       try {
         await this.sendText(senderId, finalText, contextToken)
@@ -323,6 +325,7 @@ export class WechatBot {
       workspacePath: null,
       autoApprove: AUTO_APPROVE,
       thinkingMode: THINKING_MODE,
+      sessionSource: 'wechat-bot',
     })
     this.recordMap.set(sessionId, {
       sessionId,
@@ -355,11 +358,27 @@ export class WechatBot {
     return sessionId
   }
 
-  private async runAgent(input: string): Promise<string> {
+  private async runAgent(senderId: string, contextToken: string, input: string): Promise<string> {
     const sessionId = await this.getOrCreateActiveSessionId()
+    let askQuestionSent = false
     try {
-      const finalText = await this.agentManager.backgroundPrompt(sessionId, input)
+      const finalText = await this.agentManager.backgroundPrompt(
+        sessionId,
+        input,
+        async (event) => {
+          const questionText = buildWechatAskQuestionText(event)
+          if (!questionText) return
+          askQuestionSent = true
+          try {
+            await this.sendText(senderId, questionText, contextToken)
+          } catch (err) {
+            logger.error('wechat sendText ask-question error:', err)
+          }
+        },
+        'wechat-bot'
+      )
       if (!finalText) {
+        if (askQuestionSent) return ''
         return '🤖 agent 没有返回文本内容。'
       }
       return finalText
@@ -427,4 +446,94 @@ function splitTextByLength(text: string, maxLength: number): string[] {
     out.push(value.slice(i, i + maxLength))
   }
   return out
+}
+
+function buildWechatAskQuestionText(event: WorkflowEvent): string | null {
+  if (event.type !== 'workflow.llm.tool.call.end') return null
+
+  const blocks = event.toolCall
+    .filter((toolCall) => toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME)
+    .map((toolCall) => {
+      const questions = sanitizeWechatQuestions(
+        parseToolArguments(toolCall.function.arguments)?.questions
+      )
+      if (!questions.length) return null
+
+      return questions
+        .map((question, index) => {
+          const description = question.description ? `\n${question.description}` : ''
+          const options = question.options.map((option) => `  - ${option.label}`).join('\n')
+          return `${index + 1}. ${question.title}${description}\n${options}`
+        })
+        .join('\n\n')
+    })
+    .filter((block): block is string => block !== null)
+
+  if (!blocks.length) return null
+
+  return ['📝 Agent 需要你补充信息：', '', ...blocks, '', '请直接回复你的答案。'].join('\n')
+}
+
+function parseToolArguments(raw: string): { questions?: unknown } | null {
+  try {
+    return JSON.parse(raw) as { questions?: unknown }
+  } catch {
+    return null
+  }
+}
+
+function sanitizeWechatQuestions(questions: unknown): {
+  title: string
+  description?: string
+  options: { label: string; value: string }[]
+}[] {
+  if (!Array.isArray(questions)) return []
+
+  return questions
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null
+      const question = item as {
+        title?: unknown
+        description?: unknown
+        options?: unknown
+      }
+      const title = typeof question.title === 'string' ? question.title.trim() : ''
+      const description =
+        typeof question.description === 'string' && question.description.trim()
+          ? question.description.trim()
+          : undefined
+      const options = Array.isArray(question.options)
+        ? question.options
+            .map((option) => {
+              if (!option || typeof option !== 'object') return null
+              const label =
+                typeof (option as { label?: unknown }).label === 'string'
+                  ? (option as { label: string }).label.trim()
+                  : ''
+              const value =
+                typeof (option as { value?: unknown }).value === 'string'
+                  ? (option as { value: string }).value.trim()
+                  : ''
+              if (!label || !value) return null
+              return { label, value }
+            })
+            .filter((option): option is { label: string; value: string } => option !== null)
+        : []
+
+      if (!title || !options.length) return null
+      return {
+        title,
+        ...(description ? { description } : {}),
+        options,
+      }
+    })
+    .filter(
+      (
+        question
+      ): question is {
+        title: string
+        description?: string
+        options: { label: string; value: string }[]
+      } => question !== null
+    )
 }

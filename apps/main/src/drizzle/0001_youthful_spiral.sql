@@ -1,0 +1,1 @@
+ALTER TABLE `sessions` ADD `session_source` text DEFAULT 'desktop' NOT NULL;

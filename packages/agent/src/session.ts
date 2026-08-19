@@ -24,6 +24,8 @@ export interface SessionBranch {
   source: SessionWorkflowNode | null
 }
 
+export type SessionInputSource = 'desktop' | 'wechat-bot'
+
 export class Session {
   id: string = uuid()
   model: { name: string; baseURL: string; apiKey: string } | null = null
@@ -79,7 +81,7 @@ export class Session {
     this.model = model
   }
 
-  prompt(input: string) {
+  prompt(input: string, options?: { inputSource?: SessionInputSource }) {
     if (!this.model) {
       throw new Error('Model is not set for this session.')
     }
@@ -105,7 +107,7 @@ export class Session {
     const workflowCommitNode = this.commitWorkflow(workflow)
     this.sessionWorkflowNodes[workflow.id] = workflowCommitNode
 
-    workflow.run(input).then((stopReason) => {
+    workflow.run(input, { inputSource: options?.inputSource ?? 'desktop' }).then((stopReason) => {
       this.processWorkflowStopReason(stopReason, workflowCommitNode)
     })
 
