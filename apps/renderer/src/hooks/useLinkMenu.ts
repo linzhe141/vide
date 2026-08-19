@@ -1,5 +1,11 @@
-import { useContext } from 'react'
-import { LinkMenuContext } from './linkMenuContext'
+import { createContext, useContext } from 'react'
+
+export type LinkMenuContextType = {
+  activeLink: string
+  setActiveLink: (link: string) => void
+}
+
+export const LinkMenuContext = createContext<LinkMenuContextType | undefined>(undefined)
 
 export function useLinkMenu() {
   const context = useContext(LinkMenuContext)

@@ -1,5 +1,11 @@
-import { useContext } from 'react'
-import { MarkdownContext } from './markdownContext'
+import { createContext, useContext } from 'react'
+
+export interface MarkdownContextValue {
+  animation: boolean
+  onCitationClick?: () => void
+}
+
+export const MarkdownContext = createContext<MarkdownContextValue | undefined>(undefined)
 
 export function useMarkdown() {
   const context = useContext(MarkdownContext)

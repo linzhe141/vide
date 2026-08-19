@@ -1,5 +1,5 @@
 import { type PropsWithChildren, useCallback, useMemo } from 'react'
-import { ChatContext, type ChatContextType } from '@/hooks/chatContext'
+import { ChatContext, type ChatContextType } from '@/hooks/useChatContext'
 import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionStore'
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {

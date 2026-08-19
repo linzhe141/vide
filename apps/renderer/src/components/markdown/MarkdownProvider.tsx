@@ -1,5 +1,5 @@
 import { useMemo, type PropsWithChildren } from 'react'
-import { MarkdownContext } from '@/hooks/markdownContext'
+import { MarkdownContext } from '@/hooks/useMarkdown'
 
 export const MarkdownProvider = ({
   children,

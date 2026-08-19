@@ -1,7 +1,6 @@
 import { Eraser, Moon, Sun } from 'lucide-react'
 import { themeColors } from '@/provider/ThemeProvider'
-import { type ThemeColor } from '@/hooks/themeContext'
-import { useTheme } from '@/hooks/useTheme'
+import { type ThemeColor, useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/Button'
 import { useSessionStoreActions } from '@/store/sessionStore'

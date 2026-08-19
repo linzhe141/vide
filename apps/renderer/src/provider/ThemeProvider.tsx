@@ -1,7 +1,7 @@
 import { useMemo, type PropsWithChildren } from 'react'
 import type { Theme } from '@vide/config'
 import { useElectronSettingStore } from '../store/electronSettingStore'
-import { ThemeContext, type ThemeColor } from '@/hooks/themeContext'
+import { ThemeContext, type ThemeColor } from '@/hooks/useTheme'
 
 export const themeColors = {
   blue: {
