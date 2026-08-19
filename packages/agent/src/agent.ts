@@ -1,3 +1,4 @@
+import { restoreSessionFromPersistedData, type PersistedSessionData } from './persistence'
 import { Session } from './session'
 
 export class Agent {
@@ -31,5 +32,9 @@ export class Agent {
     newSession.thinkingMode = data.thinkingMode
 
     return newSession
+  }
+
+  restoreSession(data: PersistedSessionData) {
+    return restoreSessionFromPersistedData(data, this.settings)
   }
 }

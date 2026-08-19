@@ -10,13 +10,17 @@ import type {
   WorkflowLogEvent,
   WorkflowNode,
 } from './types'
-import { ASK_USER_QUESTION_TOOL_NAME, sanitizeAskUserQuestions } from './askQuestion'
+import {
+  ASK_USER_QUESTION_TOOL_NAME,
+  parseAskQuestionAnswerPayload,
+  sanitizeAskUserQuestions,
+} from './askQuestion'
 
 /**
- * 依据 SQLite 持久化的 session data（agent messages + workflow logs）派生前端 UI 态：
- * - workflow 的消息以「agent message」为权威来源，再结合 workflow logs 补全
- *   tool call 状态/结果、reasoning、error、ask-user-question 等流式信息。
- * - logs 里的 delta 事件（reason/text）用于还原流式展示内容。
+ * 依据 SQLite 持久化的 session data 派生前端 UI 态：
+ * - workflow message 主要只根据持久化的 agent messages 还原；
+ * - workflow logs 保留给日志面板展示，不参与 ask-question / user message 的位置派生；
+ * - 少量跨 workflow 规则（如 ask-question 的答案 input）在前端按需解释。
  */
 export function deriveSessionFromData(data: SessionDataDto): Session {
   const workflowNodesMap: Record<string, WorkflowNode> = {}
@@ -84,12 +88,14 @@ function deriveWorkflow(wf: SessionWorkflowData): Workflow {
     inputSource: wf.inputSource,
     feedback: wf.feedback,
     events: deriveLogEvents(wf.logs),
-    messages: deriveMessages(decoded, wf.logs),
+    messages: deriveMessages(decoded, wf),
     runtime: { status: runtimeStatus },
   }
 
   // 若 messages 为空但 input 存在，补一条 user message（保证 UI 有输入展示）
-  if (!workflow.messages.some((m) => m.role === 'user') && wf.input) {
+  const isDesktopAskAnswerInput =
+    wf.inputSource === 'desktop' && parseAskQuestionAnswerPayload(wf.input) !== null
+  if (!isDesktopAskAnswerInput && !workflow.messages.some((m) => m.role === 'user') && wf.input) {
     workflow.messages.unshift({
       id: nanoid(),
       role: 'user',
@@ -134,14 +140,18 @@ function deriveLogEvents(logs: WorkflowLogDto[]): WorkflowLogEvent[] {
   })
 }
 
-/** 依据 agent messages + workflow logs 派生 UI 的 SessionMessage[]。 */
+/** 依据 agent messages 派生 UI 的 SessionMessage[]。 */
 function deriveMessages(
   agentMessages: { message: AgentMessage; createdAt: number }[],
-  logs: WorkflowLogDto[]
+  workflow: SessionWorkflowData
 ): SessionMessage[] {
   const messages: SessionMessage[] = []
-  // toolCall id -> ToolCallState，用于回填结果/状态
+  const deferredAskQuestionMessages: SessionMessage[] = []
   const toolCallStates = new Map<string, ToolCallState>()
+  const hiddenAnswerPayload =
+    workflow.inputSource === 'desktop' ? parseAskQuestionAnswerPayload(workflow.input) : null
+  let skippedAnswerInputUser = false
+
   const scrollInto = <T extends SessionMessage>(m: T): T => {
     messages.push(m)
     return m
@@ -150,12 +160,15 @@ function deriveMessages(
   for (const { message } of agentMessages) {
     switch (message.role) {
       case 'user': {
-        // 提交答案会产生下一个 workflow（子节点），其 input 即该答案 JSON，由 deriveWorkflow
-        // 以 user 消息形式展示。本 workflow 内不直接出现答案 user 消息。
+        const content = String(message.content ?? '')
+        if (!skippedAnswerInputUser && hiddenAnswerPayload && content === workflow.input) {
+          skippedAnswerInputUser = true
+          break
+        }
         scrollInto({
           id: nanoid(),
           role: 'user',
-          content: String(message.content ?? ''),
+          content,
         })
         break
       }
@@ -184,7 +197,7 @@ function deriveMessages(
                 parseToolArguments(toolCall.function.arguments)?.questions
               )
               if (questions.length) {
-                scrollInto({
+                deferredAskQuestionMessages.push({
                   id: nanoid(),
                   role: 'ask-user-question',
                   toolCallId: toolCall.id,
@@ -234,116 +247,10 @@ function deriveMessages(
     }
   }
 
-  // 用 workflow logs 补全 tool call 状态与结果、reasoning、error、ask-user-question
-  applyLogEnrichment(messages, toolCallStates, logs)
+  // ask-question 在 workflow 语义上应停在最后，提交会进入下一个 workflow。
+  messages.push(...deferredAskQuestionMessages)
 
   return messages
-}
-
-function applyLogEnrichment(
-  messages: SessionMessage[],
-  toolCallStates: Map<string, ToolCallState>,
-  logs: WorkflowLogDto[]
-) {
-  const reasonChunks: string[] = []
-  for (const log of logs) {
-    const payload = parsePayload(log.payload)
-    switch (log.eventName) {
-      case 'workflow.llm.reason.delta': {
-        const delta = (payload as { chunk?: { delta?: string } } | null)?.chunk?.delta
-        if (typeof delta === 'string') reasonChunks.push(delta)
-        break
-      }
-      case 'workflow.llm.reason.end': {
-        const content = (payload as { content?: string } | null)?.content
-        if (typeof content === 'string' && !reasonChunks.length) reasonChunks.push(content)
-        break
-      }
-      case 'workflow.llm.tool.call.end': {
-        const toolCalls = (payload as { toolCall?: ToolCall[] } | null)?.toolCall
-        for (const tc of toolCalls ?? []) {
-          const state = toolCallStates.get(tc.id)
-          if (state) state.toolCall.status = tc.status
-        }
-        break
-      }
-      case 'workflow.tool.call.start': {
-        const raw = (payload as { toolCall?: { id: string; toolName: string; args: any } } | null)
-          ?.toolCall
-        const id = raw?.id
-        const toolName = raw?.toolName
-        const state = id ? toolCallStates.get(id) : undefined
-        if (state) {
-          if (toolName) state.toolCall.function.name = toolName
-          const args = raw?.args
-          if (typeof args === 'object' && args !== null) {
-            state.toolCall.function.arguments = JSON.stringify(args)
-          }
-        }
-        break
-      }
-      case 'workflow.tool.call.success': {
-        const r = (payload as { toolCallResult?: any } | null)?.toolCallResult
-        if (!r) break
-        const state = toolCallStates.get(r.id)
-        if (state) {
-          state.result = {
-            status: 'success',
-            result: r.result,
-            startedAt: r.startedAt,
-            finishedAt: r.finishedAt,
-            durationMs: r.durationMs,
-          }
-          state.toolCall.status = 'auto-approved'
-        }
-        break
-      }
-      case 'workflow.tool.call.error': {
-        const r = (payload as { toolCallResult?: any } | null)?.toolCallResult
-        if (!r) break
-        const state = toolCallStates.get(r.id)
-        if (state) {
-          state.result = { status: 'error', error: r.error }
-        }
-        break
-      }
-      case 'workflow.llm.error': {
-        const err = (payload as { error?: any } | null)?.error
-        scrollIntoError(messages, err)
-        break
-      }
-      default:
-        break
-    }
-  }
-
-  if (reasonChunks.length) {
-    scrollIntoReason(messages, reasonChunks.join(''))
-  }
-}
-
-function scrollIntoReason(messages: SessionMessage[], content: string) {
-  if (!content) return
-  // 若已存在末条 reasoning 则追加，否则新建
-  const idx = messages.findIndex((m) => m.role === 'assistant-reason')
-  if (idx < 0) {
-    messages.push({ id: nanoid(), role: 'assistant-reason', content, reasoning: false })
-  } else {
-    messages[idx] = { id: nanoid(), role: 'assistant-reason', content, reasoning: false }
-  }
-}
-
-function scrollIntoError(messages: SessionMessage[], error: unknown) {
-  messages.push({ id: nanoid(), role: 'error', error })
-}
-
-function parsePayload(payload: string | null): unknown {
-  if (!payload) return null
-  try {
-    return JSON.parse(payload)
-  } catch {
-    return null
-  }
 }
 
 /** 解析 tool call 的 arguments JSON。 */

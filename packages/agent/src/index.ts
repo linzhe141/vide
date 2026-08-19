@@ -1,4 +1,5 @@
 export * from './agent'
+export * from './persistence'
 export * from './session'
 export * from './workspace'
 export * from './tools/skill'

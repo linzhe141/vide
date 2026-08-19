@@ -23,6 +23,19 @@ export type AskQuestionAnswerPayload = {
   }[]
 }
 
+export function parseAskQuestionAnswerPayload(content: string): AskQuestionAnswerPayload | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    return null
+  }
+  if (!parsed || typeof parsed !== 'object') return null
+  const payload = parsed as Partial<AskQuestionAnswerPayload>
+  if (payload.type !== ASK_QUESTION_ANSWER_TYPE || !Array.isArray(payload.answers)) return null
+  return payload as AskQuestionAnswerPayload
+}
+
 /** 清洗 LLM 输出的 questions 数组，产出符合 UI 类型的 AskUserQuestionItem。 */
 export function sanitizeAskUserQuestions(questions: unknown): AskUserQuestionItem[] {
   if (!Array.isArray(questions)) return []

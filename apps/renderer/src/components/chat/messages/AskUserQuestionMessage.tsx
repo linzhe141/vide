@@ -9,6 +9,7 @@ import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions, useSessionWorkflowNext } from '@/store/sessionStore'
 import {
   ASK_QUESTION_ANSWER_TYPE,
+  parseAskQuestionAnswerPayload,
   type AskQuestionAnswerPayload,
 } from '@/store/sessionStore/askQuestion'
 
@@ -36,7 +37,8 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
   // 只读时，从下一个 workflow 的 input（提交答案的结构化 JSON）回显每个问题已选的内容。
   const displayQuestions = useMemo(() => {
     if (!hasNext || !nextWorkflowInput) return message.questions
-    const payload = tryParseAnswerPayload(nextWorkflowInput)
+    if (nextWorkflow?.inputSource !== 'desktop') return message.questions
+    const payload = parseAskQuestionAnswerPayload(nextWorkflowInput)
     if (!payload) return message.questions
     return message.questions.map((q) => {
       const answer = payload.answers.find((a) => a.questionId === q.id)
@@ -46,7 +48,7 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
         answer: { selected: answer.selected, ...(answer.other ? { other: answer.other } : {}) },
       }
     })
-  }, [message.questions, hasNext, nextWorkflowInput])
+  }, [hasNext, nextWorkflowInput, message.questions, nextWorkflow?.inputSource])
 
   const question = displayQuestions[currentIndex]
   const isFirst = currentIndex === 0
@@ -278,18 +280,4 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
       )}
     </div>
   )
-}
-
-/** 尝试把下一个 workflow 的 input 解析为「提交答案」的结构化 payload；否则返回 null。 */
-function tryParseAnswerPayload(content: string): AskQuestionAnswerPayload | null {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(content)
-  } catch {
-    return null
-  }
-  if (!parsed || typeof parsed !== 'object') return null
-  const payload = parsed as Partial<AskQuestionAnswerPayload>
-  if (payload.type !== ASK_QUESTION_ANSWER_TYPE || !Array.isArray(payload.answers)) return null
-  return payload as AskQuestionAnswerPayload
 }

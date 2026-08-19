@@ -14,6 +14,8 @@ type StreamEvent = WorkflowEvent & {
   ctx: { sessionId: string | null; workflowId: string | null }
 }
 
+type SessionStopStatus = 'completed' | 'error' | 'aborted'
+
 type PromptObserver = (event: StreamEvent) => void | Promise<void>
 
 export class AgentManager {
@@ -98,7 +100,7 @@ export class AgentManager {
     this.loaded.add(sessionId)
     let session: Session | null = null
     try {
-      session = await SessionLoader.loadSession(sessionId, this.agent.settings)
+      session = await SessionLoader.loadSession(sessionId, this.agent)
     } catch (error) {
       logger.error('agent-manager ensureSessionLoaded error', sessionId, error)
     }
@@ -129,7 +131,7 @@ export class AgentManager {
   /**
    * 统一处理 workflow stream：
    * - 每个事件广播给 renderer（实时 UI）；
-   * - 交给 WorkflowPersister 缓冲，终态一次性持久化（agent messages + 完整日志）；
+   * - stream 真正结束后，一次性持久化该 workflow 的 agent messages + 完整日志；
    * - 抽取最终文本（workflow.llm.text.end / workflow.completed.result）。
    */
   private async runPrompt(
@@ -138,27 +140,58 @@ export class AgentManager {
     onEvent?: PromptObserver,
     inputSource: SessionSource = 'desktop'
   ): Promise<string> {
+    const branchName = session.activeBranch
     const stream = session.prompt(input, { inputSource })
-    let finalText = ''
-    for await (const event of stream) {
-      const v2Event = event as StreamEvent
-      if (onEvent) {
-        await onEvent(v2Event)
-      }
-      ipcMainApi.send(v2Event.type as any, v2Event as any)
-      await this.persister.consume(session, v2Event)
+    const workflowId = stream.workflowId!
 
-      switch (event.type) {
-        case 'workflow.llm.text.end':
-          finalText = event.content ?? ''
-          break
-        case 'workflow.completed':
-          finalText = typeof event.result === 'string' ? event.result : finalText
-          break
-        default:
-          break
+    this.persister.markPending(workflowId)
+    let finalText = ''
+    let stopStatus: SessionStopStatus | null = null
+
+    try {
+      for await (const event of stream) {
+        const v2Event = event as StreamEvent
+        if (onEvent) {
+          await onEvent(v2Event)
+        }
+        ipcMainApi.send(v2Event.type as any, v2Event as any)
+
+        switch (event.type) {
+          case 'workflow.llm.text.end':
+            finalText = event.content ?? ''
+            break
+          case 'workflow.completed':
+            stopStatus = 'completed'
+            finalText = typeof event.result === 'string' ? event.result : finalText
+            break
+          case 'workflow.aborted':
+            stopStatus = 'aborted'
+            break
+          case 'workflow.error':
+            stopStatus = 'error'
+            break
+          default:
+            break
+        }
+      }
+    } finally {
+      try {
+        if (stopStatus) {
+          await this.persister.persistWorkflow(
+            session,
+            workflowId,
+            branchName,
+            input,
+            inputSource,
+            stopStatus,
+            stream.recordedEvents
+          )
+        }
+      } finally {
+        this.persister.clearPending(workflowId)
       }
     }
+
     return finalText
   }
 
@@ -198,5 +231,21 @@ export class AgentManager {
 
   listSessionIds(): string[] {
     return [...this.sessions.keys()]
+  }
+
+  countRunningSessions(): number {
+    const pendingWorkflowIds = new Set(this.persister.getPendingWorkflowIds())
+    if (!pendingWorkflowIds.size) return 0
+
+    let count = 0
+    for (const session of this.sessions.values()) {
+      const hasRunningWorkflow = Object.keys(session.sessionWorkflowNodes).some((workflowId) =>
+        pendingWorkflowIds.has(workflowId)
+      )
+      if (hasRunningWorkflow) {
+        count += 1
+      }
+    }
+    return count
   }
 }
