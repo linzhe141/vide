@@ -1,17 +1,7 @@
-import { createContext, useContext, useMemo, type PropsWithChildren } from 'react'
-import { useElectronSettingStore } from '../store/electronSettingStore'
+import { useMemo, type PropsWithChildren } from 'react'
 import type { Theme } from '@vide/config'
-
-export type ThemeColor = 'blue' | 'green' | 'orange'
-
-type ThemeContextType = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-  themeColor: ThemeColor
-  setThemeColor: (color: ThemeColor) => void
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+import { useElectronSettingStore } from '../store/electronSettingStore'
+import { ThemeContext, type ThemeColor } from '@/hooks/themeContext'
 
 export const themeColors = {
   blue: {
@@ -56,12 +46,4 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   }, [setTheme, setThemeColor, theme, themeColor])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
 }

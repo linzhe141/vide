@@ -1,9 +1,21 @@
-import { FileClock, MessageSquareText, X } from 'lucide-react'
+import {
+  Bot,
+  Brain,
+  CheckCircle2,
+  CircleAlert,
+  FileClock,
+  LoaderCircle,
+  MessageSquareText,
+  Play,
+  SquareTerminal,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useChatContext } from '@/components/chat/ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionWorkflows } from '@/store/sessionStore'
 import type { Workflow, WorkflowLogEvent } from '@/store/sessionStore/types'
-import { useChatLayout } from '..'
+import { useChatLayout } from '@/hooks/useChatLayout'
 
 export function SessionLogPane({ className }: { className?: string }) {
   const { closePane } = useChatLayout()
@@ -66,8 +78,8 @@ function WorkflowLogSection({ index, workflow }: { index: number; workflow: Work
   const events = getVisibleEvents(workflow)
 
   return (
-    <section className='border-border/80 bg-background/86 overflow-hidden rounded-[20px] border shadow-sm'>
-      <div className='border-border/70 from-background via-background to-foreground/2.5 flex items-start gap-3 border-b bg-linear-to-r px-4 py-3.5'>
+    <section className='bg-background/86 sticky border shadow-sm'>
+      <div className='bg-background sticky top-2 z-1 flex items-start gap-3 border-b px-4 py-3.5'>
         <div className='bg-primary/10 text-primary border-primary/10 mt-0.5 rounded-xl border p-1.5'>
           <MessageSquareText size={14} />
         </div>
@@ -106,26 +118,37 @@ function shouldLog(type: string) {
 }
 
 function LogRow({ event }: { event: WorkflowLogEvent }) {
-  const tone = eventTone(event.type)
+  const meta = eventMeta(event.type)
 
   return (
     <div className='relative pl-8'>
       <span
         className={cn(
-          'bg-background absolute top-3 left-2.75 size-3 rounded-full border-2',
-          toneClass(tone, 'border')
+          'bg-background absolute top-3 left-2.75 flex size-3 items-center justify-center rounded-full border-2',
+          toneClass(meta.tone, 'border')
         )}
         aria-hidden='true'
-      />
+      >
+        <meta.icon size={8} strokeWidth={2.2} className={toneClass(meta.tone, 'text')} />
+      </span>
       <div className='border-border/60 bg-background/82 hover:border-border min-w-0 rounded-xl border px-3 py-2.5 transition'>
         <div className='flex min-w-0 items-start justify-between gap-3'>
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
-              <span className={cn('truncate font-mono text-xs', toneClass(tone, 'text'))}>
+              <span
+                className={cn('shrink-0 rounded-md p-1', toneClass(meta.tone, 'badge'))}
+                aria-hidden='true'
+              >
+                <meta.icon size={12} strokeWidth={1.9} />
+              </span>
+              <span className={cn('truncate font-mono text-xs', toneClass(meta.tone, 'text'))}>
                 {eventLabel(event.type)}
               </span>
               <span
-                className={cn('rounded-full px-1.5 py-0.5 text-[10px]', toneClass(tone, 'badge'))}
+                className={cn(
+                  'rounded-full px-1.5 py-0.5 text-[10px]',
+                  toneClass(meta.tone, 'badge')
+                )}
               >
                 {eventGroup(event.type)}
               </span>
@@ -203,6 +226,11 @@ function stringifyPayload(value: unknown) {
 
 type Tone = 'default' | 'primary' | 'success' | 'danger' | 'warning' | 'muted'
 
+type EventMeta = {
+  icon: LucideIcon
+  tone: Tone
+}
+
 function eventGroup(type: string) {
   if (type.includes('.tool.')) return 'tool'
   if (type.includes('.llm.')) return 'llm'
@@ -212,9 +240,31 @@ function eventGroup(type: string) {
 
 function eventTone(type: string): Tone {
   if (type.includes('error') || type.includes('abort')) return 'danger'
+  if (type.includes('interrupt')) return 'warning'
   if (type.includes('finish') || type.includes('complete')) return 'success'
+  if (type.includes('start')) return 'warning'
   if (type.includes('.tool.') || type.includes('.llm.')) return 'primary'
   return 'muted'
+}
+
+function eventMeta(type: string): EventMeta {
+  if (type.includes('error')) return { icon: CircleAlert, tone: 'danger' }
+  if (type.includes('abort')) return { icon: X, tone: 'danger' }
+  if (type.includes('interrupt')) return { icon: CircleAlert, tone: 'warning' }
+  if (type.includes('complete') || type.includes('success') || type.includes('result')) {
+    return { icon: CheckCircle2, tone: 'success' }
+  }
+  if (type.includes('.tool.')) return { icon: SquareTerminal, tone: eventTone(type) }
+  if (type.includes('.llm.reason.')) return { icon: Brain, tone: eventTone(type) }
+  if (type.includes('.llm.text.') || type.includes('.message.')) {
+    return { icon: MessageSquareText, tone: eventTone(type) }
+  }
+  if (type.includes('.llm.')) return { icon: Bot, tone: eventTone(type) }
+  if (type.includes('start') || type.includes('process')) {
+    return { icon: LoaderCircle, tone: eventTone(type) }
+  }
+  if (type.includes('.step.')) return { icon: Play, tone: eventTone(type) }
+  return { icon: FileClock, tone: eventTone(type) }
 }
 
 function toneClass(tone: Tone, target: 'text' | 'border' | 'badge') {

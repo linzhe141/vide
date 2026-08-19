@@ -5,7 +5,7 @@ import type { ThemedToken } from 'shiki'
 import { highlighter, defaultLangs, FALLBACK_LANG } from '../highlight/shiki'
 import { ShikiStreamTokenizer } from 'shiki-stream'
 import { Copy, Check } from 'lucide-react'
-import { useMarkdown } from '../markdown/MarkdownProvider'
+import { useMarkdown } from '@/hooks/useMarkdown'
 import { useState } from 'react'
 
 export const Pre = memo(function Pre(props: PropsWithChildren) {

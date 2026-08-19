@@ -1,13 +1,9 @@
 import { useCallback } from 'react'
-import { useChatContext } from '../../components/chat/ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
+import { useChatLayout } from '@/hooks/useChatLayout'
 import { MessageList } from '../../components/chat/MessageList'
 import { ChatInput } from '../../components/chat/ChatInput'
-import {
-  ChatLayout,
-  ChatLayoutInput,
-  ChatLayoutMessage,
-  useChatLayout,
-} from '../../layout/ChatLayout'
+import { ChatLayout, ChatLayoutInput, ChatLayoutMessage } from '../../layout/ChatLayout'
 import {
   useHasPendingAskQuestion,
   useSession,

@@ -3,7 +3,7 @@ import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 import { Check, Copy, Pen, X } from 'lucide-react'
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { createBranchPayload } from '../SessionActions'
-import { useChatContext } from '../ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions } from '../../../store/sessionStore'
 
 export function UserInputMessage({

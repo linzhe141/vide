@@ -5,9 +5,12 @@ import type {
   Workflow,
 } from '@/store/sessionStore/types'
 import { Check, ChevronLeft, ChevronRight, Circle, MessageSquareHeart, Send } from 'lucide-react'
-import { useChatContext } from '../ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions, useSessionWorkflowNext } from '@/store/sessionStore'
-import { ASK_QUESTION_ANSWER_TYPE, type AskQuestionAnswerPayload } from '@/store/sessionStore/askQuestion'
+import {
+  ASK_QUESTION_ANSWER_TYPE,
+  type AskQuestionAnswerPayload,
+} from '@/store/sessionStore/askQuestion'
 
 type AskUserQuestionMessageProps = {
   workflow: Workflow
@@ -68,15 +71,11 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
   const allAnswered = displayQuestions.every((q) => q.answer !== null && otherValid(q))
 
   const canSubmit =
-    !readOnly &&
-    !sending &&
-    !running &&
-    isLast &&
-    displayQuestions.length > 0 &&
-    allAnswered
+    !readOnly && !sending && !running && isLast && displayQuestions.length > 0 && allAnswered
 
   // 只读态仍允许翻看多题，但不能编辑/提交。
-  const canGoNext = !isLast && (readOnly || (!running && question.answer !== null && otherValid(question)))
+  const canGoNext =
+    !isLast && (readOnly || (!running && question.answer !== null && otherValid(question)))
   const canGoPrev = !isFirst && (readOnly || !running)
 
   const saveAnswer = (answer: AskQuestionAnswer) => {

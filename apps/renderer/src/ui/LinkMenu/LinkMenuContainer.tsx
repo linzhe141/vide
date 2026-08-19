@@ -1,6 +1,6 @@
 import { useEffect, type PropsWithChildren } from 'react'
 import { cn } from '@/lib/utils'
-import { useLinkMenu } from './provider'
+import { useLinkMenu } from '@/hooks/useLinkMenu'
 
 interface LinkMenuContainerProps {
   defaultLink: string

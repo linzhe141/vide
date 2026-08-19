@@ -7,7 +7,7 @@ import {
   useWorkspaceExplorerPreview,
   useWorkspaceExplorerStore,
 } from '@/store/workspaceExplorerStore'
-import { useChatLayout } from '../..'
+import { useChatLayout } from '@/hooks/useChatLayout'
 import { WorkspaceFileTree } from './WorkspaceFileTree'
 import { WorkspacePreview } from './WorkspacePreview'
 

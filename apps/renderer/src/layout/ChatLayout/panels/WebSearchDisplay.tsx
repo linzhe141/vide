@@ -1,7 +1,7 @@
 import { ExternalLink, Search, X } from 'lucide-react'
 import { cn, getSiteIcon } from '@/lib/utils'
 import { useSelectedWebSearch, type WebSearchResultItem } from '@/store/webSearchStore'
-import { useChatLayout } from '..'
+import { useChatLayout } from '@/hooks/useChatLayout'
 
 export function WebSearchDisplay({ className }: { className?: string }) {
   const selected = useSelectedWebSearch()

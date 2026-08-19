@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from 'react'
 import { AnimatedWrapper } from './animation'
 import { Pre } from '../codeblock'
-import { useChatLayout } from '@/layout/ChatLayout'
-import { useMarkdown } from './MarkdownProvider'
+import { useChatLayout } from '@/hooks/useChatLayout'
+import { useMarkdown } from '@/hooks/useMarkdown'
 
 export function A({ ...props }: PropsWithChildren) {
   const { showWebSearchResults } = useChatLayout()

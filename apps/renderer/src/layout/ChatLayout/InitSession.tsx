@@ -1,7 +1,7 @@
 import { useSession, useSessionStoreActions } from '../../store/sessionStore'
 import { useEffect, useRef } from 'react'
 import { context } from '../../hooks/chatContenxt'
-import { useChatContext } from '../../components/chat/ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 
 /**
  * 在进入 chat 页时处理“首条输入”的暂存以及持久化 session 的加载。

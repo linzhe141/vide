@@ -8,7 +8,7 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react'
-import { useChatContext } from './ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSession, useSessionStoreActions, useWorkflowBranches } from '../../store/sessionStore'
 import { type Workflow } from '../../store/sessionStore/types'
 import { Textarea } from '../../ui/Textarea'

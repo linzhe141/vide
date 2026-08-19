@@ -13,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
-import { useChatContext } from '../../ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions } from '@/store/sessionStore'
 
 type BashToolCallProps = {

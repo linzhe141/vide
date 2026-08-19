@@ -1,18 +1,11 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-  type PropsWithChildren,
-} from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, type PropsWithChildren } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useHistoryItems } from '../../store/historyStore'
-import { useChatContext } from '../../components/chat/ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
+import { ChatLayoutContext } from '@/hooks/chatLayoutContext'
+import { useChatLayout } from '@/hooks/useChatLayout'
 import { InitSession } from './InitSession'
 import { ArrowDown, GitBranch } from 'lucide-react'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
@@ -21,31 +14,11 @@ import {
   getChatPanelDefinition,
   toolbarChatPanelDefinitions,
   webSearchPanelId,
-  type ChatPanelDefinition,
   type ChatPanelId,
 } from './panels'
 import { useAutoScroll } from './useAutoScroll'
 
 const MAIN_PANEL_MIN_WIDTH = 550
-
-interface ChatLayoutContextType {
-  scrollContainerRef: React.RefObject<HTMLDivElement | null>
-  scrollToBottom: () => void
-  isPaneOpen: boolean
-  activePanelId: ChatPanelId | null
-  activePanel: ChatPanelDefinition | null
-  togglePane: (next: ChatPanelId) => void
-  openPanel: (next: ChatPanelId) => void
-  showWebSearchResults: () => void
-  closePane: () => void
-}
-
-const ChatLayoutContext = createContext<ChatLayoutContextType | null>(null)
-export function useChatLayout() {
-  const context = useContext(ChatLayoutContext)
-  if (!context) throw new Error('Must be used within ChatLayout')
-  return context
-}
 
 export function ChatLayoutProvider({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()

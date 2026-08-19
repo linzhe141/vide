@@ -2,7 +2,7 @@ import type { ToolCall } from '@vide/ai'
 import type { ToolCallState } from '@/store/sessionStore/types'
 import { CheckCircle2, Clock3, Ellipsis, Search, XCircle } from 'lucide-react'
 import { cn, getSiteIcon } from '@/lib/utils'
-import { useChatLayout } from '@/layout/ChatLayout'
+import { useChatLayout } from '@/hooks/useChatLayout'
 import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearchStore'
 
 type WebSearchToolCallProps = {

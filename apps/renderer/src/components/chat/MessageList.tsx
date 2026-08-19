@@ -2,7 +2,7 @@ import { useSessionWorkflows } from '../../store/sessionStore'
 import React from 'react'
 import { type Workflow } from '../../store/sessionStore/types'
 
-import { useChatContext } from './ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { MessageView } from './MessageView'
 import { SessionActions, RegeneratedBranchSwitcher } from './SessionActions'
 import { CircleStop } from 'lucide-react'
