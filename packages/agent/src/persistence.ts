@@ -1,14 +1,14 @@
 import type { AgentMessage } from '@vide/ai'
 import type { Agent } from './agent'
 import {
+  LoadedWorkflow,
   Session,
   type SessionBranch,
   type SessionWorkflowNode,
   type SessionType,
   type SessionInputSource,
 } from './session'
-import { Workflow, type StopReason } from './workflow'
-import { WorkflowStream } from './stream'
+import type { StopReason } from './workflow'
 
 export type PersistedWorkflowStopStatus = StopReason | null
 
@@ -66,7 +66,7 @@ export function restoreSessionFromPersistedData(
 
   const nodes = new Map<string, SessionWorkflowNode>()
   for (const wf of data.workflows) {
-    const workflow = buildInertWorkflow(session, wf)
+    const workflow = buildInertWorkflow(wf)
     nodes.set(wf.id, {
       workflow,
       parent: null,
@@ -100,20 +100,8 @@ export function restoreSessionFromPersistedData(
   return session
 }
 
-function buildInertWorkflow(session: Session, wf: PersistedWorkflowData): Workflow {
-  const stream = new WorkflowStream()
-  const workflow = new Workflow({
-    model: { name: '', baseURL: '', apiKey: '' },
-    sessionId: session.id,
-    tools: [],
-    stream,
-    thinkingMode: session.thinkingMode,
-    getAutoApprove: () => session.autoApprove,
-    getSessionAgentMessages: () => session.buildAgentMessages(),
-  })
-  workflow.id = wf.id
-  workflow.messages = decodeAgentMessages(wf)
-  return workflow
+function buildInertWorkflow(wf: PersistedWorkflowData): LoadedWorkflow {
+  return new LoadedWorkflow(wf.id, decodeAgentMessages(wf))
 }
 
 function decodeAgentMessages(wf: PersistedWorkflowData): AgentMessage[] {

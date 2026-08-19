@@ -12,9 +12,22 @@ export interface SessionOrigin {
   workflowId: string | null
 }
 
+export class LoadedWorkflow {
+  constructor(
+    public id: string,
+    public messages: AgentMessage[]
+  ) {}
+}
+
+export type SessionWorkflow = Workflow | LoadedWorkflow
+
+function isRuntimeWorkflow(workflow: SessionWorkflow): workflow is Workflow {
+  return workflow instanceof Workflow
+}
+
 export interface SessionWorkflowNode {
   stopStatus?: 'completed' | 'error' | 'aborted'
-  workflow: Workflow
+  workflow: SessionWorkflow
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
 }
@@ -117,7 +130,10 @@ export class Session {
   // 中断当前分支上正在运行的 workflow
   abort() {
     const workflow = this.currentBranch?.head?.workflow
-    workflow?.abort()
+    if (!workflow || !isRuntimeWorkflow(workflow)) {
+      return
+    }
+    workflow.abort()
     //TODO 对于 INTERRUPT workflow，已经不再 while loop了， 需要手动抛出 abort stream event
     if (workflow?.state === 'INTERRUPT') {
       workflow.stream.push({ type: 'workflow.aborted' })
@@ -133,6 +149,9 @@ export class Session {
     delete this.pendingSessionWorkflowNodes[workflowId]
 
     const workflow = workflowCommitNode.workflow
+    if (!isRuntimeWorkflow(workflow)) {
+      throw new Error(`Workflow ${workflowId} is not resumable`)
+    }
 
     const interruptPayload = workflow.stepPayload as InterruptPayload
     const continuePayload: CallToolsPayload = {

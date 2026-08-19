@@ -112,12 +112,6 @@ export type SessionRuntime = {
   running: boolean
 }
 
-export type PlanStep = {
-  id: string
-  description: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
-}
-
 export type WorkflowNode = {
   workflow: Workflow
   children: string[]

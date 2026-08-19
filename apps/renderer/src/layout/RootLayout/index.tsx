@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { SideBar } from './Sidebar'
 import { Titlebar } from './Titlebar'
+import { CommandPalette } from './CommandPalette'
 
 export default function Layout() {
   return (
@@ -12,6 +13,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   )
 }
