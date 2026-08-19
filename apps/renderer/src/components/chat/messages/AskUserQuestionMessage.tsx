@@ -54,10 +54,7 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
   const isFirst = currentIndex === 0
   const isLast = currentIndex === displayQuestions.length - 1
 
-  const options = useMemo(
-    () => [...(question?.options ?? []).slice(0, 3), { label: '其他', value: OTHER_VALUE }],
-    [question]
-  )
+  const options = question?.options ?? []
 
   if (!question) return null
 

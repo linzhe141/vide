@@ -4,7 +4,7 @@ import type { ToolCall } from '@vide/ai'
 import type { SessionSource } from '@vide/config'
 import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
-import { deriveSessionFromData } from './deriveSession'
+import { buildSessionFromData } from './buildSession'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
 type SessionState = {
@@ -114,7 +114,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       async loadSession(sessionId) {
         const data = await window.ipcRendererApi.invoke('agent-resume-session', { sessionId })
         if (!data) return
-        const derived = deriveSessionFromData(data)
+        const derived = buildSessionFromData(data)
         set((state) => {
           const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
           if (existingIndex >= 0) {

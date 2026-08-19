@@ -10,11 +10,7 @@ import type {
   WorkflowLogEvent,
   WorkflowNode,
 } from './types'
-import {
-  ASK_USER_QUESTION_TOOL_NAME,
-  parseAskQuestionAnswerPayload,
-  sanitizeAskUserQuestions,
-} from './askQuestion'
+import { ASK_USER_QUESTION_TOOL_NAME, sanitizeAskUserQuestions } from './askQuestion'
 
 /**
  * 依据 SQLite 持久化的 session data 派生前端 UI 态：
@@ -22,12 +18,12 @@ import {
  * - workflow logs 保留给日志面板展示，不参与 ask-question / user message 的位置派生；
  * - 少量跨 workflow 规则（如 ask-question 的答案 input）在前端按需解释。
  */
-export function deriveSessionFromData(data: SessionDataDto): Session {
+export function buildSessionFromData(data: SessionDataDto): Session {
   const workflowNodesMap: Record<string, WorkflowNode> = {}
   const branches: SessionBranch[] = []
 
   for (const wf of data.workflows) {
-    const workflow = deriveWorkflow(wf)
+    const workflow = buildWorkflow(wf)
     const node: WorkflowNode = {
       workflow,
       parent: wf.parentWorkflowId,
@@ -61,7 +57,7 @@ export function deriveSessionFromData(data: SessionDataDto): Session {
   }
 }
 
-function deriveWorkflow(wf: SessionWorkflowData): Workflow {
+function buildWorkflow(wf: SessionWorkflowData): Workflow {
   const decoded = decodeAgentMessages(wf.agentMessages)
 
   let runtimeStatus: Workflow['runtime']['status']
@@ -87,20 +83,9 @@ function deriveWorkflow(wf: SessionWorkflowData): Workflow {
     input: wf.input,
     inputSource: wf.inputSource,
     feedback: wf.feedback,
-    events: deriveLogEvents(wf.logs),
-    messages: deriveMessages(decoded, wf),
+    events: buildLogEvents(wf.logs),
+    messages: buildMessages(decoded, wf),
     runtime: { status: runtimeStatus },
-  }
-
-  // 若 messages 为空但 input 存在，补一条 user message（保证 UI 有输入展示）
-  const isDesktopAskAnswerInput =
-    wf.inputSource === 'desktop' && parseAskQuestionAnswerPayload(wf.input) !== null
-  if (!isDesktopAskAnswerInput && !workflow.messages.some((m) => m.role === 'user') && wf.input) {
-    workflow.messages.unshift({
-      id: nanoid(),
-      role: 'user',
-      content: wf.input,
-    })
   }
 
   return workflow
@@ -121,7 +106,7 @@ function decodeAgentMessages(
   return result
 }
 
-function deriveLogEvents(logs: WorkflowLogDto[]): WorkflowLogEvent[] {
+function buildLogEvents(logs: WorkflowLogDto[]): WorkflowLogEvent[] {
   return logs.map((log) => {
     let payload: unknown = undefined
     if (log.payload) {
@@ -141,16 +126,13 @@ function deriveLogEvents(logs: WorkflowLogDto[]): WorkflowLogEvent[] {
 }
 
 /** 依据 agent messages 派生 UI 的 SessionMessage[]。 */
-function deriveMessages(
+function buildMessages(
   agentMessages: { message: AgentMessage; createdAt: number }[],
-  workflow: SessionWorkflowData
+  _workflow: SessionWorkflowData
 ): SessionMessage[] {
   const messages: SessionMessage[] = []
   const deferredAskQuestionMessages: SessionMessage[] = []
   const toolCallStates = new Map<string, ToolCallState>()
-  const hiddenAnswerPayload =
-    workflow.inputSource === 'desktop' ? parseAskQuestionAnswerPayload(workflow.input) : null
-  let skippedAnswerInputUser = false
 
   const scrollInto = <T extends SessionMessage>(m: T): T => {
     messages.push(m)
@@ -160,15 +142,10 @@ function deriveMessages(
   for (const { message } of agentMessages) {
     switch (message.role) {
       case 'user': {
-        const content = String(message.content ?? '')
-        if (!skippedAnswerInputUser && hiddenAnswerPayload && content === workflow.input) {
-          skippedAnswerInputUser = true
-          break
-        }
         scrollInto({
           id: nanoid(),
           role: 'user',
-          content,
+          content: String(message.content ?? ''),
         })
         break
       }

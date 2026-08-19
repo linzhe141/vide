@@ -5,6 +5,7 @@ import { useEffect, useState, type PropsWithChildren } from 'react'
 import { createBranchPayload } from '../SessionActions'
 import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions } from '../../../store/sessionStore'
+import { parseAskQuestionAnswerPayload } from '../../../store/sessionStore/askQuestion'
 
 export function UserInputMessage({
   message,
@@ -20,7 +21,9 @@ export function UserInputMessage({
   const isWechatBotInput = workflow.inputSource === 'wechat-bot'
   const sourceLabel = isWechatBotInput ? 'WeChat Bot' : 'Desktop'
   const SourceIcon = isWechatBotInput ? MessageCircle : Monitor
-
+  if (workflow.inputSource === 'desktop' && parseAskQuestionAnswerPayload(message.content)) {
+    return null
+  }
   return (
     <div className='group flex justify-end px-3 py-2'>
       <div className='max-w-[min(78%,720px)] space-y-1.5'>
