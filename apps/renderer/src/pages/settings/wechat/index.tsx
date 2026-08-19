@@ -5,16 +5,27 @@ import { Button } from '@/ui/Button'
 
 export function WechatBotSettings() {
   const [loading, setLoading] = useState(false)
-  const [authenticated, setAuthenticated] = useState(false)
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [notice, setNotice] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
+    let disposed = false
+
+    void window.ipcRendererApi.invoke('wechat-get-runtime-status').then((status) => {
+      if (disposed) return
+      setAuthenticated(status.authenticated)
+    })
+
     const remove = window.ipcRendererApi.on('weixin-bot-auth-success', () => {
       setLoading(false)
       setAuthenticated(true)
-      setNotice({ success: true, message: '认证成功，Bot 已连接。' })
+      setNotice({ success: true, message: '认证成功，Bot 已完成登录认证。' })
     })
-    return remove
+
+    return () => {
+      disposed = true
+      remove()
+    }
   }, [])
 
   const handleGetQR = useCallback(async () => {
@@ -50,13 +61,18 @@ export function WechatBotSettings() {
         </div>
       )}
 
-      {authenticated ? (
+      {authenticated === null ? (
+        <section className='bg-card border-border flex flex-col items-center gap-4 rounded-2xl border p-10'>
+          <LoaderCircle className='text-primary h-10 w-10 animate-spin' />
+          <div className='text-foreground font-medium'>正在检查认证状态…</div>
+        </section>
+      ) : authenticated ? (
         <section className='bg-card border-border rounded-2xl border p-8'>
           <div className='flex items-center gap-3'>
             <CheckCircle2 className='h-8 w-8 text-emerald-500' />
             <div>
               <h2 className='text-foreground text-lg font-semibold'>认证成功</h2>
-              <p className='text-text-secondary text-sm'>微信 Bot 已完成登录并连接。</p>
+              <p className='text-text-secondary text-sm'>微信 Bot 已完成登录认证。</p>
             </div>
           </div>
         </section>

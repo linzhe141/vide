@@ -3,6 +3,7 @@ import { WindowManager } from './modules/windowManager'
 import { IpcService } from './ipc'
 import { AgentManager } from './modules/agentManager'
 import { WorkspaceManager } from './modules/workspaceManager'
+import { WechatBotManager } from './modules/wechatBotManager'
 import { logger } from './logger'
 import electronUpdater from 'electron-updater'
 import { app, Menu } from 'electron'
@@ -13,6 +14,7 @@ export class AppManager {
   windowManager: WindowManager
   ipcService: IpcService
   workspaceManager: WorkspaceManager
+  wechatBotManager: WechatBotManager
 
   constructor() {
     this.databaseManager = new DatabaseManager()
@@ -21,6 +23,7 @@ export class AppManager {
     this.windowManager = new WindowManager(this)
     this.ipcService = new IpcService(this)
     this.workspaceManager = new WorkspaceManager(this)
+    this.wechatBotManager = new WechatBotManager(this)
   }
 
   init() {
@@ -30,6 +33,7 @@ export class AppManager {
     this.windowManager.init()
     this.ipcService.registerIpcMainHandle()
     this.workspaceManager.init()
+    this.wechatBotManager.init()
 
     this.setupApplicationMenu()
     this.autoUpdate()
