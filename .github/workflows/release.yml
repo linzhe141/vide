@@ -10,7 +10,15 @@ permissions:
   contents: write
 
 jobs:
+  ensure_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+
   release:
+    needs: ensure_release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
