@@ -8,6 +8,7 @@
   "description": "a llm agent electron app",
   "packageManager": "pnpm@10.5.1",
   "scripts": {
+    "patch-version": "node ./scripts/patch-version.mjs",
     "preview": "pnpm --dir apps/main preview",
     "dev": "pnpm --dir apps/main dev",
     "build": "pnpm clean && pnpm --dir apps/main build",

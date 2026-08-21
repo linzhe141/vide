@@ -11,6 +11,7 @@ import { ipcMainApi } from './ipc/api/ipcMain'
 import type { AppUpdateStatus } from './ipc/api/channels'
 
 let hasInitializedAutoUpdate = false
+const PRERELEASE_UPDATE_FEED_URL = 'https://github.com/linzhe141/vide/releases/latest/download'
 
 export class AppManager {
   agentManager: AgentManager
@@ -102,6 +103,13 @@ export class AppManager {
     autoUpdater.autoDownload = true
     autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.allowPrerelease = app.getVersion().includes('-')
+    if (autoUpdater.allowPrerelease) {
+      autoUpdater.setFeedURL(PRERELEASE_UPDATE_FEED_URL)
+      logger.info('autoUpdater using latest-release generic feed for prerelease builds', {
+        feedUrl: PRERELEASE_UPDATE_FEED_URL,
+        currentVersion: app.getVersion(),
+      })
+    }
 
     autoUpdater.on('checking-for-update', () => {
       this.setUpdateStatus({
