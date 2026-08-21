@@ -15,4 +15,4 @@ This is an Electron-based LLM agent application.
 ## GitHub Workflows
 
 - `.github/workflows/build.yml`: run the bundle build on pushes to `main` and on pull requests.
-- `.github/workflows/release.yml`: publish release assets when a `v*` tag is pushed or when the workflow is triggered manually.
+- `.github/workflows/release.yml`: publish release assets only when a `v*` tag is pushed, and the release must match that tag exactly.

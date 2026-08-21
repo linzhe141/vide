@@ -24,6 +24,8 @@ export default {
       provider: 'github',
       owner: 'linzhe141',
       repo: 'vide',
+      vPrefixedTagName: true,
+      releaseType: 'release',
     },
   ],
 

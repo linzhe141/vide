@@ -62,10 +62,30 @@ export type WorkspaceFilePreview =
       message: string
     }
 
+export type AppUpdateStatus = {
+  phase:
+    | 'idle'
+    | 'checking'
+    | 'available'
+    | 'not-available'
+    | 'downloading'
+    | 'downloaded'
+    | 'error'
+  message: string
+  currentVersion: string
+  latestVersion: string | null
+  downloadProgress: number | null
+  isPackaged: boolean
+  allowPrerelease: boolean
+}
+
 export interface RenderChannel {
   // electron store
   'get-settings-store': () => Settings
   'dispatch-settings-store': (data: Record<string, unknown>) => void
+  'get-app-update-status': () => Promise<AppUpdateStatus>
+  'check-for-updates': () => Promise<AppUpdateStatus>
+  'install-update-and-restart': () => Promise<void>
 
   // window
   'maxmize-window': () => void
@@ -167,6 +187,7 @@ export interface RenderChannel {
 
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
+  'app-update-status': (status: AppUpdateStatus) => void
 
   'weixin-bot-auth-success': () => void
 
