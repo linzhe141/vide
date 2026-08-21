@@ -9,7 +9,8 @@ import { useChatContext } from '@/hooks/useChatContext'
  * - 新会话：welcome 页暂存的首条输入在这里发出去；会话占位由全局
  *   useAgentSessionEvent 监听到 background-create-session 后写入 sessionStore。
  * - 已存在的持久化会话（重启后 / 从历史列表进入）：通过 loadSession 从 SQLite
- *   拉取完整数据（agent messages + workflow logs），并派生到 UI 侧的 message。
+ *   拉取完整数据；若 main 进程里还有未落库的运行中 workflow，再补回放 recordedEvents，
+ *   让 UI 恢复 streaming 状态并继续接收后续事件。
  */
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()

@@ -5,23 +5,42 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
-  Code2,
   Ellipsis,
-  FileEdit,
-  FileSearch,
-  Replace,
+  FilePlus2,
+  FileText,
+  PenLine,
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
-import { DiffPreview } from './DiffPreview'
 import { PreviewFileButton } from './PreviewFileButton'
 
-type SearchReplaceToolCallProps = {
+type ReadFileToolCallProps = {
   tool: ToolCall
   result?: ToolCallState['result']
 }
 
-export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallProps) {
+type WriteFileToolCallProps = {
+  tool: ToolCall
+  result?: ToolCallState['result']
+}
+
+type ReadFileResult = {
+  path?: string
+  resolvedPath?: string
+  encoding?: string
+  size?: number
+  sizeFormatted?: string
+  truncated?: boolean
+  content?: string
+}
+
+type WriteFileResult = {
+  path?: string
+  size?: number
+  message?: string
+}
+
+export function ReadFileToolCall({ tool, result }: ReadFileToolCallProps) {
   const [open, setOpen] = useState(false)
   const isRunning = (tool.status === 'auto-approved' || tool.status === 'human-approved') && !result
   const isSuccess = result?.status === 'success'
@@ -30,52 +49,35 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
 
   const args = parseToolArguments(tool.function.arguments)
   const filePath = typeof args?.path === 'string' ? args.path : ''
-  const oldText = typeof args?.oldText === 'string' ? args.oldText : ''
-  const newText = typeof args?.newText === 'string' ? args.newText : ''
-
-  const editResult = result?.result as
-    | {
-        success?: boolean
-        path?: string
-        size?: number
-        message?: string
-        diff?: string
-        linesAdded?: number
-        linesDeleted?: number
-        replacements?: number
-      }
-    | undefined
-  const previewPath = getPreviewPath(editResult?.path, filePath)
+  const readResult = (result?.result ?? undefined) as ReadFileResult | undefined
+  const previewPath = getPreviewPath(readResult?.resolvedPath, filePath)
+  const svgPreviewUrl =
+    isSuccess && isSvgPath(previewPath) && typeof readResult?.content === 'string'
+      ? toSvgDataUrl(readResult.content)
+      : null
 
   return (
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='group border-border/80 from-foreground/[0.04] to-background hover:border-primary/25 dark:from-foreground/[0.06] dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-gradient-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='group border-border/80 from-foreground/4 to-background hover:border-primary/25 dark:from-foreground/6 dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-linear-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='bg-foreground/6 text-foreground dark:bg-foreground/10 shrink-0 rounded-2xl p-2'>
-          <FileSearch size={17} strokeWidth={1.8} />
+          <FileText size={17} strokeWidth={1.8} />
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-3'>
             <span className='text-foreground truncate font-mono text-[14px] font-medium'>
-              {filePath ? filePath.split('/').pop() : 'search-replace'}
+              {filePath ? filePath.split('/').pop() : 'read-file'}
             </span>
             {isSuccess && <StatusBadge variant='success' label='Done' />}
             {isRunning && <StatusBadge variant='running' label='Running' />}
             {isError && <StatusBadge variant='error' label='Failed' />}
           </div>
           <div className='text-text-secondary mt-1 flex items-center gap-2 text-xs'>
-            <Replace size={12} />
-            <span>Search & Replace</span>
-            {editResult?.replacements !== undefined && (
-              <span>{editResult.replacements} replacement(s)</span>
-            )}
-            {editResult?.linesAdded !== undefined && editResult?.linesDeleted !== undefined && (
-              <span>
-                +{editResult.linesAdded} -{editResult.linesDeleted}
-              </span>
-            )}
+            <span>Read file</span>
+            {readResult?.sizeFormatted && <span>{readResult.sizeFormatted}</span>}
+            {readResult?.truncated && <span>Truncated</span>}
           </div>
         </div>
         <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
@@ -100,53 +102,34 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
             <section className='space-y-2'>
               <div className='flex items-center justify-between gap-3'>
                 <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  <FileEdit size={13} />
+                  <FileText size={13} />
                   File
                 </div>
                 <PreviewFileButton path={previewPath} disabled={!isSuccess} />
               </div>
-              <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+              <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
                 {previewPath || filePath || 'N/A'}
               </pre>
             </section>
 
-            <section className='space-y-2'>
-              <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <Replace size={13} />
-                Search Pattern (Regex)
-              </div>
-              <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                {oldText || 'N/A'}
-              </pre>
-            </section>
-
-            <section className='space-y-2'>
-              <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <Code2 size={13} />
-                Replace With
-              </div>
-              <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                {newText || 'N/A'}
-              </pre>
-            </section>
-
-            {editResult?.diff && (
+            {typeof readResult?.content === 'string' && (
               <section className='space-y-2'>
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  Diff
+                  Content
                 </div>
-                <DiffPreview diff={editResult.diff} />
-              </section>
-            )}
-
-            {editResult?.message && (
-              <section className='space-y-2'>
-                <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  Result
-                </div>
-                <div className='rounded-2xl bg-emerald-500/[0.06] p-3 text-sm text-emerald-600 dark:text-emerald-300'>
-                  {editResult.message}
-                </div>
+                {svgPreviewUrl ? (
+                  <div className='bg-foreground/4 flex max-h-96 items-center justify-center overflow-auto rounded-2xl p-4'>
+                    <img
+                      src={svgPreviewUrl}
+                      alt={previewPath || filePath || 'SVG preview'}
+                      className='max-h-full max-w-full object-contain'
+                    />
+                  </div>
+                ) : (
+                  <pre className='bg-foreground/4 text-foreground max-h-80 overflow-auto rounded-2xl p-3 font-mono text-xs leading-6 whitespace-pre-wrap'>
+                    {readResult.content}
+                  </pre>
+                )}
               </section>
             )}
 
@@ -155,7 +138,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Error
                 </div>
-                <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                   {typeof result.error === 'string'
                     ? result.error
                     : JSON.stringify(result.error, null, 2)}
@@ -169,65 +152,46 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
   )
 }
 
-type EditFileToolCallProps = {
-  tool: ToolCall
-  result?: ToolCallState['result']
-}
-
-export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
+export function WriteFileToolCall({ tool, result }: WriteFileToolCallProps) {
   const [open, setOpen] = useState(false)
   const isRunning = (tool.status === 'auto-approved' || tool.status === 'human-approved') && !result
   const isSuccess = result?.status === 'success'
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-
   const args = parseToolArguments(tool.function.arguments)
   const filePath = typeof args?.path === 'string' ? args.path : ''
-  const edits = Array.isArray(args?.edits) ? args.edits : []
-
-  const editResult = result?.result as
-    | {
-        success?: boolean
-        path?: string
-        size?: number
-        message?: string
-        diff?: string
-        linesAdded?: number
-        linesDeleted?: number
-        replacements?: number
-      }
-    | undefined
-  const previewPath = getPreviewPath(editResult?.path, filePath)
+  const content = typeof args?.content === 'string' ? args.content : ''
+  const writeResult = (result?.result ?? undefined) as WriteFileResult | undefined
+  const isAppend = tool.function.name === 'append-file'
+  const previewPath = getPreviewPath(writeResult?.path, filePath)
+  const svgPreviewUrl =
+    isSuccess && !isAppend && isSvgPath(previewPath) && content ? toSvgDataUrl(content) : null
 
   return (
     <div className='space-y-2'>
       <button
         onClick={() => setOpen((value) => !value)}
-        className='group border-border/80 from-foreground/[0.04] to-background hover:border-primary/25 dark:from-foreground/[0.06] dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-gradient-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
+        className='group border-border/80 from-foreground/4 to-background hover:border-primary/25 dark:from-foreground/6 dark:to-background/60 flex w-full items-center gap-3 rounded-[22px] border bg-linear-to-br px-4 py-3 text-left shadow-[0_2px_18px_rgba(0,0,0,0.03)] transition dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)]'
       >
         <div className='bg-foreground/6 text-foreground dark:bg-foreground/10 shrink-0 rounded-2xl p-2'>
-          <FileEdit size={17} strokeWidth={1.8} />
+          {isAppend ? (
+            <PenLine size={17} strokeWidth={1.8} />
+          ) : (
+            <FilePlus2 size={17} strokeWidth={1.8} />
+          )}
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-3'>
             <span className='text-foreground truncate font-mono text-[14px] font-medium'>
-              {filePath ? filePath.split('/').pop() : 'edit-file'}
+              {filePath ? filePath.split('/').pop() : tool.function.name}
             </span>
             {isSuccess && <StatusBadge variant='success' label='Done' />}
             {isRunning && <StatusBadge variant='running' label='Running' />}
             {isError && <StatusBadge variant='error' label='Failed' />}
           </div>
           <div className='text-text-secondary mt-1 flex items-center gap-2 text-xs'>
-            <Code2 size={12} />
-            <span>{edits.length} edit(s)</span>
-            {editResult?.replacements !== undefined && (
-              <span>{editResult.replacements} replacement(s)</span>
-            )}
-            {editResult?.linesAdded !== undefined && editResult?.linesDeleted !== undefined && (
-              <span>
-                +{editResult.linesAdded} -{editResult.linesDeleted}
-              </span>
-            )}
+            <span>{isAppend ? 'Append file' : 'Write file'}</span>
+            {typeof writeResult?.size === 'number' && <span>{writeResult.size} bytes</span>}
           </div>
         </div>
         <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
@@ -252,56 +216,44 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
             <section className='space-y-2'>
               <div className='flex items-center justify-between gap-3'>
                 <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  <FileEdit size={13} />
+                  <FileText size={13} />
                   File
                 </div>
                 <PreviewFileButton path={previewPath} disabled={!isSuccess} />
               </div>
-              <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
+              <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
                 {previewPath || filePath || 'N/A'}
               </pre>
             </section>
 
-            <section className='space-y-2'>
-              <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <Code2 size={13} />
-                Edits ({edits.length})
-              </div>
-              <div className='space-y-2'>
-                {edits.map((edit: { oldText: string; newText: string }, index: number) => (
-                  <div key={index} className='bg-foreground/[0.04] space-y-1.5 rounded-2xl p-3'>
-                    <div className='flex items-center gap-2 text-xs'>
-                      <span className='text-text-secondary font-medium'>#{index + 1}</span>
-                      <span className='text-text-secondary'>Search:</span>
-                      <span className='text-foreground font-mono'>{edit.oldText || '(empty)'}</span>
-                    </div>
-                    <div className='flex items-center gap-2 text-xs'>
-                      <span className='text-text-secondary'>Replace:</span>
-                      <span className='font-mono text-emerald-600 dark:text-emerald-300'>
-                        {edit.newText || '(empty)'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {editResult?.diff && (
+            {content && (
               <section className='space-y-2'>
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
-                  Diff
+                  {svgPreviewUrl ? 'Preview' : 'Payload'}
                 </div>
-                <DiffPreview diff={editResult.diff} />
+                {svgPreviewUrl ? (
+                  <div className='bg-foreground/4 flex max-h-96 items-center justify-center overflow-auto rounded-2xl p-4'>
+                    <img
+                      src={svgPreviewUrl}
+                      alt={previewPath || filePath || 'SVG preview'}
+                      className='max-h-full max-w-full object-contain'
+                    />
+                  </div>
+                ) : (
+                  <pre className='bg-foreground/4 text-foreground max-h-80 overflow-auto rounded-2xl p-3 font-mono text-xs leading-6 whitespace-pre-wrap'>
+                    {content}
+                  </pre>
+                )}
               </section>
             )}
 
-            {editResult?.message && (
+            {writeResult?.message && (
               <section className='space-y-2'>
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Result
                 </div>
-                <div className='rounded-2xl bg-emerald-500/[0.06] p-3 text-sm text-emerald-600 dark:text-emerald-300'>
-                  {editResult.message}
+                <div className='rounded-2xl bg-emerald-500/6 p-3 text-sm text-emerald-600 dark:text-emerald-300'>
+                  {writeResult.message}
                 </div>
               </section>
             )}
@@ -311,7 +263,7 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Error
                 </div>
-                <pre className='overflow-auto rounded-2xl bg-red-500/[0.06] p-3 font-mono text-xs leading-6 text-red-500'>
+                <pre className='overflow-auto rounded-2xl bg-red-500/6 p-3 font-mono text-xs leading-6 text-red-500'>
                   {typeof result.error === 'string'
                     ? result.error
                     : JSON.stringify(result.error, null, 2)}
@@ -365,4 +317,12 @@ function formatDuration(durationMs?: number) {
 function getPreviewPath(resultPath: string | undefined, argumentPath: string) {
   if (typeof resultPath === 'string' && resultPath) return resultPath
   return argumentPath || null
+}
+
+function isSvgPath(filePath: string | null) {
+  return typeof filePath === 'string' && filePath.toLowerCase().endsWith('.svg')
+}
+
+function toSvgDataUrl(content: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`
 }

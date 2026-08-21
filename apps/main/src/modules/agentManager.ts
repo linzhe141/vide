@@ -1,4 +1,4 @@
-import { Agent } from '@vide/agent'
+import { Agent, Workflow } from '@vide/agent'
 import type { Session } from '@vide/agent'
 import type { WorkflowEvent } from '@vide/agent'
 import type { AppManager } from '@/appManager'
@@ -9,6 +9,7 @@ import { SessionRepository } from '@/modules/sessionRepository'
 import { SessionLoader } from '@/modules/sessionLoader'
 import { WorkflowPersister } from '@/modules/workflowPersister'
 import type { SessionSource } from '@vide/config'
+import type { RunningWorkflowReplay } from '@/ipc/api/channels'
 
 type StreamEvent = WorkflowEvent & {
   ctx: { sessionId: string | null; workflowId: string | null }
@@ -205,6 +206,29 @@ export class AgentManager {
 
   hasSession(sessionId: string): boolean {
     return this.sessions.has(sessionId)
+  }
+
+  getRunningWorkflowReplays(sessionId: string): RunningWorkflowReplay[] {
+    const session = this.sessions.get(sessionId)
+    if (!session) return []
+
+    return Object.values(session.sessionWorkflowNodes).flatMap((node) => {
+      if (node.stopStatus || !(node.workflow instanceof Workflow)) {
+        return []
+      }
+
+      const recordedEvents = [...node.workflow.stream.recordedEvents]
+      if (!recordedEvents.length) {
+        return []
+      }
+
+      return [
+        {
+          workflowId: node.workflow.id,
+          recordedEvents,
+        },
+      ]
+    })
   }
 
   async prompt(

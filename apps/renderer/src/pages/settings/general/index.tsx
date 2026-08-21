@@ -4,10 +4,12 @@ import { type ThemeColor, useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/Button'
 import { useSessionStoreActions } from '@/store/sessionStore'
+import { useHistoryStoreActions } from '@/store/historyStore'
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
   const { clearSessions } = useSessionStoreActions()
+  const { clear } = useHistoryStoreActions()
 
   return (
     <div>
@@ -120,6 +122,7 @@ export function GeneralSettings() {
                   try {
                     await window.ipcRendererApi.invoke('dev-delete-database-rows')
                     clearSessions()
+                    clear()
                     alert('Database cleared successfully.')
                   } catch (error) {
                     console.error('Failed to delete database rows:', error)

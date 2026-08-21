@@ -12,6 +12,15 @@ import type { WorkflowEvent, SessionEvent } from '@vide/agent'
 
 export type { FileNode, SessionRowDto, SessionDataDto }
 
+export type WorkflowEventWithContext = WorkflowEvent & {
+  ctx: { sessionId: string | null; workflowId: string | null }
+}
+
+export type RunningWorkflowReplay = {
+  workflowId: string
+  recordedEvents: WorkflowEventWithContext[]
+}
+
 export type WorkspaceExplorerNode = {
   name: string
   type: 'file' | 'folder'
@@ -153,7 +162,7 @@ export interface RenderChannel {
     sessionId: string
     workflowId: string
   }) => Promise<boolean>
-  'resume-running-workflow': (data: { sessionId: string; workflowId: string }) => Promise<void>
+  'resume-running-workflow': (data: { sessionId: string }) => Promise<RunningWorkflowReplay[]>
 }
 
 export type MainChannel = {

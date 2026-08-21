@@ -83,6 +83,23 @@ export function WorkspacePreview({ preview, error }: WorkspacePreviewProps) {
   }
 
   if (preview.kind === 'text') {
+    const svgPreviewUrl = isSvgPath(preview.path) ? toSvgDataUrl(preview.content) : null
+
+    if (svgPreviewUrl) {
+      return (
+        <div className='flex h-full flex-col'>
+          <PreviewHeader icon={<ImageIcon size={14} />} path={preview.path} />
+          <div className='bg-foreground/3 flex h-0 flex-1 items-center justify-center p-4'>
+            <img
+              src={svgPreviewUrl}
+              alt={preview.path}
+              className='max-h-full max-w-full object-contain'
+            />
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className='flex h-full flex-col'>
         <PreviewHeader icon={<FileText size={14} />} path={preview.path} />
@@ -105,6 +122,14 @@ export function WorkspacePreview({ preview, error }: WorkspacePreviewProps) {
       icon={<AlertCircle size={16} className='text-warning' />}
     />
   )
+}
+
+function isSvgPath(filePath: string) {
+  return filePath.toLowerCase().endsWith('.svg')
+}
+
+function toSvgDataUrl(content: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`
 }
 
 function PreviewHeader({

@@ -14,6 +14,7 @@ import ImageToolCall from './ImageToolCall'
 import BashToolCall from './BashToolCall'
 import WebSearchToolCall from './WebSearchToolCall'
 import { EditFileToolCall, SearchReplaceToolCall } from './EditFileToolCall'
+import { ReadFileToolCall, WriteFileToolCall } from './FileToolCall'
 import { SubAgentToolCall } from './SubAgentToolCall'
 import TodoToolCall from './TodoToolCall'
 
@@ -45,6 +46,14 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 
         if (tool.function.name === 'search-replace') {
           return <SearchReplaceToolCall key={tool.id} tool={tool} result={state.result} />
+        }
+
+        if (tool.function.name === 'read-file') {
+          return <ReadFileToolCall key={tool.id} tool={tool} result={state.result} />
+        }
+
+        if (tool.function.name === 'write-file' || tool.function.name === 'append-file') {
+          return <WriteFileToolCall key={tool.id} tool={tool} result={state.result} />
         }
 
         if (tool.function.name === 'call-sub-agent') {

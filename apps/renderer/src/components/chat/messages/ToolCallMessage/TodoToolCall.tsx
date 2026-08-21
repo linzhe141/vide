@@ -38,7 +38,8 @@ function TodoToolCall({ result }: TodoToolCallProps) {
 
   const completed = counts.completed ?? 0
   const total = todos.length
-
+  // 回显的时候，不需要显示进度条，只有在运行中才显示
+  if (total === 0) return null
   if (isError) {
     return (
       <div className='border-border bg-background flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left'>

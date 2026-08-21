@@ -112,8 +112,12 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         })
       },
       async loadSession(sessionId) {
-        const data = await window.ipcRendererApi.invoke('agent-resume-session', { sessionId })
+        const [data, runningWorkflows] = await Promise.all([
+          window.ipcRendererApi.invoke('agent-resume-session', { sessionId }),
+          window.ipcRendererApi.invoke('resume-running-workflow', { sessionId }),
+        ])
         if (!data) return
+
         const derived = buildSessionFromData(data)
         set((state) => {
           const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
@@ -121,6 +125,16 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             state.sessions[existingIndex] = derived
           } else {
             state.sessions.push(derived)
+          }
+        })
+
+        if (!runningWorkflows.length) return
+
+        set((state) => {
+          for (const runningWorkflow of runningWorkflows) {
+            for (const event of runningWorkflow.recordedEvents) {
+              handleWorkflowEvent(state, event)
+            }
           }
         })
       },

@@ -46,8 +46,12 @@ export class AgentIpcMainService implements IpcMainService {
       return !!node?.stopStatus
     })
 
-    ipcMainApi.handle('resume-running-workflow', async (_data) => {
-      // v2 workflow stream runs continuously in-memory; no extra resume logic is required.
+    ipcMainApi.handle('resume-running-workflow', async ({ sessionId }) => {
+      await agentManager.ensureSessionLoaded(sessionId)
+      if (!agentManager.hasSession(sessionId)) {
+        return []
+      }
+      return agentManager.getRunningWorkflowReplays(sessionId)
     })
 
     ipcMainApi.handle('agent-session-switch-auto-approve', async ({ sessionId, autoApprove }) => {
