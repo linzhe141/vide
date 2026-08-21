@@ -41,9 +41,8 @@ export default {
     target: ['nsis'],
   },
   nsis: {
-    oneClick: false,
+    oneClick: true,
     perMachine: true,
-    allowToChangeInstallationDirectory: true,
   },
   mac: {
     icon: '../../resources/logo.png',

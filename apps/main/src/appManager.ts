@@ -91,7 +91,7 @@ export class AppManager {
   installUpdateAndRestart() {
     const { autoUpdater } = electronUpdater
     if (this.updateStatus.phase !== 'downloaded') return
-    autoUpdater.quitAndInstall()
+    autoUpdater.quitAndInstall(true, true)
   }
 
   autoUpdate() {
