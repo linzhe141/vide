@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
-import LOGOIMG from './logo.png'
 import { ChatInput } from '../../components/chat/ChatInput'
 import { useState } from 'react'
+import { appLogoUrl } from '@/lib/appLogo'
 
 export function Welcome() {
   const [workspacePath, setWorkspacePath] = useState<string | null>(null)
@@ -31,10 +31,14 @@ export function Welcome() {
 
   return (
     <div className='flex h-full w-full flex-col items-center justify-center gap-12 px-6'>
-      {/* 标题和描述 */}
       <div className='flex flex-col items-center text-center'>
-        {/* <img className='size-80' src={LOGOIMG}></img> */}
-        <p className='text-text-secondary -mt-10 max-w-md text-lg'>
+        <img
+          className='mb-6 size-28 rounded-[1.75rem] shadow-lg'
+          src={appLogoUrl}
+          alt='vide logo'
+        />
+        <h1 className='text-foreground text-3xl font-semibold tracking-tight'>vide</h1>
+        <p className='text-text-secondary mt-3 max-w-md text-lg'>
           Start a conversation with your AI assistant. Ask anything, explore ideas, or get help with
           your tasks.
         </p>

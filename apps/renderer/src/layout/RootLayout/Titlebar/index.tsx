@@ -1,7 +1,7 @@
 import { Minus, Square, X, Copy } from 'lucide-react'
-import Logo from '../logo.png'
 import { useEffect, useState, type PropsWithChildren } from 'react'
 import { cn } from '@/lib/utils'
+import { appLogoUrl } from '@/lib/appLogo'
 
 const WindowState = {
   MINIMIZED: 'minimized',
@@ -34,7 +34,7 @@ export function Titlebar() {
   return (
     <div className='border-border flex h-10 justify-between border-b'>
       <div className='drag-region flex flex-1 items-center px-2'>
-        <img className='size-5' src={Logo}></img>
+        <img className='size-5' src={appLogoUrl} alt='vide logo' />
       </div>
       <div className='flex h-full items-center text-black dark:text-white'>
         <WindowOperationItem

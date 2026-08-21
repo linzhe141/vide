@@ -9,8 +9,8 @@
     "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",
     "build": "electron-vite build",
-    "pack:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
-    "release:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
+    "package": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
+    "release": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
     "rebuild:electron": "electron-rebuild",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts"
   },

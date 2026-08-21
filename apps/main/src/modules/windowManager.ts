@@ -4,8 +4,7 @@ import { IS_DEV } from '../utils'
 import { ipcMainApi } from '../ipc/api/ipcMain'
 import type { AppManager } from '@/appManager'
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const iconPath = path.join(__dirname, '../../../resources/logo.png')
+const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
 
 export class WindowManager {
   mainWindow: BrowserWindow = null!

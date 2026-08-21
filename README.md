@@ -8,8 +8,8 @@ This is an Electron-based LLM agent application.
 
 ## Build
 
-- `pnpm prebuild`: build the Electron main process, preload script, and renderer bundle.
-- `pnpm build`: create local desktop packages in `apps/main/dist/electron-pack`.
+- `pnpm build`: clean and build the Electron main process, preload script, and renderer bundle.
+- `pnpm package`: create local desktop packages in `apps/main/dist/electron-pack`.
 - `pnpm release`: build and publish release assets, intended for the tag-triggered GitHub workflow.
 
 ## GitHub Workflows

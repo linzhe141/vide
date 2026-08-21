@@ -10,17 +10,13 @@
   "scripts": {
     "preview": "pnpm --dir apps/main preview",
     "dev": "pnpm --dir apps/main dev",
-    "build:app": "pnpm --dir apps/main build",
-    "build:dist": "pnpm --dir apps/main pack:electron",
-    "release:dist": "pnpm --dir apps/main release:electron",
-    "prebuild": "pnpm build:app",
+    "build": "pnpm clean && pnpm --dir apps/main build",
+    "package": "pnpm build && pnpm --dir apps/main package",
+    "release": "pnpm build && pnpm --dir apps/main release",
     "rebuild:electron": "pnpm --dir apps/main rebuild:electron",
     "clean": "pnpm --dir apps/main clean",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "pack:electron": "pnpm --dir apps/main pack:electron",
-    "build": "pnpm clean && pnpm build:app && pnpm build:dist",
-    "release": "pnpm clean && pnpm build:app && pnpm release:dist",
     "db:generate": "pnpm --dir apps/main db:generate"
   },
   "dependencies": {
