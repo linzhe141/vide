@@ -1,9 +1,5 @@
-import { useMemo, useState } from 'react'
-import type {
-  AskQuestionAnswer,
-  AskUserQuestionSessionMessage,
-  Workflow,
-} from '@/store/sessionStore/types'
+import { memo, useMemo, useState } from 'react'
+import type { AskQuestionAnswer, AskUserQuestionSessionMessage } from '@/store/sessionStore/types'
 import { Check, ChevronLeft, ChevronRight, Circle, MessageSquareHeart, Send } from 'lucide-react'
 import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions, useSessionWorkflowNext } from '@/store/sessionStore'
@@ -14,13 +10,16 @@ import {
 } from '@/store/sessionStore/askQuestion'
 
 type AskUserQuestionMessageProps = {
-  workflow: Workflow
+  workflowId: string
   message: AskUserQuestionSessionMessage
 }
 
 const OTHER_VALUE = '__other__'
 
-export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMessageProps) {
+export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
+  workflowId,
+  message,
+}: AskUserQuestionMessageProps) {
   const { handleSend, running, sessionId } = useChatContext()
   const { updateAskQuestionAnswer } = useSessionStoreActions()
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -28,7 +27,7 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
 
   // 已提交判定：ask-question 属于某个 workflow，一旦用户提交答案就会产生下一个 workflow（子节点）。
   // 因此在 active branch 上「该 workflow 后面还有 workflow」= 已回答 → 只读展示。
-  const nextWorkflow = useSessionWorkflowNext(sessionId, workflow.id)
+  const nextWorkflow = useSessionWorkflowNext(sessionId, workflowId)
   const hasNext = !!nextWorkflow
   const nextWorkflowInput = nextWorkflow?.input
 
@@ -80,7 +79,7 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
   const saveAnswer = (answer: AskQuestionAnswer) => {
     updateAskQuestionAnswer({
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
       messageId: message.id,
       questionId: question.id,
       answer,
@@ -133,7 +132,7 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
     const payload = {
       type: ASK_QUESTION_ANSWER_TYPE,
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
       messageId: message.id,
       toolCallId: message.toolCallId,
       content: `用户回答了以下问题：\n${content}`,
@@ -277,4 +276,11 @@ export function AskUserQuestionMessage({ workflow, message }: AskUserQuestionMes
       )}
     </div>
   )
+}, areAskUserQuestionMessagePropsEqual)
+
+function areAskUserQuestionMessagePropsEqual(
+  prev: AskUserQuestionMessageProps,
+  next: AskUserQuestionMessageProps
+) {
+  return prev.workflowId === next.workflowId && prev.message === next.message
 }

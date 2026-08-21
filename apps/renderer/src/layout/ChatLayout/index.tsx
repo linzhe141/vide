@@ -4,7 +4,12 @@ import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
 import { useHistoryItems } from '../../store/historyStore'
 import { useChatContext } from '@/hooks/useChatContext'
-import { ChatLayoutContext, useChatLayout } from '@/hooks/useChatLayout'
+import {
+  ChatLayoutContext,
+  ChatLayoutScrollContext,
+  useChatLayout,
+  useChatLayoutScroll,
+} from '@/hooks/useChatLayout'
 import { InitSession } from './InitSession'
 import { ArrowDown, GitBranch } from 'lucide-react'
 import { MessageNavigator } from '../../components/chat/MessageNavigator'
@@ -44,10 +49,16 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
     openPanel(webSearchPanelId)
   }, [openPanel])
 
-  const chatLayoutProvideValue = useMemo(
+  const chatLayoutScrollValue = useMemo(
     () => ({
       scrollContainerRef,
       scrollToBottom,
+    }),
+    [scrollContainerRef, scrollToBottom]
+  )
+
+  const chatLayoutProvideValue = useMemo(
+    () => ({
       isPaneOpen: activePanelId !== null,
       activePanelId,
       activePanel,
@@ -56,21 +67,14 @@ export function ChatLayoutProvider({ children }: PropsWithChildren) {
       showWebSearchResults,
       closePane,
     }),
-    [
-      activePanel,
-      activePanelId,
-      closePane,
-      openPanel,
-      scrollContainerRef,
-      scrollToBottom,
-      showWebSearchResults,
-      togglePane,
-    ]
+    [activePanel, activePanelId, closePane, openPanel, showWebSearchResults, togglePane]
   )
   return (
-    <ChatLayoutContext.Provider value={chatLayoutProvideValue}>
-      {children}
-    </ChatLayoutContext.Provider>
+    <ChatLayoutScrollContext.Provider value={chatLayoutScrollValue}>
+      <ChatLayoutContext.Provider value={chatLayoutProvideValue}>
+        {children}
+      </ChatLayoutContext.Provider>
+    </ChatLayoutScrollContext.Provider>
   )
 }
 
@@ -78,6 +82,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { isPaneOpen, activePanel, activePanelId, togglePane } = useChatLayout()
+  const showSidePanel = isPaneOpen && activePanel
 
   const mainPane = (
     <div className='flex h-full min-w-0 flex-1 flex-col'>
@@ -110,22 +115,25 @@ export function ChatLayout({ children }: PropsWithChildren) {
     <div className='bg-background flex h-full flex-col' id='chat-wrapper'>
       <InitSession sessionId={sessionId} />
       <div className='flex h-0 flex-1'>
-        {isPaneOpen && activePanel ? (
-          <Group className='flex-1'>
-            <Panel minSize={`${MAIN_PANEL_MIN_WIDTH}px`}>{mainPane}</Panel>
-            <Separator className='group relative w-3 cursor-col-resize bg-transparent'></Separator>
-            <Panel
-              defaultSize={`${activePanel.defaultWidth}px`}
-              minSize={`${activePanel.minWidth}px`}
-              maxSize={activePanel.maxWidth ? `${activePanel.maxWidth}px` : undefined}
-              className='border-border bg-background min-w-0 border-l'
-            >
-              <activePanel.Component session={session} />
-            </Panel>
-          </Group>
-        ) : (
-          <div className='flex min-w-0 flex-1'>{mainPane}</div>
-        )}
+        <Group className='flex-1'>
+          <Panel id='chat-main-panel' minSize={`${MAIN_PANEL_MIN_WIDTH}px`}>
+            {mainPane}
+          </Panel>
+          {showSidePanel ? (
+            <>
+              <Separator className='group relative w-3 cursor-col-resize bg-transparent' />
+              <Panel
+                id={`chat-side-panel-${activePanel.id}`}
+                defaultSize={`${activePanel.defaultWidth}px`}
+                minSize={`${activePanel.minWidth}px`}
+                maxSize={activePanel.maxWidth ? `${activePanel.maxWidth}px` : undefined}
+                className='border-border bg-background min-w-0 border-l'
+              >
+                <activePanel.Component session={session} />
+              </Panel>
+            </>
+          ) : null}
+        </Group>
       </div>
     </div>
   )
@@ -137,7 +145,7 @@ export function ChatLayoutMessage({ children }: PropsWithChildren) {
   const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)
-  const { scrollContainerRef, scrollToBottom } = useChatLayout()
+  const { scrollContainerRef, scrollToBottom } = useChatLayoutScroll()
 
   useEffect(() => {
     const observer = new IntersectionObserver(

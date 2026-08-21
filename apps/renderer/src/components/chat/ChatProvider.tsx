@@ -4,13 +4,14 @@ import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionSt
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
   const sessionRuntime = useSessionRuntime(sessionId)!
+  const running = !!sessionRuntime?.running
   const { regenerateWorkflow } = useSessionStoreActions()
 
   // workflow 事件由全局 useAgentSessionEvent 统一分发到 session store，
   // 这里只是 fire-and-forget 触发主进程，不再自己开 stream / 监听 ipc
   const handleSend = useCallback(
     (input: string) => {
-      if (sessionRuntime.running) return
+      if (running) return
       window.ipcRendererApi.invoke('agent-session-send', {
         sessionId,
         input,
@@ -18,7 +19,7 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
       })
       return
     },
-    [sessionId, sessionRuntime]
+    [running, sessionId]
   )
 
   const handleStop = useCallback(() => {
@@ -44,13 +45,13 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
 
   const value: ChatContextType = useMemo(
     () => ({
-      running: !!sessionRuntime?.running,
+      running,
       handleSend,
       handleStop,
       handleRegenerate,
       sessionId,
     }),
-    [handleSend, handleStop, handleRegenerate, sessionId, sessionRuntime]
+    [handleSend, handleStop, handleRegenerate, running, sessionId]
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

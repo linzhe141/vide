@@ -33,8 +33,6 @@ const MemoCodeBlock = memo(CodeBlock, (prev, next) => {
 })
 
 export function CodeBlock({ code, lang }: { code: string; lang: string }) {
-  console.log('render CodeBlock~~~')
-
   const formatLang = lang as keyof typeof defaultLangs
   const highlightLang = defaultLangs[formatLang] !== undefined ? formatLang : FALLBACK_LANG
 

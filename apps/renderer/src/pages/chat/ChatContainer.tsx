@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useChatContext } from '@/hooks/useChatContext'
-import { useChatLayout } from '@/hooks/useChatLayout'
+import { useChatLayoutScroll } from '@/hooks/useChatLayout'
 import { MessageList } from '../../components/chat/MessageList'
 import { ChatInput } from '../../components/chat/ChatInput'
 import { ChatLayout, ChatLayoutInput, ChatLayoutMessage } from '../../layout/ChatLayout'
@@ -12,7 +12,7 @@ import {
 
 export function ChatContainer() {
   const { handleSend, handleStop, running, sessionId } = useChatContext()
-  const { scrollToBottom } = useChatLayout()
+  const { scrollToBottom } = useChatLayoutScroll()
   const session = useSession(sessionId)
   const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
   const { switchSessionAutoApprove, switchSessionThinkingMode } = useSessionStoreActions()

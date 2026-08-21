@@ -1,13 +1,13 @@
 import { useSessionWorkflows } from '../../store/sessionStore'
-import React from 'react'
-import { type Workflow } from '../../store/sessionStore/types'
+import React, { memo, useMemo } from 'react'
+import { type ToolCallState, type Workflow } from '../../store/sessionStore/types'
 
 import { useChatContext } from '@/hooks/useChatContext'
 import { MessageView } from './MessageView'
 import { SessionActions, RegeneratedBranchSwitcher } from './SessionActions'
 import { CircleStop } from 'lucide-react'
 
-export function MessageList() {
+export const MessageList = memo(function MessageList() {
   const { sessionId } = useChatContext()
   const workflows = useSessionWorkflows(sessionId)
 
@@ -18,27 +18,55 @@ export function MessageList() {
           <WorkflowView workflow={workflow} />
           {workflow.runtime.status === 'aborted' && <AbortedStatus />}
           {workflow.runtime.status === 'running' && <LoadingStatusCircle />}
-          {workflow.runtime.status === 'finished' && <SessionActions workflow={workflow} />}
-          <RegeneratedBranchSwitcher workflow={workflow} />
+          {workflow.runtime.status === 'finished' && (
+            <SessionActions
+              workflowId={workflow.id}
+              workflowInput={workflow.input}
+              feedback={workflow.feedback}
+            />
+          )}
+          <RegeneratedBranchSwitcher workflowId={workflow.id} />
         </React.Fragment>
       ))}
     </div>
   )
-}
+})
 
-function WorkflowView({ workflow }: { workflow: Workflow }) {
+const WorkflowView = memo(function WorkflowView({ workflow }: { workflow: Workflow }) {
+  const visibleMessages = useMemo(
+    () => workflow.messages.filter((message) => message.role !== 'workflow'),
+    [workflow.messages]
+  )
+
+  const latestWebSearchToolCall = useMemo<ToolCallState | null>(() => {
+    for (let index = workflow.messages.length - 1; index >= 0; index -= 1) {
+      const message = workflow.messages[index]
+      if (message.role !== 'tool-call') continue
+
+      const toolCall = message.toolCalls.find((item) => item.toolCall.function.name === 'websearch')
+      if (toolCall) return toolCall
+    }
+
+    return null
+  }, [workflow.messages])
+
   return (
     <div className='space-y-6' id={workflow.id}>
-      {workflow.messages
-        .filter((i) => i.role !== 'workflow')
-        .map((message) => {
-          return <MessageView key={message.id} workflow={workflow} message={message} />
-        })}
+      {visibleMessages.map((message) => {
+        return (
+          <MessageView
+            key={message.id}
+            workflow={workflow}
+            message={message}
+            latestWebSearchToolCall={latestWebSearchToolCall}
+          />
+        )
+      })}
     </div>
   )
-}
+})
 
-function LoadingStatusCircle() {
+const LoadingStatusCircle = memo(function LoadingStatusCircle() {
   return (
     <div className='flex items-center gap-1.5 px-1'>
       <div
@@ -58,9 +86,9 @@ function LoadingStatusCircle() {
       <div className='bg-primary h-2 w-2 animate-[typing_1.1s_infinite] rounded-full opacity-60' />
     </div>
   )
-}
+})
 
-function AbortedStatus() {
+const AbortedStatus = memo(function AbortedStatus() {
   return (
     <div className='border-border/60 bg-background text-text-secondary flex items-center gap-2 rounded-xl border px-3 py-2 text-sm'>
       <CircleStop className='text-text-secondary/80 h-4 w-4' />
@@ -68,4 +96,4 @@ function AbortedStatus() {
       <span>Workflow aborted</span>
     </div>
   )
-}
+})

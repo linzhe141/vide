@@ -1,51 +1,42 @@
-import type { AssistantTextSessionMessage } from '../../../store/sessionStore/types'
+import { memo, useCallback, useMemo } from 'react'
+import type { AssistantTextSessionMessage, ToolCallState } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
-import { useMemo } from 'react'
-
-import type { Workflow } from '../../../store/sessionStore/types'
 import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearchStore'
 
-export function AssistantTextMessage({
-  workflow,
-  message,
-}: {
-  workflow: Workflow
+type AssistantTextMessageProps = {
   message: AssistantTextSessionMessage
-}) {
-  const { select } = useWebSearchStoreActions()
+  latestWebSearchToolCall?: ToolCallState | null
+}
 
-  const closestWebSearchToolCallMessage = useMemo(() => {
-    const toolCallMessage = workflow.messages.findLast((m) => m.role === 'tool-call')
-    if (!toolCallMessage) return null
-    const webSearchToolCall = toolCallMessage.toolCalls.find(
-      (t) => t.toolCall.function.name === 'websearch'
-    )
-    return webSearchToolCall ?? null
-  }, [workflow.messages])
+export const AssistantTextMessage = memo(function AssistantTextMessage({
+  message,
+  latestWebSearchToolCall,
+}: AssistantTextMessageProps) {
+  const { select } = useWebSearchStoreActions()
+  const webSearchResults = latestWebSearchToolCall?.result?.result?.result?.results ?? []
 
   // 把 [number] 替换为对应的搜索结果链接
   const formatContent = useMemo(() => {
-    const webSearchResults = closestWebSearchToolCallMessage?.result?.result?.result?.results ?? []
-    return message.content.replace(/\[(\d+)\]/g, (_, index) => {
-      const i = parseInt(index, 10) - 1
-      const result = webSearchResults[i]
+    return message.content.replace(/\[(\d+)\]/g, (_match: string, index: string) => {
+      const result = webSearchResults[parseInt(index, 10) - 1]
       // 如果 result 存在，返回 [index](result.link)，否则返回空字符串 也就是不显示任何内容 不影响使用
-      return result ? `[${index}](${result.link})` : ``
+      return result ? `[${index}](${result.link})` : ''
     })
-  }, [closestWebSearchToolCallMessage, message.content])
+  }, [message.content, webSearchResults])
 
-  const handleCitationClick = () => {
-    const toolCall = closestWebSearchToolCallMessage?.toolCall
-    const query = JSON.parse(toolCall?.function.arguments ?? '{}')?.query
-    const webSearchResult = closestWebSearchToolCallMessage?.result?.result
-      ?.result as WebSearchResult
+  const handleCitationClick = useCallback(() => {
+    const toolCall = latestWebSearchToolCall?.toolCall
+    if (!toolCall) return
+
+    const query = JSON.parse(toolCall.function.arguments ?? '{}')?.query
+    const webSearchResult = latestWebSearchToolCall?.result?.result?.result as WebSearchResult
     select({
-      id: toolCall?.id ?? '',
-      query: query,
+      id: toolCall.id,
+      query,
       result: webSearchResult,
-      durationMs: closestWebSearchToolCallMessage?.result?.durationMs,
+      durationMs: latestWebSearchToolCall?.result?.durationMs,
     })
-  }
+  }, [latestWebSearchToolCall, select])
 
   return (
     <div className='max-w-none'>
@@ -53,5 +44,17 @@ export function AssistantTextMessage({
         {formatContent}
       </MarkdownRenderer>
     </div>
+  )
+}, areAssistantTextMessagePropsEqual)
+
+function areAssistantTextMessagePropsEqual(
+  prev: AssistantTextMessageProps,
+  next: AssistantTextMessageProps
+) {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.message.streaming === next.message.streaming &&
+    prev.latestWebSearchToolCall === next.latestWebSearchToolCall
   )
 }

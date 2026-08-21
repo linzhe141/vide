@@ -1,4 +1,4 @@
-import type { SessionMessage, Workflow } from '@/store/sessionStore/types'
+import type { SessionMessage, ToolCallState, Workflow } from '@/store/sessionStore/types'
 import { UserInputMessage } from './messages/UserInputMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
@@ -6,19 +6,27 @@ import { ToolCallMessage } from './messages/ToolCallMessage'
 import { AskUserQuestionMessage } from './messages/AskUserQuestionMessage'
 import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 
-export function MessageView({
-  workflow,
-  message,
-}: {
+type MessageViewProps = {
   workflow: Workflow
   message: SessionMessage
-}) {
+  latestWebSearchToolCall?: ToolCallState | null
+}
+
+export function MessageView({ workflow, message, latestWebSearchToolCall }: MessageViewProps) {
   switch (message.role) {
     case 'user':
-      return <UserInputMessage message={message} workflow={workflow} />
+      return (
+        <UserInputMessage
+          message={message}
+          workflowId={workflow.id}
+          workflowInputSource={workflow.inputSource}
+        />
+      )
 
     case 'assistant-text':
-      return <AssistantTextMessage workflow={workflow} message={message} />
+      return (
+        <AssistantTextMessage message={message} latestWebSearchToolCall={latestWebSearchToolCall} />
+      )
 
     case 'assistant-reason':
       return <AssistantReasonMessage message={message} />
@@ -27,7 +35,7 @@ export function MessageView({
       return <ToolCallMessage workflow={workflow} message={message} />
 
     case 'ask-user-question':
-      return <AskUserQuestionMessage workflow={workflow} message={message} />
+      return <AskUserQuestionMessage workflowId={workflow.id} message={message} />
 
     case 'error':
       return (

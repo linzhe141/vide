@@ -1,29 +1,58 @@
+import { memo, useCallback, useEffect, useState, type PropsWithChildren } from 'react'
 import type { UserInputSessionMessage, Workflow } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 import { Check, Copy, Monitor, MessageCircle, Pen, X } from 'lucide-react'
-import { useEffect, useState, type PropsWithChildren } from 'react'
 import { createBranchPayload } from '../SessionActions'
 import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions } from '../../../store/sessionStore'
 import { parseAskQuestionAnswerPayload } from '../../../store/sessionStore/askQuestion'
 
-export function UserInputMessage({
-  message,
-  workflow,
-}: {
+type UserInputMessageProps = {
   message: UserInputSessionMessage
-  workflow: Workflow
-}) {
+  workflowId: string
+  workflowInputSource: Workflow['inputSource']
+}
+
+export const UserInputMessage = memo(function UserInputMessage({
+  message,
+  workflowId,
+  workflowInputSource,
+}: UserInputMessageProps) {
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(message.content)
   const { sessionId, handleRegenerate } = useChatContext()
   const { changeWorkflowInput } = useSessionStoreActions()
-  const isWechatBotInput = workflow.inputSource === 'wechat-bot'
+  const isWechatBotInput = workflowInputSource === 'wechat-bot'
   const sourceLabel = isWechatBotInput ? 'WeChat Bot' : 'Desktop'
   const SourceIcon = isWechatBotInput ? MessageCircle : Monitor
-  if (workflow.inputSource === 'desktop' && parseAskQuestionAnswerPayload(message.content)) {
+  const handleEdit = useCallback(() => {
+    setEditing(true)
+  }, [])
+
+  const handleSave = useCallback(() => {
+    setEditing(false)
+    changeWorkflowInput({
+      sessionId,
+      workflowId,
+      newInput: content,
+    })
+    const regenerateBranchName = createBranchPayload({
+      type: 'regenerate',
+      branchName: `regenerate-${Date.now()}`,
+      workflowId,
+    })
+    handleRegenerate(workflowId, regenerateBranchName, content)
+  }, [changeWorkflowInput, content, handleRegenerate, sessionId, workflowId])
+
+  const handleCancel = useCallback(() => {
+    setEditing(false)
+    setContent(message.content)
+  }, [message.content])
+
+  if (workflowInputSource === 'desktop' && parseAskQuestionAnswerPayload(message.content)) {
     return null
   }
+
   return (
     <div className='group flex justify-end px-3 py-2'>
       <div className='max-w-[min(78%,720px)] space-y-1.5'>
@@ -64,30 +93,23 @@ export function UserInputMessage({
             message={message}
             editing={editing}
             actions={{
-              onEdit: () => setEditing(true),
-              onSave: () => {
-                setEditing(false)
-                changeWorkflowInput({
-                  sessionId: sessionId,
-                  workflowId: workflow.id,
-                  newInput: content,
-                })
-                const regenerateBranchName = createBranchPayload({
-                  type: 'regenerate',
-                  branchName: `regenerate-${Date.now()}`,
-                  workflowId: workflow.id,
-                })
-                handleRegenerate(workflow.id, regenerateBranchName, content)
-              },
-              onCancel: () => {
-                setEditing(false)
-                setContent(message.content)
-              },
+              onEdit: handleEdit,
+              onSave: handleSave,
+              onCancel: handleCancel,
             }}
           />
         </div>
       </div>
     </div>
+  )
+}, areUserInputMessagePropsEqual)
+
+function areUserInputMessagePropsEqual(prev: UserInputMessageProps, next: UserInputMessageProps) {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.workflowId === next.workflowId &&
+    prev.workflowInputSource === next.workflowInputSource
   )
 }
 
