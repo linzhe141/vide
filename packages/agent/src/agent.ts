@@ -6,15 +6,28 @@ export class Agent {
     apiKey: '',
     apiUrl: '',
   }
+  private generateImageConfig = {
+    apiKey: '',
+    baseUrl: '',
+    model: '',
+  }
+
   get settings() {
     return {
       webSearchConfig: this.webSearchConfig,
+      generateImageConfig: this.generateImageConfig,
     }
   }
 
   setWebSearchConfig(config: { apiKey: string; apiUrl: string }) {
     this.webSearchConfig.apiKey = config.apiKey
     this.webSearchConfig.apiUrl = config.apiUrl
+  }
+
+  setGenerateImageConfig(config: { apiKey: string; baseUrl: string; model: string }) {
+    this.generateImageConfig.apiKey = config.apiKey
+    this.generateImageConfig.baseUrl = config.baseUrl
+    this.generateImageConfig.model = config.model
   }
 
   createSession(data: {

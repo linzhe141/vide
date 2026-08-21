@@ -9,11 +9,13 @@ import { Bash } from './bash'
 import { Todo } from './todo'
 import { Grep } from './grep'
 import { SkillTool } from './skill'
+import { Image } from './image'
 
 export function getBuildInTools(toolRuntime: ToolRuntime) {
   return [
     ...new Time(toolRuntime).getTools(),
     ...new WebSearch(toolRuntime).getTools(),
+    ...new Image(toolRuntime).getTools(),
     ...new AskUserQuestionTool(toolRuntime).getTools(),
     ...new Edit(toolRuntime).getTools(),
     ...new Write(toolRuntime).getTools(),

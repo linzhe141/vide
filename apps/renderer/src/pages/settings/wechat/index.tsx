@@ -5,6 +5,7 @@ import { Button } from '@/ui/Button'
 
 export function WechatBotSettings() {
   const [loading, setLoading] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [notice, setNotice] = useState<{ success: boolean; message: string } | null>(null)
 
@@ -44,6 +45,21 @@ export function WechatBotSettings() {
     // 认证成功由 weixin-bot-auth-success 事件通知，此处不轮询
   }, [])
 
+  const handleLogout = useCallback(async () => {
+    setLoggingOut(true)
+    setNotice(null)
+    try {
+      await window.ipcRendererApi.invoke('wechat-logout')
+      setAuthenticated(false)
+      setLoading(false)
+      setNotice({ success: true, message: '已注销微信 Bot。' })
+    } catch (err) {
+      setNotice({ success: false, message: String((err as Error)?.message ?? err) })
+    } finally {
+      setLoggingOut(false)
+    }
+  }, [])
+
   return (
     <div className='mx-auto max-w-3xl px-6 py-12'>
       <div className='mb-8 flex items-center gap-3'>
@@ -68,12 +84,18 @@ export function WechatBotSettings() {
         </section>
       ) : authenticated ? (
         <section className='bg-card border-border rounded-2xl border p-8'>
-          <div className='flex items-center gap-3'>
-            <CheckCircle2 className='h-8 w-8 text-emerald-500' />
-            <div>
-              <h2 className='text-foreground text-lg font-semibold'>认证成功</h2>
-              <p className='text-text-secondary text-sm'>微信 Bot 已完成登录认证。</p>
+          <div className='flex items-start justify-between gap-4'>
+            <div className='flex items-center gap-3'>
+              <CheckCircle2 className='h-8 w-8 text-emerald-500' />
+              <div>
+                <h2 className='text-foreground text-lg font-semibold'>认证成功</h2>
+                <p className='text-text-secondary text-sm'>微信 Bot 已完成登录认证。</p>
+              </div>
             </div>
+
+            <Button variant='outline' onClick={handleLogout} disabled={loggingOut}>
+              {loggingOut ? '注销中...' : '注销'}
+            </Button>
           </div>
         </section>
       ) : loading ? (

@@ -32,9 +32,22 @@ export class AgentManager {
       apiKey: settingsStore.get('webSearchConfig').apiKey,
       apiUrl: settingsStore.get('webSearchConfig').searchUrl,
     })
+    this.agent.setGenerateImageConfig({
+      apiKey: settingsStore.get('generateImageConfig').apiKey,
+      baseUrl: settingsStore.get('generateImageConfig').baseUrl,
+      model: settingsStore.get('generateImageConfig').model,
+    })
   }
 
   init() {}
+
+  setWebSearchConfig(config: { apiKey: string; apiUrl: string }) {
+    this.agent.setWebSearchConfig(config)
+  }
+
+  setGenerateImageConfig(config: { apiKey: string; baseUrl: string; model: string }) {
+    this.agent.setGenerateImageConfig(config)
+  }
 
   /** 创建并注册一个 agent session，返回 session id。 */
   async createSession(data: {
