@@ -2,7 +2,7 @@
   "name": "vide",
   "private": true,
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.0-beta.1",
   "author": "linzhe141@qq.com",
   "license": "ISC",
   "description": "a llm agent electron app",
