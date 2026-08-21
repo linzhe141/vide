@@ -8,10 +8,9 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
   const isRunning = !result
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-  const imageUrl = result?.result?.url
+  const imageUrl = result?.result?.result?.url
   const errorMessage = getErrorMessage(result?.error)
   const isAbortError = /abort|cancel/i.test(errorMessage)
-
   if (isRunning) {
     return (
       <div className='group border-primary/20 from-primary/5 relative overflow-hidden rounded-xl border bg-linear-to-br to-transparent p-4'>
