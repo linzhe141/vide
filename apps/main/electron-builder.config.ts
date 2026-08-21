@@ -45,7 +45,4 @@ export default {
   mac: {
     target: 'dmg',
   },
-  linux: {
-    target: 'AppImage',
-  },
 } satisfies Configuration
