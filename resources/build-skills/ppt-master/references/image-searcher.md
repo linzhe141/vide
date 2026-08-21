@@ -12,11 +12,11 @@ Role definition for the **web image acquisition path**: translate the active res
 
 Every **provider-sourced** image is classified into one of two tiers; anything else is rejected outright. A third tier, `manual`, exists **only** for a user-supplied [`--from-url`](#5-running-image_searchpy) replacement — it is never the result of a provider search accepting an unknown license.
 
-| Tier | Licenses | On-slide attribution |
-|---|---|---|
-| `no-attribution` | CC0, Public Domain, Pexels License, Pixabay Content License | None |
-| `attribution-required` | CC BY, CC BY-SA | Inline credit `<text>` on the slide |
-| `manual` | User-supplied via `--from-url` (license unverified) | None — verifying rights / any credit is the user's responsibility |
+| Tier                   | Licenses                                                    | On-slide attribution                                              |
+| ---------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `no-attribution`       | CC0, Public Domain, Pexels License, Pixabay Content License | None                                                              |
+| `attribution-required` | CC BY, CC BY-SA                                             | Inline credit `<text>` on the slide                               |
+| `manual`               | User-supplied via `--from-url` (license unverified)         | None — verifying rights / any credit is the user's responsibility |
 
 **Forbidden — auto-rejected licenses**:
 
@@ -46,12 +46,12 @@ Strict:  provider chain, license filter = cc0,pdm,pexels,pixabay
 
 ## 3. Providers
 
-| Provider | Config | Strength |
-|---|---|---|
-| Pexels | recommended: `PEXELS_API_KEY` (free, [signup](https://www.pexels.com/api/)) | modern stock photography, people, workplace, lifestyle |
-| Pixabay | recommended: `PIXABAY_API_KEY` (free, [signup](https://pixabay.com/api/docs/)) | broad type coverage including photos and illustrations |
-| Openverse | zero-config | fallback aggregator: Wikimedia + Flickr + museums + rawpixel |
-| Wikimedia Commons | zero-config | educational, scientific, geographic, historical |
+| Provider          | Config                                                                         | Strength                                                     |
+| ----------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Pexels            | recommended: `PEXELS_API_KEY` (free, [signup](https://www.pexels.com/api/))    | modern stock photography, people, workplace, lifestyle       |
+| Pixabay           | recommended: `PIXABAY_API_KEY` (free, [signup](https://pixabay.com/api/docs/)) | broad type coverage including photos and illustrations       |
+| Openverse         | zero-config                                                                    | fallback aggregator: Wikimedia + Flickr + museums + rawpixel |
+| Wikimedia Commons | zero-config                                                                    | educational, scientific, geographic, historical              |
 
 Default chain (when `--provider` is unset):
 
@@ -67,10 +67,10 @@ Keyed providers without an API key are silently skipped — not an error.
 
 Keep two layers distinct:
 
-| Layer | Owner and grammar |
-|---|---|
-| Default Generate `design_spec.md §VIII Reference` | Strategist's complete visual intent: exact subject, desired view/mood, focal or quiet region, and crop-safety constraints. Positive quality cues are valid here. |
-| Quick Generate active `Reference` | Current main agent's active-context intent after honoring explicit user assets, URLs, subjects, and constraints; unspecified choices are resolved automatically without confirmation. |
+| Layer                                                 | Owner and grammar                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Default Generate `design_spec.md §VIII Reference`     | Strategist's complete visual intent: exact subject, desired view/mood, focal or quiet region, and crop-safety constraints. Positive quality cues are valid here.                                                                                                         |
+| Quick Generate active `Reference`                     | Current main agent's active-context intent after honoring explicit user assets, URLs, subjects, and constraints; unspecified choices are resolved automatically without confirmation.                                                                                    |
 | `image_queries.json.items[].query` / positional query | Image_Searcher's concrete entity/identity keyword string. Start with the shortest phrase that preserves identity; keep exact multi-word names and necessary disambiguators even when they exceed four words. Omit mood, quality, composition, HEX, and negative wording. |
 
 Web APIs match metadata, not semantic intent. Providers try the original query first, then progressively simplified four/three/two/one-word variants. A pipeline manifest should therefore use a concise query without pre-truncating exact names. For Chinese landmarks, use the precise Chinese name with Wikimedia; for stock providers, use compact English identity terms when they retain the subject.
@@ -85,18 +85,18 @@ Do **not** loosen `required_terms` to generic category words just to improve cov
 
 > Note: Keyword APIs search negative words literally.
 
-| §VIII Reference (intent) | Provider query |
-|---|---|
-| "Offshore wind farm at dusk, aerial view, quiet sky on the left for safe crop" | `offshore wind farm` |
-| "Diverse engineering team around a laptop, modern office, natural light" | `engineering team laptop` |
-| "Chongqing Jiefangbei monument, full structure visible, landscape frame" | `Chongqing Jiefangbei monument` |
+| §VIII Reference (intent)                                                       | Provider query                  |
+| ------------------------------------------------------------------------------ | ------------------------------- |
+| "Offshore wind farm at dusk, aerial view, quiet sky on the left for safe crop" | `offshore wind farm`            |
+| "Diverse engineering team around a laptop, modern office, natural light"       | `engineering team laptop`       |
+| "Chongqing Jiefangbei monument, full structure visible, landscape frame"       | `Chongqing Jiefangbei monument` |
 
 ---
 
 ## 5. Running `image_search.py`
 
 ```bash
-python3 scripts/image_search.py "<query>" \
+python scripts/image_search.py "<query>" \
   --filename <name>.jpg \
   --slide <slide_id> \
   --orientation landscape \
@@ -104,30 +104,30 @@ python3 scripts/image_search.py "<query>" \
   -o <project_path>/images
 ```
 
-| Parameter | Required | Default | Description |
-|---|---|---|---|
-| `query` | yes | — | Positional. Pre-simplification not necessary; CLI runs `simplify_query` internally. |
-| `--filename` | yes | — | Output filename matching the resource list |
-| `-o / --output` | no | `.` | Output directory; manifest defaults to `<output>/image_sources.json` |
-| `--slide` | no | `""` | Slide ID from resource list (recorded in manifest) |
-| `--purpose` | no | `""` | `background` / `hero` / `side` / `accent` |
-| `--orientation` | no | `any` | `any` / `landscape` / `portrait` / `square` |
-| `--min-width / --min-height` | no | `1200 / 800` | Actual downloaded-pixel floors; `--from-url` honors explicit lower overrides |
-| `--provider` | no | (chain) | Pin one provider |
-| `--strict-no-attribution` | no | off | Restrict to no-attribution licenses; refuse CC BY / CC BY-SA |
-| `--require-terms` | no | — | Entity-safety gate for exact subjects. Repeatable; comma separates required groups; `A|B` means aliases within one group. Example: `--require-terms Chongqing --require-terms "Jiefangbei|Liberation Monument"` |
-| `--manifest` | no | (default) | Override manifest path |
-| `--save-candidates` | no | off | Escalation only: also keep a review pool in `candidates/<stem>/`. Default downloads just the best match (+ a review copy) |
-| `--max-candidates` | no | `4` | Pool size when `--save-candidates` is set |
-| `--promote` | no | — | Human-selected candidate override; low resolution warns but does not block promotion |
-| `--from-url` | no | — | Manual replace: download a user-supplied image URL into `--filename` (recorded `license_tier: manual`); works without a multimodal model |
+| Parameter                    | Required | Default      | Description                                                                                                                              |
+| ---------------------------- | -------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`                      | yes      | —            | Positional. Pre-simplification not necessary; CLI runs `simplify_query` internally.                                                      |
+| `--filename`                 | yes      | —            | Output filename matching the resource list                                                                                               |
+| `-o / --output`              | no       | `.`          | Output directory; manifest defaults to `<output>/image_sources.json`                                                                     |
+| `--slide`                    | no       | `""`         | Slide ID from resource list (recorded in manifest)                                                                                       |
+| `--purpose`                  | no       | `""`         | `background` / `hero` / `side` / `accent`                                                                                                |
+| `--orientation`              | no       | `any`        | `any` / `landscape` / `portrait` / `square`                                                                                              |
+| `--min-width / --min-height` | no       | `1200 / 800` | Actual downloaded-pixel floors; `--from-url` honors explicit lower overrides                                                             |
+| `--provider`                 | no       | (chain)      | Pin one provider                                                                                                                         |
+| `--strict-no-attribution`    | no       | off          | Restrict to no-attribution licenses; refuse CC BY / CC BY-SA                                                                             |
+| `--require-terms`            | no       | —            | Entity-safety gate for exact subjects. Repeatable; comma separates required groups; `A                                                   | B` means aliases within one group. Example: `--require-terms Chongqing --require-terms "Jiefangbei | Liberation Monument"` |
+| `--manifest`                 | no       | (default)    | Override manifest path                                                                                                                   |
+| `--save-candidates`          | no       | off          | Escalation only: also keep a review pool in `candidates/<stem>/`. Default downloads just the best match (+ a review copy)                |
+| `--max-candidates`           | no       | `4`          | Pool size when `--save-candidates` is set                                                                                                |
+| `--promote`                  | no       | —            | Human-selected candidate override; low resolution warns but does not block promotion                                                     |
+| `--from-url`                 | no       | —            | Manual replace: download a user-supplied image URL into `--filename` (recorded `license_tier: manual`); works without a multimodal model |
 
 ### Batch mode (≥ 2 web rows) — preferred
 
 When more than one row is `Acquire Via: web`, do **not** call the CLI once per row. Write all rows into one `image_queries.json` and run a single concurrent batch — the web sister of `image_gen.py --manifest`:
 
 ```bash
-python3 scripts/image_search.py --batch <project_path>/images/image_queries.json \
+python scripts/image_search.py --batch <project_path>/images/image_queries.json \
   -o <project_path>/images
 ```
 
@@ -187,7 +187,7 @@ Never treat a generic `required_terms` pass as acceptance. For example, matching
 1. refine the query and re-run that row while each revision tests a materially different identity phrase or disambiguator; do not repeat a semantically exhausted query;
 2. **manual URL replace (universal, model-agnostic)** — use a user-supplied URL and swap it in:
    ```bash
-   python3 scripts/image_search.py --from-url <image-url> --filename <name>.jpg -o <project_path>/images
+   python scripts/image_search.py --from-url <image-url> --filename <name>.jpg -o <project_path>/images
    ```
    Recorded with `license_tier: manual` — verifying usage rights is the user's
    call. In Quick Generate, use this step only when the URL was already
@@ -209,14 +209,14 @@ Web search is far cheaper than AI generation, so this review pass is well worth 
 Candidate-pool saving is **off by default** — reach for it only when a best match fails confirmation, on a subjective topic, or for a prominent image (cover / chapter divider / `hero_page` / photo-led page).
 
 ```bash
-python3 scripts/image_search.py "<query>" --filename <name>.jpg -o <project_path>/images \
+python scripts/image_search.py "<query>" --filename <name>.jpg -o <project_path>/images \
   --save-candidates --max-candidates 4
 ```
 
 Saves the top candidates to `images/candidates/<stem>/` with a `candidates.json` manifest and one downscaled review copy per candidate under `candidates/<stem>/review/`. **Read the candidate review copies**, pick the best fit, then promote it — the full-resolution original is copied to the target filename:
 
 ```bash
-python3 scripts/image_search.py --promote candidate_03.jpg --filename <name>.jpg -o <project_path>/images
+python scripts/image_search.py --promote candidate_03.jpg --filename <name>.jpg -o <project_path>/images
 ```
 
 ---
@@ -260,14 +260,14 @@ Every successful download appends or replaces one entry keyed on `filename`:
 }
 ```
 
-| Field | Notes |
-|---|---|
-| `width` / `height` | Measured from the file actually saved to disk. Use these for layout. |
-| `metadata_dimensions` | Present only when upstream-claimed size differs from the saved file (preview vs original). Informational only. |
-| `license_tier` | Drives Executor's attribution decision: `no-attribution` / `attribution-required` for provider-sourced images, or `manual` for a user-supplied `--from-url` replacement (embed only; rights/credit are the user's responsibility). |
-| `attribution_required` | Boolean alias of `license_tier == "attribution-required"`. |
-| `attribution_text` | Canonical credit source. Preserve its author/provider/license facts; compress only through §7's visual grammar rather than inventing or dropping identity. |
-| `stage` | `all` by default, or `no-attribution-only` when strict mode is used. |
+| Field                  | Notes                                                                                                                                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `width` / `height`     | Measured from the file actually saved to disk. Use these for layout.                                                                                                                                                               |
+| `metadata_dimensions`  | Present only when upstream-claimed size differs from the saved file (preview vs original). Informational only.                                                                                                                     |
+| `license_tier`         | Drives Executor's attribution decision: `no-attribution` / `attribution-required` for provider-sourced images, or `manual` for a user-supplied `--from-url` replacement (embed only; rights/credit are the user's responsibility). |
+| `attribution_required` | Boolean alias of `license_tier == "attribution-required"`.                                                                                                                                                                         |
+| `attribution_text`     | Canonical credit source. Preserve its author/provider/license facts; compress only through §7's visual grammar rather than inventing or dropping identity.                                                                         |
+| `stage`                | `all` by default, or `no-attribution-only` when strict mode is used.                                                                                                                                                               |
 
 > Manifest is **idempotent on `filename`** and written atomically. Rerunning replaces that entry while preserving all others. An existing unreadable/non-object manifest blocks the write instead of being overwritten as fresh state.
 
@@ -283,17 +283,17 @@ Applied by Executor when an image's `license_tier == "attribution-required"`.
 
 **Reference — attribution treatments, not constraints**:
 
-| Page situation | Possible treatment |
-|---|---|
-| One credited image | Place a compact credit near the image edge or in a page footnote area |
-| Several credited images | Use per-image credits or one combined source line with labels when needed for unambiguous mapping |
+| Page situation          | Possible treatment                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| One credited image      | Place a compact credit near the image edge or in a page footnote area                                     |
+| Several credited images | Use per-image credits or one combined source line with labels when needed for unambiguous mapping         |
 | Hero / full-bleed image | Place the credit in an available quiet region; add a scrim or gradient only when contrast otherwise fails |
 
 Use `attribution_text` from the manifest as the **starting point**. Compress when the chosen page treatment needs a shorter line, without dropping the required facts:
 
-| Manifest | Slide credit |
-|---|---|
-| `team.jpg — "Untitled" via Openverse — license: CC0 (...)` | `via Openverse / CC0` |
+| Manifest                                                                              | Slide credit                            |
+| ------------------------------------------------------------------------------------- | --------------------------------------- |
+| `team.jpg — "Untitled" via Openverse — license: CC0 (...)`                            | `via Openverse / CC0`                   |
 | `team.jpg — "Sunset" by Jane Doe via Wikimedia Commons — license: CC BY-SA 4.0 (...)` | `© Jane Doe / Wikimedia / CC BY-SA 4.0` |
 
 ---
@@ -302,13 +302,13 @@ Use `attribution_text` from the manifest as the **starting point**. Compress whe
 
 Extends [`image-base.md`](./image-base.md) §6.
 
-| Situation | Behavior |
-|---|---|
-| No candidates from any provider in either stage | Mark row `Needs-Manual`. Suggest a more precise query or another configured provider; rerun without `--strict-no-attribution` only when the confirmed page may carry visible credit. |
-| Single candidate fails to download (HTTP 403/404) | Dispatcher auto-falls through to the next ranked candidate. No user action. |
-| All candidates from one provider fail | Dispatcher moves to the next provider in the chain. |
-| Provider/network failure remains after dispatch | Mark row `Failed`; a later batch run retries it. |
-| Keyed provider has no API key | Silently skipped. Not an error. |
+| Situation                                         | Behavior                                                                                                                                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No candidates from any provider in either stage   | Mark row `Needs-Manual`. Suggest a more precise query or another configured provider; rerun without `--strict-no-attribution` only when the confirmed page may carry visible credit. |
+| Single candidate fails to download (HTTP 403/404) | Dispatcher auto-falls through to the next ranked candidate. No user action.                                                                                                          |
+| All candidates from one provider fail             | Dispatcher moves to the next provider in the chain.                                                                                                                                  |
+| Provider/network failure remains after dispatch   | Mark row `Failed`; a later batch run retries it.                                                                                                                                     |
+| Keyed provider has no API key                     | Silently skipped. Not an error.                                                                                                                                                      |
 
 CLI exit: `0` when all attempted rows resolve; `1` while any row remains `Failed` or `Needs-Manual`.
 
@@ -326,11 +326,11 @@ Keep it intact as the acceptance contract. In Default Generate the owner is Stra
 
 Executor reads `image_sources.json` per slide that uses a Sourced image. For each entry:
 
-| `license_tier` | Slide-level action |
-|---|---|
-| `no-attribution` | Embed `<image>` only |
-| `attribution-required` | Embed `<image>` **and** an inline credit element per §7 |
-| `manual` | Embed `<image>` only — user-supplied URL (`--from-url`); verifying usage rights / any required credit is the user's responsibility |
+| `license_tier`         | Slide-level action                                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `no-attribution`       | Embed `<image>` only                                                                                                               |
+| `attribution-required` | Embed `<image>` **and** an inline credit element per §7                                                                            |
+| `manual`               | Embed `<image>` only — user-supplied URL (`--from-url`); verifying usage rights / any required credit is the user's responsibility |
 
 Executor does not interpret raw license strings — `license_tier` is sufficient.
 

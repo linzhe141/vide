@@ -8,11 +8,11 @@ stem, and mix that stem with the video's narration track.
 See workflows/stages/generate-audio.md for the owning delivery stage.
 
 Usage:
-    python3 scripts/video_sound_mix.py <project_path> --pptx <pptx> \
+    python scripts/video_sound_mix.py <project_path> --pptx <pptx> \
         --trace <trace.json> --video <raw.mp4> [options]
 
 Examples:
-    python3 scripts/video_sound_mix.py projects/demo \
+    python scripts/video_sound_mix.py projects/demo \
         --pptx exports/demo_narrated.pptx \
         --trace validation/demo_narrated.trace.json \
         --video exports/demo_raw.mp4 --force
@@ -397,7 +397,7 @@ def _decode_audio_f32(path: Path, ffmpeg_path: str) -> Any:
     except ImportError as exc:
         raise RuntimeError(
             "Video sound verification requires numpy. Install it with: "
-            "python3 -m pip install numpy"
+            "python -m pip install numpy"
         ) from exc
     result = subprocess.run(
         [
@@ -441,7 +441,7 @@ def _sound_mix_correlation(
     except ImportError as exc:
         raise RuntimeError(
             "Video sound verification requires numpy. Install it with: "
-            "python3 -m pip install numpy"
+            "python -m pip install numpy"
         ) from exc
 
     target_samples = int(round(duration_ms * _VERIFICATION_SAMPLE_RATE / 1000))

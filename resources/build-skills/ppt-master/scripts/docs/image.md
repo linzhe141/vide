@@ -16,9 +16,9 @@ This script renders only those declared formulas to transparent PNGs and writes
 dimensions back into the manifest.
 
 ```bash
-python3 scripts/latex_render.py <project_path>
-python3 scripts/latex_render.py <project_path> --dry-run
-python3 scripts/latex_render.py <project_path> --providers codecogs,quicklatex,mathpad,wikimedia
+python scripts/latex_render.py <project_path>
+python scripts/latex_render.py <project_path> --dry-run
+python scripts/latex_render.py <project_path> --providers codecogs,quicklatex,mathpad,wikimedia
 ```
 
 Manifest shape:
@@ -58,22 +58,22 @@ In either profile, `host-native` uses the host image tool directly and `manual`
 uses the read-only Markdown sidecar.
 
 ```bash
-python3 scripts/image_gen.py "A modern futuristic workspace"
-python3 scripts/image_gen.py "Abstract tech background" --aspect_ratio 16:9 --image_size 4K
-python3 scripts/image_gen.py "Concept car" -o projects/demo/images
-python3 scripts/image_gen.py --list-backends
+python scripts/image_gen.py "A modern futuristic workspace"
+python scripts/image_gen.py "Abstract tech background" --aspect_ratio 16:9 --image_size 4K
+python scripts/image_gen.py "Concept car" -o projects/demo/images
+python scripts/image_gen.py --list-backends
 ```
 
-Backends are grouped into Core / Extended / Experimental tiers. Run `python3 scripts/image_gen.py --list-backends` for the current list.
+Backends are grouped into Core / Extended / Experimental tiers. Run `python scripts/image_gen.py --list-backends` for the current list.
 
 Backend selection:
 
 ```bash
-python3 scripts/image_gen.py "A cat" --backend openai
-python3 scripts/image_gen.py "A cinematic portrait" --backend minimax
-python3 scripts/image_gen.py "A product launch hero image" --backend qwen
-python3 scripts/image_gen.py "科技感背景图" --backend zhipu
-python3 scripts/image_gen.py "A product KV in cinematic style" --backend volcengine
+python scripts/image_gen.py "A cat" --backend openai
+python scripts/image_gen.py "A cinematic portrait" --backend minimax
+python scripts/image_gen.py "A product launch hero image" --backend qwen
+python scripts/image_gen.py "科技感背景图" --backend zhipu
+python scripts/image_gen.py "A product KV in cinematic style" --backend volcengine
 ```
 
 Configuration sources:
@@ -175,10 +175,10 @@ RGBA asset or the active host image editor for a standalone cutout, and
 registered subject/base layers.
 
 ```bash
-python3 scripts/image_treat.py projects/demo hero.jpg \
+python scripts/image_treat.py projects/demo hero.jpg \
   --output hero_soft.png --brightness 0.9 --contrast 1.1 --blur 12
 
-python3 scripts/image_treat.py projects/demo hero.jpg \
+python scripts/image_treat.py projects/demo hero.jpg \
   --output hero_duotone.png --duotone "#14213D" "#FCA311"
 ```
 
@@ -202,7 +202,7 @@ Analyze objective image-file facts in a project directory before writing the
 design spec or authoring SVG.
 
 ```bash
-python3 scripts/analyze_images.py <project_path>/images
+python scripts/analyze_images.py <project_path>/images
 ```
 
 The tool does not resolve a canvas or recommend a left/right, top/bottom, or
@@ -227,7 +227,7 @@ restores routine readback of AI-generated images.
 Zero-config web image search across openly-licensed providers. Sister tool to `image_gen.py` — used when the resource list row has `Acquire Via: web`.
 
 ```bash
-python3 scripts/image_search.py "offshore wind farm" \
+python scripts/image_search.py "offshore wind farm" \
   --filename cover_bg.jpg --slide 01_cover \
   --orientation landscape -o projects/demo/images
 ```
@@ -236,12 +236,12 @@ For multiple web rows, `--batch images/image_queries.json` searches them concurr
 
 Providers (Pexels / Pixabay are tried first when keyed; Openverse and Wikimedia are zero-config fallbacks):
 
-| Provider | Config | Strength |
-|---|---|---|
-| `pexels` | recommended: `PEXELS_API_KEY` | modern stock photography, people, workplace, lifestyle |
-| `pixabay` | recommended: `PIXABAY_API_KEY` | broad type coverage including photos and illustrations |
-| `openverse` | zero-config | fallback aggregator: Wikimedia + Flickr + museums + rawpixel |
-| `wikimedia` | zero-config | educational, scientific, geographic, historical |
+| Provider    | Config                         | Strength                                                     |
+| ----------- | ------------------------------ | ------------------------------------------------------------ |
+| `pexels`    | recommended: `PEXELS_API_KEY`  | modern stock photography, people, workplace, lifestyle       |
+| `pixabay`   | recommended: `PIXABAY_API_KEY` | broad type coverage including photos and illustrations       |
+| `openverse` | zero-config                    | fallback aggregator: Wikimedia + Flickr + museums + rawpixel |
+| `wikimedia` | zero-config                    | educational, scientific, geographic, historical              |
 
 Default search chain (when `--provider` is unset): configured Pexels, configured Pixabay, Openverse, then Wikimedia. Missing keyed credentials are silently skipped. Keyed providers broaden stock-photo coverage but are optional; zero-config providers remain valid.
 
@@ -251,11 +251,11 @@ Query guidance:
 
 Keep the Design Spec §VIII `Reference` as the full visual/crop intent; write a separate concise provider query for this CLI. Start with the shortest phrase that preserves identity, but retain exact multi-word names and necessary disambiguators beyond four words.
 
-| Case | Pattern |
-|---|---|
-| Generic stock concept | `boardroom meeting` |
+| Case                    | Pattern                                                       |
+| ----------------------- | ------------------------------------------------------------- |
+| Generic stock concept   | `boardroom meeting`                                           |
 | China-specific landmark | Precise official place/identity name plus necessary geography |
-| Avoid | Negative prompt wording such as `not tourist snapshot` |
+| Avoid                   | Negative prompt wording such as `not tourist snapshot`        |
 
 License filter:
 
@@ -266,12 +266,12 @@ Pin a provider, refuse attribution, or override the manifest path:
 
 ```bash
 # Pin Wikimedia
-python3 scripts/image_search.py "Olympics opening ceremony" \
+python scripts/image_search.py "Olympics opening ceremony" \
   --filename event.jpg --provider wikimedia \
   --orientation landscape -o projects/demo/images
 
 # Strict mode — refuse CC BY / CC BY-SA
-python3 scripts/image_search.py "abstract gradient" \
+python scripts/image_search.py "abstract gradient" \
   --filename hero.jpg --strict-no-attribution \
   -o projects/demo/images
 ```
@@ -300,9 +300,9 @@ The full role-level reference (intent → query translation, on-slide attributio
 Remove Gemini watermark assets after manual download.
 
 ```bash
-python3 scripts/gemini_watermark_remover.py <image_path>
-python3 scripts/gemini_watermark_remover.py <image_path> -o output_path.png
-python3 scripts/gemini_watermark_remover.py <image_path> -q
+python scripts/gemini_watermark_remover.py <image_path>
+python scripts/gemini_watermark_remover.py <image_path> -o output_path.png
+python scripts/gemini_watermark_remover.py <image_path> -q
 ```
 
 Notes:

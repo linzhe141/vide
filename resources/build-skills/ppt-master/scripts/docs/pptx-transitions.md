@@ -6,14 +6,14 @@ read-back validation for every PPTX route.
 
 ## 1. Ownership
 
-| Concern | Owner |
-|---|---|
-| Page transition registry | scripts/pptx_transitions.py |
-| In-slide object animation | scripts/pptx_animations.py |
-| Generated PPTX adapter | svg_to_pptx/pptx_package/builder.py |
-| Template Fill adapter | template_fill_pptx/transitions.py |
-| Native Enhance adapter | native_enhance_pptx_core.py |
-| Public workflow | references/animations.md |
+| Concern                   | Owner                               |
+| ------------------------- | ----------------------------------- |
+| Page transition registry  | scripts/pptx_transitions.py         |
+| In-slide object animation | scripts/pptx_animations.py          |
+| Generated PPTX adapter    | svg_to_pptx/pptx_package/builder.py |
+| Template Fill adapter     | template_fill_pptx/transitions.py   |
+| Native Enhance adapter    | native_enhance_pptx_core.py         |
+| Public workflow           | references/animations.md            |
 
 **Hard rule**: adapters resolve route policy, then call the shared core. They
 must not build, replace, or patch a transition with route-local XML or regex.
@@ -22,28 +22,28 @@ must not build, replace, or patch a transition with route-local XML or regex.
 
 ## 2. Domain Model
 
-| Layer | Meaning | OOXML |
-|---|---|---|
-| Enter | How the current slide appears from the preceding slide | Native effect, Effect Options, and duration |
-| Sound | Optional cue played with the current slide's transition | `p:sndAc/p:stSnd/p:snd` with an embedded WAV relationship |
-| Advance | How the current slide leaves for the next slide | advClick and advTm |
+| Layer   | Meaning                                                 | OOXML                                                     |
+| ------- | ------------------------------------------------------- | --------------------------------------------------------- |
+| Enter   | How the current slide appears from the preceding slide  | Native effect, Effect Options, and duration               |
+| Sound   | Optional cue played with the current slide's transition | `p:sndAc/p:stSnd/p:snd` with an embedded WAV relationship |
+| Advance | How the current slide leaves for the next slide         | advClick and advTm                                        |
 
 Enter policy:
 
-| Policy | Behavior |
-|---|---|
+| Policy   | Behavior                                                        |
+| -------- | --------------------------------------------------------------- |
 | preserve | Keep the source visual transition, including unknown extensions |
-| replace | Write the requested supported effect |
-| none | Write no visual effect |
+| replace  | Write the requested supported effect                            |
+| none     | Write no visual effect                                          |
 
 Advance mode:
 
-| Mode | Behavior |
-|---|---|
-| preserve | Keep source advClick and advTm |
-| click | Click advance only |
-| after | Timed advance only |
-| both | Click or timed advance, whichever occurs first |
+| Mode      | Behavior                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------- |
+| preserve  | Keep source advClick and advTm                                                              |
+| click     | Click advance only                                                                          |
+| after     | Timed advance only                                                                          |
+| both      | Click or timed advance, whichever occurs first                                              |
 | narration | Timed advance from narration lead-in, audio duration, and page-tail padding; click disabled |
 
 **Hard rule**: enter=none may coexist with a sound and/or timed advance. The
@@ -63,78 +63,78 @@ Eight established low-level names remain valid at input boundaries. They
 normalize to one native effect plus native `effect_options`; they are not a
 second transition registry:
 
-| Compatibility input | Native request |
-|---|---|
-| `strips` | `wipe` with `direction: right` |
-| `circle` | `shape` with `shape: circle` |
-| `diamond` | `shape` with `shape: diamond` |
-| `plus` | `shape` with `shape: plus` |
-| `newsflash` | `flash` |
-| `pull` | `uncover` |
-| `wedge` | `clock` with `style: wedge` |
-| `wheel` | `clock` with `style: clockwise` |
+| Compatibility input | Native request                  |
+| ------------------- | ------------------------------- |
+| `strips`            | `wipe` with `direction: right`  |
+| `circle`            | `shape` with `shape: circle`    |
+| `diamond`           | `shape` with `shape: diamond`   |
+| `plus`              | `shape` with `shape: plus`      |
+| `newsflash`         | `flash`                         |
+| `pull`              | `uncover`                       |
+| `wedge`             | `clock` with `style: wedge`     |
+| `wheel`             | `clock` with `style: clockwise` |
 
 Standard PresentationML effects use a direct `p:transition` carrier:
 
-| Effect | Required primary child and attributes |
-|---|---|
-| fade | p:fade |
-| push | p:push dir=r |
-| wipe | p:wipe dir=r |
-| split | p:split |
-| cut | p:cut |
-| random_bars | p:randomBar dir=vert |
-| shape | p:circle |
-| uncover | p:pull dir=r |
-| cover | p:cover dir=r |
-| dissolve | p:dissolve |
-| checkerboard | p:checker |
-| blinds | p:blinds dir=vert |
-| clock | p:wheel spokes=1 |
-| random | p:random |
-| box | p:zoom |
-| comb | p:comb |
+| Effect       | Required primary child and attributes |
+| ------------ | ------------------------------------- |
+| fade         | p:fade                                |
+| push         | p:push dir=r                          |
+| wipe         | p:wipe dir=r                          |
+| split        | p:split                               |
+| cut          | p:cut                                 |
+| random_bars  | p:randomBar dir=vert                  |
+| shape        | p:circle                              |
+| uncover      | p:pull dir=r                          |
+| cover        | p:cover dir=r                         |
+| dissolve     | p:dissolve                            |
+| checkerboard | p:checker                             |
+| blinds       | p:blinds dir=vert                     |
+| clock        | p:wheel spokes=1                      |
+| random       | p:random                              |
+| box          | p:zoom                                |
+| comb         | p:comb                                |
 
 Office 2010 effects use a `p14` Choice with a `p:fade` Fallback:
 
-| Effect | Required primary child and attributes |
-|---|---|
-| reveal | p14:reveal dir=r |
-| flash | p14:flash |
-| ripple | p14:ripple |
-| honeycomb | p14:honeycomb |
-| glitter | p14:glitter |
-| vortex | p14:vortex dir=r |
-| shred | p14:shred dir=out |
-| switch | p14:switch dir=r |
-| flip | p14:flip dir=r |
-| gallery | p14:gallery dir=r |
-| cube | p14:prism dir=r |
-| doors | p14:doors dir=vert |
-| zoom | p14:warp dir=in |
-| pan | p14:pan dir=r |
-| ferris_wheel | p14:ferris dir=r |
-| conveyor | p14:conveyor dir=r |
-| rotate | p14:prism dir=r isContent=1 |
-| window | p14:window |
-| orbit | p14:prism dir=r isContent=1 isInverted=1 |
-| fly_through | p14:flythrough |
+| Effect       | Required primary child and attributes    |
+| ------------ | ---------------------------------------- |
+| reveal       | p14:reveal dir=r                         |
+| flash        | p14:flash                                |
+| ripple       | p14:ripple                               |
+| honeycomb    | p14:honeycomb                            |
+| glitter      | p14:glitter                              |
+| vortex       | p14:vortex dir=r                         |
+| shred        | p14:shred dir=out                        |
+| switch       | p14:switch dir=r                         |
+| flip         | p14:flip dir=r                           |
+| gallery      | p14:gallery dir=r                        |
+| cube         | p14:prism dir=r                          |
+| doors        | p14:doors dir=vert                       |
+| zoom         | p14:warp dir=in                          |
+| pan          | p14:pan dir=r                            |
+| ferris_wheel | p14:ferris dir=r                         |
+| conveyor     | p14:conveyor dir=r                       |
+| rotate       | p14:prism dir=r isContent=1              |
+| window       | p14:window                               |
+| orbit        | p14:prism dir=r isContent=1 isInverted=1 |
+| fly_through  | p14:flythrough                           |
 
 Office 2012 effects use a `p15` Choice with a `p:fade` Fallback:
 
-| Effect | Required primary child and attributes |
-|---|---|
-| fall_over | p15:prstTrans prst=fallOver invX=1 |
-| drape | p15:prstTrans prst=drape invX=1 |
-| curtains | p15:prstTrans prst=curtains |
-| wind | p15:prstTrans prst=wind |
-| prestige | p15:prstTrans prst=prestige |
-| fracture | p15:prstTrans prst=fracture |
-| crush | p15:prstTrans prst=crush |
-| peel_off | p15:prstTrans prst=peelOff invX=1 |
+| Effect    | Required primary child and attributes    |
+| --------- | ---------------------------------------- |
+| fall_over | p15:prstTrans prst=fallOver invX=1       |
+| drape     | p15:prstTrans prst=drape invX=1          |
+| curtains  | p15:prstTrans prst=curtains              |
+| wind      | p15:prstTrans prst=wind                  |
+| prestige  | p15:prstTrans prst=prestige              |
+| fracture  | p15:prstTrans prst=fracture              |
+| crush     | p15:prstTrans prst=crush                 |
+| peel_off  | p15:prstTrans prst=peelOff invX=1        |
 | page_curl | p15:prstTrans prst=pageCurlSingle invX=1 |
-| airplane | p15:prstTrans prst=airplane |
-| origami | p15:prstTrans prst=origami |
+| airplane  | p15:prstTrans prst=airplane              |
+| origami   | p15:prstTrans prst=origami               |
 
 `morph` uses `p159:morph option=byObject` in an Office 2015 Choice with a
 `p:fade` Fallback. `none` is the explicit no-visual-effect input and therefore
@@ -145,29 +145,29 @@ is not a registry entry.
 Use `effect_options` only with an explicit native `effect`. Omitted options use
 the PowerPoint-authored `default` reported by `--describe-transition`:
 
-| Effect | Supported options |
-|---|---|
-| `morph` | `morph_by`: `object`, `word`, `character` |
-| `fade` | `style`: `smoothly`, `through_black` |
-| `push`, `wipe`, `vortex`, `cube`, `pan`, `rotate`, `orbit` | `direction`: `left`, `right`, `up`, `down` |
-| `split` | `orientation`: `horizontal`, `vertical`; `direction`: `out`, `in` |
-| `reveal` | `direction`: `right`, `left`; `through_black`: boolean |
-| `cut` | `through_black`: boolean |
-| `random_bars`, `blinds`, `doors` | `orientation`: `vertical`, `horizontal` |
-| `checkerboard` | `direction`: `across`, `down` |
-| `comb`, `window` | `orientation`: `horizontal`, `vertical` |
-| `shape` | `shape`: `circle`, `diamond`, `plus` |
-| `uncover`, `cover` | `direction`: `left`, `right`, `up`, `down`, `up_left`, `up_right`, `down_left`, `down_right` |
-| `fall_over`, `drape`, `wind`, `peel_off`, `airplane`, `origami` | `direction`: `right`, `left` |
-| `page_curl` | `direction`: `right`, `left`; `pages`: `single`, `double` |
-| `clock` | `style`: `clockwise`, `counterclockwise`, `wedge` |
-| `ripple` | `origin`: `center`, `up_left`, `up_right`, `down_left`, `down_right` |
-| `glitter` | `shape`: `diamond`, `hexagon`; `direction`: `right`, `left`, `up`, `down` |
-| `shred` | `pattern`: `strips`, `rectangle`; `direction`: `out`, `in` |
-| `switch`, `flip`, `gallery`, `ferris_wheel`, `conveyor` | `direction`: `right`, `left` |
-| `box`, `zoom` | `direction`: `out`, `in` |
-| `fly_through` | `direction`: `in`, `out`; `bounce`: boolean |
-| All other native effects | No Effect Options |
+| Effect                                                          | Supported options                                                                            |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `morph`                                                         | `morph_by`: `object`, `word`, `character`                                                    |
+| `fade`                                                          | `style`: `smoothly`, `through_black`                                                         |
+| `push`, `wipe`, `vortex`, `cube`, `pan`, `rotate`, `orbit`      | `direction`: `left`, `right`, `up`, `down`                                                   |
+| `split`                                                         | `orientation`: `horizontal`, `vertical`; `direction`: `out`, `in`                            |
+| `reveal`                                                        | `direction`: `right`, `left`; `through_black`: boolean                                       |
+| `cut`                                                           | `through_black`: boolean                                                                     |
+| `random_bars`, `blinds`, `doors`                                | `orientation`: `vertical`, `horizontal`                                                      |
+| `checkerboard`                                                  | `direction`: `across`, `down`                                                                |
+| `comb`, `window`                                                | `orientation`: `horizontal`, `vertical`                                                      |
+| `shape`                                                         | `shape`: `circle`, `diamond`, `plus`                                                         |
+| `uncover`, `cover`                                              | `direction`: `left`, `right`, `up`, `down`, `up_left`, `up_right`, `down_left`, `down_right` |
+| `fall_over`, `drape`, `wind`, `peel_off`, `airplane`, `origami` | `direction`: `right`, `left`                                                                 |
+| `page_curl`                                                     | `direction`: `right`, `left`; `pages`: `single`, `double`                                    |
+| `clock`                                                         | `style`: `clockwise`, `counterclockwise`, `wedge`                                            |
+| `ripple`                                                        | `origin`: `center`, `up_left`, `up_right`, `down_left`, `down_right`                         |
+| `glitter`                                                       | `shape`: `diamond`, `hexagon`; `direction`: `right`, `left`, `up`, `down`                    |
+| `shred`                                                         | `pattern`: `strips`, `rectangle`; `direction`: `out`, `in`                                   |
+| `switch`, `flip`, `gallery`, `ferris_wheel`, `conveyor`         | `direction`: `right`, `left`                                                                 |
+| `box`, `zoom`                                                   | `direction`: `out`, `in`                                                                     |
+| `fly_through`                                                   | `direction`: `in`, `out`; `bounce`: boolean                                                  |
+| All other native effects                                        | No Effect Options                                                                            |
 
 Example:
 
@@ -195,8 +195,8 @@ never reads `templates/sounds/` or resolves library ids.
 Inspect the exact contract, including compatibility desugaring:
 
 ~~~bash
-python3 skills/ppt-master/scripts/pptx_animations.py --describe-transition page_curl
-python3 skills/ppt-master/scripts/pptx_animations.py --describe-transition diamond
+python skills/ppt-master/scripts/pptx_animations.py --describe-transition page_curl
+python skills/ppt-master/scripts/pptx_animations.py --describe-transition diamond
 ~~~
 
 Read-back reports the canonical native effect, its complete effective options,
@@ -240,12 +240,12 @@ continue to preserve existing object names and transition XML.
 
 ## 4. Route Mapping
 
-| Route | Default enter | Default advance | Compatibility note |
-|---|---|---|---|
-| Generated PPTX CLI | fade, 0.4s; no sound | click | auto-advance maps to both; an optional sidecar sound is project-local |
-| Recorded narration | Preserve resolved enter | narration | none remains visually none |
-| Template Fill | preserve source | preserve source | explicit effects replace; legacy advance_after maps to both |
-| Native Enhance | Confirmed global/per-slide plan effect | Confirmed timing module | With audio off, an enabled global transition or explicit global `none` applies to all pages; with audio on, the scope flag controls non-narrated pages |
+| Route              | Default enter                          | Default advance         | Compatibility note                                                                                                                                     |
+| ------------------ | -------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Generated PPTX CLI | fade, 0.4s; no sound                   | click                   | auto-advance maps to both; an optional sidecar sound is project-local                                                                                  |
+| Recorded narration | Preserve resolved enter                | narration               | none remains visually none                                                                                                                             |
+| Template Fill      | preserve source                        | preserve source         | explicit effects replace; legacy advance_after maps to both                                                                                            |
+| Native Enhance     | Confirmed global/per-slide plan effect | Confirmed timing module | With audio off, an enabled global transition or explicit global `none` applies to all pages; with audio on, the scope flag controls non-narrated pages |
 
 Template Fill changes source transitions only when its CLI or per-slide plan
 selects a replacement, removal, or timed advance. Native Enhance uses its
@@ -274,12 +274,12 @@ One slide may contain at most one logical transition carrier:
 
 Mutation rules:
 
-| Operation | Direct transition | AlternateContent |
-|---|---|---|
-| preserve | Leave unchanged | Leave wrapper and branches unchanged |
-| advance-only | Patch direct attributes | Patch Choice and Fallback identically |
-| replace | Replace the direct carrier | Remove the whole wrapper, then write one carrier |
-| none | Remove visual effect; retain a non-visual carrier when sound or timing is needed | Remove the whole wrapper; write a non-visual carrier when sound or timing is needed |
+| Operation    | Direct transition                                                                | AlternateContent                                                                    |
+| ------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| preserve     | Leave unchanged                                                                  | Leave wrapper and branches unchanged                                                |
+| advance-only | Patch direct attributes                                                          | Patch Choice and Fallback identically                                               |
+| replace      | Replace the direct carrier                                                       | Remove the whole wrapper, then write one carrier                                    |
+| none         | Remove visual effect; retain a non-visual carrier when sound or timing is needed | Remove the whole wrapper; write a non-visual carrier when sound or timing is needed |
 
 **Sound placement**: for a direct transition, append `p:sndAc` inside
 `p:transition` after the visual-effect child, when present. For

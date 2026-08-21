@@ -8,10 +8,10 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 ## Responsibility Boundary
 
-| Owner | Responsibilities |
-|---|---|
+| Owner           | Responsibilities                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Create Template | Child-workflow dispatch plus the shared `library` / `project` scope, confirmation gate, collision preflight, registration, completion, and Generate PPTX handoff contract |
-| Create Brand | End-to-end brand-specific analysis, identity brief, identity-only `design_spec.md`, adopted brand assets, and brand-specific validation |
+| Create Brand    | End-to-end brand-specific analysis, identity brief, identity-only `design_spec.md`, adopted brand assets, and brand-specific validation                                   |
 
 **Hard rule — child workflow, not a top-level route**: Create Brand executes only inside Create Template. It uses the parent workflow's single shared confirmation/preflight/registration contract and never creates a competing entry route or second confirmation gate.
 
@@ -25,16 +25,16 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 ## 1. Brand Input Analysis
 
-| Input | Read path | Facts it may support |
-|---|---|---|
-| SVG logo | Read the SVG and inspect literal `fill` / `stroke` values | Logo asset and literal colors |
-| PNG/JPG logo | Inspect visually | Logo asset and approximate colors |
-| Official brand site or manual | Convert/read the source | Published colors, fonts, voice, usage restrictions |
-| Branded PPTX/PDF | Use the existing source converters and theme/package facts | Observed colors, typography, logo assets, and tone |
-| Pasted text, Markdown, or text document | Use direct text or the parent workflow's converted text output | Explicit identity values, usage rules, voice, and restrictions |
-| Verbal brief | Use the user's words directly | Any identity field the user explicitly supplies |
-| Mixed reference bundle | Run every applicable row and retain per-source provenance | Combined identity evidence; unresolved conflicts go to the shared confirmation gate |
-| No reference | No analysis | Empty skeleton only when the user explicitly requests it |
+| Input                                   | Read path                                                      | Facts it may support                                                                |
+| --------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| SVG logo                                | Read the SVG and inspect literal `fill` / `stroke` values      | Logo asset and literal colors                                                       |
+| PNG/JPG logo                            | Inspect visually                                               | Logo asset and approximate colors                                                   |
+| Official brand site or manual           | Convert/read the source                                        | Published colors, fonts, voice, usage restrictions                                  |
+| Branded PPTX/PDF                        | Use the existing source converters and theme/package facts     | Observed colors, typography, logo assets, and tone                                  |
+| Pasted text, Markdown, or text document | Use direct text or the parent workflow's converted text output | Explicit identity values, usage rules, voice, and restrictions                      |
+| Verbal brief                            | Use the user's words directly                                  | Any identity field the user explicitly supplies                                     |
+| Mixed reference bundle                  | Run every applicable row and retain per-source provenance      | Combined identity evidence; unresolved conflicts go to the shared confirmation gate |
+| No reference                            | No analysis                                                    | Empty skeleton only when the user explicitly requests it                            |
 
 Use these provenance labels in the proposal and final Color Scheme table:
 
@@ -48,16 +48,16 @@ Use these provenance labels in the proposal and final Color Scheme table:
 
 Surface these through Create Template's single shared Step 2–3 gate:
 
-| Field | Requirement |
-|---|---|
-| Brand display name and use cases | Required |
-| Primary color | Required; `#RRGGBB` plus provenance |
+| Field                                   | Requirement                                                                                              |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Brand display name and use cases        | Required                                                                                                 |
+| Primary color                           | Required; `#RRGGBB` plus provenance                                                                      |
 | Secondary/accent/text/background colors | Include only when confirmed or supported by evidence; every written color uses `#RRGGBB` plus provenance |
-| Title/body typography | Required; retain provenance in surrounding prose when it is not official |
-| Logo | Optional; identify the default presenting entity, file, usage rule, and any trademark restriction |
-| Voice and tone | Required; formality, grammatical person, emoji policy, abbreviation policy |
-| Icon style | Required; `linear`, `filled`, `duotone`, or a confirmed custom description |
-| Adopted assets | Optional; list included and excluded candidates with reasons |
+| Title/body typography                   | Required; retain provenance in surrounding prose when it is not official                                 |
+| Logo                                    | Optional; identify the default presenting entity, file, usage rule, and any trademark restriction        |
+| Voice and tone                          | Required; formality, grammatical person, emoji policy, abbreviation policy                               |
+| Icon style                              | Required; `linear`, `filled`, `duotone`, or a confirmed custom description                               |
+| Adopted assets                          | Optional; list included and excluded candidates with reasons                                             |
 
 When the user explicitly requests an empty skeleton, all identity values remain TODO comments, materialization stops after writing the file, and Create Template reports that the workspace is incomplete and unregistered.
 
@@ -90,25 +90,25 @@ primary_color: "#XXXXXX"
 > Identity-only preset. No SVG page roster — pages are composed freely under these constraints.
 
 ## I. Brand Overview
-| Property | Value |
-|---|---|
-| Brand Name | <display name> |
-| Use Cases | <summary> |
-| Tone | <one-line tone summary> |
-| Sources | <official URL or bundled asset paths; include version/retrieval date when known> |
+| Property   | Value                                                                            |
+| ---------- | -------------------------------------------------------------------------------- |
+| Brand Name | <display name>                                                                   |
+| Use Cases  | <summary>                                                                        |
+| Tone       | <one-line tone summary>                                                          |
+| Sources    | <official URL or bundled asset paths; include version/retrieval date when known> |
 
 ## II. Color Scheme
-| Role | HEX | Provenance |
-|---|---|---|
-| primary | #XXXXXX | fact \| approx \| user |
+| Role      | HEX     | Provenance             |
+| --------- | ------- | ---------------------- |
+| primary   | #XXXXXX | fact \| approx \| user |
 | secondary | #XXXXXX | fact \| approx \| user |
-| accent | #XXXXXX | fact \| approx \| user |
+| accent    | #XXXXXX | fact \| approx \| user |
 
 ## III. Typography
-| Role | Family | Weight |
-|---|---|---|
+| Role  | Family   | Weight   |
+| ----- | -------- | -------- |
 | title | <family> | <weight> |
-| body | <family> | <weight> |
+| body  | <family> | <weight> |
 
 ## IV. Logo
 - File: `../images/logo.<ext>` or `none`
@@ -143,19 +143,19 @@ Return these facts to Create Template:
 For both scopes, Create Template Step 5 validates the portable Brand contract without registration:
 
 ```bash
-python3 skills/ppt-master/scripts/svg_quality_checker.py "<template_workspace>/templates" --template-mode
+python skills/ppt-master/scripts/svg_quality_checker.py "<template_workspace>/templates" --template-mode
 ```
 
 For `library` scope, additionally validate the directory/index identity with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <brand_id> --kind brand --dry-run
+python skills/ppt-master/scripts/register_template.py <brand_id> --kind brand --dry-run
 ```
 
 After that gate passes, Create Template Step 7 registers with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <brand_id> --kind brand
+python skills/ppt-master/scripts/register_template.py <brand_id> --kind brand
 ```
 
 For `project` scope, run only the shared validator, skip both registrar commands, and report `Not registered (project workspace)`. Downstream consumption always uses the explicit workspace root through Generate PPTX Step 3; a bare brand name never activates it.

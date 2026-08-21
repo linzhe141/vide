@@ -76,11 +76,20 @@ function isChatMessage(msg: AgentMessage): msg is ChatMessage {
   )
 }
 export function buildAIMessages(messages: AgentMessage[]) {
+  const newMessages = [...messages].map((msg) => {
+    if (msg.role === 'context') {
+      return {
+        role: 'system',
+        content: msg.content,
+      } as AgentMessage
+    }
+    return msg
+  })
   const defaultSystemMessage: AgentMessage = {
     role: 'system',
     content: AgentSystemPrompt,
   }
-  return [defaultSystemMessage, ...messages.filter(isChatMessage)]
+  return [defaultSystemMessage, ...newMessages.filter(isChatMessage)]
 }
 
 export interface ModelConfig {

@@ -6,10 +6,10 @@ Inspect a finished PPTX without modifying it and report package integrity,
 delivery portability, media footprint, hidden slides, and motion presence.
 
 Usage:
-    python3 scripts/pptx_delivery_check.py <presentation.pptx>
+    python scripts/pptx_delivery_check.py <presentation.pptx>
 
 Examples:
-    python3 scripts/pptx_delivery_check.py projects/demo/exports/demo.pptx
+    python scripts/pptx_delivery_check.py projects/demo/exports/demo.pptx
 
 Dependencies:
     Same repository dependencies as beautify_identity.py and svg_to_pptx.py.

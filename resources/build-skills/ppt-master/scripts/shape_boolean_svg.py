@@ -9,16 +9,16 @@ or structured parent, never under the old transformed ancestor. The source SVG
 is read-only; this tool never rewrites the page.
 
 Usage:
-    python3 scripts/shape_boolean_svg.py render SVG_FILE \
+    python scripts/shape_boolean_svg.py render SVG_FILE \
         --operation OPERATION --source ID --source ID --id OUTPUT_ID
 
 Examples:
-    python3 scripts/shape_boolean_svg.py render slide.svg \
+    python scripts/shape_boolean_svg.py render slide.svg \
         --operation intersect --source circle --source card --id overlap
-    python3 scripts/shape_boolean_svg.py render slide.svg \
+    python scripts/shape_boolean_svg.py render slide.svg \
         --operation subtract --source body --source cutout --id result \
         --fill "#2563EB" --stroke none
-    python3 scripts/shape_boolean_svg.py render cover.svg \
+    python scripts/shape_boolean_svg.py render cover.svg \
         --operation subtract --source scrim --source chapter-number --id reveal
 
 Dependencies:

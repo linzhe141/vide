@@ -19,7 +19,7 @@ The fixture deliberately closes the full planning and execution chain:
 - one helper-authored `rightArrow` verifies native preset discovery and export.
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import base64
 import io
 import json
@@ -96,11 +96,11 @@ preset = (
 
 ## I. Project Information
 
-| Item | Value |
-| --- | --- |
-| Project Name | advanced-image-motion-smoke |
-| Canvas Format | PPT 16:9 |
-| Page Count | 2 |
+| Item          | Value                       |
+| ------------- | --------------------------- |
+| Project Name  | advanced-image-motion-smoke |
+| Canvas Format | PPT 16:9                    |
+| Page Count    | 2                           |
 
 ## II. Canvas Specification
 
@@ -128,9 +128,9 @@ preset = (
 
 ## VIII. Image Resource List
 
-| Filename | Dimensions | Ratio | Purpose | Type | Layout pattern | Crop Policy | Acquire Via | Status | Reference | text_policy | page_role |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| scene.png | 1280x720 | 16:9 | Morph crop continuity | Photo | #M1-11 same-source independent crops with a shaped detail | adaptive | user | Existing | Synthetic three-band scene for crop and Morph verification | none | local |
+| Filename  | Dimensions | Ratio | Purpose               | Type  | Layout pattern                                            | Crop Policy | Acquire Via | Status   | Reference                                                  | text_policy | page_role |
+| --------- | ---------- | ----- | --------------------- | ----- | --------------------------------------------------------- | ----------- | ----------- | -------- | ---------------------------------------------------------- | ----------- | --------- |
+| scene.png | 1280x720   | 16:9  | Morph crop continuity | Photo | #M1-11 same-source independent crops with a shaped detail | adaptive    | user        | Existing | Synthetic three-band scene for crop and Morph verification | none        | local     |
 
 ## IX. Content Outline
 

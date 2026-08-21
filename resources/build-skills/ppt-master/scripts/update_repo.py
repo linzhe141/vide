@@ -5,12 +5,12 @@ Pull the latest Git checkout and sync Python dependencies when the effective
 requirements include tree changes.
 
 Usage:
-    python3 skills/ppt-master/scripts/update_repo.py
-    python3 skills/ppt-master/scripts/update_repo.py --skip-pip
+    python skills/ppt-master/scripts/update_repo.py
+    python skills/ppt-master/scripts/update_repo.py --skip-pip
 
 Examples:
-    python3 skills/ppt-master/scripts/update_repo.py
-    python3 skills/ppt-master/scripts/update_repo.py --skip-pip
+    python skills/ppt-master/scripts/update_repo.py
+    python skills/ppt-master/scripts/update_repo.py --skip-pip
 
 Dependencies:
     None (standard library only)

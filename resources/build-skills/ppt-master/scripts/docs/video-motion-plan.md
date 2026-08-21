@@ -18,7 +18,7 @@ For a narrated deck, generate the trace from the narrated export so its offsets
 and slide advances include the final audio timing:
 
 ```bash
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
+python skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
   --recorded-narration audio \
   --conversion-trace \
   -o <project_path>/validation/video_motion_source.pptx
@@ -27,7 +27,7 @@ python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
 Then build the motion plan:
 
 ```bash
-python3 skills/ppt-master/scripts/video_motion_plan.py \
+python skills/ppt-master/scripts/video_motion_plan.py \
   <project_path>/validation/video_motion_source.trace.json \
   -o <project_path>/validation/video_motion_plan.json \
   --style adaptive \
@@ -66,18 +66,18 @@ conversion trace.
 
 Each object keeps `source_effect` and receives a compatible video family:
 
-| Source effect | Video family |
-|---|---|
-| `entrance_appear` | `hard_reveal` |
-| `entrance_fade` | `soft_fade` |
-| `entrance_dissolve` | `grain_dissolve` |
-| `entrance_fly`, `entrance_ascend` | `directional_slide` |
-| `entrance_wipe`, `entrance_peek` | `soft_mask_reveal` |
-| `entrance_zoom`, `entrance_expand`, `entrance_stretch` | `focus_scale` |
-| `entrance_split` | `split_mask` |
-| `entrance_box`, `entrance_circle`, `entrance_diamond`, `entrance_plus` | `shape_mask` |
-| `entrance_blinds`, `entrance_checkerboard`, `entrance_random_bars`, `entrance_strips`, `entrance_wedge`, `entrance_wheel` | `pattern_reveal` |
-| `entrance_swivel` | `soft_swivel` |
+| Source effect                                                                                                             | Video family        |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `entrance_appear`                                                                                                         | `hard_reveal`       |
+| `entrance_fade`                                                                                                           | `soft_fade`         |
+| `entrance_dissolve`                                                                                                       | `grain_dissolve`    |
+| `entrance_fly`, `entrance_ascend`                                                                                         | `directional_slide` |
+| `entrance_wipe`, `entrance_peek`                                                                                          | `soft_mask_reveal`  |
+| `entrance_zoom`, `entrance_expand`, `entrance_stretch`                                                                    | `focus_scale`       |
+| `entrance_split`                                                                                                          | `split_mask`        |
+| `entrance_box`, `entrance_circle`, `entrance_diamond`, `entrance_plus`                                                    | `shape_mask`        |
+| `entrance_blinds`, `entrance_checkerboard`, `entrance_random_bars`, `entrance_strips`, `entrance_wedge`, `entrance_wheel` | `pattern_reveal`    |
+| `entrance_swivel`                                                                                                         | `soft_swivel`       |
 
 This mapping is an enhancement contract, not permission to substitute an
 unrelated effect. A directional slide remains directional; a wipe remains a

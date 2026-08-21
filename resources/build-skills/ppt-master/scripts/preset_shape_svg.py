@@ -6,14 +6,14 @@ List DrawingML presets or print one compact canonical native-preset SVG group to
 stdout for manual insertion into a hand-authored page or template.
 
 Usage:
-    python3 scripts/preset_shape_svg.py list [--search QUERY]
-    python3 scripts/preset_shape_svg.py describe PRESET
-    python3 scripts/preset_shape_svg.py render PRESET --id ID --frame X Y W H
+    python scripts/preset_shape_svg.py list [--search QUERY]
+    python scripts/preset_shape_svg.py describe PRESET
+    python scripts/preset_shape_svg.py render PRESET --id ID --frame X Y W H
 
 Examples:
-    python3 scripts/preset_shape_svg.py list --search arrow
-    python3 scripts/preset_shape_svg.py describe rightArrow
-    python3 scripts/preset_shape_svg.py render rightArrow --id next-step \
+    python scripts/preset_shape_svg.py list --search arrow
+    python scripts/preset_shape_svg.py describe rightArrow
+    python scripts/preset_shape_svg.py render rightArrow --id next-step \
         --frame 160 210 320 112 --fill "#2563EB" --stroke none
 
 Dependencies:

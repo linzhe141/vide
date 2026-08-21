@@ -8,10 +8,10 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 ## Responsibility Boundary
 
-| Owner | Responsibilities |
-|---|---|
+| Owner           | Responsibilities                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Create Template | Child-workflow dispatch plus the shared source taxonomy, `library` / `project` scope, confirmation gate, collision preflight, structured authoring contract, validation commands, registration, completion, and Generate PPTX handoff |
-| Create Deck | Recurring-application interpretation, integrated identity/structure, complete `design_spec.md`, SVG roster, and deck-specific validation |
+| Create Deck     | Recurring-application interpretation, integrated identity/structure, complete `design_spec.md`, SVG roster, and deck-specific validation                                                                                              |
 
 **Hard rule — child workflow, not a top-level route**: Create Deck executes only inside Create Template. It reuses the parent workflow's Steps 1–8 and never creates a competing entry route or second confirmation gate.
 
@@ -40,18 +40,18 @@ Create Deck is selected when identity and structure must travel together, when t
 
 Add these child-owned requirements to Create Template Step 2:
 
-| Field | Requirement |
-|---|---|
-| Deck ID and display name | Required; `deck_id` is a filesystem-safe ASCII slug |
-| Recurring presentation family | Required; identify the repeatable situations this Deck serves rather than listing every plausible use |
-| Intended audiences and outcomes | Required; state who the recurring users/recipients are and what the presentation should enable |
-| Delivery and reading assumptions | Required; state whether the family is usually presented, closely read, handed off, or used in a mixed way |
-| Representative narrative/page roles | Required; describe the roles present in the source or useful to the recurring family without assigning future inclusion rules |
-| Identity | Required; primary color plus supported palette, typography, logo policy, visual voice, and icon style |
-| Canvas and page grammar | Required; exact canvas, page types, variants, grids, zones, density rhythm, and image behavior |
-| Native structure | Required; Master families, Layout ownership, slot vocabulary, and zero-slot Layouts where intentional |
-| Creation intent | Required as natural-language prose: what should remain recognizable, what should be rebuilt into a reusable system, and whether the source page set should be preserved broadly or distilled. The AI derives `replication_mode` internally. |
-| Adopted assets | Optional; list included and excluded candidates with reasons |
+| Field                               | Requirement                                                                                                                                                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deck ID and display name            | Required; `deck_id` is a filesystem-safe ASCII slug                                                                                                                                                                                         |
+| Recurring presentation family       | Required; identify the repeatable situations this Deck serves rather than listing every plausible use                                                                                                                                       |
+| Intended audiences and outcomes     | Required; state who the recurring users/recipients are and what the presentation should enable                                                                                                                                              |
+| Delivery and reading assumptions    | Required; state whether the family is usually presented, closely read, handed off, or used in a mixed way                                                                                                                                   |
+| Representative narrative/page roles | Required; describe the roles present in the source or useful to the recurring family without assigning future inclusion rules                                                                                                               |
+| Identity                            | Required; primary color plus supported palette, typography, logo policy, visual voice, and icon style                                                                                                                                       |
+| Canvas and page grammar             | Required; exact canvas, page types, variants, grids, zones, density rhythm, and image behavior                                                                                                                                              |
+| Native structure                    | Required; Master families, Layout ownership, slot vocabulary, and zero-slot Layouts where intentional                                                                                                                                       |
+| Creation intent                     | Required as natural-language prose: what should remain recognizable, what should be rebuilt into a reusable system, and whether the source page set should be preserved broadly or distilled. The AI derives `replication_mode` internally. |
+| Adopted assets                      | Optional; list included and excluded candidates with reasons                                                                                                                                                                                |
 
 Write this complete schema:
 
@@ -123,8 +123,8 @@ In addition to Create Template Steps 5–6, verify:
 For library scope, Create Template validates and registers with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <deck_id> --kind deck --dry-run
-python3 skills/ppt-master/scripts/register_template.py <deck_id> --kind deck
+python skills/ppt-master/scripts/register_template.py <deck_id> --kind deck --dry-run
+python skills/ppt-master/scripts/register_template.py <deck_id> --kind deck
 ```
 
 For project scope, skip both commands. The exact workspace root becomes the next Generate PPTX Step 3 input; any separately supplied Brand, Style, or Layout workspace overrides the corresponding complete segment downstream without mutating this deck workspace.

@@ -21,18 +21,18 @@ This directory contains user-facing scripts for conversion, project setup, direc
 Typical end-to-end workflow:
 
 ```bash
-python3 scripts/source_to_md.py <file-or-url-or-dir> [<file-or-url-or-dir> ...]
+python scripts/source_to_md.py <file-or-url-or-dir> [<file-or-url-or-dir> ...]
 # or direct backend calls:
-python3 scripts/source_to_md/pdf_to_md.py <file.pdf>
+python scripts/source_to_md/pdf_to_md.py <file.pdf>
 # or
-python3 scripts/source_to_md/ppt_to_md.py <deck.pptx>
-python3 scripts/source_to_md/excel_to_md.py <workbook.xlsx>
-python3 scripts/project_manager.py init <project_name> --format ppt169
-python3 scripts/project_manager.py import-sources <project_path> <source_files_or_dirs...>
-python3 scripts/total_md_split.py <project_path>
-python3 scripts/finalize_svg.py <project_path>
-python3 scripts/animation_config.py scaffold <project_path>  # optional object-level animation overrides
-python3 scripts/svg_to_pptx.py <project_path>
+python scripts/source_to_md/ppt_to_md.py <deck.pptx>
+python scripts/source_to_md/excel_to_md.py <workbook.xlsx>
+python scripts/project_manager.py init <project_name> --format ppt169
+python scripts/project_manager.py import-sources <project_path> <source_files_or_dirs...>
+python scripts/total_md_split.py <project_path>
+python scripts/finalize_svg.py <project_path>
+python scripts/animation_config.py scaffold <project_path>  # optional object-level animation overrides
+python scripts/svg_to_pptx.py <project_path>
 ```
 
 After `init`, project-scoped Python CLIs automatically record their command
@@ -43,49 +43,49 @@ logging wrapper. The log does not copy the full console stream.
 Repository update:
 
 ```bash
-python3 scripts/update_repo.py
+python scripts/update_repo.py
 ```
 
 ## Script Index
 
-| Area | Primary scripts | Documentation |
-|------|-----------------|---------------|
-| Conversion | `source_to_md.py`, `source_to_md/pdf_to_md.py`, `source_to_md/doc_to_md.py`, `source_to_md/excel_to_md.py`, `source_to_md/ppt_to_md.py`, `source_to_md/web_to_md.py`, `pptx_intake.py`, `pptx_to_svg.py` | [docs/conversion.md](./docs/conversion.md) |
-| Project management | `project_manager.py`, `workflow_log.py`, `workflow_transcript.py`, `batch_validate.py`, `generate_examples_index.py`, `error_helper.py`, `pptx_template_import.py`, `template_fill_pptx.py`, `native_enhance_pptx.py`, `pptx_delivery_check.py` | [docs/project.md](./docs/project.md) |
-| SVG pipeline | `preset_shape_svg.py`, `shape_boolean_svg.py`, `svg_authoring_view.py`, `compact_svg_coordinates.py`, `mirror_template_materialize.py`, `finalize_svg.py`, `svg_to_pptx.py`, `template_preview_pptx.py`, `total_md_split.py`, `svg_quality_checker.py`, `extract_svg_assets.py`, `extract_svg_pictures.py`, `animation_config.py`, `notes_to_audio.py`, `narration_sync.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md); [native shape authoring](../references/native-shape-authoring.md) |
-| PPTX transitions | `pptx_transitions.py` | [docs/pptx-transitions.md](./docs/pptx-transitions.md) |
-| PPTX animations | `pptx_animations.py`, `animation_config.py` | [docs/pptx-animations.md](./docs/pptx-animations.md) |
-| Animation resources | `sound_sync.py` | [sound catalog](../templates/sounds/README.md); [docs/pptx-animations.md](./docs/pptx-animations.md) |
-| Spec maintenance | `update_spec.py`, `visualization_recall.py`; legacy `chart_recall.py` | [docs/update_spec.md](./docs/update_spec.md); [docs/visualization-recall.md](./docs/visualization-recall.md) |
-| Image tools | `image_gen.py`, `image_treat.py`, `latex_render.py`, `analyze_images.py`, `gemini_watermark_remover.py` | [docs/image.md](./docs/image.md) |
-| Maintenance smokes | Inline temporary-project commands | [advanced image and motion](./docs/advanced-image-motion-smoke.md); [mask and gradient](./docs/mask-gradient-smoke.md); [multilingual text](./docs/multilingual-text-smoke.md) |
-| Repo maintenance | `update_repo.py` | README install/update section |
-| Troubleshooting | validation, preview, export, dependency issues | [docs/troubleshooting.md](./docs/troubleshooting.md) |
+| Area                | Primary scripts                                                                                                                                                                                                                                                                                                                                                             | Documentation                                                                                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Conversion          | `source_to_md.py`, `source_to_md/pdf_to_md.py`, `source_to_md/doc_to_md.py`, `source_to_md/excel_to_md.py`, `source_to_md/ppt_to_md.py`, `source_to_md/web_to_md.py`, `pptx_intake.py`, `pptx_to_svg.py`                                                                                                                                                                    | [docs/conversion.md](./docs/conversion.md)                                                                                                                                     |
+| Project management  | `project_manager.py`, `workflow_log.py`, `workflow_transcript.py`, `batch_validate.py`, `generate_examples_index.py`, `error_helper.py`, `pptx_template_import.py`, `template_fill_pptx.py`, `native_enhance_pptx.py`, `pptx_delivery_check.py`                                                                                                                             | [docs/project.md](./docs/project.md)                                                                                                                                           |
+| SVG pipeline        | `preset_shape_svg.py`, `shape_boolean_svg.py`, `svg_authoring_view.py`, `compact_svg_coordinates.py`, `mirror_template_materialize.py`, `finalize_svg.py`, `svg_to_pptx.py`, `template_preview_pptx.py`, `total_md_split.py`, `svg_quality_checker.py`, `extract_svg_assets.py`, `extract_svg_pictures.py`, `animation_config.py`, `notes_to_audio.py`, `narration_sync.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md); [native shape authoring](../references/native-shape-authoring.md)                                                              |
+| PPTX transitions    | `pptx_transitions.py`                                                                                                                                                                                                                                                                                                                                                       | [docs/pptx-transitions.md](./docs/pptx-transitions.md)                                                                                                                         |
+| PPTX animations     | `pptx_animations.py`, `animation_config.py`                                                                                                                                                                                                                                                                                                                                 | [docs/pptx-animations.md](./docs/pptx-animations.md)                                                                                                                           |
+| Animation resources | `sound_sync.py`                                                                                                                                                                                                                                                                                                                                                             | [sound catalog](../templates/sounds/README.md); [docs/pptx-animations.md](./docs/pptx-animations.md)                                                                           |
+| Spec maintenance    | `update_spec.py`, `visualization_recall.py`; legacy `chart_recall.py`                                                                                                                                                                                                                                                                                                       | [docs/update_spec.md](./docs/update_spec.md); [docs/visualization-recall.md](./docs/visualization-recall.md)                                                                   |
+| Image tools         | `image_gen.py`, `image_treat.py`, `latex_render.py`, `analyze_images.py`, `gemini_watermark_remover.py`                                                                                                                                                                                                                                                                     | [docs/image.md](./docs/image.md)                                                                                                                                               |
+| Maintenance smokes  | Inline temporary-project commands                                                                                                                                                                                                                                                                                                                                           | [advanced image and motion](./docs/advanced-image-motion-smoke.md); [mask and gradient](./docs/mask-gradient-smoke.md); [multilingual text](./docs/multilingual-text-smoke.md) |
+| Repo maintenance    | `update_repo.py`                                                                                                                                                                                                                                                                                                                                                            | README install/update section                                                                                                                                                  |
+| Troubleshooting     | validation, preview, export, dependency issues                                                                                                                                                                                                                                                                                                                              | [docs/troubleshooting.md](./docs/troubleshooting.md)                                                                                                                           |
 
 ## High-Frequency Commands
 
 Conversion:
 
 ```bash
-python3 scripts/source_to_md.py <file-or-url-or-dir> [<file-or-url-or-dir> ...]
-python3 scripts/source_to_md/pdf_to_md.py <file.pdf>
-python3 scripts/source_to_md/ppt_to_md.py <deck.pptx>
-python3 scripts/source_to_md/doc_to_md.py <file.docx>
-python3 scripts/source_to_md/excel_to_md.py <workbook.xlsx>
-python3 scripts/source_to_md/web_to_md.py <url>
-python3 scripts/pptx_to_svg.py <deck.pptx> -o <output_dir>  # reconstruction/reference SVG import
+python scripts/source_to_md.py <file-or-url-or-dir> [<file-or-url-or-dir> ...]
+python scripts/source_to_md/pdf_to_md.py <file.pdf>
+python scripts/source_to_md/ppt_to_md.py <deck.pptx>
+python scripts/source_to_md/doc_to_md.py <file.docx>
+python scripts/source_to_md/excel_to_md.py <workbook.xlsx>
+python scripts/source_to_md/web_to_md.py <url>
+python scripts/pptx_to_svg.py <deck.pptx> -o <output_dir>  # reconstruction/reference SVG import
 ```
 
 Project setup:
 
 ```bash
-python3 scripts/project_manager.py init <project_name> --format ppt169
-python3 scripts/project_manager.py import-sources <project_path> <source_files_or_dirs...>
-python3 scripts/project_manager.py scaffold-spec <project_path>  # optional manual helper
-python3 scripts/project_manager.py scaffold-lock <project_path>  # optional manual helper
-python3 scripts/project_manager.py validate <project_path>
-python3 scripts/project_manager.py page-context <project_path> P07 --record-usage
-python3 scripts/project_manager.py page-context-report <project_path>
+python scripts/project_manager.py init <project_name> --format ppt169
+python scripts/project_manager.py import-sources <project_path> <source_files_or_dirs...>
+python scripts/project_manager.py scaffold-spec <project_path>  # optional manual helper
+python scripts/project_manager.py scaffold-lock <project_path>  # optional manual helper
+python scripts/project_manager.py validate <project_path>
+python scripts/project_manager.py page-context <project_path> P07 --record-usage
+python scripts/project_manager.py page-context-report <project_path>
 ```
 
 `page-context` is an on-demand read-only current-page projection for diagnostics,
@@ -101,22 +101,22 @@ degrade to `tokens: null` when `tiktoken` is absent. Telemetry may be partial.
 Visualization candidate recall:
 
 ```bash
-python3 scripts/visualization_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "direction over time"
-python3 scripts/visualization_recall.py validate chart/line_chart
+python scripts/visualization_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "direction over time"
+python scripts/visualization_recall.py validate chart/line_chart
 ```
 
 Template source import:
 
 ```bash
-python3 scripts/pptx_template_import.py <template.pptx>
-python3 scripts/pptx_template_import.py <template.pptx> --manifest-only
-python3 scripts/pptx_template_import.py <template.pptx> --inheritance-mode both
-python3 scripts/svg_authoring_view.py <imported-svg-or-dir> -o <output-dir> --projection-kind layered
-python3 scripts/svg_authoring_view.py <authoring-dir> --refresh-summary
-python3 scripts/compact_svg_coordinates.py <template_workspace>/templates --inplace --keep-native-frames
-python3 scripts/mirror_template_materialize.py <import_workspace> <empty_template_workspace>
-python3 scripts/template_preview_pptx.py <template_workspace>
-python3 scripts/template_preview_pptx.py <legacy_template_workspace> --visual-only
+python scripts/pptx_template_import.py <template.pptx>
+python scripts/pptx_template_import.py <template.pptx> --manifest-only
+python scripts/pptx_template_import.py <template.pptx> --inheritance-mode both
+python scripts/svg_authoring_view.py <imported-svg-or-dir> -o <output-dir> --projection-kind layered
+python scripts/svg_authoring_view.py <authoring-dir> --refresh-summary
+python scripts/compact_svg_coordinates.py <template_workspace>/templates --inplace --keep-native-frames
+python scripts/mirror_template_materialize.py <import_workspace> <empty_template_workspace>
+python scripts/template_preview_pptx.py <template_workspace>
+python scripts/template_preview_pptx.py <legacy_template_workspace> --visual-only
 ```
 
 Template import defaults to the canonical layered `svg/` tree. Use
@@ -172,14 +172,14 @@ The destination must be empty, and the command does not write
 Template fill (direct PPTX, no SVG conversion):
 
 ```bash
-python3 scripts/project_manager.py init <project_name> --format ppt169
-python3 scripts/project_manager.py import-sources <project_path> <source.pptx> <material...>
+python scripts/project_manager.py init <project_name> --format ppt169
+python scripts/project_manager.py import-sources <project_path> <source.pptx> <material...>
 # Manual fallback when import-sources did not produce analysis/<stem>.slide_library.json:
-python3 scripts/template_fill_pptx.py analyze <project_path>/sources/<source.pptx> -o <project_path>/analysis/<stem>.slide_library.json
-python3 scripts/template_fill_pptx.py scaffold <project_path>/analysis/<stem>.slide_library.json -o <project_path>/analysis/fill_plan.json --slides "1,3,4"
-python3 scripts/template_fill_pptx.py check-plan <project_path>/analysis/<stem>.slide_library.json <project_path>/analysis/fill_plan.json -o <project_path>/analysis/check_report.json
-python3 scripts/template_fill_pptx.py apply <project_path>/sources/<source.pptx> <project_path>/analysis/fill_plan.json -o <project_path>/exports/filled.pptx
-python3 scripts/template_fill_pptx.py validate <project_path>
+python scripts/template_fill_pptx.py analyze <project_path>/sources/<source.pptx> -o <project_path>/analysis/<stem>.slide_library.json
+python scripts/template_fill_pptx.py scaffold <project_path>/analysis/<stem>.slide_library.json -o <project_path>/analysis/fill_plan.json --slides "1,3,4"
+python scripts/template_fill_pptx.py check-plan <project_path>/analysis/<stem>.slide_library.json <project_path>/analysis/fill_plan.json -o <project_path>/analysis/check_report.json
+python scripts/template_fill_pptx.py apply <project_path>/sources/<source.pptx> <project_path>/analysis/fill_plan.json -o <project_path>/exports/filled.pptx
+python scripts/template_fill_pptx.py validate <project_path>
 ```
 
 `apply` requires `fill_plan.json` to have top-level `"status": "confirmed"` unless `--force` is passed. It automatically writes `filled_YYYYMMDD_HHMMSS.pptx` unless the output stem already ends with a timestamp. It preserves source page transitions by default; `--transition <effect>` accepts a canonical effect in the shared native gallery registry documented by [`docs/pptx-transitions.md`](docs/pptx-transitions.md), while old names remain accepted only as compatibility inputs, and `--transition-duration <seconds>` changes a replacement effect's duration. `--transition none` removes the visual effect, `--transition keep` states the preservation policy explicitly, and a per-slide `transition` field in the plan overrides whatever the CLI selects. The object form accepts effect-specific native `effect_options`.
@@ -187,19 +187,19 @@ python3 scripts/template_fill_pptx.py validate <project_path>
 Native existing-PPTX enhancement (direct PPTX, no SVG conversion):
 
 ```bash
-python3 scripts/native_enhance_pptx.py init <source.pptx> --name <project_slug>
-python3 scripts/native_enhance_pptx.py plan <project_path>
-python3 scripts/native_enhance_pptx.py validate <project_path>
-python3 scripts/native_enhance_pptx.py apply <project_path>
-python3 scripts/pptx_delivery_check.py <finished.pptx>
+python scripts/native_enhance_pptx.py init <source.pptx> --name <project_slug>
+python scripts/native_enhance_pptx.py plan <project_path>
+python scripts/native_enhance_pptx.py validate <project_path>
+python scripts/native_enhance_pptx.py apply <project_path>
+python scripts/pptx_delivery_check.py <finished.pptx>
 ```
 
 Native preset shape authoring (one registry-backed fragment on stdout):
 
 ```bash
-python3 scripts/preset_shape_svg.py list --search arrow
-python3 scripts/preset_shape_svg.py describe rightArrow
-python3 scripts/preset_shape_svg.py render rightArrow --id process-arrow --frame 120 180 240 96 --fill '#2563EB'
+python scripts/preset_shape_svg.py list --search arrow
+python scripts/preset_shape_svg.py describe rightArrow
+python scripts/preset_shape_svg.py render rightArrow --id process-arrow --frame 120 180 240 96 --fill '#2563EB'
 ```
 
 The helper never writes a page or project file. Select one exact semantic
@@ -220,7 +220,7 @@ PowerPoint-style Merge Shapes materialization (source read-only; result paths
 on stdout):
 
 ```bash
-python3 scripts/shape_boolean_svg.py render slide.svg \
+python scripts/shape_boolean_svg.py render slide.svg \
   --operation intersect \
   --source circle \
   --source card \
@@ -241,11 +241,11 @@ result remains editable freeform geometry but is no longer editable text. See
 Create-template/source normalization (optional; never part of automatic export):
 
 ```bash
-python3 scripts/extract_svg_assets.py <layered_svg_dir> --icons-dir <icons_dir> --icon-namespace imported --inplace --id-prefix layered
-python3 scripts/extract_svg_assets.py <flat_svg_dir> --icons-dir <icons_dir> --icon-namespace imported --reuse-inventory <layered_inventory.json> --inplace --id-prefix flat
-python3 scripts/extract_svg_pictures.py "<svg_file>" --select "<group_id>" --resource-root "<workspace>" --images-dir "<picture_assets_dir>" --inplace  # optional create-template normalization: one selected group -> one SVG picture
-python3 scripts/compact_svg_coordinates.py <template_workspace>/templates --inplace --keep-native-frames
-python3 scripts/mirror_template_materialize.py <import_workspace> <empty_template_workspace>  # Type A mirror only
+python scripts/extract_svg_assets.py <layered_svg_dir> --icons-dir <icons_dir> --icon-namespace imported --inplace --id-prefix layered
+python scripts/extract_svg_assets.py <flat_svg_dir> --icons-dir <icons_dir> --icon-namespace imported --reuse-inventory <layered_inventory.json> --inplace --id-prefix flat
+python scripts/extract_svg_pictures.py "<svg_file>" --select "<group_id>" --resource-root "<workspace>" --images-dir "<picture_assets_dir>" --inplace  # optional create-template normalization: one selected group -> one SVG picture
+python scripts/compact_svg_coordinates.py <template_workspace>/templates --inplace --keep-native-frames
+python scripts/mirror_template_materialize.py <import_workspace> <empty_template_workspace>  # Type A mirror only
 ```
 
 `extract_svg_assets.py` fingerprints each extracted subtree before generated-ID
@@ -263,9 +263,9 @@ Post-processing and export:
 
 ```bash
 # Run only when the Design Spec's effective Speaker Notes outcome is enabled.
-python3 scripts/total_md_split.py <project_path>
-python3 scripts/finalize_svg.py <project_path>
-python3 scripts/svg_to_pptx.py <project_path>
+python scripts/total_md_split.py <project_path>
+python scripts/finalize_svg.py <project_path>
+python scripts/svg_to_pptx.py <project_path>
 ```
 
 When Speaker Notes is disabled, skip `total_md_split.py` and append
@@ -303,18 +303,18 @@ literal field fallback because they are shared by multiple slides.
 Image generation:
 
 ```bash
-python3 scripts/latex_render.py <project_path>
-python3 scripts/latex_render.py <project_path> --providers codecogs,quicklatex,mathpad,wikimedia
-python3 scripts/image_gen.py "A modern futuristic workspace"
-python3 scripts/image_gen.py --list-backends
-python3 scripts/analyze_images.py <project_path>/images
+python scripts/latex_render.py <project_path>
+python scripts/latex_render.py <project_path> --providers codecogs,quicklatex,mathpad,wikimedia
+python scripts/image_gen.py "A modern futuristic workspace"
+python scripts/image_gen.py --list-backends
+python scripts/analyze_images.py <project_path>/images
 ```
 
 Repository update:
 
 ```bash
-python3 scripts/update_repo.py
-python3 scripts/update_repo.py --skip-pip
+python scripts/update_repo.py
+python scripts/update_repo.py --skip-pip
 ```
 
 ## Recommendations

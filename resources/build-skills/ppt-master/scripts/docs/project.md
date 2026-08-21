@@ -11,14 +11,14 @@ Project tools create, validate, and inspect the standard PPT Master workspace.
 Main entry point for project setup and validation.
 
 ```bash
-python3 scripts/project_manager.py init <project_name> --format ppt169
-python3 scripts/project_manager.py import-sources <project_path> <source1_or_dir> [<source2_or_dir> ...]
-python3 scripts/project_manager.py scaffold-spec <project_path>  # optional manual helper
-python3 scripts/project_manager.py scaffold-lock <project_path>  # optional manual helper
-python3 scripts/project_manager.py validate <project_path>
-python3 scripts/project_manager.py info <project_path>
-python3 scripts/project_manager.py page-context <project_path> P07 [--pretty] [--record-usage]
-python3 scripts/project_manager.py page-context-report <project_path>
+python scripts/project_manager.py init <project_name> --format ppt169
+python scripts/project_manager.py import-sources <project_path> <source1_or_dir> [<source2_or_dir> ...]
+python scripts/project_manager.py scaffold-spec <project_path>  # optional manual helper
+python scripts/project_manager.py scaffold-lock <project_path>  # optional manual helper
+python scripts/project_manager.py validate <project_path>
+python scripts/project_manager.py info <project_path>
+python scripts/project_manager.py page-context <project_path> P07 [--pretty] [--record-usage]
+python scripts/project_manager.py page-context-report <project_path>
 ```
 
 Notes:
@@ -138,13 +138,13 @@ Common formats:
 Examples:
 
 ```bash
-python3 scripts/project_manager.py init my_presentation --format ppt169
-python3 scripts/project_manager.py scaffold-spec projects/my_presentation_ppt169_20251116  # optional
-python3 scripts/project_manager.py scaffold-lock projects/my_presentation_ppt169_20251116  # optional
-python3 scripts/project_manager.py validate projects/my_presentation_ppt169_20251116
-python3 scripts/project_manager.py info projects/my_presentation_ppt169_20251116
-python3 scripts/project_manager.py page-context projects/my_presentation_ppt169_20251116 P07 --record-usage
-python3 scripts/project_manager.py page-context-report projects/my_presentation_ppt169_20251116
+python scripts/project_manager.py init my_presentation --format ppt169
+python scripts/project_manager.py scaffold-spec projects/my_presentation_ppt169_20251116  # optional
+python scripts/project_manager.py scaffold-lock projects/my_presentation_ppt169_20251116  # optional
+python scripts/project_manager.py validate projects/my_presentation_ppt169_20251116
+python scripts/project_manager.py info projects/my_presentation_ppt169_20251116
+python scripts/project_manager.py page-context projects/my_presentation_ppt169_20251116 P07 --record-usage
+python scripts/project_manager.py page-context-report projects/my_presentation_ppt169_20251116
 ```
 
 ## `workflow_transcript.py` and `workflow_log.py`
@@ -153,7 +153,7 @@ Project initialization creates `validation/workflow.log` and records its own
 milestone. Run later project-scoped Python tools normally:
 
 ```bash
-python3 scripts/<tool>.py <project_path> <args...>
+python scripts/<tool>.py <project_path> <args...>
 ```
 
 Their shared CLI bootstrap discovers the existing project log from the working
@@ -172,7 +172,7 @@ For a Python helper whose arguments and working directory do not identify the
 active project, set the routing signal on the same command:
 
 ```bash
-PPT_MASTER_PROJECT_PATH="<project_path>" python3 scripts/<helper>.py <args...>
+PPT_MASTER_PROJECT_PATH="<project_path>" python scripts/<helper>.py <args...>
 ```
 
 This variable selects only the destination transcript; it does not authorize
@@ -182,7 +182,7 @@ Append a manual note only when an important audit detail has no owning command
 output:
 
 ```bash
-python3 scripts/workflow_log.py <project_path> "<material audit detail>"
+python scripts/workflow_log.py <project_path> "<material audit detail>"
 ```
 
 Suitable notes include a material stage handoff or rework reason, a
@@ -208,7 +208,7 @@ from project_utils import get_project_info, validate_project_structure
 You can also run it directly for quick checks:
 
 ```bash
-python3 scripts/project_utils.py <project_path>
+python scripts/project_utils.py <project_path>
 ```
 
 ## `batch_validate.py`
@@ -216,10 +216,10 @@ python3 scripts/project_utils.py <project_path>
 Batch-check project structure and compliance.
 
 ```bash
-python3 scripts/batch_validate.py examples
-python3 scripts/batch_validate.py examples projects
-python3 scripts/batch_validate.py --all
-python3 scripts/batch_validate.py examples --export
+python scripts/batch_validate.py examples
+python scripts/batch_validate.py examples projects
+python scripts/batch_validate.py --all
+python scripts/batch_validate.py examples --export
 ```
 
 Use this for repository-wide health checks before release or cleanup.
@@ -229,8 +229,8 @@ Use this for repository-wide health checks before release or cleanup.
 Rebuild `examples/README.md` automatically.
 
 ```bash
-python3 scripts/generate_examples_index.py
-python3 scripts/generate_examples_index.py examples
+python scripts/generate_examples_index.py
+python scripts/generate_examples_index.py examples
 ```
 
 ## `pptx_template_import.py`
@@ -238,14 +238,14 @@ python3 scripts/generate_examples_index.py examples
 Unified PPTX preparation entry point for `/create-template`.
 
 ```bash
-python3 scripts/pptx_template_import.py <template.pptx>
-python3 scripts/pptx_template_import.py <template.pptx> -o <output_dir>
-python3 scripts/pptx_template_import.py <template.pptx> --manifest-only
-python3 scripts/pptx_template_import.py <template.pptx> --skip-manifest
-python3 scripts/pptx_template_import.py <template.pptx> --embed-images
-python3 scripts/pptx_template_import.py <template.pptx> --inheritance-mode both
-python3 scripts/pptx_template_import.py <template.pptx> --inheritance-mode flat
-python3 scripts/pptx_template_import.py <template.pptx> --inheritance-mode layered
+python scripts/pptx_template_import.py <template.pptx>
+python scripts/pptx_template_import.py <template.pptx> -o <output_dir>
+python scripts/pptx_template_import.py <template.pptx> --manifest-only
+python scripts/pptx_template_import.py <template.pptx> --skip-manifest
+python scripts/pptx_template_import.py <template.pptx> --embed-images
+python scripts/pptx_template_import.py <template.pptx> --inheritance-mode both
+python scripts/pptx_template_import.py <template.pptx> --inheritance-mode flat
+python scripts/pptx_template_import.py <template.pptx> --inheritance-mode layered
 ```
 
 Notes:
@@ -278,7 +278,7 @@ Implementation note:
 Show standardized fixes for common project errors.
 
 ```bash
-python3 scripts/error_helper.py
-python3 scripts/error_helper.py missing_readme
-python3 scripts/error_helper.py missing_readme project_path=my_project
+python scripts/error_helper.py
+python scripts/error_helper.py missing_readme
+python scripts/error_helper.py missing_readme project_path=my_project
 ```

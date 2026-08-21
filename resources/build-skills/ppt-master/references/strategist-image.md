@@ -36,19 +36,19 @@ For specialized or regulated paper-figure subjects, preserve the prompt depth re
 
 Formula rendering is a conditional choice surfaced in final Stage 2 production confirmation. Recommend one policy and let the user confirm or override it:
 
-| Policy | Behavior | Use |
-|---|---|---|
-| `mixed` (default) | Render complex expressions to PNG; keep simple inline math as editable text / Unicode | Most academic, engineering, educational, and technical decks |
-| `render-all` | Render every formula-worthy expression to PNG | Formula-heavy teaching / research decks where consistency matters more than editability |
-| `text-only` | Keep expressions as editable text / Unicode | Business decks, light technical briefs, or an explicit editability preference |
+| Policy            | Behavior                                                                              | Use                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `mixed` (default) | Render complex expressions to PNG; keep simple inline math as editable text / Unicode | Most academic, engineering, educational, and technical decks                            |
+| `render-all`      | Render every formula-worthy expression to PNG                                         | Formula-heavy teaching / research decks where consistency matters more than editability |
+| `text-only`       | Keep expressions as editable text / Unicode                                           | Business decks, light technical briefs, or an explicit editability preference           |
 
 `$...$` / `$$...$$` in source material are input signals only. Never scan output files for dollar-delimited formulas. Fractions, radicals, integrals, sums, limits, matrices, multiline derivations, and complex super/subscripts are formula-worthy; short variables, simple assignments, percentages, and expressions such as `O(n log n)` normally remain text. Never invent an equation for decoration.
 
 For `mixed` or `render-all`, write selected source expressions to `<project_path>/images/formula_manifest.json` before writing the final spec, then run:
 
 ```bash
-python3 skills/ppt-master/scripts/latex_render.py <project_path>
-python3 skills/ppt-master/scripts/analyze_images.py <project_path>/images
+python skills/ppt-master/scripts/latex_render.py <project_path>
+python skills/ppt-master/scripts/analyze_images.py <project_path>/images
 ```
 
 Follow `latex_render.py --help` for the manifest fields. The renderer writes dimensions, ratio, file, provider, and status back into it. Formula PNGs default to transparent; use an opaque final background only when the asset requires it.

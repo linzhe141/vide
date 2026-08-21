@@ -8,12 +8,12 @@ wait until its native video encoder finishes.
 See workflows/stages/generate-audio.md for the narration handoff.
 
 Usage:
-    python3 scripts/powerpoint_video.py <pptx> [-o <video>]
-    python3 scripts/powerpoint_video.py --check
+    python scripts/powerpoint_video.py <pptx> [-o <video>]
+    python scripts/powerpoint_video.py --check
 
 Examples:
-    python3 scripts/powerpoint_video.py projects/demo/exports/demo_narrated.pptx
-    python3 scripts/powerpoint_video.py deck.pptx -o deck.mp4 --resolution 1080
+    python scripts/powerpoint_video.py projects/demo/exports/demo_narrated.pptx
+    python scripts/powerpoint_video.py deck.pptx -o deck.mp4 --resolution 1080
 
 Dependencies:
     Windows PowerPoint with the CreateVideo automation API

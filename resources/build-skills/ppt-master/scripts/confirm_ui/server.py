@@ -16,16 +16,16 @@ fails; it preserves the same staged semantics.
 See scripts/docs/confirm_ui.md for the round-trip data contract and schema.
 
 Usage:
-    python3 scripts/confirm_ui/server.py <project_dir>
+    python scripts/confirm_ui/server.py <project_dir>
 
 Examples:
-    python3 scripts/confirm_ui/server.py projects/my-project
-    python3 scripts/confirm_ui/server.py projects/my-project --port 5051
-    python3 scripts/confirm_ui/server.py projects/my-project --no-browser
-    python3 scripts/confirm_ui/server.py projects/my-project --daemon
-    python3 scripts/confirm_ui/server.py projects/my-project --wait-only --wait-stage stage1
-    python3 scripts/confirm_ui/server.py projects/my-project --complete-template-selection
-    python3 scripts/confirm_ui/server.py projects/my-project --reset-template-selection
+    python scripts/confirm_ui/server.py projects/my-project
+    python scripts/confirm_ui/server.py projects/my-project --port 5051
+    python scripts/confirm_ui/server.py projects/my-project --no-browser
+    python scripts/confirm_ui/server.py projects/my-project --daemon
+    python scripts/confirm_ui/server.py projects/my-project --wait-only --wait-stage stage1
+    python scripts/confirm_ui/server.py projects/my-project --complete-template-selection
+    python scripts/confirm_ui/server.py projects/my-project --reset-template-selection
 
 Dependencies:
     flask>=3.0.0

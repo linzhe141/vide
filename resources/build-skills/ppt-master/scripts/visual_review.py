@@ -12,9 +12,9 @@ because cairo's text API has no font-fallback chain — CJK characters render as
 tofu boxes for any deck whose font-family list relies on system fallback.
 
 Usage:
-    python3 scripts/visual_review.py <project_path>
-    python3 scripts/visual_review.py <project_path> --pages 02 03
-    python3 scripts/visual_review.py <project_path> --server-url http://localhost:5050
+    python scripts/visual_review.py <project_path>
+    python scripts/visual_review.py <project_path> --pages 02 03
+    python scripts/visual_review.py <project_path> --server-url http://localhost:5050
 
 Exit codes (per references/visual-review.md §7):
     0 — all requested pages rendered
@@ -333,7 +333,7 @@ def main() -> int:
         _safe_print(
             'playwright not installed. Install with:\n'
             '    pip install playwright\n'
-            '    python3 -m playwright install chromium\n'
+            '    python -m playwright install chromium\n'
             '(see skills/ppt-master/requirements.txt)'
         )
         return 3
@@ -345,7 +345,7 @@ def main() -> int:
         _safe_print(str(e))
         _safe_print(
             'start it with:\n'
-            f'    python3 skills/ppt-master/scripts/svg_editor/server.py {project_path}'
+            f'    python skills/ppt-master/scripts/svg_editor/server.py {project_path}'
         )
         return 2
 
@@ -364,7 +364,7 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — browser launch failure
             _safe_print(f'browser session failed: {type(e).__name__}: {e}')
             _safe_print(
-                'try:  python3 -m playwright install chromium'
+                'try:  python -m playwright install chromium'
             )
             return 3
 

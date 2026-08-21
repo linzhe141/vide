@@ -13,30 +13,30 @@ owns status names, resource lifecycle, and embedding workflow;
 [`svg-effects.md`](./svg-effects.md) §6.5 owns native carrier, crop transport,
 and filter/clip contracts.
 
-| Mode | Resource authority and preparation timing |
-|---|---|
-| Default Generate | `design_spec.md §VIII` plus its lock projection; when user-provided images are selected, run `analyze_images.py` after Strategist confirmation and complete the list before Executor |
-| Quick Generate | Current main agent's active-context resource decisions; materialize explicit user paths first, resolve unspecified acquisition decisions automatically, and finish user/ai/web/slice/formula preparation before SVG authoring without confirmation or a persisted roster |
+| Mode             | Resource authority and preparation timing                                                                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Default Generate | `design_spec.md §VIII` plus its lock projection; when user-provided images are selected, run `analyze_images.py` after Strategist confirmation and complete the list before Executor                                                                                     |
+| Quick Generate   | Current main agent's active-context resource decisions; materialize explicit user paths first, resolve unspecified acquisition decisions automatically, and finish user/ai/web/slice/formula preparation before SVG authoring without confirmation or a persisted roster |
 
 ```markdown
-| Filename | Dimensions | Purpose | Type | Layout pattern | Crop Policy | Acquire Via | Status | Reference |
-|----------|------------|---------|------|----------------|-------------|-------------|--------|-----------|
-| team.jpg | 800x600 | Team photo | Photography | `#P1-02 image left, copy right` | adaptive | web | Pending | Diverse engineering team in modern office |
-| formula_001.png | 736x168 | Page 3 block equation | Latex Formula | formula | no-crop | formula | Rendered | `E = mc^2` |
+| Filename        | Dimensions | Purpose               | Type          | Layout pattern                  | Crop Policy | Acquire Via | Status   | Reference                                 |
+| --------------- | ---------- | --------------------- | ------------- | ------------------------------- | ----------- | ----------- | -------- | ----------------------------------------- |
+| team.jpg        | 800x600    | Team photo            | Photography   | `#P1-02 image left, copy right` | adaptive    | web         | Pending  | Diverse engineering team in modern office |
+| formula_001.png | 736x168    | Page 3 block equation | Latex Formula | formula                         | no-crop     | formula     | Rendered | `E = mc^2`                                |
 ```
 
 ### Image Status Enum
 
-| Status | Meaning | Executor Handling |
-|--------|---------|-------------------|
-| **Pending** | Acquisition or declared derivation is needed; not yet attempted | Step 5 consumes this; must not remain afterward |
-| **Failed** | The latest automatic acquisition attempt failed; this is retryable and non-terminal | Step 5 reruns the owning manifest or explicitly resolves the row to `Needs-Manual`; Executor must never treat `Failed` as usable content |
-| **Generated** | AI/slice output exists | Reference from `../images/`; manifest records govern attribution. An `Illustration Sheet` stays in §VIII only as an unplaced slice source |
-| **Sourced** | Web-sourced file exists at expected path | Reference from `../images/`; check `image_sources.json` for `license_tier` — if `attribution-required`, render an inline credit element on the slide (see [`executor-web-image.md`](./executor-web-image.md) §1 and [`image-searcher.md`](./image-searcher.md) §7 for the attribution contract) |
-| **Rendered** | Deterministic formula PNG exists at expected path (`Acquire Via: formula`) | Reference from `../images/`; use a legal anchor with `meet` for the complete placement (centered default: `xMidYMid meet`) and do not crop |
+| Status           | Meaning                                                                                                                                       | Executor Handling                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pending**      | Acquisition or declared derivation is needed; not yet attempted                                                                               | Step 5 consumes this; must not remain afterward                                                                                                                                                                                                                                                                                                                                                                |
+| **Failed**       | The latest automatic acquisition attempt failed; this is retryable and non-terminal                                                           | Step 5 reruns the owning manifest or explicitly resolves the row to `Needs-Manual`; Executor must never treat `Failed` as usable content                                                                                                                                                                                                                                                                       |
+| **Generated**    | AI/slice output exists                                                                                                                        | Reference from `../images/`; manifest records govern attribution. An `Illustration Sheet` stays in §VIII only as an unplaced slice source                                                                                                                                                                                                                                                                      |
+| **Sourced**      | Web-sourced file exists at expected path                                                                                                      | Reference from `../images/`; check `image_sources.json` for `license_tier` — if `attribution-required`, render an inline credit element on the slide (see [`executor-web-image.md`](./executor-web-image.md) §1 and [`image-searcher.md`](./image-searcher.md) §7 for the attribution contract)                                                                                                                |
+| **Rendered**     | Deterministic formula PNG exists at expected path (`Acquire Via: formula`)                                                                    | Reference from `../images/`; use a legal anchor with `meet` for the complete placement (centered default: `xMidYMid meet`) and do not crop                                                                                                                                                                                                                                                                     |
 | **Needs-Manual** | Automatic acquisition is unavailable/exhausted or the selected path requires manual fulfillment; for `slice`, the parent sheet is unavailable | Default Generate may use a dashed placeholder until its readiness gate. Quick Generate blocks every required row still in this status, even if an unverified candidate file exists; validate a supplied replacement and reconcile it to `Existing`, `Generated`, `Sourced`, or `Rendered` first. For `slice`, supply the parent sheet and rerun `slice_images.py`; do not hand-place individual element files. |
-| **Existing** | User already has image (`Acquire Via: user`) | Place in `images/`, reference with `<image>` |
-| **Placeholder** | Intentionally not prepared yet (`Acquire Via: placeholder`) | Dashed border placeholder; replace later |
+| **Existing**     | User already has image (`Acquire Via: user`)                                                                                                  | Place in `images/`, reference with `<image>`                                                                                                                                                                                                                                                                                                                                                                   |
+| **Placeholder**  | Intentionally not prepared yet (`Acquire Via: placeholder`)                                                                                   | Dashed border placeholder; replace later                                                                                                                                                                                                                                                                                                                                                                       |
 
 ---
 
@@ -60,7 +60,7 @@ and filter/clip contracts.
    ├── Sourced + license_tier=manual → <image href=...> only (user-supplied --from-url; rights/credit are user responsibility)
    ├── Rendered formula → <image href="../images/formula_001.png" preserveAspectRatio="xMidYMid meet" .../>
    └── Placeholder / Needs-Manual → Dashed border + description text until a supplied file is validated and status is reconciled
-4. Preview: python3 -m http.server -d <project_path> 8000 → /svg_output/<filename>.svg
+4. Preview: python -m http.server -d <project_path> 8000 → /svg_output/<filename>.svg
 5. Export:
    - Default Generate → follow [`generate-pptx.md`](../workflows/generate-pptx.md) Step 7
    - Quick Generate → after every required resource has a validated expected file/provenance and usable status, run the profile's final checker, then its `--quick-generate` export
@@ -74,10 +74,10 @@ and filter/clip contracts.
 
 ## External Reference vs Base64 Embedding
 
-| Method | Pros | Cons | Suitable For |
-|--------|------|------|-------------|
-| **External reference** | Small file size, fast iteration, easy to replace | Preview requires HTTP server from project root | `svg_output/` development phase |
-| **Base64 embedding** | Self-contained file, stable direct preview / SVG-picture insertion | Large file size | `svg_final/` preview phase |
+| Method                 | Pros                                                               | Cons                                           | Suitable For                    |
+| ---------------------- | ------------------------------------------------------------------ | ---------------------------------------------- | ------------------------------- |
+| **External reference** | Small file size, fast iteration, easy to replace                   | Preview requires HTTP server from project root | `svg_output/` development phase |
+| **Base64 embedding**   | Self-contained file, stable direct preview / SVG-picture insertion | Large file size                                | `svg_final/` preview phase      |
 
 ---
 
@@ -92,27 +92,27 @@ and filter/clip contracts.
 
 ### Key Attributes
 
-| Attribute | Description | Example |
-|-----------|-------------|---------|
-| `href` | Image path (relative or absolute) | `"../images/cover.png"` |
-| `x`, `y` | Image top-left corner position | `x="0" y="0"` |
-| `width`, `height` | Image display dimensions | `width="1280" height="720"` |
-| `preserveAspectRatio` | Scaling mode | `"xMidYMid slice"` |
+| Attribute             | Description                       | Example                     |
+| --------------------- | --------------------------------- | --------------------------- |
+| `href`                | Image path (relative or absolute) | `"../images/cover.png"`     |
+| `x`, `y`              | Image top-left corner position    | `x="0" y="0"`               |
+| `width`, `height`     | Image display dimensions          | `width="1280" height="720"` |
+| `preserveAspectRatio` | Scaling mode                      | `"xMidYMid slice"`          |
 
 ### preserveAspectRatio Common Values
 
-| Value | Effect |
-|-------|--------|
-| `xMidYMid slice` | Center crop (similar to CSS `cover`) |
-| `xMidYMid meet` | Complete display (similar to CSS `contain`) |
-| `none` | Stretch to fill, no aspect ratio preservation |
+| Value            | Effect                                        |
+| ---------------- | --------------------------------------------- |
+| `xMidYMid slice` | Center crop (similar to CSS `cover`)          |
+| `xMidYMid meet`  | Complete display (similar to CSS `contain`)   |
+| `none`           | Stretch to fill, no aspect ratio preservation |
 
 ### Preview Method
 
 Browser security blocks external images on directly opened SVGs. Serve via HTTP from the project root:
 
 ```bash
-python3 -m http.server -d <project_path> 8000
+python -m http.server -d <project_path> 8000
 # Visit http://localhost:8000/svg_output/your_file.svg
 ```
 
@@ -128,13 +128,13 @@ python3 -m http.server -d <project_path> 8000
 
 ### MIME Types
 
-| MIME Type | File Format |
-|-----------|-------------|
-| `image/png` | PNG |
-| `image/jpeg` | JPG/JPEG |
-| `image/gif` | GIF |
-| `image/webp` | WebP |
-| `image/svg+xml` | SVG |
+| MIME Type       | File Format |
+| --------------- | ----------- |
+| `image/png`     | PNG         |
+| `image/jpeg`    | JPG/JPEG    |
+| `image/gif`     | GIF         |
+| `image/webp`    | WebP        |
+| `image/svg+xml` | SVG         |
 
 ---
 
@@ -151,8 +151,8 @@ its project-local image references directly to DrawingML in both modes.
 For processing specific SVGs without the full pipeline:
 
 ```bash
-python3 scripts/svg_finalize/align_embed_images.py <svg_file>
-python3 scripts/svg_finalize/align_embed_images.py --dry-run <svg_file>
+python scripts/svg_finalize/align_embed_images.py <svg_file>
+python scripts/svg_finalize/align_embed_images.py --dry-run <svg_file>
 ```
 
 Use `finalize_svg.py --only align-images` for project-level batches. The old
@@ -167,11 +167,11 @@ aliases only when invoked through `finalize_svg.py --only`.
 
 **Default — preserve unmodified image bytes**: `svg_to_pptx.py` uses `--image-sizing cap`. It keeps original bytes when an image needs neither resizing nor EXIF geometry normalization, and re-encodes only images that require one of those transformations. Use the explicit compact command only when a compact export is requested.
 
-| Need | Command |
-|---|---|
-| Normal native export | `python3 scripts/svg_to_pptx.py <project_path>` |
-| Explicit compact export | `python3 scripts/svg_to_pptx.py <project_path> --image-sizing display --image-scale 2 --image-quality 85` |
-| Force original bytes | `python3 scripts/svg_to_pptx.py <project_path> --no-image-optimize` |
+| Need                    | Command                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Normal native export    | `python scripts/svg_to_pptx.py <project_path>`                                                           |
+| Explicit compact export | `python scripts/svg_to_pptx.py <project_path> --image-sizing display --image-scale 2 --image-quality 85` |
+| Force original bytes    | `python scripts/svg_to_pptx.py <project_path> --no-image-optimize`                                       |
 
 ### File Organization
 

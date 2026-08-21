@@ -3,11 +3,11 @@
 This directory is PPT Master's global sound-effect library. It contains 186
 CC0 sound effects prepared as PowerPoint-compatible WAV files:
 
-| Namespace | Source | Files | Primary use |
-|---|---|---:|---|
-| `kenney-interface` | Kenney Interface Sounds | 100 | Interface and object-animation cues |
-| `kenney-ui` | Kenney UI Audio | 51 | Click, rollover, and state-change cues |
-| `bigsoundbank` | BigSoundBank selection | 35 | Whoosh, notification, chime, and pencil cues |
+| Namespace          | Source                  | Files | Primary use                                  |
+| ------------------ | ----------------------- | ----: | -------------------------------------------- |
+| `kenney-interface` | Kenney Interface Sounds |   100 | Interface and object-animation cues          |
+| `kenney-ui`        | Kenney UI Audio         |    51 | Click, rollover, and state-change cues       |
+| `bigsoundbank`     | BigSoundBank selection  |    35 | Whoosh, notification, chime, and pencil cues |
 
 Source snapshots, license declarations, and modifications are recorded in
 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Machine-readable metadata
@@ -20,8 +20,8 @@ does not create a `sounds/` directory or copy the library. Copy only the sounds
 explicitly selected for a deck:
 
 ```bash
-python3 skills/ppt-master/scripts/sound_sync.py list --query whoosh
-python3 skills/ppt-master/scripts/sound_sync.py projects/deck bigsoundbank/1797 kenney-interface/click_001
+python skills/ppt-master/scripts/sound_sync.py list --query whoosh
+python skills/ppt-master/scripts/sound_sync.py projects/deck bigsoundbank/1797 kenney-interface/click_001
 ```
 
 The second command copies only those files to:
@@ -43,9 +43,9 @@ selected library ID; the tool never silently overwrites that conflict.
 List the full catalog or filter it by stable ID, label, tag, or context:
 
 ```bash
-python3 skills/ppt-master/scripts/sound_sync.py list
-python3 skills/ppt-master/scripts/sound_sync.py list --query transition
-python3 skills/ppt-master/scripts/sound_sync.py list --query recommended
+python skills/ppt-master/scripts/sound_sync.py list
+python skills/ppt-master/scripts/sound_sync.py list --query transition
+python skills/ppt-master/scripts/sound_sync.py list --query recommended
 ```
 
 The `recommended` flag is a conservative discovery shortlist for presentation

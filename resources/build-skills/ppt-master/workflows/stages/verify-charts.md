@@ -24,10 +24,10 @@ The calculator has direct CLI models for simple bars, lines/scatter, pie/donut, 
 
 ## Step 1: Build the chart-object list from the active profile authority
 
-| Active profile | Object-list authority |
-|---|---|
-| Default Generate | `design_spec.md §IX` plus the legacy §VII fallback below |
-| Quick Generate | The still-active semantic object keys and page decisions that produced the SVGs, cross-checked against every `chart-plot-area` marker; no Design Spec, lock, or substitute planning artifact is created |
+| Active profile   | Object-list authority                                                                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Default Generate | `design_spec.md §IX` plus the legacy §VII fallback below                                                                                                                                                |
+| Quick Generate   | The still-active semantic object keys and page decisions that produced the SVGs, cross-checked against every `chart-plot-area` marker; no Design Spec, lock, or substitute planning artifact is created |
 
 For Default, read `<project_path>/design_spec.md` §IX Content Outline as the
 authoritative roster and include every semantic object key whose
@@ -49,16 +49,16 @@ inferred into this list. Default repairs that object's §IX `Visualization` firs
 Quick makes the promotion decision immediately in active context and updates
 the SVG marker before verification.
 
-| Mode | `charts_index.json` keys | Notes |
-|------|--------------------------|-------|
-| `direct-calc` | `column_chart`, `horizontal_bar_chart`, `histogram_chart` | Use `calc bar`; add `--horizontal` for horizontal bars. Histogram bins use contiguous bars on the numeric x-axis. |
-| `direct-calc` | `line_chart`, `area_chart`, `scatter_chart` | Use `calc line`; area uses line output as the top boundary, then closes to `y_max`. |
-| `direct-calc` | `pie_chart`, `donut_chart` | Use `calc pie`; donut passes `--inner-radius`. |
-| `direct-calc` | `radar_chart` | Use `calc radar`; separate subcommand, not under `calc pie`. |
-| `decomposable-calc` | `stacked_bar_chart`, `stacked_area_chart`, `grouped_bar_chart`, `dumbbell_chart`, `pareto_chart`, `dual_axis_line_chart`, `bullet_chart`, `butterfly_chart`, `waterfall_chart`, `box_plot_chart`, `gantt_chart`, `bar_of_pie_chart`, `pie_of_pie_chart`, `stock_chart` | Verify by repeated direct calculations; see recipes below. |
-| `partial-calc` | `bubble_chart`, `matrix_2x2` | Use `calc line` for x/y-driven `cx/cy`; verify radius only when a size scale is explicit. |
-| `formula-verify` | `progress_bar_chart`, `gauge_chart`, `funnel_chart`, `sunburst_chart` | Record the formula and resulting length/angle/width in the receipt; sunburst verifies each ring's value-derived arc lengths and offsets. |
-| `manual-verify` | `sankey_chart`, `heatmap_chart`, `treemap_chart`, `word_cloud` | Data-driven geometry or encoding exists, but the current calculator has no complete layout model. Inspect and report; do not silently skip. |
+| Mode                | `charts_index.json` keys                                                                                                                                                                                                                                               | Notes                                                                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `direct-calc`       | `column_chart`, `horizontal_bar_chart`, `histogram_chart`                                                                                                                                                                                                              | Use `calc bar`; add `--horizontal` for horizontal bars. Histogram bins use contiguous bars on the numeric x-axis.                           |
+| `direct-calc`       | `line_chart`, `area_chart`, `scatter_chart`                                                                                                                                                                                                                            | Use `calc line`; area uses line output as the top boundary, then closes to `y_max`.                                                         |
+| `direct-calc`       | `pie_chart`, `donut_chart`                                                                                                                                                                                                                                             | Use `calc pie`; donut passes `--inner-radius`.                                                                                              |
+| `direct-calc`       | `radar_chart`                                                                                                                                                                                                                                                          | Use `calc radar`; separate subcommand, not under `calc pie`.                                                                                |
+| `decomposable-calc` | `stacked_bar_chart`, `stacked_area_chart`, `grouped_bar_chart`, `dumbbell_chart`, `pareto_chart`, `dual_axis_line_chart`, `bullet_chart`, `butterfly_chart`, `waterfall_chart`, `box_plot_chart`, `gantt_chart`, `bar_of_pie_chart`, `pie_of_pie_chart`, `stock_chart` | Verify by repeated direct calculations; see recipes below.                                                                                  |
+| `partial-calc`      | `bubble_chart`, `matrix_2x2`                                                                                                                                                                                                                                           | Use `calc line` for x/y-driven `cx/cy`; verify radius only when a size scale is explicit.                                                   |
+| `formula-verify`    | `progress_bar_chart`, `gauge_chart`, `funnel_chart`, `sunburst_chart`                                                                                                                                                                                                  | Record the formula and resulting length/angle/width in the receipt; sunburst verifies each ring's value-derived arc lengths and offsets.    |
+| `manual-verify`     | `sankey_chart`, `heatmap_chart`, `treemap_chart`, `word_cloud`                                                                                                                                                                                                         | Data-driven geometry or encoding exists, but the current calculator has no complete layout model. Inspect and report; do not silently skip. |
 
 **Family boundary**: this table covers every canonical key in
 `templates/charts/charts_index.json` exactly once. Do not put qualitative shape
@@ -107,24 +107,24 @@ For each object in the Step 1 list:
    ```bash
    # column_chart / horizontal_bar_chart (add --horizontal for the latter)
    # IMPORTANT: always pass --value-range from axis tick labels (step 4)
-   python3 skills/ppt-master/scripts/svg_position_calculator.py calc bar \
+   python skills/ppt-master/scripts/svg_position_calculator.py calc bar \
      --data "Label1:Value1,Label2:Value2" --area "x_min,y_min,x_max,y_max" \
      --bar-width 120 --value-range=0,axis_max
 
    # line_chart / area_chart / scatter_chart — area uses line output as the top boundary, then closes to y_max
-   python3 skills/ppt-master/scripts/svg_position_calculator.py calc line \
+   python skills/ppt-master/scripts/svg_position_calculator.py calc line \
      --data "x1:y1,x2:y2,..." --area "x_min,y_min,x_max,y_max" --y-range=0,max
 
    # pie_chart — default start angle is -90 (12 o'clock); pass --start-angle only if the SVG starts elsewhere
-   python3 skills/ppt-master/scripts/svg_position_calculator.py calc pie \
+   python skills/ppt-master/scripts/svg_position_calculator.py calc pie \
      --data "Slice1:Value1,Slice2:Value2" --center "cx,cy" --radius 200 --start-angle -90
 
    # donut_chart (pie with inner-radius)
-   python3 skills/ppt-master/scripts/svg_position_calculator.py calc pie \
+   python skills/ppt-master/scripts/svg_position_calculator.py calc pie \
      --data "Slice1:Value1,Slice2:Value2" --center "cx,cy" --radius 200 --inner-radius 120 --start-angle -90
 
    # radar_chart (separate subcommand) — pass --max-value from the outermost ring tick
-   python3 skills/ppt-master/scripts/svg_position_calculator.py calc radar \
+   python skills/ppt-master/scripts/svg_position_calculator.py calc radar \
      --data "Dim1:Value1,Dim2:Value2,Dim3:Value3" --center "cx,cy" --radius 200 --max-value 100
    ```
 
@@ -140,7 +140,7 @@ After updating any page, follow the active profile's checker order. Default
 reruns its quality checker to confirm nothing broke:
 
 ```bash
-python3 skills/ppt-master/scripts/svg_quality_checker.py <project_path>
+python skills/ppt-master/scripts/svg_quality_checker.py <project_path>
 ```
 
 Quick completes every chart comparison/repair first, then returns to
@@ -158,11 +158,11 @@ checker call between Quick chart pages.
 ```bash
 # Example: two-series stack at category "Q1" with bottom=30, top=20, plot area y from 100 to 500
 # Run 1 — bottom segment (origin = baseline)
-python3 skills/ppt-master/scripts/svg_position_calculator.py calc bar \
+python skills/ppt-master/scripts/svg_position_calculator.py calc bar \
   --data "Q1:30,Q2:..." --area "x_min,100,x_max,500" \
   --bar-width 80 --value-range=0,axis_max
 # Run 2 — top segment (origin shifted up by bottom segment's height in pixels)
-python3 skills/ppt-master/scripts/svg_position_calculator.py calc bar \
+python skills/ppt-master/scripts/svg_position_calculator.py calc bar \
   --data "Q1:20,Q2:..." --area "x_min,100,x_max,<500 - bottom_height_px>" \
   --bar-width 80 --value-range=0,axis_max
 ```
@@ -187,10 +187,10 @@ Use these recipes for `decomposable-calc` and `partial-calc` pages. Each recipe 
 ```bash
 # Horizontal dumbbell, 3 categories, value axis 0–100, plot area (100,100)–(700,460).
 # Encode category index as the y value: row 1 → 0.5, row 2 → 1.5, row 3 → 2.5.
-python3 skills/ppt-master/scripts/svg_position_calculator.py calc line \
+python skills/ppt-master/scripts/svg_position_calculator.py calc line \
   --data "42:0.5,55:1.5,37:2.5" --area "100,100,700,460" \
   --x-range=0,100 --y-range=0,3
-python3 skills/ppt-master/scripts/svg_position_calculator.py calc line \
+python skills/ppt-master/scripts/svg_position_calculator.py calc line \
   --data "68:0.5,71:1.5,49:2.5" --area "100,100,700,460" \
   --x-range=0,100 --y-range=0,3
 ```

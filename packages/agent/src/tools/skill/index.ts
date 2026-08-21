@@ -1,9 +1,9 @@
-import type { ChatMessage } from '@vide/ai'
+import type { AgentMessage } from '@vide/ai'
 import matter from 'gray-matter'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { defineTool, ToolProvider } from '../toolProvider'
-import { getSkillsRoot } from '../../workspace'
+import { defineTool, ToolProvider, type ToolRuntime } from '../toolProvider'
+import { getSkillsRoot, getWorkspaceSkillsRoot, type WorkspacePath } from '../../workspace'
 import { ToolCallError } from '../../error'
 
 async function isDirectoryExists(dirPath: string) {
@@ -34,6 +34,13 @@ const SkillsMap: Record<
 export const skillsPath = getSkillsRoot()
 
 export class SkillTool extends ToolProvider {
+  private workspacePath: string | null
+
+  constructor(runtime: ToolRuntime) {
+    super(runtime)
+    this.workspacePath = runtime.workspacePath
+  }
+
   loadSkill = defineTool({
     name: SKILL_TOOL_NAMES.LOAD_SKILL,
     type: 'function',
@@ -62,6 +69,8 @@ Use this when a task matches an available skill description and you need the ful
 
     executor: async (args) => {
       const name = args.name.trim()
+      // 确保当前 workspace 的 skills（全局内置 + 项目级）已扫描进 SkillsMap
+      await scanSkills(this.workspacePath)
       const targetSkill = SkillsMap[name]
       if (!targetSkill) {
         throw new ToolCallError(`Skill "${name}" is not available.`)
@@ -100,30 +109,41 @@ async function readSkill(filePath: string): Promise<SkillMeta | null> {
   }
 }
 
-export async function scanSkills(): Promise<(SkillMeta & { filePath: string })[]> {
-  const result: (SkillMeta & { filePath: string })[] = []
+/**
+ * 扫描 skills：全局 ~/.vide/skills（内置 + 用户安装）始终扫描，
+ * 若提供 workspacePath，则额外扫描 <workspace>/.vide/skills 下的项目级 skills，
+ * 两者合并。同名 skill 时项目级覆盖全局。
+ */
+export async function scanSkills(
+  workspacePath?: WorkspacePath
+): Promise<(SkillMeta & { filePath: string })[]> {
+  const roots = [getSkillsRoot(), getWorkspaceSkillsRoot(workspacePath)]
+  const byName = new Map<string, SkillMeta & { filePath: string }>()
 
-  const skillsDirExists = await isDirectoryExists(skillsPath)
-  if (!skillsDirExists) return []
-  const dirs = await fs.readdir(skillsPath, { withFileTypes: true })
+  for (const root of roots) {
+    const skillsDirExists = await isDirectoryExists(root)
+    if (!skillsDirExists) continue
+    const dirs = await fs.readdir(root, { withFileTypes: true })
 
-  for (const dir of dirs) {
-    if (!dir.isDirectory()) continue
+    for (const dir of dirs) {
+      if (!dir.isDirectory()) continue
 
-    const skillFile = path.join(skillsPath, dir.name, 'SKILL.md')
+      const skillFile = path.join(root, dir.name, 'SKILL.md')
+      const meta = await readSkill(skillFile)
 
-    const meta = await readSkill(skillFile)
-
-    if (meta) {
-      result.push({ ...meta, filePath: skillFile })
+      if (meta) {
+        byName.set(meta.name, { ...meta, filePath: skillFile })
+      }
     }
   }
 
-  return result
+  return [...byName.values()]
 }
 
-export async function buildSkillsChatMessage(): Promise<ChatMessage | null> {
-  const skills = await scanSkills()
+export async function buildSkillsChatMessage(
+  workspacePath?: WorkspacePath
+): Promise<AgentMessage | null> {
+  const skills = await scanSkills(workspacePath)
   if (skills.length === 0) return null
 
   const skillList = skills
@@ -133,7 +153,8 @@ export async function buildSkillsChatMessage(): Promise<ChatMessage | null> {
     .join('\n')
 
   return {
-    role: 'user',
+    role: 'context',
+    type: 'skills',
     content: `
 You have access to the following skills.
 

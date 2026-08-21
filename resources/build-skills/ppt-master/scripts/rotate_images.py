@@ -6,10 +6,10 @@ Provides visual image orientation filtering, fix code generation,
 and batch image rotation functionality.
 
 Usage:
-    python3 scripts/rotate_images.py sheet <images_directory>
-    python3 scripts/rotate_images.py gen <images_directory>
-    python3 scripts/rotate_images.py fix <fixes.json>
-    python3 scripts/rotate_images.py auto <images_directory>
+    python scripts/rotate_images.py sheet <images_directory>
+    python scripts/rotate_images.py gen <images_directory>
+    python scripts/rotate_images.py fix <fixes.json>
+    python scripts/rotate_images.py auto <images_directory>
 """
 
 
@@ -699,10 +699,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="Manage image orientation and manual rotation fixes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  python3 scripts/rotate_images.py sheet projects/demo/images
-  python3 scripts/rotate_images.py gen projects/demo/images
-  python3 scripts/rotate_images.py fix fixes.json
-  python3 scripts/rotate_images.py auto projects/demo/images
+  python scripts/rotate_images.py sheet projects/demo/images
+  python scripts/rotate_images.py gen projects/demo/images
+  python scripts/rotate_images.py fix fixes.json
+  python scripts/rotate_images.py auto projects/demo/images
 """,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

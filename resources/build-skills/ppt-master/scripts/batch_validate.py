@@ -5,10 +5,10 @@ PPT Master - Batch Project Validation Tool
 Checks the structural integrity and compliance of multiple projects at once.
 
 Usage:
-    python3 scripts/batch_validate.py examples
-    python3 scripts/batch_validate.py projects
-    python3 scripts/batch_validate.py --all
-    python3 scripts/batch_validate.py examples projects
+    python scripts/batch_validate.py examples
+    python scripts/batch_validate.py projects
+    python scripts/batch_validate.py --all
+    python scripts/batch_validate.py examples projects
 """
 
 import argparse
@@ -265,10 +265,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="Validate one or more PPT Master project directories.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  python3 scripts/batch_validate.py examples
-  python3 scripts/batch_validate.py projects
-  python3 scripts/batch_validate.py examples projects
-  python3 scripts/batch_validate.py --all
+  python scripts/batch_validate.py examples
+  python scripts/batch_validate.py projects
+  python scripts/batch_validate.py examples projects
+  python scripts/batch_validate.py --all
 """,
     )
     parser.add_argument("directories", nargs="*", help="Directories to scan")

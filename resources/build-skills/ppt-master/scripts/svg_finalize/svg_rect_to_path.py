@@ -7,13 +7,13 @@ Historical diagnostic that converts <rect> elements with rx/ry to equivalent
 workflow; PowerPoint's manual "Convert to Shape" behavior is not supported.
 
 Usage:
-    python3 scripts/svg_finalize/svg_rect_to_path.py <SVG file or directory>
-    python3 scripts/svg_finalize/svg_rect_to_path.py <project_path> -s output
-    python3 scripts/svg_finalize/svg_rect_to_path.py <project_path> -s final -o svg_rounded
+    python scripts/svg_finalize/svg_rect_to_path.py <SVG file or directory>
+    python scripts/svg_finalize/svg_rect_to_path.py <project_path> -s output
+    python scripts/svg_finalize/svg_rect_to_path.py <project_path> -s final -o svg_rounded
 
 Examples:
-    python3 scripts/svg_finalize/svg_rect_to_path.py examples/ppt169_demo
-    python3 scripts/svg_finalize/svg_rect_to_path.py examples/ppt169_demo/svg_output/01_cover.svg
+    python scripts/svg_finalize/svg_rect_to_path.py examples/ppt169_demo
+    python scripts/svg_finalize/svg_rect_to_path.py examples/ppt169_demo/svg_output/01_cover.svg
 
 Output:
     - Directory mode: outputs to svg_rounded/ subdirectory

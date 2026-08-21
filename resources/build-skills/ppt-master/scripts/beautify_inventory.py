@@ -10,15 +10,15 @@ join only — `ignored` and `needs_confirmation` are emitted empty for the agent
 to fill with judgment (hidden shapes, combo charts, overcrowded pages, ...).
 
 Usage:
-    python3 scripts/beautify_inventory.py <slide_library.json> [--images <image_manifest.json>] [-o inventory.json]
-    python3 scripts/beautify_inventory.py <inventory.json> --summary
-    python3 scripts/beautify_inventory.py <inventory.json> --page N [--with-geometry]
+    python scripts/beautify_inventory.py <slide_library.json> [--images <image_manifest.json>] [-o inventory.json]
+    python scripts/beautify_inventory.py <inventory.json> --summary
+    python scripts/beautify_inventory.py <inventory.json> --page N [--with-geometry]
 
 Examples:
-    python3 scripts/beautify_inventory.py projects/x/analysis/<stem>.slide_library.json \
+    python scripts/beautify_inventory.py projects/x/analysis/<stem>.slide_library.json \
         --images projects/x/images/image_manifest.json -o projects/x/analysis/beautify_inventory.json
-    python3 scripts/beautify_inventory.py projects/x/analysis/beautify_inventory.json --summary
-    python3 scripts/beautify_inventory.py projects/x/analysis/beautify_inventory.json --page 7
+    python scripts/beautify_inventory.py projects/x/analysis/beautify_inventory.json --summary
+    python scripts/beautify_inventory.py projects/x/analysis/beautify_inventory.json --page 7
 
 Dependencies:
     None (standard library only).

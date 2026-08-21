@@ -17,6 +17,10 @@ export function getSkillsRoot() {
   return path.join(DEFAULT_VIDE_HOME, 'skills')
 }
 
+export function getWorkspaceSkillsRoot(workspacePath?: WorkspacePath) {
+  return path.join(getVideHome(workspacePath), 'skills')
+}
+
 export function resolveWorkspacePath(workspacePath: WorkspacePath, inputPath: string) {
   if (path.isAbsolute(inputPath)) {
     return path.normalize(inputPath)

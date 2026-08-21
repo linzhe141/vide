@@ -8,13 +8,13 @@ keeps visible SVG content, compact shape intent, and stable source references
 while hiding bulky import-only payloads and duplicate hidden geometry carriers.
 
 Usage:
-    python3 scripts/svg_authoring_view.py <svg-file-or-directory> \
+    python scripts/svg_authoring_view.py <svg-file-or-directory> \
         -o <output-dir> --projection-kind <kind>
 
 Examples:
-    python3 scripts/svg_authoring_view.py analysis/source_svg_import/svg \
+    python scripts/svg_authoring_view.py analysis/source_svg_import/svg \
         -o analysis/authoring-svg --projection-kind layered
-    python3 scripts/svg_authoring_view.py imported/slide_06.svg \
+    python scripts/svg_authoring_view.py imported/slide_06.svg \
         -o /tmp/slide-authoring-view --projection-kind generic
 
 Dependencies:

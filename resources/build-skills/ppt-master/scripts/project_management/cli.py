@@ -2,18 +2,18 @@
 """PPT Master project-management CLI implementation.
 
 Usage:
-    python3 scripts/project_manager.py init <project_name> [--format ppt169] [--dir <path>] [--quick-generate]
-    python3 scripts/project_manager.py import-sources <project_path> <source1> [<source2> ...] [--move | --copy]
-    python3 scripts/project_manager.py scaffold-spec <project_path>
-    python3 scripts/project_manager.py scaffold-lock <project_path>
-    python3 scripts/project_manager.py validate <project_path>
-    python3 scripts/project_manager.py info <project_path>
-    python3 scripts/project_manager.py page-context <project_path> P07 [--record-usage]
-    python3 scripts/project_manager.py page-context-report <project_path>
+    python scripts/project_manager.py init <project_name> [--format ppt169] [--dir <path>] [--quick-generate]
+    python scripts/project_manager.py import-sources <project_path> <source1> [<source2> ...] [--move | --copy]
+    python scripts/project_manager.py scaffold-spec <project_path>
+    python scripts/project_manager.py scaffold-lock <project_path>
+    python scripts/project_manager.py validate <project_path>
+    python scripts/project_manager.py info <project_path>
+    python scripts/project_manager.py page-context <project_path> P07 [--record-usage]
+    python scripts/project_manager.py page-context-report <project_path>
 
 Examples:
-    python3 scripts/project_manager.py init demo --format ppt169
-    python3 scripts/project_manager.py validate projects/demo
+    python scripts/project_manager.py init demo --format ppt169
+    python scripts/project_manager.py validate projects/demo
 
 Dependencies:
     Standard library plus local PPT Master project and source-conversion modules.
@@ -1061,14 +1061,14 @@ def build_parser() -> argparse.ArgumentParser:
         description="PPT Master project management helpers.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:
-  python3 scripts/project_manager.py init demo --format ppt169
-  python3 scripts/project_manager.py import-sources projects/demo file.md
-  python3 scripts/project_manager.py scaffold-spec projects/demo_ppt169_20260718
-  python3 scripts/project_manager.py scaffold-lock projects/demo_ppt169_20260718
-  python3 scripts/project_manager.py validate projects/demo
-  python3 scripts/project_manager.py info projects/demo
-  python3 scripts/project_manager.py page-context projects/demo P07 --record-usage
-  python3 scripts/project_manager.py page-context-report projects/demo
+  python scripts/project_manager.py init demo --format ppt169
+  python scripts/project_manager.py import-sources projects/demo file.md
+  python scripts/project_manager.py scaffold-spec projects/demo_ppt169_20260718
+  python scripts/project_manager.py scaffold-lock projects/demo_ppt169_20260718
+  python scripts/project_manager.py validate projects/demo
+  python scripts/project_manager.py info projects/demo
+  python scripts/project_manager.py page-context projects/demo P07 --record-usage
+  python scripts/project_manager.py page-context-report projects/demo
 """,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

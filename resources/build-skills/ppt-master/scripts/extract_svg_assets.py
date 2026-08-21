@@ -14,17 +14,17 @@ threshold is a readability convenience — it changes which blobs are factored
 out, not whether the export stays editable.
 
 Usage:
-    python3 scripts/extract_svg_assets.py <svg_dir> [options]
+    python scripts/extract_svg_assets.py <svg_dir> [options]
 
 Examples:
-    python3 scripts/extract_svg_assets.py import_ws/authoring-svg \
+    python scripts/extract_svg_assets.py import_ws/authoring-svg \
         --icons-dir import_ws/icons --icon-namespace imported \
         --inplace --id-prefix layered --clean-stale
-    python3 scripts/extract_svg_assets.py import_ws/authoring-svg-flat \
+    python scripts/extract_svg_assets.py import_ws/authoring-svg-flat \
         --icons-dir import_ws/icons --icon-namespace imported \
         --reuse-inventory import_ws/authoring-svg_vector_asset_inventory.json \
         --inplace --id-prefix flat --clean-stale
-    python3 scripts/extract_svg_assets.py project/svg_output --inplace --min-drawables 40
+    python scripts/extract_svg_assets.py project/svg_output --inplace --min-drawables 40
 
 Dependencies:
     None (standard library only).

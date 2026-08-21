@@ -6,15 +6,15 @@ Recall a deterministic chart or table shortlist from semantic tags, or validate
 selected references against the live family catalogs.
 
 Usage:
-    python3 scripts/visualization_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "trend"
-    python3 scripts/visualization_recall.py validate chart/line_chart table/record_table
+    python scripts/visualization_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "trend"
+    python scripts/visualization_recall.py validate chart/line_chart table/record_table
 
 Examples:
-    python3 scripts/visualization_recall.py recall --page P07 --family table \
+    python scripts/visualization_recall.py recall --page P07 --family table \
         --tag "option comparison" --tag "shared criteria" \
         --tag "cell values" --limit 6
-    python3 scripts/visualization_recall.py validate table/record_table
-    python3 scripts/visualization_recall.py validate --legacy-bare process_flow
+    python scripts/visualization_recall.py validate table/record_table
+    python scripts/visualization_recall.py validate --legacy-bare process_flow
 
 Dependencies:
     None (only uses the standard library)

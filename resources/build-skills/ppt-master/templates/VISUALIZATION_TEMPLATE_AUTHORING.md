@@ -6,10 +6,10 @@ page-local Visualization 模板库；模板负责数据编码或单元格关系�
 风格。模板必须保持源码可读、独立可渲染，并允许 Executor 根据项目 Design Spec
 与 `spec_lock.md` 重做字体、配色和装饰。
 
-| Family | 定义 | 判定边界 |
-|---|---|---|
+| Family  | 定义                       | 判定边界                                                                           |
+| ------- | -------------------------- | ---------------------------------------------------------------------------------- |
 | `chart` | Value-driven visualization | 数值、类别、时间、权重或持续时间决定 mark 的位置、长度、面积、角度、字号或连接宽度 |
-| `table` | Row × column fact grid | 行头与列头共同寻址一个单元格事实；合并、对齐和边界保持该交点关系 |
+| `table` | Row × column fact grid     | 行头与列头共同寻址一个单元格事实；合并、对齐和边界保持该交点关系                   |
 
 **Hard rule — Structure is a method, not a catalog**: 定性顺序、层级、角色、
 分区和关系由 [`executor-structure.md`](../references/executor-structure.md) 在当前页面
@@ -26,12 +26,12 @@ placeholder 合同仍只属于 [`layouts/`](./layouts/) workspace。
 
 **Hard rule**: 本指南只定义 Chart/Table 两个 catalog family 的结构与中性预览合同。通用 SVG 语法、效果、原生数据接口和 PowerPoint 结构分别由以下权威文件定义：
 
-| 合同 | 权威文件 |
-|---|---|
-| 通用 SVG | [`shared-standards.md`](../references/shared-standards.md) |
-| 效果与兼容输入 | [`svg-effects.md`](../references/svg-effects.md) |
+| 合同               | 权威文件                                                             |
+| ------------------ | -------------------------------------------------------------------- |
+| 通用 SVG           | [`shared-standards.md`](../references/shared-standards.md)           |
+| 效果与兼容输入     | [`svg-effects.md`](../references/svg-effects.md)                     |
 | Native Chart/Table | [`native-data-interface.md`](../references/native-data-interface.md) |
-| 画布格式 | [`canvas-formats.md`](../references/canvas-formats.md) |
+| 画布格式           | [`canvas-formats.md`](../references/canvas-formats.md)               |
 
 **Forbidden — second SVG specification**: 不在本指南复述或放宽上游语法。发生冲突时以上游权威文件为准。
 
@@ -43,13 +43,13 @@ placeholder 合同仍只属于 [`layouts/`](./layouts/) workspace。
 
 以下所有权只约束库内单个模板工件的维护，不把该工件变成项目页面的布局锁：
 
-| 单个 Visualization 模板的作者合同 | 项目页面决策拥有 |
-|---|---|
-| 该工件的 family 与相应信息模型 | 最终采用的页面级结构、类型与几何 |
-| 该工件内的数据映射或单元格关系 | 项目字体、字号、调色板与品牌色 |
-| 该工件的示例骨架和阅读顺序 | 实际分组、框架数量、项目数量、组合方式与容量适配 |
-| 必要的状态与语义区分 | 页面背景、页头、页脚和品牌 chrome |
-| 独立预览所需的中性样式 | 最终强调策略与页面级视觉层级 |
+| 单个 Visualization 模板的作者合同 | 项目页面决策拥有                                 |
+| --------------------------------- | ------------------------------------------------ |
+| 该工件的 family 与相应信息模型    | 最终采用的页面级结构、类型与几何                 |
+| 该工件内的数据映射或单元格关系    | 项目字体、字号、调色板与品牌色                   |
+| 该工件的示例骨架和阅读顺序        | 实际分组、框架数量、项目数量、组合方式与容量适配 |
+| 必要的状态与语义区分              | 页面背景、页头、页脚和品牌 chrome                |
+| 独立预览所需的中性样式            | 最终强调策略与页面级视觉层级                     |
 
 **Hard rule — authoring integrity**: 维护某个库模板时必须保持该模板自身的
 family 与信息模型：Chart 的 value mapping、Table 的 row × column fact grid。
@@ -67,12 +67,12 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 对每个视觉元素按顺序判断：
 
-| 判断 | 处理 |
-|---|---|
-| 删除后会改变数据含义、关系、状态或阅读顺序 | 保留 |
-| 删除后会弱化分组、层级、边界或文本容量 | 保留结构表达；只简化不承载信息的样式层 |
-| 只让示例显得更精致、立体、品牌化或“高级” | 作为简化候选；通过文本与前后渲染核对后再删除 |
-| 只对某个项目风格成立 | 交给 Executor 重建 |
+| 判断                                       | 处理                                         |
+| ------------------------------------------ | -------------------------------------------- |
+| 删除后会改变数据含义、关系、状态或阅读顺序 | 保留                                         |
+| 删除后会弱化分组、层级、边界或文本容量     | 保留结构表达；只简化不承载信息的样式层       |
+| 只让示例显得更精致、立体、品牌化或“高级”   | 作为简化候选；通过文本与前后渲染核对后再删除 |
+| 只对某个项目风格成立                       | 交给 Executor 重建                           |
 
 **Default — information first (may override when semantics require it)**: 优先使用清楚的线、面、标签和留白。装饰不能成为理解信息的前提。
 
@@ -111,16 +111,16 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 以下色值只保证模板独立展示时清晰。它们不是最终项目调色板：
 
-| 角色 | 中性参考值 | 使用边界 |
-|---|---|---|
-| 主文本 | `#0F172A` | 标题、关键值 |
-| 正文 | `#475569` | 描述、图例 |
-| 次文本 | `#64748B` | 轴标签、辅助说明 |
-| 弱线 | `#CBD5E1` / `#E2E8F0` | 网格、边界、分隔 |
-| 参考强调 | `#2563EB` | 第一系列、当前状态或结构焦点 |
-| 正向语义 | `#059669` | 仅表示上升、完成、达标 |
-| 负向语义 | `#E11D48` | 仅表示下降、异常、未达标 |
-| 警示语义 | `#D97706` | 仅表示风险或待处理 |
+| 角色     | 中性参考值            | 使用边界                     |
+| -------- | --------------------- | ---------------------------- |
+| 主文本   | `#0F172A`             | 标题、关键值                 |
+| 正文     | `#475569`             | 描述、图例                   |
+| 次文本   | `#64748B`             | 轴标签、辅助说明             |
+| 弱线     | `#CBD5E1` / `#E2E8F0` | 网格、边界、分隔             |
+| 参考强调 | `#2563EB`             | 第一系列、当前状态或结构焦点 |
+| 正向语义 | `#059669`             | 仅表示上升、完成、达标       |
+| 负向语义 | `#E11D48`             | 仅表示下降、异常、未达标     |
+| 警示语义 | `#D97706`             | 仅表示风险或待处理           |
 
 **Hard rule**: 多系列数据必须可区分；正负、完成/计划等语义状态必须可辨认。颜色承担这些信息时保留，颜色只承担装饰时移除。
 
@@ -128,12 +128,12 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 ### 2.3 页面 chrome
 
-| 元素 | 模板行为 |
-|---|---|
-| 标题/副标题 | 可用简短占位文本展示层级和可用空间；不附带装饰条、徽章或品牌图形 |
-| 数据来源 | 仅当该可视化结构需要来源/脚注槽时保留；不是每个模板的固定页脚 |
-| 页码、Logo、部门名 | 省略 |
-| 进度徽章、状态胶囊 | 只有状态本身属于信息时保留，移除纯装饰外壳 |
+| 元素               | 模板行为                                                         |
+| ------------------ | ---------------------------------------------------------------- |
+| 标题/副标题        | 可用简短占位文本展示层级和可用空间；不附带装饰条、徽章或品牌图形 |
+| 数据来源           | 仅当该可视化结构需要来源/脚注槽时保留；不是每个模板的固定页脚    |
+| 页码、Logo、部门名 | 省略                                                             |
+| 进度徽章、状态胶囊 | 只有状态本身属于信息时保留，移除纯装饰外壳                       |
 
 ---
 
@@ -143,13 +143,13 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 **Default — one clear treatment (may override when structure requires depth)**: 中性模板避免阴影、发光、纹理、渐变和多层框同时叠加；保留能帮助读者识别真实边界、重叠或空间关系的最少效果。
 
-| 效果 | 默认 | 允许条件 |
-|---|---|---|
-| 阴影/filter | 有描边或底色已能分组时省略 | 重叠、浮层或空间深度本身属于结构 |
-| 渐变 | 只承担审美时可换成实色 | 连续色阶、流量、深度面或方向确实承载编码 |
-| 透明光晕 | 省略 | 透明度本身编码范围或不确定性 |
-| 圆角卡片 | 保留真实信息单元的一层边界 | 圆角值与最终外观由项目适配 |
-| 图标底板 | 非默认 | 需要明确图标槽位或状态边界 |
+| 效果        | 默认                       | 允许条件                                 |
+| ----------- | -------------------------- | ---------------------------------------- |
+| 阴影/filter | 有描边或底色已能分组时省略 | 重叠、浮层或空间深度本身属于结构         |
+| 渐变        | 只承担审美时可换成实色     | 连续色阶、流量、深度面或方向确实承载编码 |
+| 透明光晕    | 省略                       | 透明度本身编码范围或不确定性             |
+| 圆角卡片    | 保留真实信息单元的一层边界 | 圆角值与最终外观由项目适配               |
+| 图标底板    | 非默认                     | 需要明确图标槽位或状态边界               |
 
 **Hard rule**: Heatmap 色阶、Sankey 流量宽度、系列区分、Isometric 面向关系和真实模块边界属于信息编码或结构。普通卡片阴影、气泡高光、无含义色带和不承担顺序的大号淡色编号通常不属于；删除前仍需确认没有弱化层级。
 
@@ -167,14 +167,14 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 **Hard rule**: 缩小模板时保留正常换行、缩进、语义 `id` 和必要分区注释。压缩目标是减少重复信息，不是把 XML 变成一行。
 
-| 做法 | 要求 |
-|---|---|
-| 字体继承 | 公共 `font-family` 放在根 `<svg>` 或清楚的父 `<g>` |
-| 属性继承 | 同组重复的 `fill`、`stroke`、字号或锚点可提升到父组 |
-| 注释 | 保留结构、语义和机器标记；删除色名、营销解释和重复说明 |
-| 文本 | 普通单行直接写在 `<text>`；只有多 run/多行需要 `<tspan>` |
-| 坐标 | 页面坐标使用必要精度；按上游合同运行 `compact_svg_coordinates.py` |
-| ID | 使用 `chart-area`、`series-1`、`card-1` 等结构名称，避免示例业务名 |
+| 做法     | 要求                                                               |
+| -------- | ------------------------------------------------------------------ |
+| 字体继承 | 公共 `font-family` 放在根 `<svg>` 或清楚的父 `<g>`                 |
+| 属性继承 | 同组重复的 `fill`、`stroke`、字号或锚点可提升到父组                |
+| 注释     | 保留结构、语义和机器标记；删除色名、营销解释和重复说明             |
+| 文本     | 普通单行直接写在 `<text>`；只有多 run/多行需要 `<tspan>`           |
+| 坐标     | 页面坐标使用必要精度；按上游合同运行 `compact_svg_coordinates.py`  |
+| ID       | 使用 `chart-area`、`series-1`、`card-1` 等结构名称，避免示例业务名 |
 
 ### 4.2 禁止的压缩
 
@@ -189,12 +189,12 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 ### 4.3 文本可读性
 
-| 角色 | 中性范围 |
-|---|---|
-| 页面标题 | `30–36`，`700–800` |
-| 区域标题 | `18–24`，`600–700` |
-| 正文/标签 | `13–16` |
-| Caption/轴刻度 | `12–14` |
+| 角色           | 中性范围           |
+| -------------- | ------------------ |
+| 页面标题       | `30–36`，`700–800` |
+| 区域标题       | `18–24`，`600–700` |
+| 正文/标签      | `13–16`            |
+| Caption/轴刻度 | `12–14`            |
 
 **Hard rule**: 所有文本 `font-size >= 12`，使用有限无单位数值。需要成为一个 PowerPoint 文本框的多格式逻辑行使用一个 `<text>` 加非定位 `<tspan>`；独立文本框使用独立 `<text>`。
 
@@ -206,13 +206,13 @@ flexible page-local reference。Default 的 §IX 或 Quick 的页面决策拥有
 
 **Hard rule**: 使用描述性顶层 `<g id>` 表达页面级逻辑单元，例如 Header、Chart、Legend、Card Grid 或 Process。不要为每条文字、图标或数据点建立一个直属根组。
 
-| 顶层组 | 典型内容 |
-|---|---|
-| `header` | 标题与副标题 |
+| 顶层组                             | 典型内容                                  |
+| ---------------------------------- | ----------------------------------------- |
+| `header`                           | 标题与副标题                              |
 | `chart-area` / replacement carrier | Chart 的轴、数据系列、标签、必要 metadata |
-| `legend` | 系列或状态说明 |
-| `table-area` / replacement carrier | Table 的行、列、单元格和必要 metadata |
-| `table-notes` | 来源、口径或脚注 |
+| `legend`                           | 系列或状态说明                            |
+| `table-area` / replacement carrier | Table 的行、列、单元格和必要 metadata     |
+| `table-notes`                      | 来源、口径或脚注                          |
 
 **Forbidden — workspace metadata**: 两个 catalog family 都不得写入
 Master/Layout/placeholder 所有权标记。运行时 Structure 即使占满整个
@@ -232,26 +232,26 @@ Master/Layout/placeholder 所有权标记。运行时 Structure 即使占满整�
 </g>
 ```
 
-| 边界要求 | 行为 |
-|---|---|
-| 坐标系 | 使用根 `viewBox` 坐标，不使用局部 transform 后坐标 |
-| 范围 | 覆盖该逻辑单元允许使用的布局子画布，不从示例文字紧包围盒推断 |
-| 精度 | 最多两位小数 |
-| 嵌套组 | 不写；Checker 忽略嵌套 bounds |
-| 背景/defs | 直接背景 primitive 与非可见定义不需要 bounds |
+| 边界要求  | 行为                                                         |
+| --------- | ------------------------------------------------------------ |
+| 坐标系    | 使用根 `viewBox` 坐标，不使用局部 transform 后坐标           |
+| 范围      | 覆盖该逻辑单元允许使用的布局子画布，不从示例文字紧包围盒推断 |
+| 精度      | 最多两位小数                                                 |
+| 嵌套组    | 不写；Checker 忽略嵌套 bounds                                |
+| 背景/defs | 直接背景 primitive 与非可见定义不需要 bounds                 |
 
 **Forbidden — bounds noise**: 不给每个嵌套 `<g>`、图标、数据点或实现碎片添加 bounds。
 
 ### 5.3 Shape-first
 
-| 对象 | 模板表达 |
-|---|---|
-| 基础节点/容器 | `<rect>`、`<circle>`、`<ellipse>` |
-| 直线关系/分隔/引线 | `<line>` |
-| 预设可精确表达的弯折/曲线关系 | 完整 compact authored `bentConnector*` / `curvedConnector*` `<g>`；端点不附着 |
-| 单一预设不能表达、但封闭形状可组合的对象 | 优先用 `shape_boolean_svg.py` 物化 Merge Shapes 结果 |
-| 图元、预设、Boolean 都不能表达的数据/语义/锁定风格几何 | `<path>`、`<polygon>`、`<polyline>` |
-| 数据图表 | 默认 Shape fallback；符合条件时附带 native replacement marker |
+| 对象                                                   | 模板表达                                                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| 基础节点/容器                                          | `<rect>`、`<circle>`、`<ellipse>`                                             |
+| 直线关系/分隔/引线                                     | `<line>`                                                                      |
+| 预设可精确表达的弯折/曲线关系                          | 完整 compact authored `bentConnector*` / `curvedConnector*` `<g>`；端点不附着 |
+| 单一预设不能表达、但封闭形状可组合的对象               | 优先用 `shape_boolean_svg.py` 物化 Merge Shapes 结果                          |
+| 图元、预设、Boolean 都不能表达的数据/语义/锁定风格几何 | `<path>`、`<polygon>`、`<polyline>`                                           |
+| 数据图表                                               | 默认 Shape fallback；符合条件时附带 native replacement marker                 |
 
 **Forbidden — inferred native semantics**: 概念图、流程图和框架图不添加 `data-pptx-replace-with="chart"`；普通关系线不添加 Connector attachment metadata。
 
@@ -291,14 +291,14 @@ Catalog 模板本身只有一个主 Chart，可保留上述 unscoped marker 与
 
 ### 6.3 数据装饰边界
 
-| 元素 | 分类 |
-|---|---|
-| 轴、刻度、网格、图例 | 结构 |
-| 系列颜色、正负语义色 | 数据编码 |
-| 数据点节点 | `lineMarker` 等类型需要时保留 |
-| Area fill | 面积/累计量是信息时保留；普通 line chart 仅在确认填充不承担范围、基线或强调含义后简化 |
-| 柱体渐变、节点高光、卡片阴影 | 只承担审美时可简化；若用于区分重叠、层级或状态则保留结构作用 |
-| 来源与注释 | 内容需要时保留，不作为全库固定 chrome |
+| 元素                         | 分类                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| 轴、刻度、网格、图例         | 结构                                                                                  |
+| 系列颜色、正负语义色         | 数据编码                                                                              |
+| 数据点节点                   | `lineMarker` 等类型需要时保留                                                         |
+| Area fill                    | 面积/累计量是信息时保留；普通 line chart 仅在确认填充不承担范围、基线或强调含义后简化 |
+| 柱体渐变、节点高光、卡片阴影 | 只承担审美时可简化；若用于区分重叠、层级或状态则保留结构作用                          |
+| 来源与注释                   | 内容需要时保留，不作为全库固定 chrome                                                 |
 
 ---
 
@@ -308,11 +308,11 @@ Catalog 模板本身只有一个主 Chart，可保留上述 unscoped marker 与
 
 **Hard rule**: 模板占位文本使用英文，展示真实文本容量和数据格式，但不承载具体项目事实。
 
-| 应展示 | 示例 |
-|---|---|
-| 标题长度 | `Revenue Trend`、`Implementation Plan` |
-| 数据格式 | `$245.5M`、`98.5%`、`2026 Q1` |
-| 正常换行 | 2–3 行短描述 |
+| 应展示   | 示例                                    |
+| -------- | --------------------------------------- |
+| 标题长度 | `Revenue Trend`、`Implementation Plan`  |
+| 数据格式 | `$245.5M`、`98.5%`、`2026 Q1`           |
+| 正常换行 | 2–3 行短描述                            |
 | 结构容量 | 真实建议数量范围内的 series/items/nodes |
 
 **Forbidden — placeholder storytelling**: 不写长篇营销文案、部门归属、真实品牌或无法复用的项目背景。
@@ -321,8 +321,8 @@ Catalog 模板本身只有一个主 Chart，可保留上述 unscoped marker 与
 
 新增模板只登记到其 owning family index：
 
-| Family | Directory | Index object |
-|---|---|---|
+| Family  | Directory | Index object                   |
+| ------- | --------- | ------------------------------ |
 | `chart` | `charts/` | `charts_index.json` → `charts` |
 | `table` | `tables/` | `tables_index.json` → `tables` |
 
@@ -353,20 +353,20 @@ Structure 载体判断。
 
 **已批准的图表容量迁移**：
 
-| Canonical key | 已批准边界 | 兼容处理 |
-|---|---|---|
+| Canonical key | 已批准边界                                                                                                                            | 兼容处理                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `gauge_chart` | 2026-08-10：中性预览从三个并列 Gauge 重组为一个有界域、明确目标或阈值的 KPI；多个同级 KPI 改用 `bullet_chart` 或 `progress_bar_chart` | canonical key 保持不变；旧三指标示例不再作为可读取容量合同，无需 alias |
 
 **Canonical Table set**:
 
-| Canonical key | 核心信息关系 |
-|---|---|
-| `record_table` | 每行一条记录、每列一个稳定字段 |
-| `metric_table` | 实体与 KPI 的交点承载度量、变化、状态或 cell 内微图形 |
-| `comparison_matrix` | 行维度与列方案的交点承载文本、精确值或异构事实 |
-| `feature_matrix` | 能力与方案的交点承载支持、不支持、部分支持或例外状态 |
-| `rating_matrix` | 评价维度与方案的交点使用同一套序数等级 |
-| `hierarchical_table` | 分组或缩进行、明细与小计/总计形成层级网格 |
+| Canonical key        | 核心信息关系                                          |
+| -------------------- | ----------------------------------------------------- |
+| `record_table`       | 每行一条记录、每列一个稳定字段                        |
+| `metric_table`       | 实体与 KPI 的交点承载度量、变化、状态或 cell 内微图形 |
+| `comparison_matrix`  | 行维度与列方案的交点承载文本、精确值或异构事实        |
+| `feature_matrix`     | 能力与方案的交点承载支持、不支持、部分支持或例外状态  |
+| `rating_matrix`      | 评价维度与方案的交点使用同一套序数等级                |
+| `hierarchical_table` | 分组或缩进行、明细与小计/总计形成层级网格             |
 
 **Hard rule — semantic family before physical object**: PowerPoint 中的物理
 Table 对象不自动属于 `table` family。只有行头与列头的交点可寻址为一个事实时才是
@@ -375,15 +375,15 @@ Table；日期或持续时间决定 `x`/`width` 的排期是 `chart/gantt_chart`
 
 **Canonical catalog aliases**:
 
-| Canonical reference | Legacy bare keys |
-|---|---|
-| `table/record_table` | `basic_table` |
-| `table/metric_table` | `consulting_table` |
-| `table/comparison_matrix` | `comparison_table` |
-| `table/feature_matrix` | `feature_matrix_table` |
-| `table/rating_matrix` | `harvey_balls_table` |
+| Canonical reference        | Legacy bare keys            |
+| -------------------------- | --------------------------- |
+| `table/record_table`       | `basic_table`               |
+| `table/metric_table`       | `consulting_table`          |
+| `table/comparison_matrix`  | `comparison_table`          |
+| `table/feature_matrix`     | `feature_matrix_table`      |
+| `table/rating_matrix`      | `harvey_balls_table`        |
 | `table/hierarchical_table` | `financial_statement_table` |
-| `chart/gantt_chart` | `project_schedule_table` |
+| `chart/gantt_chart`        | `project_schedule_table`    |
 
 新文档、§VII 和 `page_visualizations` 只写 canonical `chart|table/<key>`。表中 Alias
 只服务旧 `page_charts` 读取，不是新模板命名候选；旧的 family-qualified key 不获得
@@ -442,15 +442,15 @@ Table；日期或持续时间决定 `x`/`width` 的排期是 `chart/gantt_chart`
 
 ```bash
 # 单文件 SVG 合同
-python3 skills/ppt-master/scripts/svg_quality_checker.py \
+python skills/ppt-master/scripts/svg_quality_checker.py \
   skills/ppt-master/templates/<family-directory>/<key>.svg
 
 # Canonical family/key
-python3 skills/ppt-master/scripts/visualization_recall.py validate \
+python skills/ppt-master/scripts/visualization_recall.py validate \
   <family>/<key>
 
 # 可安全压缩的页面坐标（默认 dry-run）
-python3 skills/ppt-master/scripts/compact_svg_coordinates.py \
+python skills/ppt-master/scripts/compact_svg_coordinates.py \
   skills/ppt-master/templates/<family-directory>/<key>.svg
 ```
 

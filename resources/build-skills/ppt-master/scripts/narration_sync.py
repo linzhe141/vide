@@ -8,17 +8,17 @@ from the final narrated PPTX.
 See workflows/stages/generate-audio.md for the owning stage.
 
 Usage:
-    python3 scripts/narration_sync.py fingerprint <project_path>
-    python3 scripts/narration_sync.py animations <project_path>
-    python3 scripts/narration_sync.py subtitles <project_path> --pptx <pptx> --force
-    python3 scripts/narration_sync.py subtitles <project_path> --pptx <pptx> \
+    python scripts/narration_sync.py fingerprint <project_path>
+    python scripts/narration_sync.py animations <project_path>
+    python scripts/narration_sync.py subtitles <project_path> --pptx <pptx> --force
+    python scripts/narration_sync.py subtitles <project_path> --pptx <pptx> \
         --video <powerpoint_video> --force
 
 Examples:
-    python3 scripts/narration_sync.py fingerprint projects/demo
-    python3 scripts/narration_sync.py animations projects/demo
-    python3 scripts/narration_sync.py subtitles projects/demo --pptx exports/demo.pptx --force
-    python3 scripts/narration_sync.py subtitles projects/demo \
+    python scripts/narration_sync.py fingerprint projects/demo
+    python scripts/narration_sync.py animations projects/demo
+    python scripts/narration_sync.py subtitles projects/demo --pptx exports/demo.pptx --force
+    python scripts/narration_sync.py subtitles projects/demo \
         --pptx exports/demo.pptx --video exports/demo.mp4 --force
 
 Dependencies:
@@ -1508,7 +1508,7 @@ def _require_numpy() -> Any:
     except ImportError as exc:
         raise RuntimeError(
             "Exported-video timeline calibration requires numpy. "
-            "Install it with: python3 -m pip install numpy"
+            "Install it with: python -m pip install numpy"
         ) from exc
     return np
 

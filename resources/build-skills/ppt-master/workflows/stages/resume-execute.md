@@ -19,11 +19,11 @@ bounded material outcome selection automatically, not the full console stream.
 
 The user opens a new chat and gives a phrase that names a project path and signals continuation. Recognize any of:
 
-| Pattern | Example |
-|---|---|
-| "继续生成 projects/<project_name>" | "继续生成 projects/ppt169_joe_hisaishi" |
-| "resume execution projects/<project_name>" | "resume execution projects/ppt169_joe_hisaishi" |
-| Project path + any "继续 / 恢复 / 继续做 / 接着做" semantic | "把 projects/ppt169_joe_hisaishi 继续做完" |
+| Pattern                                                     | Example                                         |
+| ----------------------------------------------------------- | ----------------------------------------------- |
+| "继续生成 projects/<project_name>"                          | "继续生成 projects/ppt169_joe_hisaishi"         |
+| "resume execution projects/<project_name>"                  | "resume execution projects/ppt169_joe_hisaishi" |
+| Project path + any "继续 / 恢复 / 继续做 / 接着做" semantic | "把 projects/ppt169_joe_hisaishi 继续做完"      |
 
 **Prerequisite**: the planning session must have completed in the named project. Verified by file presence in Step 1; do NOT auto-trigger planning on missing state.
 
@@ -33,14 +33,14 @@ The user opens a new chat and gives a phrase that names a project path and signa
 
 Verify the project's planning-session artifacts before doing anything else:
 
-| File / Directory | Required when | Reason |
-|---|---|---|
-| `<project_path>/spec_lock.md` | Always | Strategist's execution anchors and routing contract; read it completely once in this fresh execution context |
-| `<project_path>/design_spec.md` | Always | Complete approved design narrative and Section IX page outline; read it completely once in this fresh execution context |
-| `<project_path>/notes/total.md` | Design Spec §X records a supplied final/literal narration script | Frozen verbatim narration input; read it once before SVG authoring and never reconstruct it from the planning chat |
-| `<project_path>/images/` plus files whose row status requires existence | `spec_lock images` references any image | `Existing` / `Generated` / `Sourced` / `Rendered` files must exist; an absent `Needs-Manual` file remains allowed until the Step 7 readiness gate |
-| `<project_path>/templates/` | `spec_lock page_layouts` references any | Layout / mirror prototypes required by execution |
-| Resolver-returned Chart/Table SVG | `spec_lock page_visualizations` or legacy `page_charts` references a live Chart/Table key | Shared page-local SVG selected through the two live catalogs |
+| File / Directory                                                        | Required when                                                                             | Reason                                                                                                                                            |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<project_path>/spec_lock.md`                                           | Always                                                                                    | Strategist's execution anchors and routing contract; read it completely once in this fresh execution context                                      |
+| `<project_path>/design_spec.md`                                         | Always                                                                                    | Complete approved design narrative and Section IX page outline; read it completely once in this fresh execution context                           |
+| `<project_path>/notes/total.md`                                         | Design Spec §X records a supplied final/literal narration script                          | Frozen verbatim narration input; read it once before SVG authoring and never reconstruct it from the planning chat                                |
+| `<project_path>/images/` plus files whose row status requires existence | `spec_lock images` references any image                                                   | `Existing` / `Generated` / `Sourced` / `Rendered` files must exist; an absent `Needs-Manual` file remains allowed until the Step 7 readiness gate |
+| `<project_path>/templates/`                                             | `spec_lock page_layouts` references any                                                   | Layout / mirror prototypes required by execution                                                                                                  |
+| Resolver-returned Chart/Table SVG                                       | `spec_lock page_visualizations` or legacy `page_charts` references a live Chart/Table key | Shared page-local SVG selected through the two live catalogs                                                                                      |
 
 Resolve every live Chart/Table value through the shared catalog resolver before
 Step 6. Validate canonical `family/key` from `page_visualizations` directly;
@@ -48,9 +48,9 @@ opt into bare-key resolution only for a live Chart/Table value read from legacy
 `page_charts`:
 
 ```bash
-python3 skills/ppt-master/scripts/visualization_recall.py validate \
+python skills/ppt-master/scripts/visualization_recall.py validate \
   <family/key> [<family/key> ...]
-python3 skills/ppt-master/scripts/visualization_recall.py validate \
+python skills/ppt-master/scripts/visualization_recall.py validate \
   --legacy-bare <legacy-key> [<legacy-key> ...]
 ```
 

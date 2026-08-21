@@ -25,7 +25,7 @@ this stage.
 ## When to Run
 
 - Per-page narration files exist at `notes/*.md`. In Generate PPTX, split `notes/total.md` during Step 7.1. In Enhance Native PPTX, the notes module writes numeric files such as `001.md`.
-- Default mode: `edge-tts` is installed (`python3 -m pip install edge-tts`).
+- Default mode: `edge-tts` is installed (`python -m pip install edge-tts`).
 - The stage is page-level only: one note becomes `audio/<stem>.<audio-ext>` plus `audio/<stem>.srt` on provider-timed paths, or one audio file with Qwen / explicit CosyVoice audio-only mode. Never substitute one long track or automatic splitting.
 - Final/literal script notes are synthesized verbatim. Source SRT timecodes are pacing evidence only; new provider timing owns the generated audio/SRT set.
 - SRT bound to an authoritative existing recording does not enter TTS. Recorded narration requires page-level audio or an explicit page/time map; automatic long-track splitting is unsupported.
@@ -77,21 +77,21 @@ Default to **edge** unless the user explicitly asks for a cloud provider / highe
 **edge backend**:
 
 ```bash
-python3 skills/ppt-master/scripts/notes_to_audio.py --list-voices --locale <locale>
+python skills/ppt-master/scripts/notes_to_audio.py --list-voices --locale <locale>
 ```
 
 **ElevenLabs backend**:
 
 ```bash
-python3 skills/ppt-master/scripts/notes_to_audio.py --provider elevenlabs --list-voices
+python skills/ppt-master/scripts/notes_to_audio.py --provider elevenlabs --list-voices
 ```
 
 **Cloud providers using explicit voice IDs/names**:
 
 ```bash
-python3 skills/ppt-master/scripts/notes_to_audio.py --provider minimax --list-voices
-python3 skills/ppt-master/scripts/notes_to_audio.py --provider qwen --list-voices
-python3 skills/ppt-master/scripts/notes_to_audio.py --provider cosyvoice --list-voices
+python skills/ppt-master/scripts/notes_to_audio.py --provider minimax --list-voices
+python skills/ppt-master/scripts/notes_to_audio.py --provider qwen --list-voices
+python skills/ppt-master/scripts/notes_to_audio.py --provider cosyvoice --list-voices
 ```
 
 The output is a flat list of all available voices for the selected provider. From this list, the AI picks **3–6 candidates** to recommend, applying these rules:
@@ -129,7 +129,7 @@ from its complete per-page tracks.
 
 **Default / Enhance Native — one-shot interaction (mandatory)**:
 
-For Default or Enhance Native, send one message that resolves all five configuration decisions and recommends each value. Before offering automatic video export, run `python3 skills/ppt-master/scripts/powerpoint_video.py --check`; do not present an unavailable local capability as executable. Do NOT split into multiple rounds.
+For Default or Enhance Native, send one message that resolves all five configuration decisions and recommends each value. Before offering automatic video export, run `python skills/ppt-master/scripts/powerpoint_video.py --check`; do not present an unavailable local capability as executable. Do NOT split into multiple rounds.
 An explicit slideshow-capture choice does not run this availability check; it
 uses the manual Windows playback handoff below.
 
@@ -179,27 +179,27 @@ Run sequentially — do NOT bundle:
 
 ```bash
 # 1A. Generate audio with edge (default)
-python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
+python skills/ppt-master/scripts/notes_to_audio.py <project_path> \
   --voice <chosen-ShortName> --rate <chosen-rate>
 
 # 1B. Or generate audio/SRT pairs with ElevenLabs
-python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
+python skills/ppt-master/scripts/notes_to_audio.py <project_path> \
   --provider elevenlabs --voice-id <chosen-voice-id> \
   --elevenlabs-model eleven_multilingual_v2
 
 # 1C. Or generate audio with MiniMax
 # Defaults to the China endpoint; set MINIMAX_TTS_BASE_URL=https://api.minimax.io/v1/t2a_v2 for overseas access.
-python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
+python skills/ppt-master/scripts/notes_to_audio.py <project_path> \
   --provider minimax --voice-id <chosen-voice-id> \
   --minimax-model speech-2.8-hd
 
 # 1D. Or generate audio only with Qwen TTS (the API returns no timestamps)
-python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
+python skills/ppt-master/scripts/notes_to_audio.py <project_path> \
   --provider qwen --voice-id <chosen-voice> \
   --qwen-model qwen3-tts-flash --qwen-language-type Chinese
 
 # 1E. Or generate audio/SRT pairs with a timestamp-capable CosyVoice voice
-python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
+python skills/ppt-master/scripts/notes_to_audio.py <project_path> \
   --provider cosyvoice --voice-id <chosen-voice> \
   --cosyvoice-model cosyvoice-v3-flash
 
@@ -208,7 +208,7 @@ python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> \
 #     by matching SVG group semantics to SRT topics, then derive the narrated
 #     sidecar. Reuse current SVG semantics when complete; otherwise read only
 #     the missing or stale svg_output pages.
-python3 skills/ppt-master/scripts/narration_sync.py animations <project_path> \
+python skills/ppt-master/scripts/narration_sync.py animations <project_path> \
   --narration-start-floor 0.8 --narration-padding 0.5 --force
 
 # 2B. Re-export with audio embedded
@@ -217,32 +217,32 @@ python3 skills/ppt-master/scripts/narration_sync.py animations <project_path> \
 #     For the native-export mix branch when final motion has sound cues, also
 #     pass --conversion-trace <final_narrated_trace>. Explicit slideshow capture
 #     does not require that trace for sound delivery.
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
+python skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
   --recorded-narration audio \
   --narration-start-floor 0.8 --narration-padding 0.5 \
   --inherit-motion-from "<base_postflight_report>"
 
 # Optional: use the canonical presentation animation instead
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
+python skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
   --recorded-narration audio \
   --narration-start-floor 0.8 --narration-padding 0.5 \
   --animation-config animations.json \
   --inherit-motion-from "<base_postflight_report>"
 
 # Optional: export narration with no object or page-transition animation
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
+python skills/ppt-master/scripts/svg_to_pptx.py <project_path> \
   --recorded-narration audio \
   --narration-start-floor 0.8 --narration-padding 0.5 \
   --no-animations
 
 # 2C. Only when page-local SRT exists, merge it against timing values read
 #     from the final PPTX
-python3 skills/ppt-master/scripts/narration_sync.py subtitles <project_path> \
+python skills/ppt-master/scripts/narration_sync.py subtitles <project_path> \
   --pptx <final_narrated_pptx> --force
 
 # 2D. Optional: export the raw video through installed Windows PowerPoint
 #     and wait for completion
-python3 skills/ppt-master/scripts/powerpoint_video.py \
+python skills/ppt-master/scripts/powerpoint_video.py \
   <final_narrated_pptx> -o <raw_powerpoint_video.mp4>
 
 # 2E. Only when final resolved motion has sound cues and direct MP4 delivery is
@@ -250,7 +250,7 @@ python3 skills/ppt-master/scripts/powerpoint_video.py \
 #     calibrate cue times against raw video narration, and publish the verified
 #     SFX stem, mixed MP4, and report. Defaults are about 35% for transitions,
 #     25% for object cues, and a -1 dBFS limiter.
-python3 skills/ppt-master/scripts/video_sound_mix.py <project_path> \
+python skills/ppt-master/scripts/video_sound_mix.py <project_path> \
   --pptx <final_narrated_pptx> \
   --trace <final_narrated_trace> \
   --video <raw_powerpoint_video.mp4> \
@@ -261,7 +261,7 @@ python3 skills/ppt-master/scripts/video_sound_mix.py <project_path> \
 # 2F. Only when page-local SRT exists, align the frozen narration text against
 #     the final delivery video: mixed when 2E ran, captured when the explicit
 #     slideshow-capture handoff returned an MP4, otherwise the raw video.
-python3 skills/ppt-master/scripts/video_subtitles.py <project_path> \
+python skills/ppt-master/scripts/video_subtitles.py <project_path> \
   --video <final_delivery_video.mp4> --language <language> --force
 ```
 
@@ -306,12 +306,12 @@ Before generation starts, `notes_to_audio.py` removes stale `audio/manifest.json
 
 **Narrated export animation selection**:
 
-| Sidecar state | Behavior |
-|---|---|
-| `narration_animations.json` exists and narration-cue sync is selected | Use it |
-| Only canonical `animations.json` exists and narration-cue sync is selected | Block until narration synchronization creates the derived sidecar |
+| Sidecar state                                                                                                        | Behavior                                                            |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `narration_animations.json` exists and narration-cue sync is selected                                                | Use it                                                              |
+| Only canonical `animations.json` exists and narration-cue sync is selected                                           | Block until narration synchronization creates the derived sidecar   |
 | Canonical `animations.json` exists and motion is narration-independent, whether or not a derived sidecar also exists | Pass `--animation-config animations.json`; do not claim object sync |
-| Both are absent | Create no sidecar; inherit the base report's deck motion |
+| Both are absent                                                                                                      | Create no sidecar; inherit the base report's deck motion            |
 
 Generate passes the base report through `--inherit-motion-from`: inherited
 `-a none` preserves explicit objects-off, while final Stage-2 `false` does not.
@@ -341,7 +341,7 @@ changed.
 Get the exact fingerprint value with:
 
 ```bash
-python3 skills/ppt-master/scripts/narration_sync.py fingerprint <project_path>
+python skills/ppt-master/scripts/narration_sync.py fingerprint <project_path>
 ```
 
 ```json
@@ -405,10 +405,10 @@ that handoff remains incomplete until a real capture is accepted.
 
 **Caller integration**:
 
-| Caller | After audio generation |
-|---|---|
-| Generate PPTX | Derive narration-cued motion when selected; otherwise pass canonical motion, inherit base motion, or use explicit all-motion-off. Export with `--recorded-narration audio`; Quick also passes `--quick-generate --with-notes`. Native video uses conversion trace plus raw export and cue mix as required. Explicit capture returns the narrated PPTX for the handoff above, skips trace-only sound work and mixing, then aligns subtitles against the accepted capture. |
-| Enhance Native PPTX | Return to [`native-enhance-pptx`](../native-enhance-pptx.md) Step 9. Native video passes its final PPTX to `powerpoint_video.py`; explicit capture uses the same handoff above and skips mixing. |
+| Caller              | After audio generation                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Generate PPTX       | Derive narration-cued motion when selected; otherwise pass canonical motion, inherit base motion, or use explicit all-motion-off. Export with `--recorded-narration audio`; Quick also passes `--quick-generate --with-notes`. Native video uses conversion trace plus raw export and cue mix as required. Explicit capture returns the narrated PPTX for the handoff above, skips trace-only sound work and mixing, then aligns subtitles against the accepted capture. |
+| Enhance Native PPTX | Return to [`native-enhance-pptx`](../native-enhance-pptx.md) Step 9. Native video passes its final PPTX to `powerpoint_video.py`; explicit capture uses the same handoff above and skips mixing.                                                                                                                                                                                                                                                                         |
 
 For Qwen or explicit CosyVoice audio-only mode, embed/export the audio normally
 but skip `narration_timing.json`, `narration_sync.py animations`, SRT merge, and
@@ -445,4 +445,4 @@ Output one summary block listing:
   otherwise do not claim a video-aligned subtitle.
 - The provider, voice, and rate/settings actually used.
 - The caller-owned integration result: narrated SVG export path, enhanced native PPTX path, or “audio only”.
-- For Generate PPTX when embedding was skipped, one-line hint: `python3 skills/ppt-master/scripts/svg_to_pptx.py <project_path> --recorded-narration audio`.
+- For Generate PPTX when embedding was skipped, one-line hint: `python skills/ppt-master/scripts/svg_to_pptx.py <project_path> --recorded-narration audio`.

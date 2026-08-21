@@ -12,17 +12,17 @@
 
 ## Authority and Scope
 
-| Concern | Owner |
-|---|---|
-| Stage-1 combined confirmation and post-confirmation installation order | [`generate-pptx.md`](../../workflows/generate-pptx.md) |
-| Template option/selection schema and page transport | This document |
-| Step 4 gate and pipeline order | [`generate-pptx.md`](../../workflows/generate-pptx.md) |
-| Confirm UI schema | This document |
-| Stage 1 / final Stage 2 field membership | This document |
-| Server launch / wait / shutdown behavior | This document |
-| Port and lock behavior | This document |
-| Chat fallback equivalence | This document |
-| Confirmed-value precedence | [`generate-pptx.md`](../../workflows/generate-pptx.md) plus this document's `result.json` contract |
+| Concern                                                                | Owner                                                                                              |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Stage-1 combined confirmation and post-confirmation installation order | [`generate-pptx.md`](../../workflows/generate-pptx.md)                                             |
+| Template option/selection schema and page transport                    | This document                                                                                      |
+| Step 4 gate and pipeline order                                         | [`generate-pptx.md`](../../workflows/generate-pptx.md)                                             |
+| Confirm UI schema                                                      | This document                                                                                      |
+| Stage 1 / final Stage 2 field membership                               | This document                                                                                      |
+| Server launch / wait / shutdown behavior                               | This document                                                                                      |
+| Port and lock behavior                                                 | This document                                                                                      |
+| Chat fallback equivalence                                              | This document                                                                                      |
+| Confirmed-value precedence                                             | [`generate-pptx.md`](../../workflows/generate-pptx.md) plus this document's `result.json` contract |
 
 **Hard rule**: Keep detailed Confirm UI behavior here. The Generate route may summarize orchestration, but it should not duplicate the full JSON schema, catalog behavior, or launcher lifecycle.
 
@@ -32,11 +32,11 @@ explicit confirmation-surface instruction for this run before running
 branch. A new explicit selection may change it before launch; once confirmation
 starts in chat or UI switches to chat, keep chat for the rest of this run.
 
-| Most recent explicit surface instruction | Branch |
-|---|---|
-| The user explicitly delegates confirmation | Make the combined Stage-1 communication/template decision, install it, then present one complete final summary. Do not launch the page or fabricate UI receipts. |
+| Most recent explicit surface instruction                                                                | Branch                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The user explicitly delegates confirmation                                                              | Make the combined Stage-1 communication/template decision, install it, then present one complete final summary. Do not launch the page or fabricate UI receipts.   |
 | Otherwise, the user asks for or agrees to personally confirm in chat, or declines the confirmation page | Use chat for both Strategist stages; Stage 1 includes the template/free-design choice. Do not launch the page, run `--wait-only`, or require UI-authored receipts. |
-| No explicit confirmation-surface instruction exists for this run | Use the page as the default. |
+| No explicit confirmation-surface instruction exists for this run                                        | Use the page as the default.                                                                                                                                       |
 
 Interpret the instruction semantically: “confirm here”, “use the chat window”, or
 “do not open the confirmation page” are sufficient; no literal `chat-only`
@@ -102,15 +102,15 @@ the same combined Stage-1 items as open chat questions and wait explicitly.
 The following launch and wait commands belong to the **UI branch only**:
 
 ```bash
-python3 scripts/confirm_ui/server.py <project_path> --daemon         # launch combined Stage 1
-python3 scripts/confirm_ui/server.py <project_path> --wait-only --wait-stage stage1  # communication + template selection
-python3 scripts/confirm_ui/server.py <project_path> --complete-template-selection # after Stage-1 free-design closure / template install
-python3 scripts/confirm_ui/server.py <project_path> --wait-only       # current final Stage 2
-python3 scripts/confirm_ui/server.py <project_path> --daemon --port 5051
-python3 scripts/confirm_ui/server.py <project_path> --no-browser
-python3 scripts/confirm_ui/server.py <project_path> --timeout 0   # disable idle auto-shutdown
-python3 scripts/confirm_ui/server.py <project_path> --reset-template-selection # clear prior template sidecars before a fresh UI run
-python3 scripts/confirm_ui/server.py <project_path> --shutdown    # Step 4 cleanup (idempotent)
+python scripts/confirm_ui/server.py <project_path> --daemon         # launch combined Stage 1
+python scripts/confirm_ui/server.py <project_path> --wait-only --wait-stage stage1  # communication + template selection
+python scripts/confirm_ui/server.py <project_path> --complete-template-selection # after Stage-1 free-design closure / template install
+python scripts/confirm_ui/server.py <project_path> --wait-only       # current final Stage 2
+python scripts/confirm_ui/server.py <project_path> --daemon --port 5051
+python scripts/confirm_ui/server.py <project_path> --no-browser
+python scripts/confirm_ui/server.py <project_path> --timeout 0   # disable idle auto-shutdown
+python scripts/confirm_ui/server.py <project_path> --reset-template-selection # clear prior template sidecars before a fresh UI run
+python scripts/confirm_ui/server.py <project_path> --shutdown    # Step 4 cleanup (idempotent)
 ```
 
 - Without `--port`, binds the first free port from `127.0.0.1:5050`; the launch log prints the actual URL. `--port N` is exact and fails when unavailable. Auto-open is suppressed by `--no-browser`.
@@ -281,7 +281,7 @@ reads the source roots.
 After free design closes or template installation succeeds, run:
 
 ```bash
-python3 scripts/confirm_ui/server.py <project_path> --complete-template-selection
+python scripts/confirm_ui/server.py <project_path> --complete-template-selection
 ```
 
 The command writes, and agents must not hand-author:
@@ -360,10 +360,10 @@ newer than that handoff and the Stage-1 result. A Stage-2 file left by an earlie
 run remains inactive. An existing `result.json` outside the current `stage1` /
 `final` contract also fails closed unless fresh paired inputs start a new run.
 
-| Recommendation file | Declared stage | Page renders | Button | On submit |
-|---|---|---|---|---|
-| `recommendations.stage1.json` + `template_options.json` | `"stage1"` | communication contract — content language; audience; open `communication_intent`; audience outcome; core message / primary delivery context + optional secondary use / artifact afterlife / `content_divergence` (all prose fields may be blank); canvas; free-design/template mode and conditional candidate selectors | **Confirm contract & template choice** | writes Stage-1 `result.json` plus `template_selection.json` in one submission; the page stays open and polls while the agent installs/completes the handoff |
-| `recommendations.stage2.json` | `"stage2"` | complete deck solution and production — conditional natural-language template application, reading mode, mode, page count, visual direction, color, icons, typography, image usage/rendering, conditional AI acquisition path, formula policy, proactive notes/custom-animation/narration-audio toggles, generation mode, and Design Spec review toggle | **Confirm final plan** | writes `result.json` `{ stage: "final", status: "confirmed", <all fields> }`, then shuts the page down |
+| Recommendation file                                     | Declared stage | Page renders                                                                                                                                                                                                                                                                                                                                            | Button                                 | On submit                                                                                                                                                   |
+| ------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recommendations.stage1.json` + `template_options.json` | `"stage1"`     | communication contract — content language; audience; open `communication_intent`; audience outcome; core message / primary delivery context + optional secondary use / artifact afterlife / `content_divergence` (all prose fields may be blank); canvas; free-design/template mode and conditional candidate selectors                                 | **Confirm contract & template choice** | writes Stage-1 `result.json` plus `template_selection.json` in one submission; the page stays open and polls while the agent installs/completes the handoff |
+| `recommendations.stage2.json`                           | `"stage2"`     | complete deck solution and production — conditional natural-language template application, reading mode, mode, page count, visual direction, color, icons, typography, image usage/rendering, conditional AI acquisition path, formula policy, proactive notes/custom-animation/narration-audio toggles, generation mode, and Design Spec review toggle | **Confirm final plan**                 | writes `result.json` `{ stage: "final", status: "confirmed", <all fields> }`, then shuts the page down                                                      |
 
 In the UI branch, the AI authors Stage 1 without reading template candidates,
 then launches the combined page. In chat/delegated confirmation it authors the

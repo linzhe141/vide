@@ -5,14 +5,14 @@ PPT Master - Animation Config Tool
 Create and validate optional PPTX animation and deterministic Morph sidecars.
 
 Usage:
-    python3 scripts/animation_config.py scaffold <project_path>
-    python3 scripts/animation_config.py list-groups <project_path>
-    python3 scripts/animation_config.py validate <project_path>
+    python scripts/animation_config.py scaffold <project_path>
+    python scripts/animation_config.py list-groups <project_path>
+    python scripts/animation_config.py validate <project_path>
 
 Examples:
-    python3 scripts/animation_config.py scaffold projects/demo --force
-    python3 scripts/animation_config.py list-groups projects/demo
-    python3 scripts/animation_config.py validate projects/demo
+    python scripts/animation_config.py scaffold projects/demo --force
+    python scripts/animation_config.py list-groups projects/demo
+    python scripts/animation_config.py validate projects/demo
 
 Dependencies:
     None (standard library only)

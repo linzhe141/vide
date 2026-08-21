@@ -6,12 +6,12 @@ existing projects and external callers. It delegates to
 the legacy bare-key JSON shape.
 
 ```bash
-python3 skills/ppt-master/scripts/chart_recall.py recall \
+python skills/ppt-master/scripts/chart_recall.py recall \
   --page P03 \
   --tag "time series" \
   --tag "three metrics" \
   --tag "direction over time"
-python3 skills/ppt-master/scripts/chart_recall.py validate process_flow
+python skills/ppt-master/scripts/chart_recall.py validate process_flow
 ```
 
 The validation example intentionally uses the legacy bare Structure intent `process_flow`;

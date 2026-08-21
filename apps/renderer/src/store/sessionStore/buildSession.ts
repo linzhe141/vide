@@ -151,6 +151,9 @@ function buildMessages(
       }
       case 'assistant': {
         const content = typeof message.content === 'string' ? message.content : ''
+        if (content) {
+          scrollInto({ id: nanoid(), role: 'assistant-text', content, streaming: false })
+        }
         const toolCalls = message.tool_calls ?? []
         if (toolCalls.length) {
           const states: ToolCallState[] = []
@@ -191,9 +194,7 @@ function buildMessages(
             scrollInto({ id: nanoid(), role: 'tool-call', toolCalls: states })
           }
         }
-        if (content) {
-          scrollInto({ id: nanoid(), role: 'assistant-text', content, streaming: false })
-        }
+
         break
       }
       case 'tool': {

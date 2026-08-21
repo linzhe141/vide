@@ -10,23 +10,23 @@ Conditional Executor authority for resolving one page-local Chart/Table `family/
 
 ## 1. Canonical Reference Resolution
 
-| Family | Canonical reference | SVG root | Construction authority |
-|---|---|---|---|
-| `chart` | `chart/<key>` | `templates/charts/<key>.svg` | [`executor-chart.md`](./executor-chart.md) |
-| `table` | `table/<key>` | `templates/tables/<key>.svg` | [`executor-table.md`](./executor-table.md) |
+| Family  | Canonical reference | SVG root                     | Construction authority                     |
+| ------- | ------------------- | ---------------------------- | ------------------------------------------ |
+| `chart` | `chart/<key>`       | `templates/charts/<key>.svg` | [`executor-chart.md`](./executor-chart.md) |
+| `table` | `table/<key>`       | `templates/tables/<key>.svg` | [`executor-table.md`](./executor-table.md) |
 
-| Active profile | Resolve from |
-|---|---|
-| Default Generate | Prefer the current `P<NN>: family/key` row from retained `spec_lock.md page_visualizations`, then read that page's `Page | Family | Template | Usage` row in Design Spec §VII; use a legacy `page_charts` row and its legacy §VII Usage only when the canonical row is absent |
-| Quick Generate | Use the canonical Chart/Table `family/key` and page-local purpose already selected in active context before SVG authoring |
+| Active profile   | Resolve from                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Default Generate | Prefer the current `P<NN>: family/key` row from retained `spec_lock.md page_visualizations`, then read that page's `Page  | Family | Template | Usage` row in Design Spec §VII; use a legacy `page_charts` row and its legacy §VII Usage only when the canonical row is absent |
+| Quick Generate   | Use the canonical Chart/Table `family/key` and page-local purpose already selected in active context before SVG authoring |
 
 **Hard rule — one primary reference per page**: one page resolves at most one catalog SVG. The reference guides one dominant reusable Chart/Table information structure; secondary objects are authored from their actual content through the applicable branch without loading another catalog SVG. Independent Chart/Table children retain their §IX or Quick semantic object keys for scoped native/verification contracts.
 
 **Mandatory — shared resolution**: resolve the selected value through `visualization_recall.py validate`; consume its canonical `reference` and `path` instead of guessing a family or constructing a path from the input string. Add `--legacy-bare` only for a value read from legacy `page_charts`.
 
 ```bash
-python3 ${SKILL_DIR}/scripts/visualization_recall.py validate <family/key>
-python3 ${SKILL_DIR}/scripts/visualization_recall.py validate \
+python ${SKILL_DIR}/scripts/visualization_recall.py validate <family/key>
+python ${SKILL_DIR}/scripts/visualization_recall.py validate \
   --legacy-bare <legacy-key>
 ```
 
@@ -42,11 +42,11 @@ Read the resolver-returned SVG once before its first use in the valid active con
 
 **Hard rule — reference, not lock**: the selected SVG is a page-local construction reference. The current §IX page block or Quick page decision plus authoritative source content owns the final information structure; the preview does not lock visualization type, geometry, styling, or native replacement.
 
-| Preserve | Adapt freely |
-|---|---|
-| Authoritative labels, values, units, statuses, sources, relationships, hierarchy, and explanatory content | Dimensions, spacing, axes, grouping, orientation, density, and exact primitive/preset composition |
-| Selected Usage and valid information encoding | Borrow, recombine, simplify, extend, or depart when another realization preserves the information more faithfully |
-| Complete page content obligations | Palette, typography, container treatment, effects, background, and page chrome from project authorities |
+| Preserve                                                                                                  | Adapt freely                                                                                                      |
+| --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Authoritative labels, values, units, statuses, sources, relationships, hierarchy, and explanatory content | Dimensions, spacing, axes, grouping, orientation, density, and exact primitive/preset composition                 |
+| Selected Usage and valid information encoding                                                             | Borrow, recombine, simplify, extend, or depart when another realization preserves the information more faithfully |
+| Complete page content obligations                                                                         | Palette, typography, container treatment, effects, background, and page chrome from project authorities           |
 
 **Forbidden — preview substitution**:
 

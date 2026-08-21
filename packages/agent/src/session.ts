@@ -3,6 +3,7 @@ import { WorkflowStream } from './stream'
 import { Workflow, type CallToolsPayload, type InterruptPayload, type StopReason } from './workflow'
 import { v4 as uuid } from 'uuid'
 import { getBuildInTools } from './tools/buildinTools'
+import { buildSkillsChatMessage } from './tools/skill'
 import type { Agent } from './agent'
 
 export type SessionType = 'normal' | 'fork'
@@ -94,7 +95,7 @@ export class Session {
     this.model = model
   }
 
-  prompt(input: string, options?: { inputSource?: SessionInputSource }) {
+  async prompt(input: string, options?: { inputSource?: SessionInputSource }) {
     if (!this.model) {
       throw new Error('Model is not set for this session.')
     }
@@ -116,6 +117,12 @@ export class Session {
     workflow.context.stream = stream
     stream.sessionId = this.id
     stream.workflowId = workflow.id
+
+    // 注入当前 workspace 可用的 skills 目录，让 LLM 知道可以调用 load-skill
+    const skillsMessage = await buildSkillsChatMessage(this.workspacePath)
+    if (skillsMessage) {
+      workflow.messages.push(skillsMessage)
+    }
 
     const workflowCommitNode = this.commitWorkflow(workflow)
     this.sessionWorkflowNodes[workflow.id] = workflowCommitNode

@@ -16,18 +16,18 @@ After Generate Step 4 Gate 1, read the completed Design Spec and current page/re
 
 ## 2. Base sections
 
-| Section | Required keys | Notes |
-| --- | --- | --- |
-| `canvas` | `viewBox`, `format` | `format` is the canonical display name (for example `PPT 16:9`); `viewBox` is the matching exact geometry |
-| `communication` | `primary_language`, `audience`, `objective`, `core_message` | New lock: canonical BCP-47; old lock may omit it. Reject `und` and Chinese without script/region. `objective` merges intent/outcome; `consumption_mode` is optional off PPT |
-| `mode` | `mode` | Preset or `custom` |
-| `visual_style` | `visual_style` | Preset or `custom` |
-| `colors` | Stable semantic color roles | Core identity and recurring roles only; contextual SVG paints need no row; `image_rendering` appears only for AI images |
-| `typography` | `font_family`, `body`, `title` | Core family/size anchors; new locks also write explicit `title_family` and `body_family`; size anchors are unitless px numbers |
-| `icons` | `library`, `inventory` | `library` is the Strategist's primary bundled style choice or `none`; `simple-icons/*` may be selected alone or accompany it; `inventory` indexes the curated synced bundled pool rather than page usage or all usable project-local icons; `stroke_width` is conditional |
-| `page_rhythm` | One `P<NN>` row per page | Values: `anchor`, `dense`, `breathing` |
-| `pptx_structure` | `mode` | Values: `flat`, `structured` |
-| `forbidden` | Literal list items | General standards stay in their owning reference |
+| Section          | Required keys                                               | Notes                                                                                                                                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `canvas`         | `viewBox`, `format`                                         | `format` is the canonical display name (for example `PPT 16:9`); `viewBox` is the matching exact geometry                                                                                                                                                                 |
+| `communication`  | `primary_language`, `audience`, `objective`, `core_message` | New lock: canonical BCP-47; old lock may omit it. Reject `und` and Chinese without script/region. `objective` merges intent/outcome; `consumption_mode` is optional off PPT                                                                                               |
+| `mode`           | `mode`                                                      | Preset or `custom`                                                                                                                                                                                                                                                        |
+| `visual_style`   | `visual_style`                                              | Preset or `custom`                                                                                                                                                                                                                                                        |
+| `colors`         | Stable semantic color roles                                 | Core identity and recurring roles only; contextual SVG paints need no row; `image_rendering` appears only for AI images                                                                                                                                                   |
+| `typography`     | `font_family`, `body`, `title`                              | Core family/size anchors; new locks also write explicit `title_family` and `body_family`; size anchors are unitless px numbers                                                                                                                                            |
+| `icons`          | `library`, `inventory`                                      | `library` is the Strategist's primary bundled style choice or `none`; `simple-icons/*` may be selected alone or accompany it; `inventory` indexes the curated synced bundled pool rather than page usage or all usable project-local icons; `stroke_width` is conditional |
+| `page_rhythm`    | One `P<NN>` row per page                                    | Values: `anchor`, `dense`, `breathing`                                                                                                                                                                                                                                    |
+| `pptx_structure` | `mode`                                                      | Values: `flat`, `structured`                                                                                                                                                                                                                                              |
+| `forbidden`      | Literal list items                                          | General standards stay in their owning reference                                                                                                                                                                                                                          |
 
 Optional data sections: `images`, `page_visualizations` (Chart/Table only). New locks never write
 legacy `page_charts`; existing locks may retain it for read-only compatibility.
@@ -45,16 +45,16 @@ The required universal block is:
 
 ## 3. Conditional sections and fields
 
-| Trigger | Required addition |
-| --- | --- |
-| `mode.mode: custom` | `mode_behavior` in `mode`; optional `mode_references` only when catalog modes are actually used |
-| `visual_style.visual_style: custom` | `visual_style_behavior` in `visual_style`; optional `visual_style_references` only when catalog styles are actually used |
-| `colors.image_rendering: custom` | `image_rendering_behavior` in `colors`; optional `image_rendering_references` only when catalog renderings are actually used |
-| `icons.library: tabler-outline` | `stroke_width: 1.5`, `2`, or `3` |
-| `pptx_structure.mode: structured` | `template_reuse_scope: layout\|mirror`, `template_adherence`, plus `pptx_masters`, `pptx_layouts`, `page_pptx_layouts`, and `page_layouts` |
-| `pptx_structure.template_reuse_scope: mirror` | `mode: structured` and `template_adherence: strict` |
-| `pptx_structure.template_reuse_scope: style` | `mode: flat`; omit structured mapping sections |
-| `pptx_structure.mode: flat` | Omit all four structured mapping sections |
+| Trigger                                       | Required addition                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mode.mode: custom`                           | `mode_behavior` in `mode`; optional `mode_references` only when catalog modes are actually used                                            |
+| `visual_style.visual_style: custom`           | `visual_style_behavior` in `visual_style`; optional `visual_style_references` only when catalog styles are actually used                   |
+| `colors.image_rendering: custom`              | `image_rendering_behavior` in `colors`; optional `image_rendering_references` only when catalog renderings are actually used               |
+| `icons.library: tabler-outline`               | `stroke_width: 1.5`, `2`, or `3`                                                                                                           |
+| `pptx_structure.mode: structured`             | `template_reuse_scope: layout\|mirror`, `template_adherence`, plus `pptx_masters`, `pptx_layouts`, `page_pptx_layouts`, and `page_layouts` |
+| `pptx_structure.template_reuse_scope: mirror` | `mode: structured` and `template_adherence: strict`                                                                                        |
+| `pptx_structure.template_reuse_scope: style`  | `mode: flat`; omit structured mapping sections                                                                                             |
+| `pptx_structure.mode: flat`                   | Omit all four structured mapping sections                                                                                                  |
 
 Structured section value shapes:
 
@@ -91,12 +91,12 @@ conflict even when they resolve alike.
 
 Typography projection excludes Character/upgrade References:
 
-| Design Spec §IV declaration | `spec_lock.md` field |
-| --- | --- |
-| Title font stack | `title_family` |
-| Body font stack | `body_family` and compatibility/default `font_family` |
-| Any additional recurring font role `<role>` | `<role>_family` |
-| Every Font Size Hierarchy role `<role>` | lowercase `<role>` with its numeric anchor |
+| Design Spec §IV declaration                 | `spec_lock.md` field                                  |
+| ------------------------------------------- | ----------------------------------------------------- |
+| Title font stack                            | `title_family`                                        |
+| Body font stack                             | `body_family` and compatibility/default `font_family` |
+| Any additional recurring font role `<role>` | `<role>_family`                                       |
+| Every Font Size Hierarchy role `<role>`     | lowercase `<role>` with its numeric anchor            |
 
 New locks always write `title_family` and `body_family`, even when their values happen to match. Every additional recurring family row and every size-anchor row in the Design Spec must appear under the same lowercase snake_case role; omit only family roles that inherit without an explicit override. Existing locks without family-role fields remain readable through `font_family` fallback. Executor may choose the anchor or a value within that role's `±2px` band; the lock does not enumerate intermediate values. A short non-structural Hero/Display size may remain absent only while the same undeclared value appears at most twice across the deck; its third occurrence requires a named role.
 
@@ -138,7 +138,7 @@ Catalog-based custom example:
 ## 5. Machine Validation
 
 ```bash
-python3 skills/ppt-master/scripts/project_manager.py validate <project_path>
+python skills/ppt-master/scripts/project_manager.py validate <project_path>
 ```
 
 Validation reports unresolved `[fill...]` placeholders, wrong casing, unknown sections or fields, illegal enums, malformed page keys, missing catalog assets, broken structured-layout references, and unmet conditions. It neither rewrites the lock nor checks semantic projection; Generate Step 4 Gate 2 owns that check.

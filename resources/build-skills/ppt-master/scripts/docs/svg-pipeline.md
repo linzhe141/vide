@@ -14,7 +14,7 @@ Create a lightweight editable authoring IR bundle from one PPTX-imported SVG or
 a directory of imported SVGs:
 
 ```bash
-python3 scripts/svg_authoring_view.py <svg-file-or-directory> -o <output-dir> \
+python scripts/svg_authoring_view.py <svg-file-or-directory> -o <output-dir> \
   --projection-kind layered
 ```
 
@@ -52,7 +52,7 @@ Regenerate the summary after direct edits that do not pass through one of the
 in-place normalization tools:
 
 ```bash
-python3 scripts/svg_authoring_view.py <authoring-dir> --refresh-summary
+python scripts/svg_authoring_view.py <authoring-dir> --refresh-summary
 ```
 
 This projection is separate from canonical preset authoring. New project SVGs
@@ -76,7 +76,7 @@ inline-smoke convention from [`code-style.md`](../../../../docs/rules/code-style
 §11; do not turn it into a test file or example deck.
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import re
 import subprocess
 import sys
@@ -312,8 +312,8 @@ Compact safe model-facing page-space coordinates without rewriting unrelated
 SVG formatting:
 
 ```bash
-python3 scripts/compact_svg_coordinates.py <svg-file-or-directory>
-python3 scripts/compact_svg_coordinates.py <template-directory> \
+python scripts/compact_svg_coordinates.py <svg-file-or-directory>
+python scripts/compact_svg_coordinates.py <template-directory> \
   --inplace --keep-native-frames
 ```
 
@@ -338,10 +338,10 @@ Factor large vector subtrees out of lightweight authoring IR documents and
 replace them with compact `<use data-icon>` references:
 
 ```bash
-python3 scripts/extract_svg_assets.py <layered_svg_dir> \
+python scripts/extract_svg_assets.py <layered_svg_dir> \
   --icons-dir <icons_dir> --icon-namespace imported \
   --inplace --id-prefix layered
-python3 scripts/extract_svg_assets.py <flat_svg_dir> \
+python scripts/extract_svg_assets.py <flat_svg_dir> \
   --icons-dir <icons_dir> --icon-namespace imported \
   --reuse-inventory <layered_inventory.json> \
   --inplace --id-prefix flat
@@ -367,7 +367,7 @@ Compile one Type A PPTX import workspace into a deterministic structured mirror
 template after the layered authoring IR has been reviewed and edited:
 
 ```bash
-python3 scripts/mirror_template_materialize.py \
+python scripts/mirror_template_materialize.py \
   <import_workspace> <empty_template_workspace>
 ```
 
@@ -436,7 +436,7 @@ replaces the source group at the same parent index with one `<image>`. Native
 export therefore emits one `p:pic` backed by SVG media.
 
 ```bash
-python3 scripts/extract_svg_pictures.py \
+python scripts/extract_svg_pictures.py \
   "<workspace>/authoring-svg/<layered_svg_file>.svg" \
   --select "<group_id>" \
   --resource-root "<workspace>" \
@@ -485,23 +485,23 @@ starting the next command.
 When the effective Speaker Notes outcome in `design_spec.md §I` is enabled, run:
 
 ```bash
-python3 scripts/total_md_split.py <project_path>
+python scripts/total_md_split.py <project_path>
 ```
 
 After `total_md_split.py` exits successfully, run:
 
 ```bash
-python3 scripts/finalize_svg.py <project_path>
+python scripts/finalize_svg.py <project_path>
 ```
 
 After `finalize_svg.py` exits successfully, run:
 
 ```bash
-python3 scripts/svg_to_pptx.py <project_path>
+python scripts/svg_to_pptx.py <project_path>
 ```
 
 When Speaker Notes is disabled, skip `total_md_split.py` and use
-`python3 scripts/svg_to_pptx.py <project_path> --no-notes` for the final
+`python scripts/svg_to_pptx.py <project_path> --no-notes` for the final
 command. This prevents stale files under `notes/` from being embedded.
 
 Do not start another post-processing command while the current command is still
@@ -525,27 +525,27 @@ It aggregates:
 Convert project SVGs into PPTX.
 
 ```bash
-python3 scripts/svg_to_pptx.py <project_path>
+python scripts/svg_to_pptx.py <project_path>
 # Explicit compact image export:
-python3 scripts/svg_to_pptx.py <project_path> --image-sizing display --image-scale 2 --image-quality 85
+python scripts/svg_to_pptx.py <project_path> --image-sizing display --image-scale 2 --image-quality 85
 # Force original image bytes:
-python3 scripts/svg_to_pptx.py <project_path> --no-image-optimize
-python3 scripts/svg_to_pptx.py <project_path> --native-charts-and-tables
-python3 scripts/svg_to_pptx.py <project_path> --pptx-structure structured  # deck/layout template override
-python3 scripts/svg_to_pptx.py <project_path> --pptx-structure flat  # free-design/brand-only override
+python scripts/svg_to_pptx.py <project_path> --no-image-optimize
+python scripts/svg_to_pptx.py <project_path> --native-charts-and-tables
+python scripts/svg_to_pptx.py <project_path> --pptx-structure structured  # deck/layout template override
+python scripts/svg_to_pptx.py <project_path> --pptx-structure flat  # free-design/brand-only override
 # Template-import visual round-trip diagnostic only:
-python3 scripts/svg_to_pptx.py <template_import_output> -s svg-flat
+python scripts/svg_to_pptx.py <template_import_output> -s svg-flat
 # Post-processed-source comparison diagnostic only (never a release export):
-python3 scripts/svg_to_pptx.py <project_path> -s final
-python3 scripts/svg_to_pptx.py <project_path> --no-notes
-python3 scripts/svg_to_pptx.py <project_path> -t none
-python3 scripts/svg_to_pptx.py <project_path> --auto-advance 3
-python3 scripts/svg_to_pptx.py <project_path> --animation mixed --animation-duration 0.8
-python3 scripts/svg_to_pptx.py <project_path> --reflow-text  # opt-in PowerPoint reflow
-python3 scripts/svg_to_pptx.py <project_path> --no-merge    # one text frame per visual line
-python3 scripts/svg_to_pptx.py <project_path> --recorded-narration audio
-python3 scripts/svg_to_pptx.py <project_path> --recorded-narration audio --animation-config animations.json
-python3 scripts/svg_to_pptx.py <project_path> --recorded-narration audio --no-animations
+python scripts/svg_to_pptx.py <project_path> -s final
+python scripts/svg_to_pptx.py <project_path> --no-notes
+python scripts/svg_to_pptx.py <project_path> -t none
+python scripts/svg_to_pptx.py <project_path> --auto-advance 3
+python scripts/svg_to_pptx.py <project_path> --animation mixed --animation-duration 0.8
+python scripts/svg_to_pptx.py <project_path> --reflow-text  # opt-in PowerPoint reflow
+python scripts/svg_to_pptx.py <project_path> --no-merge    # one text frame per visual line
+python scripts/svg_to_pptx.py <project_path> --recorded-narration audio
+python scripts/svg_to_pptx.py <project_path> --recorded-narration audio --animation-config animations.json
+python scripts/svg_to_pptx.py <project_path> --recorded-narration audio --no-animations
 ```
 
 Native image export defaults to `--image-sizing cap`: it preserves source bytes
@@ -570,9 +570,9 @@ After the complete SVG roster exists, run its lockless final checker, then
 export:
 
 ```bash
-python3 scripts/svg_quality_checker.py <project_path> \
+python scripts/svg_quality_checker.py <project_path> \
   --quick-generate --stage final --json
-python3 scripts/svg_to_pptx.py <project_path> --quick-generate
+python scripts/svg_to_pptx.py <project_path> --quick-generate
 ```
 
 This direct-export flag takes `svg_output/` as its authored page source, resolves
@@ -656,7 +656,7 @@ Behavior:
   - Either narration flag names the default-flow export `<project_name>_<timestamp>_narrated.pptx`, telling it apart from silent exports in the same directory
   - This is intended for direct PowerPoint video export with "Use recorded timings and narrations"
   - Long-audio import and automatic long-audio splitting are not supported; keep narration assets page-level
-  - Voice choices can be listed with `python3 scripts/notes_to_audio.py --list-common-voices`, `python3 scripts/notes_to_audio.py --list-voices --locale zh-CN`, or provider-specific `--provider <name> --list-voices`
+  - Voice choices can be listed with `python scripts/notes_to_audio.py --list-common-voices`, `python scripts/notes_to_audio.py --list-voices --locale zh-CN`, or provider-specific `--provider <name> --list-voices`
 - Page transitions are controlled by `-t/--transition`; per-element object animations are controlled by `-a/--animation`
 - Per-element animation applies to ordinary top-level SVG `<g id="...">` groups; each group is a PowerPoint shape-target anchor, not necessarily one Animation Pane row. Use one group per logical Slide-local content unit rather than targeting a group count. Master/Layout atoms and slot groups are structural and excluded; exact id tokens remain a fallback only when explicit structural roles are absent
 - An explicit `animations.json` group entry may override the marker-free legacy chrome-name heuristic. It cannot override `data-pptx-layer` or an explicit static role/placeholder marker
@@ -693,9 +693,9 @@ pip install python-pptx
 Split `total.md` into per-slide note files.
 
 ```bash
-python3 scripts/total_md_split.py <project_path>
-python3 scripts/total_md_split.py <project_path> -o <output_directory>
-python3 scripts/total_md_split.py <project_path> -q
+python scripts/total_md_split.py <project_path>
+python scripts/total_md_split.py <project_path> -o <output_directory>
+python scripts/total_md_split.py <project_path> -q
 ```
 
 Requirements:
@@ -708,15 +708,15 @@ Requirements:
 Validate SVG technical compliance.
 
 ```bash
-python3 scripts/svg_quality_checker.py examples/project/svg_output/01_cover.svg
-python3 scripts/svg_quality_checker.py examples/project/svg_output
-python3 scripts/svg_quality_checker.py examples/project
-python3 scripts/svg_quality_checker.py examples/project --stage first-page
-python3 scripts/svg_quality_checker.py examples/project --stage final --json
-python3 scripts/svg_quality_checker.py examples/project --format ppt169
-python3 scripts/svg_quality_checker.py --all examples
-python3 scripts/svg_quality_checker.py examples/project --export
-python3 scripts/svg_quality_checker.py path/to/template/templates --template-mode
+python scripts/svg_quality_checker.py examples/project/svg_output/01_cover.svg
+python scripts/svg_quality_checker.py examples/project/svg_output
+python scripts/svg_quality_checker.py examples/project
+python scripts/svg_quality_checker.py examples/project --stage first-page
+python scripts/svg_quality_checker.py examples/project --stage final --json
+python scripts/svg_quality_checker.py examples/project --format ppt169
+python scripts/svg_quality_checker.py --all examples
+python scripts/svg_quality_checker.py examples/project --export
+python scripts/svg_quality_checker.py path/to/template/templates --template-mode
 ```
 
 Checks include:
@@ -758,10 +758,10 @@ Use this after `svg_quality_checker.py` passes, and only for chart types support
 ### Calculate expected coordinates
 
 ```bash
-python3 scripts/svg_position_calculator.py calc bar --data "A:185,B:142" --area "130,155,1200,480" --bar-width 120
-python3 scripts/svg_position_calculator.py calc line --data "0:50,10:80,20:120" --area "120,120,1200,600" --y-range "0,150"
-python3 scripts/svg_position_calculator.py calc pie --data "A:35,B:25,C:20" --center "420,400" --radius 200
-python3 scripts/svg_position_calculator.py calc grid --rows 2 --cols 3 --area "50,150,1230,670"
+python scripts/svg_position_calculator.py calc bar --data "A:185,B:142" --area "130,155,1200,480" --bar-width 120
+python scripts/svg_position_calculator.py calc line --data "0:50,10:80,20:120" --area "120,120,1200,600" --y-range "0,150"
+python scripts/svg_position_calculator.py calc pie --data "A:35,B:25,C:20" --center "420,400" --radius 200
+python scripts/svg_position_calculator.py calc grid --rows 2 --cols 3 --area "50,150,1230,670"
 ```
 
 For an area chart, use the line output as the top boundary:
@@ -775,7 +775,7 @@ Manually compare the calculator output with the coordinates already present in t
 ### Analyze (inspect existing SVG)
 
 ```bash
-python3 scripts/svg_position_calculator.py analyze <svg_file>
+python scripts/svg_position_calculator.py analyze <svg_file>
 ```
 
 Use this after SVG generation to inspect existing SVG geometry when manual comparison needs more context.
@@ -785,29 +785,29 @@ Use this after SVG generation to inspect existing SVG geometry when manual compa
 ### `flatten_tspan.py`
 
 ```bash
-python3 scripts/svg_finalize/flatten_tspan.py examples/<project>/svg_output
-python3 scripts/svg_finalize/flatten_tspan.py path/to/input.svg path/to/output.svg
+python scripts/svg_finalize/flatten_tspan.py examples/<project>/svg_output
+python scripts/svg_finalize/flatten_tspan.py path/to/input.svg path/to/output.svg
 ```
 
 ### `align_embed_images.py`
 
 ```bash
-python3 scripts/svg_finalize/align_embed_images.py path/to/slide.svg
-python3 scripts/svg_finalize/align_embed_images.py --dry-run path/to/slide.svg
+python scripts/svg_finalize/align_embed_images.py path/to/slide.svg
+python scripts/svg_finalize/align_embed_images.py --dry-run path/to/slide.svg
 ```
 
 Use for rare single-file diagnostics when image `slice` / `meet` alignment and
 Base64 embedding must be inspected outside `finalize_svg.py`. In normal project
-runs, use `python3 scripts/finalize_svg.py <project_path>`; the old
+runs, use `python scripts/finalize_svg.py <project_path>`; the old
 `crop-images`, `fix-aspect`, and `embed-images` names remain accepted only as
 `finalize_svg.py --only` aliases for the merged `align-images` step.
 
 ### `embed_icons.py`
 
 ```bash
-python3 scripts/svg_finalize/embed_icons.py output.svg
-python3 scripts/svg_finalize/embed_icons.py svg_output/*.svg
-python3 scripts/svg_finalize/embed_icons.py --dry-run svg_output/*.svg
+python scripts/svg_finalize/embed_icons.py output.svg
+python scripts/svg_finalize/embed_icons.py svg_output/*.svg
+python scripts/svg_finalize/embed_icons.py --dry-run svg_output/*.svg
 ```
 
 Replaces `<use data-icon="chunk-filled/name" .../>`, `<use data-icon="tabler-filled/name" .../>` and `<use data-icon="tabler-outline/name" .../>` placeholders with actual SVG path elements. Use for manual icon embedding checks outside `finalize_svg.py`.

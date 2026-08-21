@@ -141,7 +141,7 @@ export class AgentManager {
     inputSource: SessionSource = 'desktop'
   ): Promise<string> {
     const branchName = session.activeBranch
-    const stream = session.prompt(input, { inputSource })
+    const stream = await session.prompt(input, { inputSource })
     const workflowId = stream.workflowId!
 
     this.persister.markPending(workflowId)

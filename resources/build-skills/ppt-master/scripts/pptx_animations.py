@@ -53,9 +53,9 @@ See references/animations.md for the public workflow contract.
 Dependencies: None (standard-library XML generation and validation)
 
 Usage:
-    python3 scripts/pptx_animations.py --demo
-    python3 scripts/pptx_animations.py --list
-    python3 scripts/pptx_animations.py --describe entrance_fly
+    python scripts/pptx_animations.py --demo
+    python scripts/pptx_animations.py --list
+    python scripts/pptx_animations.py --describe entrance_fly
 """
 
 import argparse

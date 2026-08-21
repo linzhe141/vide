@@ -8,10 +8,10 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 ## Responsibility Boundary
 
-| Owner | Responsibilities |
-|---|---|
+| Owner           | Responsibilities                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Create Template | Child-workflow dispatch plus the shared source taxonomy, `library` / `project` scope, confirmation gate, collision preflight, structured authoring contract, validation commands, registration, completion, and Generate PPTX handoff |
-| Create Layout | Structure-only interpretation, layout-specific brief fields, brand-neutral `design_spec.md`, SVG roster, and layout-specific validation |
+| Create Layout   | Structure-only interpretation, layout-specific brief fields, brand-neutral `design_spec.md`, SVG roster, and layout-specific validation                                                                                               |
 
 **Hard rule — child workflow, not a top-level route**: Create Layout executes only inside Create Template. It reuses the parent workflow's Steps 1–8 and never creates a competing entry route or second confirmation gate.
 
@@ -41,15 +41,15 @@ Direct conversation text, pasted requirements, converted documents/websites, ima
 
 Add these child-owned requirements to Create Template Step 2:
 
-| Field | Requirement |
-|---|---|
-| Layout ID and display name | Required; `layout_id` is a filesystem-safe ASCII slug |
-| Structural use cases | Required; describe content shapes and delivery settings the geometry can support, not communication objectives, audience outcomes, narrative sequence, or brand tone |
-| Canvas | Required; exact format, dimensions, and `viewBox` |
-| Page grammar | Required; page types, variants, grids, zones, semantic text roles, alignment/wrapping/capacity, density rhythm, and image behavior |
-| Native structure | Required; Master families, Layout ownership, slot vocabulary, and zero-slot Layouts where intentional |
-| Creation intent | Required as natural-language prose: what should remain recognizable, what should become reusable structure, and how broad the page vocabulary should be. The AI derives `replication_mode` internally from this intent and the evidence. |
-| Identity stripping | Required when branded reference material exists; list the identity facts intentionally excluded |
+| Field                      | Requirement                                                                                                                                                                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout ID and display name | Required; `layout_id` is a filesystem-safe ASCII slug                                                                                                                                                                                    |
+| Structural use cases       | Required; describe content shapes and delivery settings the geometry can support, not communication objectives, audience outcomes, narrative sequence, or brand tone                                                                     |
+| Canvas                     | Required; exact format, dimensions, and `viewBox`                                                                                                                                                                                        |
+| Page grammar               | Required; page types, variants, grids, zones, semantic text roles, alignment/wrapping/capacity, density rhythm, and image behavior                                                                                                       |
+| Native structure           | Required; Master families, Layout ownership, slot vocabulary, and zero-slot Layouts where intentional                                                                                                                                    |
+| Creation intent            | Required as natural-language prose: what should remain recognizable, what should become reusable structure, and how broad the page vocabulary should be. The AI derives `replication_mode` internally from this intent and the evidence. |
+| Identity stripping         | Required when branded reference material exists; list the identity facts intentionally excluded                                                                                                                                          |
 
 Write this structure-only schema:
 
@@ -116,8 +116,8 @@ In addition to Create Template Steps 5–6, verify:
 For library scope, Create Template validates and registers with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <layout_id> --kind layout --dry-run
-python3 skills/ppt-master/scripts/register_template.py <layout_id> --kind layout
+python skills/ppt-master/scripts/register_template.py <layout_id> --kind layout --dry-run
+python skills/ppt-master/scripts/register_template.py <layout_id> --kind layout
 ```
 
 For project scope, skip both commands. The exact workspace root becomes the next Generate PPTX Step 3 input; downstream identity remains a Strategist decision unless an explicit Brand or Deck workspace is also supplied.

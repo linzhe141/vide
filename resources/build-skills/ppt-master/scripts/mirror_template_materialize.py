@@ -8,7 +8,7 @@ lossless SVG files are consulted solely to restore unchanged supported source
 objects. Final templates and imported vectors contain no IR-only source refs.
 
 Usage:
-    python3 scripts/mirror_template_materialize.py \
+    python scripts/mirror_template_materialize.py \
         <import_workspace> <template_workspace>
 
 Dependencies:

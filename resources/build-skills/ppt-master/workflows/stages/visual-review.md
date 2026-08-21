@@ -39,10 +39,10 @@ For decks containing data charts, run [`verify-charts`](./verify-charts.md) firs
 ```bash
 # 1. playwright + chromium installed (the PNG renderer)
 pip install playwright
-python3 -m playwright install chromium
+python -m playwright install chromium
 
 # 2. live-preview server running for this project (provides inlined SVG fetch)
-python3 skills/ppt-master/scripts/svg_editor/server.py <project_path> --no-browser
+python skills/ppt-master/scripts/svg_editor/server.py <project_path> --no-browser
 # (single instance per project — if it's already running, skip)
 ```
 
@@ -55,7 +55,7 @@ The renderer (`visual_review.py`) does **not** auto-start the live-preview serve
 ## Step 1 — Pre-render all PNGs
 
 ```bash
-python3 skills/ppt-master/scripts/visual_review.py <project_path>
+python skills/ppt-master/scripts/visual_review.py <project_path>
 ```
 
 This writes one PNG per page to `<project_path>/.preview/<page>.png`, sized from that SVG root's `viewBox`, with `<use data-icon>` inlined and `<image href>` resolved exactly as the live-preview browser sees them. Each successful page record in the JSON summary includes the exact canvas plus its raster dimensions. Renders are serialized via a project-local file lock — safe to invoke concurrently.
@@ -117,7 +117,7 @@ The orchestrator emits the aggregate Markdown table back to you (the main agent)
 
 ```
 | page | role | status | hard_hits | soft_hits | fixes_applied | needs_human_reason |
-|------|------|--------|-----------|-----------|---------------|---------------------|
+| ---- | ---- | ------ | --------- | --------- | ------------- | ------------------ |
 ```
 
 Statuses:

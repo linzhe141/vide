@@ -6,7 +6,7 @@ expansion, or mask rejection. It keeps XML in memory except for temporary SVG
 fixtures; do not turn it into a test framework or example deck.
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import math
 import re
 import sys

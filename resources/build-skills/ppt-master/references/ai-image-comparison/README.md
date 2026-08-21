@@ -7,11 +7,11 @@ This directory uses **controlled-variable comparison** — vary one dimension wh
 
 ## The three comparison sets
 
-| Subdirectory | Count | Variable | Fixed baseline |
-|---|---|---|---|
-| [`rendering/`](./rendering/) | 20 | rendering (20 styles) | single-subject hero composition (§4.1 Primitive A), palette=cool-corporate |
-| [`palette/`](./palette/) | 14 | palette (14 color behaviors) | single-subject hero composition (§4.1 Primitive A), rendering=vector-illustration |
-| [`type/`](./type/) | 11 | type (11 internal compositions for `page_role: local`) | rendering=vector-illustration, palette=cool-corporate |
+| Subdirectory                 | Count | Variable                                               | Fixed baseline                                                                    |
+| ---------------------------- | ----- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [`rendering/`](./rendering/) | 20    | rendering (20 styles)                                  | single-subject hero composition (§4.1 Primitive A), palette=cool-corporate        |
+| [`palette/`](./palette/)     | 14    | palette (14 color behaviors)                           | single-subject hero composition (§4.1 Primitive A), rendering=vector-illustration |
+| [`type/`](./type/)           | 11    | type (11 internal compositions for `page_role: local`) | rendering=vector-illustration, palette=cool-corporate                             |
 
 Each subdirectory contains:
 
@@ -23,11 +23,11 @@ Each subdirectory contains:
 
 ## Why these baselines
 
-| Choice | Reason |
-|---|---|
-| rendering=`vector-illustration` | Most versatile in the catalog; ✓✓ compatible with all 14 palettes; minimal interference when used as the "origin" for palette / type comparisons |
-| palette=`cool-corporate` | Most neutral and common; clear dominant/support/accent roles keep the compared dimension visible |
-| composition=single-subject hero (§4.1 Primitive A) | One dominant subject (60-70% of canvas) — the most visually representative shape, so rendering / palette differences show up most clearly |
+| Choice                                             | Reason                                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| rendering=`vector-illustration`                    | Most versatile in the catalog; ✓✓ compatible with all 14 palettes; minimal interference when used as the "origin" for palette / type comparisons |
+| palette=`cool-corporate`                           | Most neutral and common; clear dominant/support/accent roles keep the compared dimension visible                                                 |
+| composition=single-subject hero (§4.1 Primitive A) | One dominant subject (60-70% of canvas) — the most visually representative shape, so rendering / palette differences show up most clearly        |
 
 ## How the images were generated
 
@@ -36,17 +36,17 @@ Each subdirectory contains:
 To reproduce or regenerate:
 
 ```bash
-python3 skills/ppt-master/scripts/image_gen.py \
+python skills/ppt-master/scripts/image_gen.py \
     --manifest skills/ppt-master/references/ai-image-comparison/rendering/_manifest.json \
     -o skills/ppt-master/references/ai-image-comparison/rendering/ \
     --backend openai
 
-python3 skills/ppt-master/scripts/image_gen.py \
+python skills/ppt-master/scripts/image_gen.py \
     --manifest skills/ppt-master/references/ai-image-comparison/palette/_manifest.json \
     -o skills/ppt-master/references/ai-image-comparison/palette/ \
     --backend openai
 
-python3 skills/ppt-master/scripts/image_gen.py \
+python skills/ppt-master/scripts/image_gen.py \
     --manifest skills/ppt-master/references/ai-image-comparison/type/_manifest.json \
     -o skills/ppt-master/references/ai-image-comparison/type/ \
     --backend openai
@@ -56,10 +56,10 @@ Generated images land in the corresponding subdirectory. Each item's `status` in
 
 ## How to use
 
-| If you are deciding... | Look at |
-|---|---|
-| Which rendering to lock in [`strategist-image.md`](../strategist-image.md) §2 | `rendering/` — scan all 20 side by side; pick the visual temperament that matches the deck |
-| Diagnosing a legacy palette lock or comparison asset | `palette/` — see how historical color behaviors shift the same subject; do not expose it as a new-flow choice |
-| Which type fits a specific image's purpose | `type/` — match the internal composition to the page's content shape |
+| If you are deciding...                                                        | Look at                                                                                                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Which rendering to lock in [`strategist-image.md`](../strategist-image.md) §2 | `rendering/` — scan all 20 side by side; pick the visual temperament that matches the deck                    |
+| Diagnosing a legacy palette lock or comparison asset                          | `palette/` — see how historical color behaviors shift the same subject; do not expose it as a new-flow choice |
+| Which type fits a specific image's purpose                                    | `type/` — match the internal composition to the page's content shape                                          |
 
 > The three sets are intentionally independent. When deciding rendering in the current flow, use only `rendering/`; the legacy palette set must not influence or reintroduce a separate color decision.

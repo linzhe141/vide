@@ -5,8 +5,8 @@
 ## Run
 
 ```bash
-python3 skills/ppt-master/scripts/prompt_audit.py            # text summary
-python3 skills/ppt-master/scripts/prompt_audit.py --json     # stable JSON report
+python skills/ppt-master/scripts/prompt_audit.py            # text summary
+python skills/ppt-master/scripts/prompt_audit.py --json     # stable JSON report
 ```
 
 Requires `tiktoken` (not part of `requirements.txt` — end users never need it):
@@ -19,17 +19,17 @@ Exit code `1` on any deterministic error. An unaccepted exact duplicate or schem
 
 ## What It Checks
 
-| Area | Failure class |
-|---|---|
-| Corpus and hot-file token ceilings | error on budget overflow |
-| Declared load sets (route/stage scenarios) | error on budget overflow, unknown files, selector/registry drift |
-| Load coverage | error when a corpus file is in no load set and has no `coverage.exempt` entry |
-| Registry claims (layout patterns, modes, styles, renderings, types, charts) | error on ID/count/index drift |
-| Markdown references and declared authority edges | error on broken links or unreferenced edges |
-| Cross-file exact duplicates | warning until adjudicated via `duplicates.accepted` |
-| Cross-file near duplicates | informational candidates in the report; no finding |
-| Schema multi-definition | warning for each unaccepted owner-field / projection-path pair; accepted projections stay visible in the report |
-| Accepted duplicate/schema drift | error when an accepted source or projection no longer matches |
+| Area                                                                        | Failure class                                                                                                   |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Corpus and hot-file token ceilings                                          | error on budget overflow                                                                                        |
+| Declared load sets (route/stage scenarios)                                  | error on budget overflow, unknown files, selector/registry drift                                                |
+| Load coverage                                                               | error when a corpus file is in no load set and has no `coverage.exempt` entry                                   |
+| Registry claims (layout patterns, modes, styles, renderings, types, charts) | error on ID/count/index drift                                                                                   |
+| Markdown references and declared authority edges                            | error on broken links or unreferenced edges                                                                     |
+| Cross-file exact duplicates                                                 | warning until adjudicated via `duplicates.accepted`                                                             |
+| Cross-file near duplicates                                                  | informational candidates in the report; no finding                                                              |
+| Schema multi-definition                                                     | warning for each unaccepted owner-field / projection-path pair; accepted projections stay visible in the report |
+| Accepted duplicate/schema drift                                             | error when an accepted source or projection no longer matches                                                   |
 
 ## Manifest Maintenance — `prompt_audit_manifest.json`
 

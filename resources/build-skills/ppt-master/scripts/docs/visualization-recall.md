@@ -19,7 +19,7 @@ Describe one page's information shape with 3-8 concise English semantic tags.
 Translate source-language or industry terms into structural meaning first.
 
 ```bash
-python3 skills/ppt-master/scripts/visualization_recall.py recall \
+python skills/ppt-master/scripts/visualization_recall.py recall \
   --page P03 \
   --tag "time series" \
   --tag "three metrics" \
@@ -39,15 +39,15 @@ command once with `--semantic-fallback`, compare the returned selection rules
 semantically, and only then retain `no-template-match`. The full-catalog review
 is a narrow low-confidence no-match gate, not a routine recall step.
 
-| Field | Contract |
-|---|---|
-| `page` | Input `P<NN>` page key |
-| `family_filter` | Requested family or `all` |
-| `semantic_tags` | Deduplicated input tags |
-| `confidence` | Lexical recall strength; never a selection decision |
-| `candidates` | Ranked family/key references, SVG paths, summaries, scores, and matched tags |
-| `semantic_fallback` | Selected live catalogs, present only with `--semantic-fallback` |
-| `no_template_match` | Explicit fallback; blocked at low/none until semantic fallback review |
+| Field               | Contract                                                                     |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `page`              | Input `P<NN>` page key                                                       |
+| `family_filter`     | Requested family or `all`                                                    |
+| `semantic_tags`     | Deduplicated input tags                                                      |
+| `confidence`        | Lexical recall strength; never a selection decision                          |
+| `candidates`        | Ranked family/key references, SVG paths, summaries, scores, and matched tags |
+| `semantic_fallback` | Selected live catalogs, present only with `--semantic-fallback`              |
+| `no_template_match` | Explicit fallback; blocked at low/none until semantic fallback review        |
 
 The scorer treats the key and summary Pick clause as positive evidence and the
 Skip clause as negative evidence. A term found only in Skip cannot make a
@@ -61,7 +61,7 @@ Validate every selected reference before Default writes Design Spec §VII and
 `spec_lock.md page_visualizations`, or before Quick opens it for immediate use:
 
 ```bash
-python3 skills/ppt-master/scripts/visualization_recall.py validate \
+python skills/ppt-master/scripts/visualization_recall.py validate \
   chart/line_chart table/record_table
 ```
 
@@ -71,7 +71,7 @@ to a registered SVG and `1` otherwise. New planning supplies canonical
 resolution explicitly; every key must resolve uniquely:
 
 ```bash
-python3 skills/ppt-master/scripts/visualization_recall.py validate \
+python skills/ppt-master/scripts/visualization_recall.py validate \
   --legacy-bare pros_cons_chart
 ```
 

@@ -28,12 +28,12 @@ discovery happens exclusively against the index file):
 
 Usage::
 
-    python3 scripts/register_template.py <id> --kind deck     # default kind=deck
-    python3 scripts/register_template.py <id> --kind layout
-    python3 scripts/register_template.py <id> --kind brand
-    python3 scripts/register_template.py <id> --kind style
-    python3 scripts/register_template.py --rebuild-all --kind deck
-    python3 scripts/register_template.py <id> --dry-run
+    python scripts/register_template.py <id> --kind deck     # default kind=deck
+    python scripts/register_template.py <id> --kind layout
+    python scripts/register_template.py <id> --kind brand
+    python scripts/register_template.py <id> --kind style
+    python scripts/register_template.py --rebuild-all --kind deck
+    python scripts/register_template.py <id> --dry-run
 
 ``--rebuild-all`` rebuilds every entry from scratch within the chosen kind;
 recommended for repairing index drift across many templates at once.

@@ -8,11 +8,11 @@ intent-only compatibility values; they do not recall or load SVG assets. The
 legacy ``valid`` list remains intact while ``resolved`` exposes each kind.
 
 Usage:
-    python3 scripts/chart_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "trend"
-    python3 scripts/chart_recall.py validate line_chart column_chart
+    python scripts/chart_recall.py recall --page P03 --tag "time series" --tag "three metrics" --tag "trend"
+    python scripts/chart_recall.py validate line_chart column_chart
 
 Examples:
-    python3 scripts/chart_recall.py validate process_flow
+    python scripts/chart_recall.py validate process_flow
 
 Dependencies:
     None (only uses the standard library)

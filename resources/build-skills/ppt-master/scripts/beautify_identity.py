@@ -14,11 +14,11 @@ confirm. Pure read: reuses the pptx_to_svg resolver, writes
 no PPTX.
 
 Usage:
-    python3 scripts/beautify_identity.py <source.pptx> [-o identity.json]
+    python scripts/beautify_identity.py <source.pptx> [-o identity.json]
 
 Examples:
-    python3 scripts/beautify_identity.py projects/x/sources/deck.pptx
-    python3 scripts/beautify_identity.py deck.pptx -o projects/x/analysis/deck.identity.json
+    python scripts/beautify_identity.py projects/x/sources/deck.pptx
+    python scripts/beautify_identity.py deck.pptx -o projects/x/analysis/deck.identity.json
 
 Dependencies:
     None beyond the standard library (reuses scripts/pptx_to_svg/).

@@ -22,61 +22,65 @@ const MemoMarkdown: FC<ReactMarkdownOptions> = memo(
     return <MarkdownReact {...rest}>{children}</MarkdownReact>
   },
   (prev, next) => {
-    return (
-      prev.children === next.children &&
-      prev.rehypePlugins === next.rehypePlugins &&
-      prev.components === next.components
-    )
+    // 只有 children 不同时才重渲染
+    return prev.children === next.children
   }
 )
 
-export function MarkdownRenderer({
-  children,
-  className,
-  animation,
-  onCitationClick,
-}: ReactMarkdownOptions & {
-  className?: string
-  animation: boolean
-  onCitationClick?: () => void
-}) {
-  /**
-   * ✅ 避免每次 render 重新 tokenize markdown
-   */
-  const blocks = useMemo(() => {
-    return parseMarkdownIntoBlocks(children ?? '')
-  }, [children])
+export const MarkdownRenderer = memo(
+  function MarkdownRenderer({
+    children,
+    className,
+    animation,
+    onCitationClick,
+  }: ReactMarkdownOptions & {
+    className?: string
+    animation: boolean
+    onCitationClick?: () => void
+  }) {
+    console.log('MarkdownRenderer render')
+    /**
+     * ✅ 避免每次 render 重新 tokenize markdown
+     */
+    const blocks = useMemo(() => {
+      return parseMarkdownIntoBlocks(children ?? '')
+    }, [children])
 
-  return (
-    <MarkdownProvider animation={animation} onCitationClick={onCitationClick}>
-      <article
-        className={cn(
-          'article-wrapper prose dark:prose-invert prose-zinc prose-sm max-w-none',
-          { animation },
-          className
-        )}
-      >
-        {animation ? (
-          blocks.map((block, index) => (
+    return (
+      <MarkdownProvider animation={animation} onCitationClick={onCitationClick}>
+        <article
+          className={cn(
+            'article-wrapper prose dark:prose-invert prose-zinc prose-sm max-w-none',
+            { animation },
+            className
+          )}
+        >
+          {animation ? (
+            blocks.map((block, index) => (
+              <MemoMarkdown
+                key={index}
+                rehypePlugins={streamRehypePlugins}
+                remarkPlugins={[remarkGfm]}
+                components={components}
+              >
+                {block}
+              </MemoMarkdown>
+            ))
+          ) : (
             <MemoMarkdown
-              key={index}
-              rehypePlugins={streamRehypePlugins}
-              remarkPlugins={[remarkGfm]}
+              rehypePlugins={markdownRehypePlugins}
               components={components}
+              remarkPlugins={[remarkGfm]}
             >
-              {block}
+              {children}
             </MemoMarkdown>
-          ))
-        ) : (
-          <MemoMarkdown
-            rehypePlugins={markdownRehypePlugins}
-            components={components}
-            remarkPlugins={[remarkGfm]}
-          >
-            {children}
-          </MemoMarkdown>
-        )}
-      </article>
-    </MarkdownProvider>
-  )
-}
+          )}
+        </article>
+      </MarkdownProvider>
+    )
+  },
+  (prev, next) => {
+    // 只有 children 不同时才重渲染
+    return prev.children === next.children
+  }
+)

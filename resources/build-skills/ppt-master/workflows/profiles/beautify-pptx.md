@@ -20,11 +20,11 @@ Beautify constraints in this file apply in either runtime.
 
 ## 1. When to Run
 
-| Pattern | Example |
-|---|---|
-| Existing `.pptx` + beautify intent | "把这份 PPT 美化一下" / "make this deck look better" |
-| Existing `.pptx` + re-layout intent | "重新排版这份 PPT，内容别动" / "re-layout this, keep the wording" |
-| Existing `.pptx` + paste-back intent | "重排后我要把元素贴回原来的模板" |
+| Pattern                              | Example                                                           |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| Existing `.pptx` + beautify intent   | "把这份 PPT 美化一下" / "make this deck look better"              |
+| Existing `.pptx` + re-layout intent  | "重新排版这份 PPT，内容别动" / "re-layout this, keep the wording" |
+| Existing `.pptx` + paste-back intent | "重排后我要把元素贴回原来的模板"                                  |
 
 **Hard rule — content is frozen**: every text string from the source is preserved exactly (no add / remove / reword / reorder). Beautification freedom lives only in layout, hierarchy, spacing, and visual rhythm.
 
@@ -47,9 +47,9 @@ two fidelity profiles never compose.
 
 🚧 **GATE**: the user has provided:
 
-| Input | Required | Notes |
-|---|---:|---|
-| Source PPTX | Yes | The deck to re-lay-out |
+| Input          | Required | Notes                                                                                           |
+| -------------- | -------: | ----------------------------------------------------------------------------------------------- |
+| Source PPTX    |      Yes | The deck to re-lay-out                                                                          |
 | Beautify scope | Optional | Density / emphasis preference — never content rewrites, and never page drops (v1 is strict 1:1) |
 
 ---
@@ -58,21 +58,21 @@ two fidelity profiles never compose.
 
 Match the canvas to the source so 1:1 pages and paste-back align. Determine the source aspect first — before the project exists, run `beautify_identity.py <source.pptx>` to **stdout** and read `canvas.aspect` (the formal standard intake bundle is written in Step 4, after `init`) — then `init` with the matching format:
 
-| Source aspect | Format |
-|---|---|
-| ≈1.778 (16:9) | `ppt169` |
-| ≈1.333 (4:3) | `ppt43` |
-| other | nearest format in [`canvas-formats.md`](../../references/canvas-formats.md); record the source pixel size in the spec |
+| Source aspect | Format                                                                                                                |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| ≈1.778 (16:9) | `ppt169`                                                                                                              |
+| ≈1.333 (4:3)  | `ppt43`                                                                                                               |
+| other         | nearest format in [`canvas-formats.md`](../../references/canvas-formats.md); record the source pixel size in the spec |
 
 ```bash
 # Default runtime:
-python3 ${SKILL_DIR}/scripts/project_manager.py init <project_name> --format <format>
+python ${SKILL_DIR}/scripts/project_manager.py init <project_name> --format <format>
 
 # Quick runtime instead:
-python3 ${SKILL_DIR}/scripts/project_manager.py init <project_name> --format <format> --quick-generate
+python ${SKILL_DIR}/scripts/project_manager.py init <project_name> --format <format> --quick-generate
 
 # Both runtimes then import once:
-python3 ${SKILL_DIR}/scripts/project_manager.py import-sources <project_path> <source.pptx>
+python ${SKILL_DIR}/scripts/project_manager.py import-sources <project_path> <source.pptx>
 ```
 
 Run exactly one `init` command: the Quick form only when Quick was selected.
@@ -84,23 +84,23 @@ Run exactly one `init` command: the Quick form only when Quick was selected.
 Use the standard PPTX intake bundle from Step 3. `project_manager.py import-sources` already writes it under `analysis/` for PPTX-family inputs. If the bundle is missing because the project predates this workflow, generate it once:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/pptx_intake.py <project_path>/sources/<source.pptx> -o <project_path>/analysis
+python ${SKILL_DIR}/scripts/pptx_intake.py <project_path>/sources/<source.pptx> -o <project_path>/analysis
 ```
 
 **Content + images — already produced by Step 3.** `import-sources` ran `ppt_to_md` on the deck, so the **frozen content contract** is `sources/<stem>.md` (one source slide per block, in order). If the source deck contains pictures, they are already propagated to `images/` with per-slide binding in `images/image_manifest.json` (`occurrences[].slide_index`). Do **not** re-run `ppt_to_md` — it would duplicate the conversion and write images to `analysis/<stem>_files/` instead of `images/`.
 
 **Visual identity (theme + observed sample + canvas)**: read `<project_path>/analysis/<stem>.identity.json` (intake prefixes per-deck artifacts by source-file stem).
 
-| Field | Use |
-|---|---|
-| `theme.palette.background` / `text` / `primary` / `accent1..6` | the deck's *declared* colors |
-| `theme.fonts.title` / `body` (`latin` / `ea` / `cs`; `scripts` maps `Hans` / `Hant` / `Jpan` / `Hang` supplemental faces) | the deck's *declared* fonts; use the matching script when `ea` is empty |
-| `theme.sizes.title` / `body` (pt) | the deck's *declared* placeholder sizes (master `txStyles`) — the size a run inherits when it sets no explicit `sz`; `body` is the **level-1** default (coarsest, commonly over-reads) |
-| `theme.sizes.body_levels` (pt list) | the full master `bodyStyle` ramp (lvl1..lvl9, e.g. `[32, 28, 24, 20, …]`) — **reference context** so you can read a deeper level than the over-reading level-1, not an auto-seed |
-| `observed.colors` / `observed.fonts` (`latin` / `ea`, frequency-ranked) | a usage **sample / frequency hint** — run-level fonts + explicit `srgbClr` fills across slides |
-| `observed.sizes_pt` (pt, frequency-ranked) | a usage **sample** of run-level explicit point sizes — the **size the deck actually renders at** when it overrides the placeholder default; the source for the Step 5 `body_size` recommendation |
-| `layout_sizes_pt` (pt, frequency-ranked) | **reference fact only**, NOT an auto-seed — the level-1 sizes that the in-use slide layouts' body placeholders declare. Usually empty (decks rely on runs / master) and ambiguous when present; use it as a hint when judging the body size, never as the authoritative seed |
-| `canvas.aspect` | drives the Step 3 format choice |
+| Field                                                                                                                     | Use                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `theme.palette.background` / `text` / `primary` / `accent1..6`                                                            | the deck's *declared* colors                                                                                                                                                                                                                                                 |
+| `theme.fonts.title` / `body` (`latin` / `ea` / `cs`; `scripts` maps `Hans` / `Hant` / `Jpan` / `Hang` supplemental faces) | the deck's *declared* fonts; use the matching script when `ea` is empty                                                                                                                                                                                                      |
+| `theme.sizes.title` / `body` (pt)                                                                                         | the deck's *declared* placeholder sizes (master `txStyles`) — the size a run inherits when it sets no explicit `sz`; `body` is the **level-1** default (coarsest, commonly over-reads)                                                                                       |
+| `theme.sizes.body_levels` (pt list)                                                                                       | the full master `bodyStyle` ramp (lvl1..lvl9, e.g. `[32, 28, 24, 20, …]`) — **reference context** so you can read a deeper level than the over-reading level-1, not an auto-seed                                                                                             |
+| `observed.colors` / `observed.fonts` (`latin` / `ea`, frequency-ranked)                                                   | a usage **sample / frequency hint** — run-level fonts + explicit `srgbClr` fills across slides                                                                                                                                                                               |
+| `observed.sizes_pt` (pt, frequency-ranked)                                                                                | a usage **sample** of run-level explicit point sizes — the **size the deck actually renders at** when it overrides the placeholder default; the source for the Step 5 `body_size` recommendation                                                                             |
+| `layout_sizes_pt` (pt, frequency-ranked)                                                                                  | **reference fact only**, NOT an auto-seed — the level-1 sizes that the in-use slide layouts' body placeholders declare. Usually empty (decks rely on runs / master) and ambiguous when present; use it as a hint when judging the body size, never as the authoritative seed |
+| `canvas.aspect`                                                                                                           | drives the Step 3 format choice                                                                                                                                                                                                                                              |
 
 > Note: `theme` is what the deck declares; `observed` is a frequency sample of run-level overrides (not a complete style resolution — it misses `schemeClr` and master/layout inheritance, and counts chart/gradient fills). A hand-edited deck can diverge from `theme` — Step 5 recommends which to inherit and the user confirms.
 
@@ -109,8 +109,8 @@ python3 ${SKILL_DIR}/scripts/pptx_intake.py <project_path>/sources/<source.pptx>
 **Optional source-SVG visual reference**: when the source deck has complex vector decoration, distinctive page chrome, or a visual language that cannot be captured by `<stem>.identity.json` colors/fonts alone, create a read-only SVG reference package under `analysis/`. This is for understanding style only; it is not a carry-over asset path.
 
 ```bash
-python3 ${SKILL_DIR}/scripts/pptx_to_svg.py <project_path>/sources/<source.pptx> -o <project_path>/analysis/source_svg_import
-python3 ${SKILL_DIR}/scripts/extract_svg_assets.py <project_path>/analysis/source_svg_import/svg-flat \
+python ${SKILL_DIR}/scripts/pptx_to_svg.py <project_path>/sources/<source.pptx> -o <project_path>/analysis/source_svg_import
+python ${SKILL_DIR}/scripts/extract_svg_assets.py <project_path>/analysis/source_svg_import/svg-flat \
     --icons-dir <project_path>/analysis/source_svg_import/icons \
     --icon-namespace imported \
     --inplace --id-prefix source_flat --min-decoration-bytes 3000 --clean-stale
@@ -131,15 +131,15 @@ promote text-bearing groups, charts/tables, page layouts, or dense composites.
 **Assemble the inventory** — the deterministic join into one per-slide ledger, `analysis/beautify_inventory.json`, the contract Step 5 confirms and Step 7 verifies against:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/beautify_inventory.py <project_path>/analysis/<stem>.slide_library.json \
+python ${SKILL_DIR}/scripts/beautify_inventory.py <project_path>/analysis/<stem>.slide_library.json \
     --images <project_path>/images/image_manifest.json -o <project_path>/analysis/beautify_inventory.json
 ```
 
 If `images/image_manifest.json` does not exist because the source deck has no extracted pictures, omit `--images`. The script joins per slide: `text_blocks` (slot text + geometry), `tables` (cell grid), `charts` (categories + series values), `diagrams` (SmartArt nodes + hierarchy/connections + source layout), and `images` (bound via `image_manifest` `occurrences[].slide_index`, with geometry / `usage_count`). The **frozen source values are inlined**, so the inventory is a self-contained contract, not a pointer back to `slide_library.json`. It emits `ignored` and `needs_confirmation` as **empty arrays** — fill them with judgment before Step 5:
 
-| Field | Fill with |
-|---|---|
-| `ignored` | hidden slides / shapes, master-only text, image crop / opacity / rotation / mask (not captured upstream) |
+| Field                | Fill with                                                                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ignored`            | hidden slides / shapes, master-only text, image crop / opacity / rotation / mask (not captured upstream)                                                                          |
 | `needs_confirmation` | unreadable SmartArt data; combo / dual-axis / waterfall charts; merged-cell or multi-header tables; density-outlier pages — **either** overcrowded **or** near-empty / title-only |
 
 **Mandatory — bounded inventory reads**: the complete inventory is the Step 7
@@ -147,11 +147,11 @@ validation ledger, not the default authoring prompt. Read its compact roster,
 then the current page; add geometry only for structural ambiguity:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/beautify_inventory.py \
+python ${SKILL_DIR}/scripts/beautify_inventory.py \
   <project_path>/analysis/beautify_inventory.json --summary
-python3 ${SKILL_DIR}/scripts/beautify_inventory.py \
+python ${SKILL_DIR}/scripts/beautify_inventory.py \
   <project_path>/analysis/beautify_inventory.json --page <N>
-python3 ${SKILL_DIR}/scripts/beautify_inventory.py \
+python ${SKILL_DIR}/scripts/beautify_inventory.py \
   <project_path>/analysis/beautify_inventory.json --page <N> --with-geometry
 ```
 
@@ -189,12 +189,12 @@ facts, stop as a hard prerequisite instead of simplifying it.
 entering §6 and [`quick-generate.md`](./quick-generate.md) §3, resolve every
 row below in the active context:
 
-| Transient state | Required closure |
-|---|---|
-| Roster and message | Exact source-order roster and one core message per page |
-| Identity and type | Source identity, palette, fonts, body size, and type-role anchors |
-| Page geometry | Per-page density, body frame, primary zone, and composition direction |
-| Meaning and rhythm | Frozen relationships, reading path, neighbor/section rhythm, and ending |
+| Transient state            | Required closure                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Roster and message         | Exact source-order roster and one core message per page                                                                                       |
+| Identity and type          | Source identity, palette, fonts, body size, and type-role anchors                                                                             |
+| Page geometry              | Per-page density, body frame, primary zone, and composition direction                                                                         |
+| Meaning and rhythm         | Frozen relationships, reading path, neighbor/section rhythm, and ending                                                                       |
 | Resources and capabilities | Required local resources are usable; triggered notes, motion, audio, image, icon, formula, Chart/Table, and verification outcomes are decided |
 
 Keep it transient: create no page/resource plan, Design Spec, lock,
@@ -208,23 +208,23 @@ This step has two halves:
 - **Visual re-confirm via the selected confirmation surface** — the **full** Step 4 field set (below), seeded from the source so every targeted-confirmation field (canvas, mode, visual style, palette, icons, typography incl. body baseline, image strategy, generation mode) is **pre-filled with the inherited / source-derived default and left editable**. Beautify *recommends* keeping the source's identity, but never removes the user's place to override any field — you may choose not to change a value, but you must not deny the place to change it. This is also where the deck's text size is confirmed: `<stem>.identity.json` now carries size hints — `observed.sizes_pt` (the point sizes the deck actually renders at) and `theme.sizes` (the declared placeholder defaults) — so the `body_size` recommendation **follows the source's own font size** rather than a blind canvas default; the user still confirms or overrides it here.
 - **Structural scope** — the inventory-driven list decisions below (ignored, reuse, needs-confirmation, verification level) stay in **chat**; they have no confirm-UI widget.
 
-| Plan item | Recommend from | Default lean |
-|---|---|---|
-| Identity source | `<stem>.identity.json` `theme` vs `observed` | present **both as color / typography candidates in the selected confirmation surface** so the user picks the one that looks right (theme first when the deck is theme-driven; observed first when slides override heavily) — recommend a default ordering and say why |
-| Preserve scope | inventory `text_blocks` / `images` / `charts` / `tables` / `diagrams` | all text verbatim; data values and SmartArt relationships frozen; pictures reused |
-| Ignored | inventory `ignored` | name them so the user sees what drops (hidden / master-only text / image crop / rotation) |
-| Needs confirmation | inventory `needs_confirmation` | flag complex charts + overcrowded pages explicitly; ask how to handle |
-| Verification level | deck size / risk | recommend the Step 7 per-page checks; user sets strictness |
+| Plan item          | Recommend from                                                        | Default lean                                                                                                                                                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity source    | `<stem>.identity.json` `theme` vs `observed`                          | present **both as color / typography candidates in the selected confirmation surface** so the user picks the one that looks right (theme first when the deck is theme-driven; observed first when slides override heavily) — recommend a default ordering and say why |
+| Preserve scope     | inventory `text_blocks` / `images` / `charts` / `tables` / `diagrams` | all text verbatim; data values and SmartArt relationships frozen; pictures reused                                                                                                                                                                                     |
+| Ignored            | inventory `ignored`                                                   | name them so the user sees what drops (hidden / master-only text / image crop / rotation)                                                                                                                                                                             |
+| Needs confirmation | inventory `needs_confirmation`                                        | flag complex charts + overcrowded pages explicitly; ask how to handle                                                                                                                                                                                                 |
+| Verification level | deck size / risk                                                      | recommend the Step 7 per-page checks; user sets strictness                                                                                                                                                                                                            |
 
 **Hard rule — content is frozen, not the scope decisions**: text strings and chart/table/table-cell data values are non-negotiable (verbatim). *Which* identity to inherit, what to ignore, and how to treat flagged items are recommend-then-confirm, never silently decided.
 
 **Recommend honestly — name the v1 ceiling**:
 
-| Item | What v1 delivers |
-|---|---|
-| Overcrowded source page | layout / hierarchy / whitespace improve **within the page as-is** — v1 does **not** relieve information overload (that needs re-pagination / rewrite, deferred). Flag such pages; the user may accept or note them for manual split |
-| Paste-back into the original | regenerated elements share the inherited palette + fonts, so they **blend visually** when pasted. v1 does **not** guarantee a seamless coordinate-level drop-in (slide coordinates, master placeholders, font availability are the original deck's, not ours) |
-| Complex charts / merged-cell tables | best-effort from the captured data; combo / dual-axis / waterfall lose the un-captured plots — flagged for the user |
+| Item                                | What v1 delivers                                                                                                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overcrowded source page             | layout / hierarchy / whitespace improve **within the page as-is** — v1 does **not** relieve information overload (that needs re-pagination / rewrite, deferred). Flag such pages; the user may accept or note them for manual split                           |
+| Paste-back into the original        | regenerated elements share the inherited palette + fonts, so they **blend visually** when pasted. v1 does **not** guarantee a seamless coordinate-level drop-in (slide coordinates, master placeholders, font availability are the original deck's, not ours) |
+| Complex charts / merged-cell tables | best-effort from the captured data; combo / dual-axis / waterfall lose the un-captured plots — flagged for the user                                                                                                                                           |
 
 **Visual re-confirm — full confirmation seeded from the source**:
 
@@ -318,17 +318,17 @@ post-processing commands, gates, success criteria, and export artifacts.
 ## 7. Validate Output
 
 ```bash
-python3 ${SKILL_DIR}/scripts/source_to_md/ppt_to_md.py <project_path>/exports/<output.pptx>
+python ${SKILL_DIR}/scripts/source_to_md/ppt_to_md.py <project_path>/exports/<output.pptx>
 ```
 
-| Check | Expected |
-|---|---|
-| Text fidelity | every source text string appears in the output, unaltered |
-| Data fidelity | chart categories / series / table cells match the source exactly |
-| Page count | output slide count equals the source slide count |
-| Regenerated visuals | charts / tables are native SVG re-themed to the inherited palette |
-| Identity | generated text / shapes use only `<stem>.identity.json` colors + fonts |
-| Paste-back | copying a beautified element into the original deck looks native |
+| Check               | Expected                                                               |
+| ------------------- | ---------------------------------------------------------------------- |
+| Text fidelity       | every source text string appears in the output, unaltered              |
+| Data fidelity       | chart categories / series / table cells match the source exactly       |
+| Page count          | output slide count equals the source slide count                       |
+| Regenerated visuals | charts / tables are native SVG re-themed to the inherited palette      |
+| Identity            | generated text / shapes use only `<stem>.identity.json` colors + fonts |
+| Paste-back          | copying a beautified element into the original deck looks native       |
 
 ```markdown
 ## ✅ Beautify Complete
@@ -344,14 +344,14 @@ python3 ${SKILL_DIR}/scripts/source_to_md/ppt_to_md.py <project_path>/exports/<o
 
 ## Current Boundary
 
-| Capability | Status |
-|---|---|
-| Re-layout with verbatim text | Supported |
-| Inherit source palette / fonts as truth | Supported |
-| Strict 1:1 page mapping | Supported |
-| Regenerate charts / tables as native SVG from extracted data | Supported |
-| Re-lay-out source pictures | Supported |
-| Re-pagination (split dense / merge sparse) | Not in v1 |
-| Carry source charts / tables / images over byte-for-byte | Out of scope — user copies originals manually if wanted |
-| Free visual-style application / cleanup deviating from source identity | Not in v1 |
-| Batch / multi-deck beautification | Not in v1 |
+| Capability                                                             | Status                                                  |
+| ---------------------------------------------------------------------- | ------------------------------------------------------- |
+| Re-layout with verbatim text                                           | Supported                                               |
+| Inherit source palette / fonts as truth                                | Supported                                               |
+| Strict 1:1 page mapping                                                | Supported                                               |
+| Regenerate charts / tables as native SVG from extracted data           | Supported                                               |
+| Re-lay-out source pictures                                             | Supported                                               |
+| Re-pagination (split dense / merge sparse)                             | Not in v1                                               |
+| Carry source charts / tables / images over byte-for-byte               | Out of scope — user copies originals manually if wanted |
+| Free visual-style application / cleanup deviating from source identity | Not in v1                                               |
+| Batch / multi-deck beautification                                      | Not in v1                                               |

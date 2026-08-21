@@ -12,13 +12,13 @@ This route treats a `.pptx` as the artifact to preserve. It archives the source 
 
 ## 1. Platform Contract
 
-| Rule | Contract |
-|---|---|
-| Source file | If already under `projects/`, move it into the enhancement project; otherwise copy it |
-| Visible slides | Do not rewrite existing text, shapes, images, charts, tables, masters, or layouts |
-| Route | Direct PPTX package patching; no SVG conversion |
-| Output | A new `.pptx` under `<project>/exports/` |
-| Project kind | `native_pptx_enhancement` |
+| Rule           | Contract                                                                              |
+| -------------- | ------------------------------------------------------------------------------------- |
+| Source file    | If already under `projects/`, move it into the enhancement project; otherwise copy it |
+| Visible slides | Do not rewrite existing text, shapes, images, charts, tables, masters, or layouts     |
+| Route          | Direct PPTX package patching; no SVG conversion                                       |
+| Output         | A new `.pptx` under `<project>/exports/`                                              |
+| Project kind   | `native_pptx_enhancement`                                                             |
 
 **Hard rule**: Native enhancement is append-oriented. It may add notes, media, timings, transitions, relationships, and content-type records. It must not regenerate slides.
 
@@ -46,17 +46,17 @@ source.pptx
 
 ## 2. Module Scope
 
-| Module | V1 status | Behavior |
-|---|---:|---|
-| `narration.notes` | Enabled | Add or replace speaker notes generated from slide content |
-| `narration.audio` | Enabled | Embed one audio file per slide |
-| `narration.timings` | Enabled | Set narrated slides to auto-advance from page-start lead-in, audio duration, and page-tail padding |
-| `narration.transitions` | Enabled | Add page-level transitions for narrated/selected slides |
-| `delivery.check` | Enabled | Read-only package/font/media/hidden-slide/file-size and existing-motion audit |
-| `media` | Planned | Background music, video, media compression |
-| `presenter` | Planned | Q&A notes, speaker cues, rehearsal artifacts |
-| `animation` | Planned | Explicit object-level animation only |
-| `visible-stamp` | Planned | Watermark/footer/logo; requires explicit confirmation |
+| Module                  | V1 status | Behavior                                                                                           |
+| ----------------------- | --------: | -------------------------------------------------------------------------------------------------- |
+| `narration.notes`       |   Enabled | Add or replace speaker notes generated from slide content                                          |
+| `narration.audio`       |   Enabled | Embed one audio file per slide                                                                     |
+| `narration.timings`     |   Enabled | Set narrated slides to auto-advance from page-start lead-in, audio duration, and page-tail padding |
+| `narration.transitions` |   Enabled | Add page-level transitions for narrated/selected slides                                            |
+| `delivery.check`        |   Enabled | Read-only package/font/media/hidden-slide/file-size and existing-motion audit                      |
+| `media`                 |   Planned | Background music, video, media compression                                                         |
+| `presenter`             |   Planned | Q&A notes, speaker cues, rehearsal artifacts                                                       |
+| `animation`             |   Planned | Explicit object-level animation only                                                               |
+| `visible-stamp`         |   Planned | Watermark/footer/logo; requires explicit confirmation                                              |
 
 **Default — current write scope only**: Do not implement planned write modules inside this route yet. Keep mutations limited to notes, narration audio, timings, and page transitions.
 
@@ -66,13 +66,13 @@ source.pptx
 
 ## 3. When to Run
 
-| Condition | Action |
-|---|---|
-| Existing `.pptx` + wants notes / narration / voiceover / auto-play / page transitions while keeping format stable | Run this route |
-| Existing `.pptx` + asks to optimize it but says not to change existing content or layout | Run this route only for V1 narration enhancements; clarify any visible-slide request |
-| Existing `.pptx` + asks to beautify or re-layout | Enter Generate PPTX with the [`beautify-pptx`](./profiles/beautify-pptx.md) profile |
-| Existing `.pptx` + asks to fill new content into the design | Use [`template-fill-pptx`](./template-fill-pptx.md) |
-| PPT Master generated project with `svg_output/` | Stay in Generate PPTX and run the shared [`generate-audio`](./stages/generate-audio.md) stage |
+| Condition                                                                                                         | Action                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Existing `.pptx` + wants notes / narration / voiceover / auto-play / page transitions while keeping format stable | Run this route                                                                                |
+| Existing `.pptx` + asks to optimize it but says not to change existing content or layout                          | Run this route only for V1 narration enhancements; clarify any visible-slide request          |
+| Existing `.pptx` + asks to beautify or re-layout                                                                  | Enter Generate PPTX with the [`beautify-pptx`](./profiles/beautify-pptx.md) profile           |
+| Existing `.pptx` + asks to fill new content into the design                                                       | Use [`template-fill-pptx`](./template-fill-pptx.md)                                           |
+| PPT Master generated project with `svg_output/`                                                                   | Stay in Generate PPTX and run the shared [`generate-audio`](./stages/generate-audio.md) stage |
 
 ---
 
@@ -83,21 +83,21 @@ source.pptx
 Run:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py init "<source.pptx>" --name "<project_slug>"
+python skills/ppt-master/scripts/native_enhance_pptx.py init "<source.pptx>" --name "<project_slug>"
 ```
 
 Project layout:
 
-| Path | Purpose |
-|---|---|
-| `<project>/project.json` | Project schema, kind, enabled modules, source paths, defaults |
-| `<project>/sources/<source>.pptx` | Archived source PPTX used for package patching |
-| `<project>/sources/<source>.md` | `ppt_to_md.py` output for slide understanding |
-| `<project>/analysis/slide_index.json` | Slide order and PPTX slide part mapping |
-| `<project>/notes/` | Per-slide spoken notes, named `001.md`, `002.md`, ... |
-| `<project>/audio/` | Per-slide narration media, named `001.mp3`, `002.mp3`, ... |
-| `<project>/exports/` | Enhanced PPTX copies |
-| `<project>/validation/` | Delivery checks, readiness reports, and read-back artifacts |
+| Path                                  | Purpose                                                       |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `<project>/project.json`              | Project schema, kind, enabled modules, source paths, defaults |
+| `<project>/sources/<source>.pptx`     | Archived source PPTX used for package patching                |
+| `<project>/sources/<source>.md`       | `ppt_to_md.py` output for slide understanding                 |
+| `<project>/analysis/slide_index.json` | Slide order and PPTX slide part mapping                       |
+| `<project>/notes/`                    | Per-slide spoken notes, named `001.md`, `002.md`, ...         |
+| `<project>/audio/`                    | Per-slide narration media, named `001.mp3`, `002.mp3`, ...    |
+| `<project>/exports/`                  | Enhanced PPTX copies                                          |
+| `<project>/validation/`               | Delivery checks, readiness reports, and read-back artifacts   |
 
 **Validation**: `project.json` contains `schema: native_pptx_enhancement_project.v1`, `kind: native_pptx_enhancement`, and `modules` containing `notes`, `audio`, `timings`, `transitions`, and `delivery.check`.
 
@@ -122,7 +122,7 @@ The `init` command also writes:
 If the project already existed or notes/audio coverage changed, refresh the draft:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py plan "<project>"
+python skills/ppt-master/scripts/native_enhance_pptx.py plan "<project>"
 ```
 
 `plan` preserves module settings, refreshes coverage, and emits a
@@ -133,13 +133,13 @@ flags override.
 
 Present the plan to the user before generating notes or audio:
 
-| Module | Recommended default | Confirmation question |
-|---|---|---|
-| `notes` | Enabled; required whenever audio is enabled | Add/replace speaker notes generated from slide content? |
-| `audio` | Enabled when user wants narration/video/autoplay | After notes are complete, generate one narration audio file per slide? |
-| `timings` | Enabled with audio; 0.8s page-start floor and 0.4s page-tail padding | Set slide auto-advance from narration timing? |
-| `transitions` | Enabled, `fade` 0.5s | Add page transitions? Which canonical native effect, Effect Options, and duration? |
-| `delivery.check` | Always on, read-only | No confirmation required; review errors and advisories |
+| Module           | Recommended default                                                  | Confirmation question                                                              |
+| ---------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `notes`          | Enabled; required whenever audio is enabled                          | Add/replace speaker notes generated from slide content?                            |
+| `audio`          | Enabled when user wants narration/video/autoplay                     | After notes are complete, generate one narration audio file per slide?             |
+| `timings`        | Enabled with audio; 0.8s page-start floor and 0.4s page-tail padding | Set slide auto-advance from narration timing?                                      |
+| `transitions`    | Enabled, `fade` 0.5s                                                 | Add page transitions? Which canonical native effect, Effect Options, and duration? |
+| `delivery.check` | Always on, read-only                                                 | No confirmation required; review errors and advisories                             |
 
 **⛔ BLOCKING**: Stop here and wait for explicit user confirmation. Do not generate notes, generate audio, or patch the PPTX until the user confirms the module plan.
 
@@ -151,13 +151,13 @@ the notes artifact.
 
 **Transition/timing ownership**:
 
-| Confirmed state | Enter transition | Slide advance |
-|---|---|---|
-| Transitions enabled with an effect | Replace with that exact effect and duration | Preserve unless timings is enabled |
-| Transitions disabled with a non-`none` configured effect | Preserve the source effect, including unknown `AlternateContent` | Preserve unless timings is enabled |
-| Explicit `none` | Remove the visual effect | Preserve, or write timing-only advance when timings is enabled |
-| Timings enabled with audio | Keep the resolved enter policy | Use page-start lead-in plus audio duration plus page-tail padding; click disabled |
-| Timings disabled | Apply the confirmed enter policy only | Use duration only to reject source auto-advance that would truncate narration; do not derive, add, or change `advTm` / `useTimings` |
+| Confirmed state                                          | Enter transition                                                 | Slide advance                                                                                                                       |
+| -------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Transitions enabled with an effect                       | Replace with that exact effect and duration                      | Preserve unless timings is enabled                                                                                                  |
+| Transitions disabled with a non-`none` configured effect | Preserve the source effect, including unknown `AlternateContent` | Preserve unless timings is enabled                                                                                                  |
+| Explicit `none`                                          | Remove the visual effect                                         | Preserve, or write timing-only advance when timings is enabled                                                                      |
+| Timings enabled with audio                               | Keep the resolved enter policy                                   | Use page-start lead-in plus audio duration plus page-tail padding; click disabled                                                   |
+| Timings disabled                                         | Apply the confirmed enter policy only                            | Use duration only to reject source auto-advance that would truncate narration; do not derive, add, or change `advTm` / `useTimings` |
 
 The timing module's `narration_start_floor` and `narration_padding` are
 independent optional values. When omitted, use `0.8` and `0.4` seconds
@@ -203,12 +203,12 @@ the 1-based `index` in `analysis/slide_index.json`:
 }
 ```
 
-| Per-slide entry | Behavior |
-|---|---|
-| `{}` | Select the page and inherit the global effect/options/duration |
-| Partial object | Inherit omitted global fields; a new explicit effect uses its own default options |
-| `effect: none` | Remove the visual transition; timings remain independently owned |
-| `effect: preserve` | Preserve the source visual transition; narration timing may still update advance |
+| Per-slide entry    | Behavior                                                                          |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `{}`               | Select the page and inherit the global effect/options/duration                    |
+| Partial object     | Inherit omitted global fields; a new explicit effect uses its own default options |
+| `effect: none`     | Remove the visual transition; timings remain independently owned                  |
+| `effect: preserve` | Preserve the source visual transition; narration timing may still update advance  |
 
 A `slides` entry always selects that page. Without audio, enabled global effects
 and explicit global `none` apply deck-wide; `apply_without_audio` is ignored.
@@ -237,10 +237,10 @@ Also set each confirmed module's `enabled` value. Disabled modules must stay in 
 
 Read:
 
-| File | Use |
-|---|---|
-| `<project>/sources/<source>.md` | Visible slide text, tables, extracted notes, image references |
-| `<project>/analysis/slide_index.json` | Exact slide count and target note filenames |
+| File                                  | Use                                                           |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `<project>/sources/<source>.md`       | Visible slide text, tables, extracted notes, image references |
+| `<project>/analysis/slide_index.json` | Exact slide count and target note filenames                   |
 
 Write:
 
@@ -254,17 +254,17 @@ Write:
 
 **Hard rule**: Notes must be faithful to the slide. They may explain visible content, but must not add unsupported facts.
 
-| Slide type | Notes length |
-|---|---|
-| Cover / section divider | 1-2 short sentences |
-| Dense content page | 2-4 sentences |
-| Chart / table page | Explain the reading path, then state the takeaway |
-| Ending page | One concise close |
+| Slide type              | Notes length                                      |
+| ----------------------- | ------------------------------------------------- |
+| Cover / section divider | 1-2 short sentences                               |
+| Dense content page      | 2-4 sentences                                     |
+| Chart / table page      | Explain the reading path, then state the takeaway |
+| Ending page             | One concise close                                 |
 
 Run coverage check:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py validate "<project>" --materials notes
+python skills/ppt-master/scripts/native_enhance_pptx.py validate "<project>" --materials notes
 ```
 
 > Note: This keeps source/plan/transition/carrier checks but does not require
@@ -305,7 +305,7 @@ Run [`generate-audio`](./stages/generate-audio.md) Step 4 with `<project>` and t
 Validate:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py validate "<project>"
+python skills/ppt-master/scripts/native_enhance_pptx.py validate "<project>"
 ```
 
 ---
@@ -317,13 +317,13 @@ python3 skills/ppt-master/scripts/native_enhance_pptx.py validate "<project>"
 Run:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py apply "<project>"
+python skills/ppt-master/scripts/native_enhance_pptx.py apply "<project>"
 ```
 
 Optional:
 
 ```bash
-python3 skills/ppt-master/scripts/native_enhance_pptx.py apply "<project>" \
+python skills/ppt-master/scripts/native_enhance_pptx.py apply "<project>" \
   --transition fade \
   --transition-duration 0.5 \
   --narration-start-floor 0.8 \
@@ -350,15 +350,15 @@ instead of leaving stale passed evidence.
 
 Patch scope:
 
-| Package area | Append/update |
-|---|---|
-| `ppt/notesSlides/` | Notes slide parts |
-| `ppt/notesMasters/` | Notes master only when needed |
-| `ppt/slides/_rels/slideN.xml.rels` | Relationships for notes/audio/media/poster |
-| `ppt/media/` | Narration audio and transparent poster |
-| `ppt/slides/slideN.xml` | Hidden autoplay audio shape and page timing |
-| `ppt/presProps.xml` | `showPr useTimings=1` only when this run writes automatic slide advance |
-| `[Content_Types].xml` | Required content types |
+| Package area                       | Append/update                                                           |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `ppt/notesSlides/`                 | Notes slide parts                                                       |
+| `ppt/notesMasters/`                | Notes master only when needed                                           |
+| `ppt/slides/_rels/slideN.xml.rels` | Relationships for notes/audio/media/poster                              |
+| `ppt/media/`                       | Narration audio and transparent poster                                  |
+| `ppt/slides/slideN.xml`            | Hidden autoplay audio shape and page timing                             |
+| `ppt/presProps.xml`                | `showPr useTimings=1` only when this run writes automatic slide advance |
+| `[Content_Types].xml`              | Required content types                                                  |
 
 **Hard rule**: Do not modify existing slide shapes, text bodies, images, chart data, master/layout parts, or existing non-target relationships.
 
@@ -376,23 +376,23 @@ introduced-error delta to `<project>/validation/report.json`.
 Run read-back:
 
 ```bash
-python3 skills/ppt-master/scripts/source_to_md/ppt_to_md.py \
+python skills/ppt-master/scripts/source_to_md/ppt_to_md.py \
   "<project>/exports/<source>_enhanced.pptx" \
   -o "<project>/validation/readback.md"
 ```
 
 Check:
 
-| Check | Expected |
-|---|---|
-| Slide count | Same as source |
-| Visible content | No intentional changes |
-| Notes | Present on intended slides |
-| Audio media | Present under `ppt/media/` when generated |
-| Auto-play | Narrated slides wait for the resolved page-start lead-in, then advance after audio duration plus page-tail padding |
-| Transition | Requested effect remains exact; preserved `AlternateContent` keeps its primary and fallback branches |
-| Timings disabled | Source `advTm` and package `useTimings` are not changed |
-| Delivery check | No newly introduced structural errors; source baseline and font/media/hidden-slide advisories reviewed |
+| Check            | Expected                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Slide count      | Same as source                                                                                                     |
+| Visible content  | No intentional changes                                                                                             |
+| Notes            | Present on intended slides                                                                                         |
+| Audio media      | Present under `ppt/media/` when generated                                                                          |
+| Auto-play        | Narrated slides wait for the resolved page-start lead-in, then advance after audio duration plus page-tail padding |
+| Transition       | Requested effect remains exact; preserved `AlternateContent` keeps its primary and fallback branches               |
+| Timings disabled | Source `advTm` and package `useTimings` are not changed                                                            |
+| Delivery check   | No newly introduced structural errors; source baseline and font/media/hidden-slide advisories reviewed             |
 
 ```markdown
 ## ✅ Native PPTX Enhancement V1 Complete

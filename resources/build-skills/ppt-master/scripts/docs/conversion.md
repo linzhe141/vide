@@ -15,12 +15,12 @@ diagnostic or forced route is needed.
 All `source_to_md` converters keep their existing Markdown output behavior and
 now also write a lightweight sidecar profile when conversion succeeds:
 
-| Output | Convention |
-|---|---|
-| Markdown | `<stem>.md` beside the local source unless `-o` selects another path |
-| Asset directory | `<stem>_files/` when the backend extracts images or media |
-| Image manifest | `<stem>_files/image_manifest.json` when image metadata is available |
-| Conversion profile | `<stem>.conversion_profile.json` beside the Markdown output |
+| Output             | Convention                                                           |
+| ------------------ | -------------------------------------------------------------------- |
+| Markdown           | `<stem>.md` beside the local source unless `-o` selects another path |
+| Asset directory    | `<stem>_files/` when the backend extracts images or media            |
+| Image manifest     | `<stem>_files/image_manifest.json` when image metadata is available  |
+| Conversion profile | `<stem>.conversion_profile.json` beside the Markdown output          |
 
 The conversion profile is metadata only. It records the converter, source path,
 Markdown structure counts, asset directory, image manifest path, and image
@@ -37,16 +37,16 @@ Routing is centralized in `source_to_md/_dispatcher.py` and reused by
 `project_manager.py import-sources`; do not add a second type-to-backend table.
 
 ```bash
-python3 scripts/source_to_md.py paper.pdf
-python3 scripts/source_to_md.py paper.pdf report.docx deck.pptx
-python3 scripts/source_to_md.py ./sources
-python3 scripts/source_to_md.py ./pdfs/*.pdf
-python3 scripts/source_to_md.py ./decks/*.pptx
-python3 scripts/source_to_md.py report.docx -o report.md
-python3 scripts/source_to_md.py ./sources -o ./markdown  # explicit separate output directory
-python3 scripts/source_to_md.py workbook.xlsx --json
-python3 scripts/source_to_md.py deck.pptx
-python3 scripts/source_to_md.py https://example.com/article -o article.md
+python scripts/source_to_md.py paper.pdf
+python scripts/source_to_md.py paper.pdf report.docx deck.pptx
+python scripts/source_to_md.py ./sources
+python scripts/source_to_md.py ./pdfs/*.pdf
+python scripts/source_to_md.py ./decks/*.pptx
+python scripts/source_to_md.py report.docx -o report.md
+python scripts/source_to_md.py ./sources -o ./markdown  # explicit separate output directory
+python scripts/source_to_md.py workbook.xlsx --json
+python scripts/source_to_md.py deck.pptx
+python scripts/source_to_md.py https://example.com/article -o article.md
 ```
 
 Useful options:
@@ -73,16 +73,16 @@ non-recursive directory inputs.
 Recommended first choice for native PDFs.
 
 ```bash
-python3 scripts/source_to_md/pdf_to_md.py book.pdf
-python3 scripts/source_to_md/pdf_to_md.py book.pdf -o output.md
-python3 scripts/source_to_md/pdf_to_md.py book.pdf appendix.pdf
-python3 scripts/source_to_md/pdf_to_md.py ./pdfs
-python3 scripts/source_to_md/pdf_to_md.py ./pdfs -o ./markdown  # explicit separate output directory
+python scripts/source_to_md/pdf_to_md.py book.pdf
+python scripts/source_to_md/pdf_to_md.py book.pdf -o output.md
+python scripts/source_to_md/pdf_to_md.py book.pdf appendix.pdf
+python scripts/source_to_md/pdf_to_md.py ./pdfs
+python scripts/source_to_md/pdf_to_md.py ./pdfs -o ./markdown  # explicit separate output directory
 
 # Image extraction control (default: filtered)
-python3 scripts/source_to_md/pdf_to_md.py book.pdf --images filtered  # size/quality filters applied
-python3 scripts/source_to_md/pdf_to_md.py book.pdf --images all       # extract all images, no filtering
-python3 scripts/source_to_md/pdf_to_md.py book.pdf --images none      # skip all images (text only)
+python scripts/source_to_md/pdf_to_md.py book.pdf --images filtered  # size/quality filters applied
+python scripts/source_to_md/pdf_to_md.py book.pdf --images all       # extract all images, no filtering
+python scripts/source_to_md/pdf_to_md.py book.pdf --images none      # skip all images (text only)
 ```
 
 Use cases:
@@ -115,13 +115,13 @@ Pandoc fallback (only if you need these):
 - `.doc`, `.odt`, `.rtf`, `.tex`/`.latex`, `.rst`, `.org`, `.typ`
 
 ```bash
-python3 scripts/source_to_md/doc_to_md.py lecture.docx
-python3 scripts/source_to_md/doc_to_md.py lecture.docx -o output.md
-python3 scripts/source_to_md/doc_to_md.py lecture.docx notes.html
-python3 scripts/source_to_md/doc_to_md.py ./docs
-python3 scripts/source_to_md/doc_to_md.py ./docs -o ./markdown  # explicit separate output directory
-python3 scripts/source_to_md/doc_to_md.py notes.epub
-python3 scripts/source_to_md/doc_to_md.py paper.tex -o paper.md  # uses pandoc
+python scripts/source_to_md/doc_to_md.py lecture.docx
+python scripts/source_to_md/doc_to_md.py lecture.docx -o output.md
+python scripts/source_to_md/doc_to_md.py lecture.docx notes.html
+python scripts/source_to_md/doc_to_md.py ./docs
+python scripts/source_to_md/doc_to_md.py ./docs -o ./markdown  # explicit separate output directory
+python scripts/source_to_md/doc_to_md.py notes.epub
+python scripts/source_to_md/doc_to_md.py paper.tex -o paper.md  # uses pandoc
 ```
 
 Dependencies:
@@ -151,12 +151,12 @@ Unsupported by default:
 - `.xls` — resave as `.xlsx` first
 
 ```bash
-python3 scripts/source_to_md/excel_to_md.py report.xlsx
-python3 scripts/source_to_md/excel_to_md.py report.xlsx -o output.md
-python3 scripts/source_to_md/excel_to_md.py report.xlsx budget.xlsm
-python3 scripts/source_to_md/excel_to_md.py ./workbooks
-python3 scripts/source_to_md/excel_to_md.py ./workbooks -o ./markdown  # explicit separate output directory
-python3 scripts/source_to_md/excel_to_md.py report.xlsm --max-rows 200 --max-cols 40
+python scripts/source_to_md/excel_to_md.py report.xlsx
+python scripts/source_to_md/excel_to_md.py report.xlsx -o output.md
+python scripts/source_to_md/excel_to_md.py report.xlsx budget.xlsm
+python scripts/source_to_md/excel_to_md.py ./workbooks
+python scripts/source_to_md/excel_to_md.py ./workbooks -o ./markdown  # explicit separate output directory
+python scripts/source_to_md/excel_to_md.py report.xlsm --max-rows 200 --max-cols 40
 ```
 
 Behavior:
@@ -185,12 +185,12 @@ Supported formats include:
 - `.potx`, `.potm`
 
 ```bash
-python3 scripts/source_to_md/ppt_to_md.py sales_deck.pptx
-python3 scripts/source_to_md/ppt_to_md.py sales_deck.pptx -o output.md
-python3 scripts/source_to_md/ppt_to_md.py sales_deck.pptx appendix.pptx
-python3 scripts/source_to_md/ppt_to_md.py ./decks
-python3 scripts/source_to_md/ppt_to_md.py ./decks -o ./markdown  # explicit separate output directory
-python3 scripts/source_to_md/ppt_to_md.py template.ppsx -o notes/template.md
+python scripts/source_to_md/ppt_to_md.py sales_deck.pptx
+python scripts/source_to_md/ppt_to_md.py sales_deck.pptx -o output.md
+python scripts/source_to_md/ppt_to_md.py sales_deck.pptx appendix.pptx
+python scripts/source_to_md/ppt_to_md.py ./decks
+python scripts/source_to_md/ppt_to_md.py ./decks -o ./markdown  # explicit separate output directory
+python scripts/source_to_md/ppt_to_md.py template.ppsx -o notes/template.md
 ```
 
 Behavior:
@@ -218,7 +218,7 @@ than replacing it: Markdown remains the normalized content source, while intake
 artifacts provide source facts for Strategist and standalone PPTX workflows.
 
 ```bash
-python3 scripts/pptx_intake.py deck.pptx -o projects/demo/analysis
+python scripts/pptx_intake.py deck.pptx -o projects/demo/analysis
 ```
 
 Outputs (per source deck, prefixed by file stem):
@@ -238,17 +238,17 @@ Usage boundary:
 Reconstruct a PPTX package as editable SVG views by reading OOXML directly.
 
 ```bash
-python3 scripts/pptx_to_svg.py deck.pptx --inheritance-mode both
-python3 scripts/pptx_to_svg.py deck.pptx --inheritance-mode layered
-python3 scripts/pptx_to_svg.py deck.pptx --inheritance-mode flat
-python3 scripts/pptx_to_svg.py deck.pptx --strict
+python scripts/pptx_to_svg.py deck.pptx --inheritance-mode both
+python scripts/pptx_to_svg.py deck.pptx --inheritance-mode layered
+python scripts/pptx_to_svg.py deck.pptx --inheritance-mode flat
+python scripts/pptx_to_svg.py deck.pptx --strict
 ```
 
-| Mode | Output |
-|---|---|
+| Mode             | Output                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------- |
 | `both` (default) | Layered master/layout/slide SVGs under `svg/`, plus self-contained slides under `svg-flat/` |
-| `layered` | Only the layered `svg/` view and inheritance metadata |
-| `flat` | One self-contained slide SVG per page under `svg/` |
+| `layered`        | Only the layered `svg/` view and inheritance metadata                                       |
+| `flat`           | One self-contained slide SVG per page under `svg/`                                          |
 
 For Office pictures that carry both a raster compatibility preview on
 `a:blip` and an editable SVG relationship in `asvg:svgBlip`, import resolves
@@ -403,7 +403,7 @@ a committed `test_*.py` suite.
 #### Healthy generated deck
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.util import Inches
@@ -421,11 +421,11 @@ shape.text = "PPTX import smoke check"
 presentation.save("/tmp/ppt-master-smoke-healthy.pptx")
 PY
 
-python3 "skills/ppt-master/scripts/pptx_to_svg.py" \
+python "skills/ppt-master/scripts/pptx_to_svg.py" \
   "/tmp/ppt-master-smoke-healthy.pptx" \
   --inheritance-mode flat \
   -o "/tmp/ppt-master-smoke-healthy"
-python3 -c "import json; from pathlib import Path; report = json.loads(Path('/tmp/ppt-master-smoke-healthy/conversion-report.json').read_text()); assert report['summary'] == {'slides': 1, 'warnings': 0}, report['summary']; print('OK: 1 slide, 0 warnings')"
+python -c "import json; from pathlib import Path; report = json.loads(Path('/tmp/ppt-master-smoke-healthy/conversion-report.json').read_text()); assert report['summary'] == {'slides': 1, 'warnings': 0}, report['summary']; print('OK: 1 slide, 0 warnings')"
 ```
 
 Expected: both commands exit `0`; the assertion prints
@@ -437,7 +437,7 @@ Generate a two-shape PPTX, then add one foreign attribute to the first shape's
 valid `a:srgbClr` node:
 
 ```bash
-python3 -c '
+python -c '
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -483,11 +483,11 @@ print(target)
 Run tolerant import and verify both the recovery report and the visible SVG:
 
 ```bash
-python3 "skills/ppt-master/scripts/pptx_to_svg.py" \
+python "skills/ppt-master/scripts/pptx_to_svg.py" \
   "/tmp/ppt-master-color-smoke.pptx" \
   --inheritance-mode flat \
   -o "/tmp/ppt-master-smoke-color-tolerant"
-python3 -c '
+python -c '
 import json
 from pathlib import Path
 
@@ -513,7 +513,7 @@ Expected: both commands exit `0`; the importer reports one
 Run the same probe in strict mode:
 
 ```bash
-python3 "skills/ppt-master/scripts/pptx_to_svg.py" \
+python "skills/ppt-master/scripts/pptx_to_svg.py" \
   "/tmp/ppt-master-color-smoke.pptx" \
   --inheritance-mode flat \
   --strict \
@@ -531,11 +531,11 @@ Error: PPTX-to-SVG conversion failed: Invalid DrawingML sRGB color structure
 Convert web pages to Markdown and download images locally.
 
 ```bash
-python3 scripts/source_to_md/web_to_md.py https://example.com/article
-python3 scripts/source_to_md/web_to_md.py https://url1.com https://url2.com
-python3 scripts/source_to_md/web_to_md.py -f urls.txt
-python3 scripts/source_to_md/web_to_md.py https://example.com -o output.md
-python3 scripts/source_to_md/web_to_md.py https://example.com --emit-result /tmp/result.json
+python scripts/source_to_md/web_to_md.py https://example.com/article
+python scripts/source_to_md/web_to_md.py https://url1.com https://url2.com
+python scripts/source_to_md/web_to_md.py -f urls.txt
+python scripts/source_to_md/web_to_md.py https://example.com -o output.md
+python scripts/source_to_md/web_to_md.py https://example.com --emit-result /tmp/result.json
 ```
 
 When `curl_cffi` is installed (included in `requirements.txt`), this script
@@ -561,7 +561,7 @@ Generate a labeled static contact sheet. This command previews the first frame
 after EXIF normalization and does not modify source images:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/rotate_images.py sheet <images_directory>
+python ${SKILL_DIR}/scripts/rotate_images.py sheet <images_directory>
 ```
 
 The default output is
@@ -579,8 +579,8 @@ must be `90`, `180`, or `270`:
 Apply the confirmed fixes and regenerate image facts:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/rotate_images.py fix /tmp/orientation_fixes.json
-python3 ${SKILL_DIR}/scripts/analyze_images.py <images_directory>
+python ${SKILL_DIR}/scripts/rotate_images.py fix /tmp/orientation_fixes.json
+python ${SKILL_DIR}/scripts/analyze_images.py <images_directory>
 ```
 
 GIF files are excluded: `sheet` does not list them, and `fix` rejects a batch

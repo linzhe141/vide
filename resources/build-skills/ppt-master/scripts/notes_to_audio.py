@@ -9,16 +9,16 @@ alignment. All four apply the same compact, text-faithful cue regrouping.
 Qwen remains audio-only because its current TTS API exposes no timestamps.
 
 Usage:
-    python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> --voice zh-CN-XiaoxiaoNeural
-    python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider elevenlabs --voice-id <voice_id>
-    python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider minimax --voice-id <voice_id>
-    python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider qwen --voice-id <voice>
-    python3 skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider cosyvoice --voice-id <voice>
-    python3 skills/ppt-master/scripts/notes_to_audio.py --list-common-voices
-    python3 skills/ppt-master/scripts/notes_to_audio.py --list-voices --locale zh-CN
+    python skills/ppt-master/scripts/notes_to_audio.py <project_path> --voice zh-CN-XiaoxiaoNeural
+    python skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider elevenlabs --voice-id <voice_id>
+    python skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider minimax --voice-id <voice_id>
+    python skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider qwen --voice-id <voice>
+    python skills/ppt-master/scripts/notes_to_audio.py <project_path> --provider cosyvoice --voice-id <voice>
+    python skills/ppt-master/scripts/notes_to_audio.py --list-common-voices
+    python skills/ppt-master/scripts/notes_to_audio.py --list-voices --locale zh-CN
 
 Dependencies:
-    python3 -m pip install edge-tts
+    python -m pip install edge-tts
     ELEVENLABS_API_KEY=<key> for --provider elevenlabs
     MINIMAX_API_KEY=<key> for --provider minimax
     QWEN_API_KEY or DASHSCOPE_API_KEY=<key> for --provider qwen

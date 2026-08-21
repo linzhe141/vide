@@ -17,14 +17,14 @@ See scripts/docs/svg-pipeline.md before modifying the shared pipeline.
 
 Usage:
     # Execute all processing steps (recommended)
-    python3 scripts/finalize_svg.py <project_directory>
+    python scripts/finalize_svg.py <project_directory>
 
     # Execute only specific steps
-    python3 scripts/finalize_svg.py <project_directory> --only embed-icons align-images
+    python scripts/finalize_svg.py <project_directory> --only embed-icons align-images
 
 Examples:
-    python3 scripts/finalize_svg.py projects/my_project
-    python3 scripts/finalize_svg.py examples/ppt169_demo --only embed-icons
+    python scripts/finalize_svg.py projects/my_project
+    python scripts/finalize_svg.py examples/ppt169_demo --only embed-icons
 
 Processing options:
     embed-icons   - Expand project icons and static same-document <use>

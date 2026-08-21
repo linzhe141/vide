@@ -96,7 +96,7 @@ async def generate(
     except ImportError as exc:
         raise RuntimeError(
             "Missing dependency `edge-tts`. Install it with: "
-            "python3 -m pip install edge-tts"
+            "python -m pip install edge-tts"
         ) from exc
 
     communicate = edge_tts.Communicate(text, voice=voice, rate=normalize_rate(rate))
@@ -427,7 +427,7 @@ async def _generate_with_subtitles(
     except ImportError as exc:
         raise RuntimeError(
             "Missing dependency `edge-tts`. Install it with: "
-            "python3 -m pip install edge-tts"
+            "python -m pip install edge-tts"
         ) from exc
 
     communicate = edge_tts.Communicate(
@@ -508,7 +508,7 @@ async def print_voices(locale: str | None = None) -> None:
     except ImportError as exc:
         raise RuntimeError(
             "Missing dependency `edge-tts`. Install it with: "
-            "python3 -m pip install edge-tts"
+            "python -m pip install edge-tts"
         ) from exc
 
     manager = await edge_tts.VoicesManager.create()

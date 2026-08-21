@@ -7,11 +7,11 @@ conversion trace. The plan preserves animation order, direction, duration,
 and timing anchors while adding deterministic video-only motion parameters.
 
 Usage:
-    python3 scripts/video_motion_plan.py <conversion_trace.json> [options]
+    python scripts/video_motion_plan.py <conversion_trace.json> [options]
 
 Examples:
-    python3 scripts/video_motion_plan.py validation/deck.trace.json --force
-    python3 scripts/video_motion_plan.py validation/deck.trace.json \
+    python scripts/video_motion_plan.py validation/deck.trace.json --force
+    python scripts/video_motion_plan.py validation/deck.trace.json \
         --style dynamic -o validation/video_motion_plan.json --force
 
 Dependencies:

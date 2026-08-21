@@ -19,12 +19,12 @@ phase without adding a confirmation gate.
 
 ## When to Run
 
-| Material state | Action |
-|---|---|
-| Topic or requirements with no supporting facts | Research the factual baseline needed for the requested outcome |
-| Supplied files or chat content cover only part of the requested outcome | After conversion and reading, research only the identified externally verifiable gaps |
-| Supplied material already supports the requested outcome | Skip this stage and continue the active Generate profile's source preparation |
-| User requires a closed corpus, source-only transformation, or no external enrichment | Skip this stage and keep planning within supplied material |
+| Material state                                                                       | Action                                                                                |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Topic or requirements with no supporting facts                                       | Research the factual baseline needed for the requested outcome                        |
+| Supplied files or chat content cover only part of the requested outcome              | After conversion and reading, research only the identified externally verifiable gaps |
+| Supplied material already supports the requested outcome                             | Skip this stage and continue the active Generate profile's source preparation         |
+| User requires a closed corpus, source-only transformation, or no external enrichment | Skip this stage and keep planning within supplied material                            |
 
 **Sufficiency test**: a gap exists when the active content owner would otherwise need to invent, omit, or leave unsupported an externally verifiable claim required by the user's requested outcome. File presence, source length, and a generic topic taxonomy do not decide sufficiency.
 
@@ -43,16 +43,16 @@ the defaults below and continues without interaction; stop only when a required
 permission or safety boundary cannot be inferred responsibly. Skip clarification
 when the request and supplied material are already clear.
 
-| Item | Default if unspecified |
-|---|---|
-| Topic | From the user request |
-| Requested scope / outcome | From the user request; otherwise broad overview |
-| Supplied-material baseline | Facts and claims already available |
-| Research gaps | Only facts needed to support the requested outcome |
-| External-source boundary | External factual enrichment allowed; supplied facts remain authoritative inputs |
-| Output language | Match user input |
+| Item                                   | Default if unspecified                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Topic                                  | From the user request                                                                                                      |
+| Requested scope / outcome              | From the user request; otherwise broad overview                                                                            |
+| Supplied-material baseline             | Facts and claims already available                                                                                         |
+| Research gaps                          | Only facts needed to support the requested outcome                                                                         |
+| External-source boundary               | External factual enrichment allowed; supplied facts remain authoritative inputs                                            |
+| Output language                        | Match user input                                                                                                           |
 | Target audience / communication intent | Use what is explicit; Default leaves final confirmation to Strategist, while Quick resolves routine gaps in active context |
-| Research stem (`<research_slug>`) | `<topic_slug>_research`; choose another unused snake_case stem rather than overwrite an existing file |
+| Research stem (`<research_slug>`)      | `<topic_slug>_research`; choose another unused snake_case stem rather than overwrite an existing file                      |
 
 Do not repeat the full default-pipeline confirmation here. Default Generate
 confirms the complete communication contract in Step 4; Quick Generate adds no
@@ -64,9 +64,9 @@ confirmation stage.
 
 **Default — isolated research when available**: The main agent owns the sufficiency decision and gap brief. When the current AI editor supports and permits an isolated subagent with web/fetch access and write access to the declared outputs, dispatch exactly one research worker. Otherwise the main agent runs Steps 2–3 locally.
 
-| Actor | Contract |
-|---|---|
-| Main agent | Supply the topic/outcome, baseline or relevant source paths, declared gaps, output language, two exact unused output paths, and this stage's absolute path as execution authority; use paths instead of pasting source bodies when possible |
+| Actor           | Contract                                                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main agent      | Supply the topic/outcome, baseline or relevant source paths, declared gaps, output language, two exact unused output paths, and this stage's absolute path as execution authority; use paths instead of pasting source bodies when possible |
 | Research worker | Read the supplied stage file completely, then follow Steps 2–3 using the brief and declared source paths as its baseline; limit project writes to the two output artifacts; acquire no images and make no deck-planning or design decisions |
 
 **Hard rule — isolate retrieval, not research**: Raw page content and fetch transcripts stay in the worker context. The 250-word limit applies only to its chat receipt: return `status`, exact artifact paths, covered/unresolved gap counts, external-fact count, and material conflicts. It does not cap or replace the two artifacts. After validation and import, the active content owner reads the complete imported research supplement and fact-provenance JSON into the main context before planning or direct SVG authoring; never use the receipt or validation summary as content.
@@ -80,21 +80,21 @@ confirmation stage.
 Use the web search and fetch tools available in the active research context. An isolated worker without them returns `blocked: web-tools-unavailable`. If no usable research context has search/fetch tools, the main agent pauses and asks the user for authoritative URLs covering the declared gaps, then fetches each with:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/source_to_md/web_to_md.py <URL>
+python ${SKILL_DIR}/scripts/source_to_md/web_to_md.py <URL>
 ```
 
-| Phase | Action |
-|---|---|
-| Orient | Search only far enough to map authoritative sources to the declared gaps |
-| Deep fetch | Read the highest-signal primary or authoritative pages in full |
-| Targeted fill | Search only for gaps still unsupported after those reads |
+| Phase         | Action                                                                   |
+| ------------- | ------------------------------------------------------------------------ |
+| Orient        | Search only far enough to map authoritative sources to the declared gaps |
+| Deep fetch    | Read the highest-signal primary or authoritative pages in full           |
+| Targeted fill | Search only for gaps still unsupported after those reads                 |
 
-| Priority | Source |
-|---|---|
-| 1 | Primary sources, official sites, institutional releases, standards, or original research |
-| 2 | Authoritative reference works and reputable academic sources |
-| 3 | Reputable reporting or analysis when primary evidence is unavailable |
-| Avoid | Unsourced reposts, unverifiable summaries, and stock-aggregator pages |
+| Priority | Source                                                                                   |
+| -------- | ---------------------------------------------------------------------------------------- |
+| 1        | Primary sources, official sites, institutional releases, standards, or original research |
+| 2        | Authoritative reference works and reputable academic sources                             |
+| 3        | Reputable reporting or analysis when primary evidence is unavailable                     |
+| Avoid    | Unsourced reposts, unverifiable summaries, and stock-aggregator pages                    |
 
 **Stop condition**: stop when every declared gap has enough sourced evidence for
 the active content owner to decide whether and how to include it. Do not expand
@@ -107,10 +107,10 @@ research look complete.
 
 Write two artifacts under `projects/`:
 
-| Artifact | Path |
-|---|---|
-| Research supplement | `projects/<research_slug>.md` |
-| Fact provenance | `projects/<research_slug>.facts.json` |
+| Artifact            | Path                                  |
+| ------------------- | ------------------------------------- |
+| Research supplement | `projects/<research_slug>.md`         |
+| Fact provenance     | `projects/<research_slug>.facts.json` |
 
 **Hard rule — location and preservation**: write both files under `projects/`, never the repository root. Do not overwrite an existing user file; choose a new research stem instead. This stage creates no image folder.
 
@@ -145,7 +145,7 @@ Import the research supplement and provenance alongside any user-supplied
 sources through the active profile's source intake:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/project_manager.py import-sources projects/<project_name> [<source_paths...>] projects/<research_slug>.md projects/<research_slug>.facts.json
+python ${SKILL_DIR}/scripts/project_manager.py import-sources projects/<project_name> [<source_paths...>] projects/<research_slug>.md projects/<research_slug>.facts.json
 ```
 
 The imported pair remains evidence-facing context, not a locked presentation

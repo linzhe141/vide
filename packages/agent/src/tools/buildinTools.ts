@@ -7,6 +7,7 @@ import { Write } from './write'
 import { Read } from './fileRead'
 import { Bash } from './bash'
 import { Todo } from './todo'
+import { SkillTool } from './skill'
 
 export function getBuildInTools(toolRuntime: ToolRuntime) {
   return [
@@ -18,5 +19,6 @@ export function getBuildInTools(toolRuntime: ToolRuntime) {
     ...new Read(toolRuntime).getTools(),
     ...new Bash(toolRuntime).getTools(),
     ...new Todo(toolRuntime).getTools(),
+    ...new SkillTool(toolRuntime).getTools(),
   ]
 }

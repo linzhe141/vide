@@ -15,20 +15,20 @@ not launch Confirm UI or create `template_options.json`,
 `template_selection.json`, or `template_handoff.json`. Every selected input must
 resolve to one of these current contracts:
 
-| Input shape | Spec and SVG source | Asset source |
-|---|---|---|
-| Current workspace root | `<root>/templates/design_spec.md` and `<root>/templates/` | Existing `<root>/images/` and `<root>/icons/` |
-| Compatible legacy-flat Brand/Layout/Deck root | `<root>/design_spec.md`; Layout/Deck also require current-contract SVGs under `<root>/` | Package-local files |
-| Current Create Template handoff | Its exact validated library or project workspace root | Existing portable sibling `images/` and `icons/`; already installed only when the root is the target project |
+| Input shape                                   | Spec and SVG source                                                                     | Asset source                                                                                                 |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Current workspace root                        | `<root>/templates/design_spec.md` and `<root>/templates/`                               | Existing `<root>/images/` and `<root>/icons/`                                                                |
+| Compatible legacy-flat Brand/Layout/Deck root | `<root>/design_spec.md`; Layout/Deck also require current-contract SVGs under `<root>/` | Package-local files                                                                                          |
+| Current Create Template handoff               | Its exact validated library or project workspace root                                   | Existing portable sibling `images/` and `icons/`; already installed only when the root is the target project |
 
 The spec frontmatter MUST declare `kind: brand`, `kind: style`, `kind: layout`, or `kind: deck`. Do not accept only another project's inner `templates/` directory because that omits sibling assets.
 
 **Selection-source classification**:
 
-| Source label | Resolution rule |
-|---|---|
-| `library` | The normalized root exactly equals `templates/<kind_dir>/<id>/` derived from an entry in that kind's `*_index.json` |
-| `explicit` | The user or Create Template supplied an exact workspace root that is not registered at that canonical index-derived root |
+| Source label | Resolution rule                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `library`    | The normalized root exactly equals `templates/<kind_dir>/<id>/` derived from an entry in that kind's `*_index.json`      |
+| `explicit`   | The user or Create Template supplied an exact workspace root that is not registered at that canonical index-derived root |
 
 Read library choices only from `brands_index.json`, `styles_index.json`,
 `layouts_index.json`, and `decks_index.json`. Never scan kind directories or
@@ -47,12 +47,12 @@ validation, segment precedence, or installation behavior.
 
 Read [`templates/README.md`](../../templates/README.md), then only the README for each supplied kind:
 
-| Kind | Schema | Owned segment |
-|---|---|---|
-| `brand` | [`templates/brands/README.md`](../../templates/brands/README.md) | Identity: color, typography, logo, voice/tone, icon style |
-| `style` | [`templates/styles/README.md`](../../templates/styles/README.md) | Direction/method: reusable communication method, visual language, composition, and information-expression defaults |
-| `layout` | [`templates/layouts/README.md`](../../templates/layouts/README.md) | Structure: canvas, page structure, semantic text roles, page types, SVG roster |
-| `deck` | [`templates/decks/README.md`](../../templates/decks/README.md) | Application plus integrated identity and structure |
+| Kind     | Schema                                                             | Owned segment                                                                                                      |
+| -------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `brand`  | [`templates/brands/README.md`](../../templates/brands/README.md)   | Identity: color, typography, logo, voice/tone, icon style                                                          |
+| `style`  | [`templates/styles/README.md`](../../templates/styles/README.md)   | Direction/method: reusable communication method, visual language, composition, and information-expression defaults |
+| `layout` | [`templates/layouts/README.md`](../../templates/layouts/README.md) | Structure: canvas, page structure, semantic text roles, page types, SVG roster                                     |
+| `deck`   | [`templates/decks/README.md`](../../templates/decks/README.md)     | Application plus integrated identity and structure                                                                 |
 
 A Layout created with `mirror` remains eligible only when its source contract is brand-neutral and application-neutral. Keep a branded or application-bearing source as a Deck, or re-author it as Layout through `standard` / `fidelity`; do not remove those semantics through mirror.
 
@@ -62,7 +62,7 @@ library registration; Brand/Style pass without SVG, while Layout/Deck validate
 their roster and structure:
 
 ```bash
-python3 skills/ppt-master/scripts/svg_quality_checker.py "<workspace_root>/templates" --template-mode
+python skills/ppt-master/scripts/svg_quality_checker.py "<workspace_root>/templates" --template-mode
 ```
 
 Any error blocks installation. A compatible legacy-flat root uses its own root
@@ -88,10 +88,10 @@ Copy its body unchanged. Several workspaces of the same kind therefore coexist
 as separate files. Segment precedence is resolved by the consuming role while
 reading (§5), never by rewriting spec content at install time.
 
-| Installed file | Meaning |
-|---|---|
-| `templates/design_spec.<kind>.<id>.md` | A template workspace installed into this project |
-| `templates/design_spec.md` | This project *is itself* a template workspace produced by project-scope Create Template; it is not an installed template and is never consumed as one |
+| Installed file                         | Meaning                                                                                                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `templates/design_spec.<kind>.<id>.md` | A template workspace installed into this project                                                                                                      |
+| `templates/design_spec.md`             | This project *is itself* a template workspace produced by project-scope Create Template; it is not an installed template and is never consumed as one |
 
 Prepend exactly one provenance line under each installed file's H1, then leave
 the rest of the document untouched:
@@ -100,12 +100,12 @@ the rest of the document untouched:
 > **Installed from**: `skills/ppt-master/templates/brands/mckinsey/` (library)
 ```
 
-| Kind | Install behavior |
-|---|---|
-| `brand` | Install `templates/` plus existing `images/` and `icons/`; ignore `exports/`. Identity is constrained; structure remains free. |
-| `style` | Install its `design_spec.md` only. Ignore sibling project scaffolding and reject a library Style carrying asset/review payloads. Expose reusable direction/method without identity truth, page prototypes, or native structure. Default Style-only and Style + Brand derive `template_reuse_scope: style` and stay flat; Style + Layout/Deck follows the selected structure plan. Quick always realizes the resolved combination as flat pages. A Style workspace never activates visual review. |
-| `layout` | Install the same portable roots. Expose the actual reusable structure; Default Strategist later inspects the prototypes, while Quick's current agent uses them for immediate flat authoring decisions in active context. |
-| `deck` | Install the same portable roots. Expose descriptive application context, identity, structure, and the actual prototype roster; Default Strategist or Quick's current agent compares them with the current communication contract and content, then derives the applicable plan. |
+| Kind     | Install behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `brand`  | Install `templates/` plus existing `images/` and `icons/`; ignore `exports/`. Identity is constrained; structure remains free.                                                                                                                                                                                                                                                                                                                                                                   |
+| `style`  | Install its `design_spec.md` only. Ignore sibling project scaffolding and reject a library Style carrying asset/review payloads. Expose reusable direction/method without identity truth, page prototypes, or native structure. Default Style-only and Style + Brand derive `template_reuse_scope: style` and stay flat; Style + Layout/Deck follows the selected structure plan. Quick always realizes the resolved combination as flat pages. A Style workspace never activates visual review. |
+| `layout` | Install the same portable roots. Expose the actual reusable structure; Default Strategist later inspects the prototypes, while Quick's current agent uses them for immediate flat authoring decisions in active context.                                                                                                                                                                                                                                                                         |
+| `deck`   | Install the same portable roots. Expose descriptive application context, identity, structure, and the actual prototype roster; Default Strategist or Quick's current agent compares them with the current communication contract and content, then derives the applicable plan.                                                                                                                                                                                                                  |
 
 For a compatible legacy-flat package, route SVG/spec/non-bitmaps to project `templates/`, bitmaps to project `images/`, and declared icons to project `icons/`. Do not infer legacy Master/Layout semantics from the flat directory shape.
 
@@ -151,12 +151,12 @@ launching Confirm UI or by using path order.
 Resolve four whole template segments. This table names the starting owner;
 current user instructions and the consuming plan still govern project use:
 
-| Segment | Starting owner |
-|---|---|
-| Identity | Brand, otherwise Deck, otherwise unresolved until the consuming plan (Default final Stage 2 or Quick active context). Style color/type/icon/image values are direction candidates, never identity truth. |
-| Structure | A compatible Layout, otherwise Deck, otherwise unresolved/free design until the consuming plan. Style owns no canvas, prototype, Master/Layout, slot, or page mapping. |
-| Reusable application context | Deck only when present. Preserve it for the consuming comparison; it never becomes the current project's application contract. |
-| Direction / method | Style when present, otherwise unresolved until the consuming plan. Actual Deck prototypes and Signature facts may inform compatibility, but Deck does not own the Style-only method segment. |
+| Segment                      | Starting owner                                                                                                                                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity                     | Brand, otherwise Deck, otherwise unresolved until the consuming plan (Default final Stage 2 or Quick active context). Style color/type/icon/image values are direction candidates, never identity truth. |
+| Structure                    | A compatible Layout, otherwise Deck, otherwise unresolved/free design until the consuming plan. Style owns no canvas, prototype, Master/Layout, slot, or page mapping.                                   |
+| Reusable application context | Deck only when present. Preserve it for the consuming comparison; it never becomes the current project's application contract.                                                                           |
+| Direction / method           | Style when present, otherwise unresolved until the consuming plan. Actual Deck prototypes and Signature facts may inform compatibility, but Deck does not own the Style-only method segment.             |
 
 Apply each selected segment wholesale; do not mix its fields implicitly. Brand or Deck identity overrides any identity-adjacent defaults carried by Style. A Style direction may adapt to that resolved identity, but cannot relabel its candidates as official brand facts.
 

@@ -11,17 +11,17 @@ Motion here is several separate capabilities, not one dial. Two of them are
 decided **upstream, while pages are still being authored** — read this menu
 before the page plan is frozen, not only when a deck is already exported.
 
-| What the deck needs | Reach for | Decided at |
-|---|---|---|
-| A generic deck-wide entrance build | `-a auto`; with the default `after-previous` Start mode, groups use fixed `--animation-stagger` timing rather than narration cues | Post-processing; §2, §4 |
-| Explicit object lifecycle choreography | An `animations.json` sidecar for selected enter/emphasize/move/exit/static duties, order, Start mode, and timing | Post-processing; §2, §4, [`customize-animations`](../workflows/stages/customize-animations.md) |
-| Object reveals semantically synchronized to recorded narration | Narration-cue sync derives `narration_animations.json` from canonical `animations.json`, page-local SRT, and `narration_timing.json`; `-a auto` alone does not provide this mapping | Audio stage; [`generate-audio`](../workflows/stages/generate-audio.md) |
-| A continuous action — slide-in, flip, camera push-in, progressive reveal, camera pan | **Morph: author the action as two static pages, then select Morph and add explicit pairs when identity must be deterministic.** There is no keyframe timeline anywhere in this pipeline; the difference between two ordinary editable slides *is* the animation | **Page authoring (Step 6), then motion post-processing** — §2.1, §3.1 |
-| A static full-bleed page that should stop looking frozen | Consider slow `path_*` motion on a visually subordinate image or atmospheric layer; §4.1 gives one starting recipe | Post-processing; §4.1 |
-| Carousel, counting numerals, parallax depth, click-to-reveal flip card | Four recurring recipes assembled from the mechanisms above | §4.2 — the carousel and odometer both need paired pages |
-| Kiosk or unattended playback | `--auto-advance <seconds>`, optionally with `-t none` | Export; §3 |
-| A transition or object animation needs an audible cue | Optional `transition.sound` or object-animation `sound`; select it only after the visual motion solution is complete, then sync the chosen global-library ids into the project. For direct narrated MP4 delivery, [`generate-audio`](../workflows/stages/generate-audio.md) selects either the verified native-export mix or explicit real-time slideshow capture; never combine them | Post-motion; §2.2 |
-| Nothing should move | `-t none`, and leave per-element animation at its default `none` | Export; §1 |
+| What the deck needs                                                                  | Reach for                                                                                                                                                                                                                                                                                                                                                                             | Decided at                                                                                     |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| A generic deck-wide entrance build                                                   | `-a auto`; with the default `after-previous` Start mode, groups use fixed `--animation-stagger` timing rather than narration cues                                                                                                                                                                                                                                                     | Post-processing; §2, §4                                                                        |
+| Explicit object lifecycle choreography                                               | An `animations.json` sidecar for selected enter/emphasize/move/exit/static duties, order, Start mode, and timing                                                                                                                                                                                                                                                                      | Post-processing; §2, §4, [`customize-animations`](../workflows/stages/customize-animations.md) |
+| Object reveals semantically synchronized to recorded narration                       | Narration-cue sync derives `narration_animations.json` from canonical `animations.json`, page-local SRT, and `narration_timing.json`; `-a auto` alone does not provide this mapping                                                                                                                                                                                                   | Audio stage; [`generate-audio`](../workflows/stages/generate-audio.md)                         |
+| A continuous action — slide-in, flip, camera push-in, progressive reveal, camera pan | **Morph: author the action as two static pages, then select Morph and add explicit pairs when identity must be deterministic.** There is no keyframe timeline anywhere in this pipeline; the difference between two ordinary editable slides *is* the animation                                                                                                                       | **Page authoring (Step 6), then motion post-processing** — §2.1, §3.1                          |
+| A static full-bleed page that should stop looking frozen                             | Consider slow `path_*` motion on a visually subordinate image or atmospheric layer; §4.1 gives one starting recipe                                                                                                                                                                                                                                                                    | Post-processing; §4.1                                                                          |
+| Carousel, counting numerals, parallax depth, click-to-reveal flip card               | Four recurring recipes assembled from the mechanisms above                                                                                                                                                                                                                                                                                                                            | §4.2 — the carousel and odometer both need paired pages                                        |
+| Kiosk or unattended playback                                                         | `--auto-advance <seconds>`, optionally with `-t none`                                                                                                                                                                                                                                                                                                                                 | Export; §3                                                                                     |
+| A transition or object animation needs an audible cue                                | Optional `transition.sound` or object-animation `sound`; select it only after the visual motion solution is complete, then sync the chosen global-library ids into the project. For direct narrated MP4 delivery, [`generate-audio`](../workflows/stages/generate-audio.md) selects either the verified native-export mix or explicit real-time slideshow capture; never combine them | Post-motion; §2.2                                                                              |
+| Nothing should move                                                                  | `-t none`, and leave per-element animation at its default `none`                                                                                                                                                                                                                                                                                                                      | Export; §1                                                                                     |
 
 **Hard rule — Morph geometry is an authoring decision; pairing is a later
 execution decision**: export cannot invent the two visible endpoint states.
@@ -39,11 +39,11 @@ tell; each capability above earns its place per page, not per deck.
 
 ## 1. Defaults
 
-| Layer | Default | Why |
-|---|---|---|
-| Page transition | CLI: `fade`, 0.4s | Calm baseline that suits most decks; the public Python builder retains its legacy 0.5s default |
-| Per-element animation | **`none` (off)** | A page appears as a whole. Auto-firing element builds are an unsolicited "AI deck" tell, so object animation is opt-in. Turn on the content-aware canonical entrance policy with `-a auto`, or select one PowerPoint-native `entrance_*`, `emphasis_*`, `path_*`, or `exit_*` key explicitly |
-| Sound effects | **`none` (off)** | No global sound is copied and no `<project>/sounds/` directory is created unless a resolved transition or object-animation cue actually selects one |
+| Layer                 | Default           | Why                                                                                                                                                                                                                                                                                          |
+| --------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page transition       | CLI: `fade`, 0.4s | Calm baseline that suits most decks; the public Python builder retains its legacy 0.5s default                                                                                                                                                                                               |
+| Per-element animation | **`none` (off)**  | A page appears as a whole. Auto-firing element builds are an unsolicited "AI deck" tell, so object animation is opt-in. Turn on the content-aware canonical entrance policy with `-a auto`, or select one PowerPoint-native `entrance_*`, `emphasis_*`, `path_*`, or `exit_*` key explicitly |
+| Sound effects         | **`none` (off)**  | No global sound is copied and no `<project>/sounds/` directory is created unless a resolved transition or object-animation cue actually selects one                                                                                                                                          |
 
 To regenerate a deck with different settings, rerun the final checker when its current matching report is absent or stale, then rerun `svg_to_pptx.py` against the same `svg_output/`; the content-generation LLM need not rerun unless authored SVG requires repair. `-s final` is reserved for diagnostic comparison and is not a supported release source. To turn per-element animation on for the whole deck, pass `-a auto`.
 
@@ -74,16 +74,16 @@ valid object targets.
 
 ```bash
 # Inspect the real anchors after the semantic regrouping pass
-python3 skills/ppt-master/scripts/animation_config.py list-groups <project>
+python skills/ppt-master/scripts/animation_config.py list-groups <project>
 
 # Build a neutral editable scaffold from the post-regroup anchors when useful
-python3 skills/ppt-master/scripts/animation_config.py scaffold <project>
+python skills/ppt-master/scripts/animation_config.py scaffold <project>
 
 # Validate references before export
-python3 skills/ppt-master/scripts/animation_config.py validate <project>
+python skills/ppt-master/scripts/animation_config.py validate <project>
 
 # Export reads <project>/animations.json automatically when present
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project>
+python skills/ppt-master/scripts/svg_to_pptx.py <project>
 ```
 
 The scaffold keeps `defaults.animation.effect: none` and may list untouched
@@ -144,14 +144,14 @@ Rules:
   block or `effects[]` row and accepts only parameters PowerPoint exposes for
   that effect:
 
-  | Option | Applies to |
-  |---|---|
-  | `direction` | Directional Fly/Crawl/Wipe/Peek/Strips/Split/Stretch/Zoom and related entrance/exit effects |
-  | `amount` | Wheel spokes (`1`, `2`, `3`, `4`, `8`), emphasis Spin degrees, or Transparency ratio |
-  | `color` | Color-capable emphasis effects; `#RRGGBB` or `theme:<scheme-color>` |
+  | Option      | Applies to                                                                                      |
+  | ----------- | ----------------------------------------------------------------------------------------------- |
+  | `direction` | Directional Fly/Crawl/Wipe/Peek/Strips/Split/Stretch/Zoom and related entrance/exit effects     |
+  | `amount`    | Wheel spokes (`1`, `2`, `3`, `4`, `8`), emphasis Spin degrees, or Transparency ratio            |
+  | `color`     | Color-capable emphasis effects; `#RRGGBB` or `theme:<scheme-color>`                             |
   | `font_name` | Change Font; required for `emphasis_change_font`; one installed PowerPoint face, not a CSS list |
-  | `size` | Grow/Shrink |
-  | `relative` | Motion paths (`true` = shape-relative, `false` = fixed slide path) |
+  | `size`      | Grow/Shrink                                                                                     |
+  | `relative`  | Motion paths (`true` = shape-relative, `false` = fixed slide path)                              |
 - Any animation block or effect row may set `repeat_count` or `repeat_duration`
   (mutually exclusive), `auto_reverse`, `rewind`, `accelerate`, `decelerate`,
   `bounce_end`, `restart`, `after_effect`, and `sound`. Ratios are `0..1`;
@@ -169,7 +169,7 @@ Rules:
   paragraph/text-range build fields are intentionally absent because grouped
   SVG content is not emitted as paragraph builds; media play/pause/stop
   commands remain in the audio/video workflows.
-- Run `python3 skills/ppt-master/scripts/pptx_animations.py --describe
+- Run `python skills/ppt-master/scripts/pptx_animations.py --describe
   <canonical_effect>` for that effect's exact option values and full parameter
   contract.
 - `--animation none` overrides the sidecar and disables all per-element animation.
@@ -252,20 +252,20 @@ pre-SVG resource preparation. First complete the SVG roster and resolve the
 transition/object-motion solution. Only when a specific cue is then selected,
 copy its global-library file into the project and reference that local copy.
 
-| Source | Action |
-|---|---|
-| Bundled CC0 library | Discover ids with `sound_sync.py list`, sync only the selected ids, then use the corresponding `sounds/<namespace>/<file>.wav` paths |
-| User-provided audio already inside the project | Reference its existing project-relative `.m4a`, `.mp3`, or `.wav` path for object animation; a transition sound uses `.wav` |
-| External absolute file | The low-level object-animation path remains compatible, but new generated projects should copy or sync the intended file into the project and use a relative path |
-| No concrete auditory cue job | Keep `sound` omitted; do not create `<project>/sounds/` and do not copy the library |
+| Source                                         | Action                                                                                                                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundled CC0 library                            | Discover ids with `sound_sync.py list`, sync only the selected ids, then use the corresponding `sounds/<namespace>/<file>.wav` paths                              |
+| User-provided audio already inside the project | Reference its existing project-relative `.m4a`, `.mp3`, or `.wav` path for object animation; a transition sound uses `.wav`                                       |
+| External absolute file                         | The low-level object-animation path remains compatible, but new generated projects should copy or sync the intended file into the project and use a relative path |
+| No concrete auditory cue job                   | Keep `sound` omitted; do not create `<project>/sounds/` and do not copy the library                                                                               |
 
 ```bash
 # Inspect ids only after the visual motion solution exists
-python3 skills/ppt-master/scripts/sound_sync.py list
-python3 skills/ppt-master/scripts/sound_sync.py list --query <term>
+python skills/ppt-master/scripts/sound_sync.py list
+python skills/ppt-master/scripts/sound_sync.py list --query <term>
 
 # Materialize only the chosen ids
-python3 skills/ppt-master/scripts/sound_sync.py \
+python skills/ppt-master/scripts/sound_sync.py \
   <project_path> <namespace>/<sound_id> [<namespace>/<sound_id> ...]
 ```
 
@@ -297,41 +297,41 @@ and limiter settings out of `animations.json`.
 between adjacent pages, not from gallery coverage. Run this playbook before
 selecting a canonical key:
 
-| Pass | Decision |
-|---|---|
-| Relate | Decide whether the destination continues the same object or space, advances in a meaningful direction, opens a new section, or intentionally breaks continuity. |
-| Diagnose | Name the transition's job: neutral continuity, immediate cut, directional progress, object/state continuity, spatial movement, or a deliberate thematic beat. |
-| Select | Use the smallest family that performs that job; keep `fade` when no stronger relationship exists. |
-| Coordinate | Align direction, duration, and recurrence with reading order, narration, and the deck's established motion language. |
-| Stop | Keep `fade` or `none` when another effect adds no meaning; never vary transitions for catalog coverage. |
+| Pass       | Decision                                                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Relate     | Decide whether the destination continues the same object or space, advances in a meaningful direction, opens a new section, or intentionally breaks continuity. |
+| Diagnose   | Name the transition's job: neutral continuity, immediate cut, directional progress, object/state continuity, spatial movement, or a deliberate thematic beat.   |
+| Select     | Use the smallest family that performs that job; keep `fade` when no stronger relationship exists.                                                               |
+| Coordinate | Align direction, duration, and recurrence with reading order, narration, and the deck's established motion language.                                            |
+| Stop       | Keep `fade` or `none` when another effect adds no meaning; never vary transitions for catalog coverage.                                                         |
 
-| Page relationship | Candidate family |
-|---|---|
-| Ordinary continuation within one section | `fade` |
-| Immediate change with no continuity to preserve | `none` or `cut` |
-| Directional steps, timeline, or layer progression | `push` / `wipe`; use `cover` / `uncover` when an overlay relationship is visible |
-| The same semantic object or scene changes across adjacent pages | `morph`; use §2.1 pairs when identity must be deterministic |
-| Section opening, key reveal, or marked state boundary | Selective `split` / `reveal` / `shape` / `flash` / `random_bars` |
-| A repeated collection advances through one spatial frame | `pan` / `conveyor` / `ferris_wheel`; use the §4.2 Morph carousel when individual cards need deterministic identity |
-| The viewpoint travels around or through a continuous space | `rotate` / `window` / `orbit` / `fly_through` |
+| Page relationship                                                         | Candidate family                                                                                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Ordinary continuation within one section                                  | `fade`                                                                                                                           |
+| Immediate change with no continuity to preserve                           | `none` or `cut`                                                                                                                  |
+| Directional steps, timeline, or layer progression                         | `push` / `wipe`; use `cover` / `uncover` when an overlay relationship is visible                                                 |
+| The same semantic object or scene changes across adjacent pages           | `morph`; use §2.1 pairs when identity must be deterministic                                                                      |
+| Section opening, key reveal, or marked state boundary                     | Selective `split` / `reveal` / `shape` / `flash` / `random_bars`                                                                 |
+| A repeated collection advances through one spatial frame                  | `pan` / `conveyor` / `ferris_wheel`; use the §4.2 Morph carousel when individual cards need deterministic identity               |
+| The viewpoint travels around or through a continuous space                | `rotate` / `window` / `orbit` / `fly_through`                                                                                    |
 | The narrative or theme supports a stage, paper, or physical-page metaphor | Selective `fall_over` / `drape` / `curtains` / `wind` / `prestige` / `peel_off` / `page_curl` / `airplane` / `origami` / `doors` |
-| A disruptive beat represents breakage, collapse, or dispersal | Selective `fracture` / `crush` / `dissolve` / `vortex` / `shred` |
-| A marked reveal benefits from a geometric, timed, or textured pattern | Selective `checkerboard` / `blinds` / `clock` / `ripple` / `honeycomb` / `glitter` / `comb` |
-| A card, panel, gallery, or viewpoint visibly turns or changes face | Selective `switch` / `flip` / `gallery` / `cube` / `box` / `zoom` |
-| Unpredictability is itself the requested behavior | `random`; never use it merely to create variety |
+| A disruptive beat represents breakage, collapse, or dispersal             | Selective `fracture` / `crush` / `dissolve` / `vortex` / `shred`                                                                 |
+| A marked reveal benefits from a geometric, timed, or textured pattern     | Selective `checkerboard` / `blinds` / `clock` / `ripple` / `honeycomb` / `glitter` / `comb`                                      |
+| A card, panel, gallery, or viewpoint visibly turns or changes face        | Selective `switch` / `flip` / `gallery` / `cube` / `box` / `zoom`                                                                |
+| Unpredictability is itself the requested behavior                         | `random`; never use it merely to create variety                                                                                  |
 
 ```bash
 # Pick a different effect
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project> -t push --transition-duration 0.6
+python skills/ppt-master/scripts/svg_to_pptx.py <project> -t push --transition-duration 0.6
 
 # Remove the visual transition
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project> -t none
+python skills/ppt-master/scripts/svg_to_pptx.py <project> -t none
 
 # Auto-advance every 5 seconds (kiosk-style playback)
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project> --auto-advance 5
+python skills/ppt-master/scripts/svg_to_pptx.py <project> --auto-advance 5
 
 # Auto-advance with no visual transition
-python3 skills/ppt-master/scripts/svg_to_pptx.py <project> -t none --auto-advance 5
+python skills/ppt-master/scripts/svg_to_pptx.py <project> -t none --auto-advance 5
 ```
 
 The native registry covers PowerPoint's complete Subtle, Exciting, and Dynamic
@@ -374,13 +374,13 @@ Flags:
 
 Morph tweens objects it can match across consecutive slides. That makes it a general mechanism, not just a transition: **any continuous action can be authored as two static pages plus a Morph transition**, with no keyframe timeline anywhere. Duplicate the page, change one property on one object, and PowerPoint interpolates the rest. Use §2.1 explicit pairs when the match must be deterministic.
 
-| Change between the two pages | Reads as |
-|---|---|
-| Object sits off-canvas, then on-canvas | Slide-in, drawer pull, card extending |
-| Object rotates | Flip, turn, hinge |
-| Image container scales up | Camera push-in |
-| Scrim opacity drops, or a cut contour grows | Progressive reveal |
-| Same wide image at two `x` offsets | Camera pan (see image-layout-patterns `#C2-01`) |
+| Change between the two pages                | Reads as                                        |
+| ------------------------------------------- | ----------------------------------------------- |
+| Object sits off-canvas, then on-canvas      | Slide-in, drawer pull, card extending           |
+| Object rotates                              | Flip, turn, hinge                               |
+| Image container scales up                   | Camera push-in                                  |
+| Scrim opacity drops, or a cut contour grows | Progressive reveal                              |
+| Same wide image at two `x` offsets          | Camera pan (see image-layout-patterns `#C2-01`) |
 
 Chain three or more pages to build a sequence — extend, hold, retract — where each page is still an ordinary editable slide.
 
@@ -432,13 +432,13 @@ classify semantic `initial → action → end` before choosing an effect. Generi
 staged reveals normally use `enter`; narrower communication jobs select their
 matching lifecycle instead.
 
-| Duty | State contract | Use when | Effect family |
-|---|---|---|---|
-| `static` | present → hold as reference → present | Motion adds no clarity or intended feeling | No row; legacy `effect: none` only suppresses inheritance |
-| `enter` | absent → introduce → present | Information should be withheld, ordered, or revealed with narration | `entrance_*`; modes only for generic reveal |
-| `emphasize` | present → redirect attention → present/altered | An already visible object must regain attention or show a local change; never substitute for its first reveal | Explicit `emphasis_*` |
-| `move` | state/position A → progress → state/position B | The trajectory carries spatial or causal meaning, or §4.1 adopts subordinate ambient motion; use Morph for cross-page continuity | Explicit `path_*`, or endpoint pages + Morph |
-| `exit` | present → retire → absent | The same slide must remove, replace, or make room for content; an ordinary page change needs no object exit | Explicit `exit_*` |
+| Duty        | State contract                                 | Use when                                                                                                                         | Effect family                                             |
+| ----------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `static`    | present → hold as reference → present          | Motion adds no clarity or intended feeling                                                                                       | No row; legacy `effect: none` only suppresses inheritance |
+| `enter`     | absent → introduce → present                   | Information should be withheld, ordered, or revealed with narration                                                              | `entrance_*`; modes only for generic reveal               |
+| `emphasize` | present → redirect attention → present/altered | An already visible object must regain attention or show a local change; never substitute for its first reveal                    | Explicit `emphasis_*`                                     |
+| `move`      | state/position A → progress → state/position B | The trajectory carries spatial or causal meaning, or §4.1 adopts subordinate ambient motion; use Morph for cross-page continuity | Explicit `path_*`, or endpoint pages + Morph              |
+| `exit`      | present → retire → absent                      | The same slide must remove, replace, or make room for content; an ordinary page change needs no object exit                      | Explicit `exit_*`                                         |
 
 **Default — restrained entrance-led choreography (may override for content,
 tone, or the request)**: Use entrances for ordinary builds. Add emphasis or
@@ -458,7 +458,7 @@ The registry exposes two layers:
 Run the registry command for the exact categorized key list:
 
 ```bash
-python3 skills/ppt-master/scripts/pptx_animations.py --list
+python skills/ppt-master/scripts/pptx_animations.py --list
 ```
 
 Compatibility names normalize before selection and writing: for example,

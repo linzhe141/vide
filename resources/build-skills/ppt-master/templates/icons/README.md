@@ -6,13 +6,13 @@ Upstream versions, compatibility overlays, licenses, attribution, and trademark 
 
 ## Libraries
 
-| Library | Style | Count | viewBox | Prefix |
-|---------|-------|-------|---------|--------|
-| `chunk-filled` | fill · compact, chunky 16px silhouettes | 641 | primarily `0 0 16 16` | `chunk-filled/` |
-| `tabler-filled` | fill · bezier-curve forms (smooth, rounded contours) | 1,055 | `0 0 24 24` | `tabler-filled/` |
-| `tabler-outline` | stroke / line | 5,138 | `0 0 24 24` | `tabler-outline/` |
-| `phosphor-duotone` | duotone · single color + 0.2 opacity backplate (soft depth) | 1,518 | `0 0 256 256` | `phosphor-duotone/` |
-| `simple-icons` | **brand logos** (real company / product marks) — single-color silhouettes, color in via `fill` | 3,675 | `0 0 24 24` | `simple-icons/` |
+| Library            | Style                                                                                          | Count | viewBox               | Prefix              |
+| ------------------ | ---------------------------------------------------------------------------------------------- | ----- | --------------------- | ------------------- |
+| `chunk-filled`     | fill · compact, chunky 16px silhouettes                                                        | 641   | primarily `0 0 16 16` | `chunk-filled/`     |
+| `tabler-filled`    | fill · bezier-curve forms (smooth, rounded contours)                                           | 1,055 | `0 0 24 24`           | `tabler-filled/`    |
+| `tabler-outline`   | stroke / line                                                                                  | 5,138 | `0 0 24 24`           | `tabler-outline/`   |
+| `phosphor-duotone` | duotone · single color + 0.2 opacity backplate (soft depth)                                    | 1,518 | `0 0 256 256`         | `phosphor-duotone/` |
+| `simple-icons`     | **brand logos** (real company / product marks) — single-color silhouettes, color in via `fill` | 3,675 | `0 0 24 24`           | `simple-icons/`     |
 
 ---
 
@@ -21,7 +21,7 @@ Upstream versions, compatibility overlays, licenses, attribution, and trademark 
 This directory is the **global library**. The active resource owner copies chosen icons into the deck's own `<project>/icons/<lib>/` with `icon_sync.py` before SVG authoring:
 
 ```bash
-python3 skills/ppt-master/scripts/icon_sync.py <project_path> tabler-outline/home tabler-outline/bulb simple-icons/github
+python skills/ppt-master/scripts/icon_sync.py <project_path> tabler-outline/home tabler-outline/bulb simple-icons/github
 ```
 
 Missing names and a single selection batch that mixes the four stylistic libraries exit non-zero; `simple-icons` may coexist for real brand marks. Once files are under `<project>/icons/`, they form the prepared project asset pool and may be combined freely with user-provided, custom, or imported icons. `finalize_svg.py embed-icons` embeds **project-first**; its per-icon global fallback exists for legacy compatibility, not new asset discovery.
@@ -66,7 +66,7 @@ Use placeholder syntax **during SVG generation**:
 `finalize_svg.py` auto-embeds all placeholders during post-processing. To run manually:
 
 ```bash
-python3 scripts/svg_finalize/embed_icons.py svg_output/*.svg
+python scripts/svg_finalize/embed_icons.py svg_output/*.svg
 ```
 
 ---
@@ -103,10 +103,10 @@ Do not load a full index or enumerate broad keyword families. Re-pick from the n
 
 **Brand-logo exception (`simple-icons`).** `simple-icons` is **not a stylistic library** and does not participate in the "one library" rule. Its job is brand recognition — Slack's purple, GitHub's cat, AWS's color — which is intentionally heterogeneous. Use it **alone or alongside** the chosen stylistic library, but **only** for actual company / product / service brand marks. Do **not** reach for it as a substitute when the chosen stylistic library lacks a generic icon.
 
-| Use `simple-icons` for | Do NOT use `simple-icons` for |
-|------------------------|-------------------------------|
-| Customer / partner / ecosystem logos on a "trusted by" page | Generic concepts (home, chart, settings, etc.) |
-| Tech stack icons on architecture / integration diagrams | Replacing a missing icon in `chunk-filled` / `tabler-*` / `phosphor-duotone` |
-| Social media handles in a footer | Decorative / illustrative purposes |
+| Use `simple-icons` for                                      | Do NOT use `simple-icons` for                                                |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Customer / partner / ecosystem logos on a "trusted by" page | Generic concepts (home, chart, settings, etc.)                               |
+| Tech stack icons on architecture / integration diagrams     | Replacing a missing icon in `chunk-filled` / `tabler-*` / `phosphor-duotone` |
+| Social media handles in a footer                            | Decorative / illustrative purposes                                           |
 
 ⚠️ During bundled selection, choose generic icons from only one of the four **stylistic** libraries. `simple-icons` may be selected at the same time for real brand marks. Project-local assets are already prepared material and are not subject to a runtime mixing ban.

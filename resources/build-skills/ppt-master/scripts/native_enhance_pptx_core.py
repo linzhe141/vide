@@ -10,14 +10,14 @@ Enhancement modules: read-only delivery checks, speaker notes, narration audio,
 slide auto-advance timings, and optional global or per-slide page transitions.
 
 Usage:
-    python3 scripts/native_enhance_pptx.py init <source.pptx> [--name project_name]
-    python3 scripts/native_enhance_pptx.py apply <project_path> [--output output.pptx]
-    python3 scripts/native_enhance_pptx.py validate <project_path> [--materials {all,notes}]
+    python scripts/native_enhance_pptx.py init <source.pptx> [--name project_name]
+    python scripts/native_enhance_pptx.py apply <project_path> [--output output.pptx]
+    python scripts/native_enhance_pptx.py validate <project_path> [--materials {all,notes}]
 
 Examples:
-    python3 scripts/native_enhance_pptx.py init projects/source.pptx --name fire_station
-    python3 scripts/native_enhance_pptx.py apply projects/fire_station_native_enhance_20260626
-    python3 scripts/native_enhance_pptx.py validate projects/fire_station_native_enhance_20260626
+    python scripts/native_enhance_pptx.py init projects/source.pptx --name fire_station
+    python scripts/native_enhance_pptx.py apply projects/fire_station_native_enhance_20260626
+    python scripts/native_enhance_pptx.py validate projects/fire_station_native_enhance_20260626
 
 Dependencies:
     ffprobe for narration decodability and audio-duration validation.

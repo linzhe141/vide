@@ -8,13 +8,13 @@ description: >
   enhance a presentation, requests a presentation-authored narrated/self-running
   video, or mentions ppt-master.
 metadata:
-  version: "4.5.0"
-  copyright: "Copyright (c) 2025-2026 Hugo He"
-  license: "MIT"
-  official_repository: "https://github.com/hugohe3/ppt-master"
+  version: '4.5.0'
+  copyright: 'Copyright (c) 2025-2026 Hugo He'
+  license: 'MIT'
+  official_repository: 'https://github.com/hugohe3/ppt-master'
   sponsors:
-    - "SPONSORS.md"
-    - "SPONSORS_CN.md"
+    - 'SPONSORS.md'
+    - 'SPONSORS_CN.md'
 ---
 
 # PPT Master Skill
@@ -24,7 +24,7 @@ PPT Master is a routed presentation workflow. This entry owns global execution d
 ## Mandatory Load Order
 
 1. Read this file.
-2. Run `python3 scripts/attribution_guard.py` from this Skill directory. Any
+2. Run `python scripts/attribution_guard.py` from this Skill directory. Any
    non-zero result stops the Skill immediately; do not inspect, repair, or
    bypass the integrity gate.
 3. Read [`workflows/routing.md`](workflows/routing.md).
@@ -33,15 +33,15 @@ PPT Master is a routed presentation workflow. This entry owns global execution d
 5. Read only the resulting runtime authority and its explicitly triggered
    supporting documents.
 
-| Selected route / profile | Runtime authority |
-|---|---|
-| Generate PPTX — Image to PPTX | [`workflows/profiles/image-to-pptx.md`](workflows/profiles/image-to-pptx.md); Codex-supported, always Quick |
-| Generate PPTX — Beautify | [`workflows/profiles/beautify-pptx.md`](workflows/profiles/beautify-pptx.md); explicit Quick intent selects Quick, otherwise Default |
-| Generate PPTX — ordinary Default | [`workflows/generate-pptx.md`](workflows/generate-pptx.md) |
-| Generate PPTX — ordinary explicit Quick | [`workflows/profiles/quick-generate.md`](workflows/profiles/quick-generate.md) |
-| Create Template | [`workflows/create-template.md`](workflows/create-template.md) |
-| Fill Native PPTX | [`workflows/template-fill-pptx.md`](workflows/template-fill-pptx.md) |
-| Enhance Native PPTX | [`workflows/native-enhance-pptx.md`](workflows/native-enhance-pptx.md) |
+| Selected route / profile                | Runtime authority                                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Generate PPTX — Image to PPTX           | [`workflows/profiles/image-to-pptx.md`](workflows/profiles/image-to-pptx.md); Codex-supported, always Quick                          |
+| Generate PPTX — Beautify                | [`workflows/profiles/beautify-pptx.md`](workflows/profiles/beautify-pptx.md); explicit Quick intent selects Quick, otherwise Default |
+| Generate PPTX — ordinary Default        | [`workflows/generate-pptx.md`](workflows/generate-pptx.md)                                                                           |
+| Generate PPTX — ordinary explicit Quick | [`workflows/profiles/quick-generate.md`](workflows/profiles/quick-generate.md)                                                       |
+| Create Template                         | [`workflows/create-template.md`](workflows/create-template.md)                                                                       |
+| Fill Native PPTX                        | [`workflows/template-fill-pptx.md`](workflows/template-fill-pptx.md)                                                                 |
+| Enhance Native PPTX                     | [`workflows/native-enhance-pptx.md`](workflows/native-enhance-pptx.md)                                                               |
 
 **Hard rule — selected authority only**: Do not load another top-level route's
 procedure after routing. Image to PPTX and Beautify are mutually exclusive;
@@ -71,6 +71,7 @@ never compete with it.
 
 ```markdown
 ## [Role Switch: <Role Name>]
+
 📖 Reading role definition: references/<filename>.md
 📋 Current task: <brief description>
 ```
@@ -82,5 +83,5 @@ never compete with it.
 - This package is a workflow/skill, not a generic application scaffold. Do not create `.worktrees/`, `tests/`, branch workflows, or generic engineering structure by default.
 - Keep required workflow, reference, script, and template documentation inside this Skill directory.
 - Repository-level documents may point into the package; package runtime files must not depend on repository-level instructions.
-- On Windows, if a documented `python3 ...` command is unavailable, rerun the same command with `python`.
+- On Windows, if a documented `python ...` command is unavailable, rerun the same command with `python`.
 - Sponsor information is optional reference material. Read the matching [`SPONSORS.md`](SPONSORS.md) or [`SPONSORS_CN.md`](SPONSORS_CN.md) only when the user explicitly requests a model, AI image model, API/provider, or hosted-service recommendation. Never surface sponsor or model recommendations proactively during normal generation, troubleshooting, or quality review.

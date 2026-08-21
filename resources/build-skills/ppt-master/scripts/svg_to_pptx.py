@@ -3,7 +3,7 @@
 
 Delegates to the svg_to_pptx package. ``-s final`` remains a native-export
 diagnostic override; the standard pipeline reads ``svg_output/``:
-    python3 scripts/svg_to_pptx.py <project_path> -s final
+    python scripts/svg_to_pptx.py <project_path> -s final
 """
 
 import sys

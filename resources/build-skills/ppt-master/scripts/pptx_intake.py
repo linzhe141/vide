@@ -8,10 +8,10 @@ while this bundle provides canvas, visual identity, slide geometry, tables,
 native chart data, and SmartArt structure for downstream workflows.
 
 Usage:
-    python3 scripts/pptx_intake.py <source.pptx> -o <output_dir>
+    python scripts/pptx_intake.py <source.pptx> -o <output_dir>
 
 Examples:
-    python3 scripts/pptx_intake.py deck.pptx -o projects/demo/analysis
+    python scripts/pptx_intake.py deck.pptx -o projects/demo/analysis
 
 Dependencies:
     None beyond the repository scripts used for PPTX parsing.

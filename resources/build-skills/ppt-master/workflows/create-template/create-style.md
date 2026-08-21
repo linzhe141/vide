@@ -8,10 +8,10 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 ## Responsibility Boundary
 
-| Owner | Responsibilities |
-|---|---|
-| Create Template | Child-workflow dispatch plus the shared `library` / `project` scope, confirmation gate, collision preflight, registration, completion, and Generate PPTX handoff contract |
-| Create Style | Reusable communication method, page-role vocabulary, evidence discipline, visual-system defaults, image/icon direction, review focus, and the roster-free `design_spec.md` |
+| Owner           | Responsibilities                                                                                                                                                           |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create Template | Child-workflow dispatch plus the shared `library` / `project` scope, confirmation gate, collision preflight, registration, completion, and Generate PPTX handoff contract  |
+| Create Style    | Reusable communication method, page-role vocabulary, evidence discipline, visual-system defaults, image/icon direction, review focus, and the roster-free `design_spec.md` |
 
 **Hard rule — child workflow, not a top-level route**: Create Style executes only inside Create Template. It uses the parent workflow's single shared confirmation/preflight/registration contract and never creates a competing entry route or second confirmation gate.
 
@@ -29,12 +29,12 @@ Enter this child workflow only after [`Create Template`](../create-template.md) 
 
 Use every supplied reference only as evidence for reusable method and design defaults:
 
-| Evidence | May inform | Must not become |
-|---|---|---|
-| Direct brief, text, document, or website | Argument flow, claim discipline, page-role vocabulary, data-expression rules, and review focus | The current project's audience, objective, outline, page count, or source claims |
-| PPTX, PDF, image, or SVG reference | Visual-system tendencies, density, decoration, image treatment, and icon treatment | A copied page roster, canvas contract, Master/Layout graph, or fixed geometry |
-| Brand or organization material | A lower-priority fallback direction when the user explicitly wants it generalized | Official identity truth, logos, proprietary palettes, brand voice, or trademarked presentation rules |
-| Existing mode, visual-style, or image-rendering catalog entry | A preferred catalog seed plus a concise Style-owned overlay | A duplicated copy of the catalog file |
+| Evidence                                                      | May inform                                                                                     | Must not become                                                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Direct brief, text, document, or website                      | Argument flow, claim discipline, page-role vocabulary, data-expression rules, and review focus | The current project's audience, objective, outline, page count, or source claims                     |
+| PPTX, PDF, image, or SVG reference                            | Visual-system tendencies, density, decoration, image treatment, and icon treatment             | A copied page roster, canvas contract, Master/Layout graph, or fixed geometry                        |
+| Brand or organization material                                | A lower-priority fallback direction when the user explicitly wants it generalized              | Official identity truth, logos, proprietary palettes, brand voice, or trademarked presentation rules |
+| Existing mode, visual-style, or image-rendering catalog entry | A preferred catalog seed plus a concise Style-owned overlay                                    | A duplicated copy of the catalog file                                                                |
 
 **Mandatory — series-aware PPTX analysis**: Before inferring cross-page cadence from a composite PPTX reference, distinguish coherent finished-deck series from page/layout libraries. Infer cadence only within each coherent series; treat library pages as independent composition evidence, never as one ordered narrative run.
 
@@ -46,17 +46,17 @@ Preserve source provenance in `Style Overview`. Keep exact user-authored method 
 
 Add these child-owned requirements to Create Template Step 2:
 
-| Field | Requirement |
-|---|---|
-| Style ID and display name | Required; `style_id` is a filesystem-safe portable slug (prefer ASCII for interoperability) |
-| Best fit | Required; describe reusable decision, explanation, or expression situations without binding a target audience or outcome |
-| Reusable intent | Required; state what the method and design defaults should consistently achieve |
-| Communication method | Required; argument flow, page-message discipline, and claim/evidence treatment; a preferred mode is optional |
-| Page-role vocabulary | Required; reusable semantic roles and their jobs, evidence obligations, and composition tendencies; no order or inclusion policy |
-| Evidence and data expression | Required; chart, table, source, and editability guidance without numeric content quotas |
-| Visual-system defaults | Required; composition, density, decoration, color behavior, and typography character; catalog seeds and literal fallbacks are optional |
-| Image and icon direction | Required; rendering, usage, and treatment defaults without asset inventory or page mapping |
-| Review focus | Required; extra checks to apply only if the user explicitly activates visual review |
+| Field                        | Requirement                                                                                                                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Style ID and display name    | Required; `style_id` is a filesystem-safe portable slug (prefer ASCII for interoperability)                                            |
+| Best fit                     | Required; describe reusable decision, explanation, or expression situations without binding a target audience or outcome               |
+| Reusable intent              | Required; state what the method and design defaults should consistently achieve                                                        |
+| Communication method         | Required; argument flow, page-message discipline, and claim/evidence treatment; a preferred mode is optional                           |
+| Page-role vocabulary         | Required; reusable semantic roles and their jobs, evidence obligations, and composition tendencies; no order or inclusion policy       |
+| Evidence and data expression | Required; chart, table, source, and editability guidance without numeric content quotas                                                |
+| Visual-system defaults       | Required; composition, density, decoration, color behavior, and typography character; catalog seeds and literal fallbacks are optional |
+| Image and icon direction     | Required; rendering, usage, and treatment defaults without asset inventory or page mapping                                             |
+| Review focus                 | Required; extra checks to apply only if the user explicitly activates visual review                                                    |
 
 Write this roster-free schema:
 
@@ -73,12 +73,12 @@ keywords: [<three-to-five discovery tags>]
 > Method and design defaults only. No project communication contract, brand identity, page structure, or SVG prototypes.
 
 ## I. Style Overview
-| Property | Value |
-|---|---|
-| Style Name | <display name> |
-| Best Fit | <reusable selection context> |
-| Reusable Intent | <stable method/design outcome> |
-| Sources | <source URLs, bundled references, or user brief; include date/version when known> |
+| Property        | Value                                                                             |
+| --------------- | --------------------------------------------------------------------------------- |
+| Style Name      | <display name>                                                                    |
+| Best Fit        | <reusable selection context>                                                      |
+| Reusable Intent | <stable method/design outcome>                                                    |
+| Sources         | <source URLs, bundled references, or user brief; include date/version when known> |
 
 ## II. Communication Method
 - **Preferred Mode**: <catalog id or custom; omit when none>
@@ -89,9 +89,9 @@ keywords: [<three-to-five discovery tags>]
 - **Claim Discipline**: <treatment of facts, assumptions, implications, and recommendations>
 
 ## III. Page Role Vocabulary
-| Role | Communication Job | Evidence Obligation | Composition Tendency |
-|---|---|---|---|
-| <semantic role> | <job> | <proof requirement> | <non-geometric tendency> |
+| Role            | Communication Job | Evidence Obligation | Composition Tendency     |
+| --------------- | ----------------- | ------------------- | ------------------------ |
+| <semantic role> | <job>             | <proof requirement> | <non-geometric tendency> |
 
 ## IV. Evidence & Data Expression
 - **Argument Trace**: <claim-to-evidence relationship>
@@ -111,13 +111,13 @@ keywords: [<three-to-five discovery tags>]
 - **Typography Character**: <hierarchy and register; no identity claim>
 
 ### Fallback Color Scheme
-| Role | HEX | Purpose |
-|---|---|---|
+| Role   | HEX     | Purpose        |
+| ------ | ------- | -------------- |
 | <role> | #RRGGBB | <fallback use> |
 
 ### Fallback Typography
-| Role | Primary | Fallback Tail | Character |
-|---|---|---|---|
+| Role   | Primary  | Fallback Tail       | Character         |
+| ------ | -------- | ------------------- | ----------------- |
 | <role> | <family> | <ordered fallbacks> | <typographic job> |
 
 ## VI. Image & Icon Direction
@@ -169,19 +169,19 @@ Return these facts to Create Template:
 For both scopes, Create Template Step 5 validates the portable Style contract without registration:
 
 ```bash
-python3 skills/ppt-master/scripts/svg_quality_checker.py "<template_workspace>/templates" --template-mode
+python skills/ppt-master/scripts/svg_quality_checker.py "<template_workspace>/templates" --template-mode
 ```
 
 For `library` scope, additionally validate the directory/index identity with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <style_id> --kind style --dry-run
+python skills/ppt-master/scripts/register_template.py <style_id> --kind style --dry-run
 ```
 
 After that gate passes, Create Template Step 7 registers with:
 
 ```bash
-python3 skills/ppt-master/scripts/register_template.py <style_id> --kind style
+python skills/ppt-master/scripts/register_template.py <style_id> --kind style
 ```
 
 For `project` scope, run only the shared validator, skip both registrar commands, and report `Not registered (project workspace)`. Downstream consumption always uses the explicit workspace root through Generate PPTX Step 3; a bare Style name or ordinary style description never activates it.

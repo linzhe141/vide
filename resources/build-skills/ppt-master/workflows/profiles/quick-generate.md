@@ -17,17 +17,17 @@ Page count alone never activates or blocks this profile.
 
 ## 1. Profile Boundary
 
-| Concern | Quick Generate contract |
-|---|---|
-| Authority | Follow every explicit user requirement as stated; decide every unspecified choice directly without asking |
-| Interaction | The current main agent decides content, design, resources, and implementation without Strategist, Confirm UI, or approval stops |
-| Execution memory | Keep routine page, visual, and resource decisions only in the current active context; losing that context restarts Quick instead of reconstructing a plan from project files |
-| Inputs | Any supported Generate input; convert/import sources and run bounded factual research when the input requires them |
-| Templates | Directly validate and install at most one exact workspace root per kind supplied for this run; when none are supplied, use free design without catalog selection or Confirm UI |
-| Resources | Prepare every project-local image, icon, formula, and required provenance/manifest artifact before its SVG; sound waits for §4 |
-| Planning artifacts | Do not author a root project `design_spec.md`, `spec_lock.md`, confirmation payloads, or any substitute planning artifact; installed `templates/design_spec.<kind>.<id>.md` files remain template input |
-| Traceability | Operational resource manifests, checker reports, postflight, and bounded Python command/outcome audit entries may remain, but they do not record the AI's design reasoning or form a resumable generation history |
-| Delivery | Hand-author the resolved SVG roster, run one lockless final checker, skip `finalize_svg.py`, and export the final native PPTX through `--quick-generate` |
+| Concern            | Quick Generate contract                                                                                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authority          | Follow every explicit user requirement as stated; decide every unspecified choice directly without asking                                                                                                         |
+| Interaction        | The current main agent decides content, design, resources, and implementation without Strategist, Confirm UI, or approval stops                                                                                   |
+| Execution memory   | Keep routine page, visual, and resource decisions only in the current active context; losing that context restarts Quick instead of reconstructing a plan from project files                                      |
+| Inputs             | Any supported Generate input; convert/import sources and run bounded factual research when the input requires them                                                                                                |
+| Templates          | Directly validate and install at most one exact workspace root per kind supplied for this run; when none are supplied, use free design without catalog selection or Confirm UI                                    |
+| Resources          | Prepare every project-local image, icon, formula, and required provenance/manifest artifact before its SVG; sound waits for §4                                                                                    |
+| Planning artifacts | Do not author a root project `design_spec.md`, `spec_lock.md`, confirmation payloads, or any substitute planning artifact; installed `templates/design_spec.<kind>.<id>.md` files remain template input           |
+| Traceability       | Operational resource manifests, checker reports, postflight, and bounded Python command/outcome audit entries may remain, but they do not record the AI's design reasoning or form a resumable generation history |
+| Delivery           | Hand-author the resolved SVG roster, run one lockless final checker, skip `finalize_svg.py`, and export the final native PPTX through `--quick-generate`                                                          |
 
 **Artifact ownership**: follow
 [`artifact-ownership.md`](../../references/artifact-ownership.md) for source,
@@ -58,13 +58,13 @@ an optional or mandatory capability.
 gate once during §2's pre-P01 planning. Do not load the full reference when
 the defaults fit.
 
-| Signal | Action |
-|---|---|
-| Adjacent beats may share one mental map | Evaluate visible states; repetition alone does not require Morph. If continuity clarifies orientation, enable Custom Animations, load [`animations.md`](../../references/animations.md) before SVG, and author compatible Morph endpoints |
-| Page- or object-specific reveal, renewed emphasis, meaningful movement, or same-page removal clarifies the message | Load [`animations.md`](../../references/animations.md) before SVG authoring; preserve the required units/states, then run [`customize-animations`](../stages/customize-animations.md) after the final checker |
-| One deck-wide entrance policy supplies all required staged reveal | Load [`animations.md`](../../references/animations.md) before export and use an exporter flag such as `-a auto`; do not run the custom stage |
-| A directional/section boundary benefits from a non-default transition | Load [`animations.md`](../../references/animations.md) before export and select from its §3 playbook |
-| No earlier signal applies | Keep `fade` transitions and object animation `none`; do not load the motion reference |
+| Signal                                                                                                             | Action                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adjacent beats may share one mental map                                                                            | Evaluate visible states; repetition alone does not require Morph. If continuity clarifies orientation, enable Custom Animations, load [`animations.md`](../../references/animations.md) before SVG, and author compatible Morph endpoints |
+| Page- or object-specific reveal, renewed emphasis, meaningful movement, or same-page removal clarifies the message | Load [`animations.md`](../../references/animations.md) before SVG authoring; preserve the required units/states, then run [`customize-animations`](../stages/customize-animations.md) after the final checker                             |
+| One deck-wide entrance policy supplies all required staged reveal                                                  | Load [`animations.md`](../../references/animations.md) before export and use an exporter flag such as `-a auto`; do not run the custom stage                                                                                              |
+| A directional/section boundary benefits from a non-default transition                                              | Load [`animations.md`](../../references/animations.md) before export and select from its §3 playbook                                                                                                                                      |
+| No earlier signal applies                                                                                          | Keep `fade` transitions and object animation `none`; do not load the motion reference                                                                                                                                                     |
 
 This gate activates capability discovery, not motion coverage. Keep the
 defaults when no row supplies a concrete communication job. When several
@@ -90,13 +90,13 @@ activates cue synchronization.
 
 Prepare source facts before initialization:
 
-| Input | Action |
-|---|---|
-| Topic or requirements without supporting facts | Run [`topic-research`](../stages/topic-research.md) immediately and retain its Markdown supplement plus fact-provenance JSON for import |
-| One or more PNG / JPEG / WebP files representing page frames under Image to PPTX | Do not call `source_to_md.py`; normalize single-page files and multi-frame contact sheets into the canonical ordered frame roster through that profile, then import the originals below |
-| PDF / DOCX / Office document / XLSX / XLSM / PPTX / EPUB / HTML / LaTeX / RST / web URL | Run `python3 ${SKILL_DIR}/scripts/source_to_md.py <file_or_URL_or_dir> [<file_or_URL_or_dir> ...]` |
-| CSV / TSV | Read directly as a plain-text table source |
-| Markdown or direct conversation text | Read directly |
+| Input                                                                                   | Action                                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topic or requirements without supporting facts                                          | Run [`topic-research`](../stages/topic-research.md) immediately and retain its Markdown supplement plus fact-provenance JSON for import                                                 |
+| One or more PNG / JPEG / WebP files representing page frames under Image to PPTX        | Do not call `source_to_md.py`; normalize single-page files and multi-frame contact sheets into the canonical ordered frame roster through that profile, then import the originals below |
+| PDF / DOCX / Office document / XLSX / XLSM / PPTX / EPUB / HTML / LaTeX / RST / web URL | Run `python ${SKILL_DIR}/scripts/source_to_md.py <file_or_URL_or_dir> [<file_or_URL_or_dir> ...]`                                                                                       |
+| CSV / TSV                                                                               | Read directly as a plain-text table source                                                                                                                                              |
+| Markdown or direct conversation text                                                    | Read directly                                                                                                                                                                           |
 
 The conversion dispatcher writes standard Markdown plus its conversion profile
 beside each local source by default. Use `-t <type>` only when detection is
@@ -111,12 +111,12 @@ downloaded asset is visibly sideways. Skip the legacy HTML tool.
 
 After reading every direct and converted source, assess factual sufficiency:
 
-| Material state | Action |
-|---|---|
-| Image to PPTX page surface | Treat as a closed visible corpus; unreadable/occluded regions become `manual_required`, never external research |
-| The requested outcome is supported | Continue |
-| A required externally verifiable claim remains unsupported | Run [`topic-research`](../stages/topic-research.md) for those gaps only |
-| Closed corpus / source-only / no external enrichment | Stay within the supplied material |
+| Material state                                             | Action                                                                                                          |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Image to PPTX page surface                                 | Treat as a closed visible corpus; unreadable/occluded regions become `manual_required`, never external research |
+| The requested outcome is supported                         | Continue                                                                                                        |
+| A required externally verifiable claim remains unsupported | Run [`topic-research`](../stages/topic-research.md) for those gaps only                                         |
+| Closed corpus / source-only / no external enrichment       | Stay within the supplied material                                                                               |
 
 **Sufficiency test**: research only when the requested outcome would otherwise
 require inventing, omitting, or leaving unsupported an externally verifiable
@@ -156,7 +156,7 @@ Neither branch creates anything under `confirm_ui/` or executes
 `confirm_ui/server.py`. Initialize the minimal workspace with:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/project_manager.py init <project_name> \
+python ${SKILL_DIR}/scripts/project_manager.py init <project_name> \
   --format <format> --quick-generate
 ```
 
@@ -177,7 +177,7 @@ With file-based sources, import the original inputs, converted outputs, and any
 research pair together:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/project_manager.py import-sources \
+python ${SKILL_DIR}/scripts/project_manager.py import-sources \
   <project_path> <source_files_or_dirs...> [<converted_outputs...>] \
   [projects/<research_slug>.md projects/<research_slug>.facts.json]
 ```
@@ -318,16 +318,16 @@ the complete carrier menu once and choose only the forms that communicate its
 content best. A decision to use none of a carrier is valid; skipping the scan
 because Quick is expected to be faster is not.
 
-| Communication job | Available carrier |
-|---|---|
-| Real subject, place, product, evidence, atmosphere, or scene benefits from visual grounding | Supplied/extracted, web, AI, or sliced image |
-| A compact semantic cue clarifies a category, process, KPI, state, navigation item, or real brand | Prepared project-local icon |
-| Editable geometry can express a relationship, flow, emphasis, callout, symbol, or diagram | Basic SVG primitive, exact Office preset, Boolean result, then necessary freeform |
-| Values, categories, time, weights, or duration determine mark geometry | Value-driven chart |
-| Sequence, hierarchy, role, region, or relationship determines page-local topology | Qualitative structure |
-| Rows, columns, cells, headers, merges, and alignment form the information model | Cell-grid table |
-| Mathematical notation is clearer as typeset math than ordinary text | Rendered formula asset |
-| Typography, spacing, and simple geometry already carry the message | Use no additional visual carrier |
+| Communication job                                                                                | Available carrier                                                                 |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Real subject, place, product, evidence, atmosphere, or scene benefits from visual grounding      | Supplied/extracted, web, AI, or sliced image                                      |
+| A compact semantic cue clarifies a category, process, KPI, state, navigation item, or real brand | Prepared project-local icon                                                       |
+| Editable geometry can express a relationship, flow, emphasis, callout, symbol, or diagram        | Basic SVG primitive, exact Office preset, Boolean result, then necessary freeform |
+| Values, categories, time, weights, or duration determine mark geometry                           | Value-driven chart                                                                |
+| Sequence, hierarchy, role, region, or relationship determines page-local topology                | Qualitative structure                                                             |
+| Rows, columns, cells, headers, merges, and alignment form the information model                  | Cell-grid table                                                                   |
+| Mathematical notation is clearer as typeset math than ordinary text                              | Rendered formula asset                                                            |
+| Typography, spacing, and simple geometry already carry the message                               | Use no additional visual carrier                                                  |
 
 This carrier menu does not satisfy or replace the per-page Structure decision in §3.
 
@@ -338,7 +338,7 @@ information model is already certain. Do not run recall for qualitative shape
 composition.
 
 ```bash
-python3 skills/ppt-master/scripts/visualization_recall.py recall \
+python skills/ppt-master/scripts/visualization_recall.py recall \
   --page P03 \
   --tag "time series" \
   --tag "three metrics" \
@@ -362,17 +362,17 @@ reusable Master/Layout/placeholder contract.
 
 Prepare only the resource paths needed by the decided pages:
 
-| Resource | Required preparation |
-|---|---|
-| Supplied/extracted image | Copy the selected file into `images/`; preserve its factual/provenance context and use the measured file rather than an invented substitute |
+| Resource                           | Required preparation                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Supplied/extracted image           | Copy the selected file into `images/`; preserve its factual/provenance context and use the measured file rather than an invented substitute                                                                                                                                                                                                                                                                                                      |
 | Image-to-PPTX reconstruction asset | In Codex, preserve identity graphics through an exact vector, deterministic redraw, sufficient source asset, or reference-based high-resolution reconstruction; keep data graphics native-and-verified or exact. For scene imagery, build the minimum registered clean-base/midground/subject/foreground group; batch padded-bbox-disjoint objects into one shared plate, then split them with grid slicing or independent nested-SVG bbox crops |
-| Bundled/custom icon | Follow the [icon library contract](../../templates/icons/README.md), choose one coherent primary library, sync a useful project pool covering recurring semantics and likely page-local needs without assigning icons to pages, and choose from that prepared pool during SVG authoring |
-| Formula | Follow the [`latex_render.py` contract](../../scripts/docs/image.md), write `images/formula_manifest.json`, run the renderer, and keep the rendered PNG under `images/` |
-| AI image | Follow `image-base.md` + `image-generator.md`; apply only the chosen rendering preset or exact custom bases, never blend unselected catalog identities, and keep `image_prompts.json` plus its human-readable sidecar |
-| Web image | Follow `image-base.md` + `image-searcher.md`; keep query/status data and `image_sources.json`, including any required on-slide attribution |
-| Illustration slice | Generate or obtain the parent sheet, run `slice_images.py`, and place only the resulting element files |
-| Registered reconstruction group | Follow `image-generator.md` §4.4; keep full-canvas members registered with `crop=no-crop`, and materialize every required shared-plate member as an independent picture object |
-| Visualization | Keep Chart values, Table cell topology, and chosen treatment in active context; load the applicable Chart/Table authority in §3 and write native replacement metadata only for an independently selected native-ready object |
+| Bundled/custom icon                | Follow the [icon library contract](../../templates/icons/README.md), choose one coherent primary library, sync a useful project pool covering recurring semantics and likely page-local needs without assigning icons to pages, and choose from that prepared pool during SVG authoring                                                                                                                                                          |
+| Formula                            | Follow the [`latex_render.py` contract](../../scripts/docs/image.md), write `images/formula_manifest.json`, run the renderer, and keep the rendered PNG under `images/`                                                                                                                                                                                                                                                                          |
+| AI image                           | Follow `image-base.md` + `image-generator.md`; apply only the chosen rendering preset or exact custom bases, never blend unselected catalog identities, and keep `image_prompts.json` plus its human-readable sidecar                                                                                                                                                                                                                            |
+| Web image                          | Follow `image-base.md` + `image-searcher.md`; keep query/status data and `image_sources.json`, including any required on-slide attribution                                                                                                                                                                                                                                                                                                       |
+| Illustration slice                 | Generate or obtain the parent sheet, run `slice_images.py`, and place only the resulting element files                                                                                                                                                                                                                                                                                                                                           |
+| Registered reconstruction group    | Follow `image-generator.md` §4.4; keep full-canvas members registered with `crop=no-crop`, and materialize every required shared-plate member as an independent picture object                                                                                                                                                                                                                                                                   |
+| Visualization                      | Keep Chart values, Table cell topology, and chosen treatment in active context; load the applicable Chart/Table authority in §3 and write native replacement metadata only for an independently selected native-ready object                                                                                                                                                                                                                     |
 
 **Image inspection boundary**: acquisition-time suitability review follows the
 owning AI/web/slice reference. Once resources reach terminal status, SVG
@@ -460,13 +460,13 @@ artifact, spec, lock, manifest, or extra pass.
 This decision is mandatory on every page and cannot be satisfied by the
 capability menu, visualization recall, template geometry, or a later check.
 
-| Deterministic trigger | Additional authority |
-|---|---|
-| A selected primary Chart/Table `family/key` | [`executor-visualization.md`](../../references/executor-visualization.md), then the matching Chart/Table authority |
-| Any actual value-driven geometry, including mini/inset charts and sparklines | [`executor-chart.md`](../../references/executor-chart.md) |
-| Any actual row × column fact grid | [`executor-table.md`](../../references/executor-table.md) |
-| A used preset pattern fill, or one independent Chart/Table object selected as native-ready in active context | [`native-data-interface.md`](../../references/native-data-interface.md) before drawing that object |
-| Any data-driven chart geometry | [`verify-charts.md`](../stages/verify-charts.md) after the complete roster and before the one final checker |
+| Deterministic trigger                                                                                        | Additional authority                                                                                               |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| A selected primary Chart/Table `family/key`                                                                  | [`executor-visualization.md`](../../references/executor-visualization.md), then the matching Chart/Table authority |
+| Any actual value-driven geometry, including mini/inset charts and sparklines                                 | [`executor-chart.md`](../../references/executor-chart.md)                                                          |
+| Any actual row × column fact grid                                                                            | [`executor-table.md`](../../references/executor-table.md)                                                          |
+| A used preset pattern fill, or one independent Chart/Table object selected as native-ready in active context | [`native-data-interface.md`](../../references/native-data-interface.md) before drawing that object                 |
+| Any data-driven chart geometry                                                                               | [`verify-charts.md`](../stages/verify-charts.md) after the complete roster and before the one final checker        |
 
 Chart/Table reference and final information model are independent loading
 signals; load every applicable authority. Selection never makes an object
@@ -541,7 +541,7 @@ authored. Complete all coordinate repairs first; then run the one lockless final
 SVG check:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/svg_quality_checker.py <project_path> \
+python ${SKILL_DIR}/scripts/svg_quality_checker.py <project_path> \
   --quick-generate --stage final --json
 ```
 
@@ -554,7 +554,7 @@ without regenerating it; otherwise generate `notes/total.md` from the final SVG
 roster. Then run:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/total_md_split.py <project_path>
+python ${SKILL_DIR}/scripts/total_md_split.py <project_path>
 ```
 
 Run [`customize-animations`](../stages/customize-animations.md) after that notes
@@ -579,11 +579,11 @@ Choose exactly one notes mode for the base export:
 
 ```bash
 # Speaker Notes enabled
-python3 ${SKILL_DIR}/scripts/svg_to_pptx.py <project_path> \
+python ${SKILL_DIR}/scripts/svg_to_pptx.py <project_path> \
   --quick-generate --with-notes
 
 # Speaker Notes disabled
-python3 ${SKILL_DIR}/scripts/svg_to_pptx.py <project_path> \
+python ${SKILL_DIR}/scripts/svg_to_pptx.py <project_path> \
   --quick-generate --no-notes
 ```
 

@@ -8,14 +8,14 @@ This produces a delivery SRT from the actual video timeline without rewriting
 speaker notes or relying on theoretical slide offsets.
 
 Usage:
-    python3 scripts/video_subtitles.py <project_path> --video <video> --language <language>
+    python scripts/video_subtitles.py <project_path> --video <video> --language <language>
 
 Examples:
-    python3 scripts/video_subtitles.py projects/demo --video exports/demo.mp4 --language zh --force
+    python scripts/video_subtitles.py projects/demo --video exports/demo.mp4 --language zh --force
 
 Dependencies:
     ffmpeg
-    python3 -m pip install stable-ts
+    python -m pip install stable-ts
 """
 
 from __future__ import annotations
@@ -214,7 +214,7 @@ def _require_stable_whisper() -> Any:
     except ImportError as exc:
         raise RuntimeError(
             "Final-video subtitle alignment requires stable-ts. "
-            "Install it with: python3 -m pip install stable-ts"
+            "Install it with: python -m pip install stable-ts"
         ) from exc
     return stable_whisper
 

@@ -12,14 +12,14 @@ objects, infer Master/Layout structure, or change the native-shape semantics of
 ``extract_svg_assets.py``.
 
 Usage:
-    python3 scripts/extract_svg_pictures.py page.svg --select emblem \
+    python scripts/extract_svg_pictures.py page.svg --select emblem \
         --images-dir project/images -o project/svg_output/page.svg
 
 Examples:
-    python3 scripts/extract_svg_pictures.py imported/slide_01.svg \
+    python scripts/extract_svg_pictures.py imported/slide_01.svg \
         --select shape-15 --resource-root imported \
         --images-dir imported/images --inplace
-    python3 scripts/extract_svg_pictures.py source.svg --select complex-art \
+    python scripts/extract_svg_pictures.py source.svg --select complex-art \
         --bounds complex-art=80,120,320,240 --images-dir work/images \
         -o work/normalized.svg
 

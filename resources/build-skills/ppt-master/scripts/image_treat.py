@@ -6,11 +6,11 @@ Create a non-destructive PNG derivative from one project-local bitmap while
 preserving its display dimensions, alpha mask, and any matching web provenance.
 
 Usage:
-    python3 scripts/image_treat.py <project_path> <source> --output <filename.png> [options]
+    python scripts/image_treat.py <project_path> <source> --output <filename.png> [options]
 
 Examples:
-    python3 scripts/image_treat.py projects/demo hero.jpg --output hero_soft.png --blur 12
-    python3 scripts/image_treat.py projects/demo hero.jpg --output hero_duotone.png \
+    python scripts/image_treat.py projects/demo hero.jpg --output hero_soft.png --blur 12
+    python scripts/image_treat.py projects/demo hero.jpg --output hero_duotone.png \
         --contrast 1.1 --duotone "#14213D" "#FCA311"
 
 Dependencies:

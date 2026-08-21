@@ -19,16 +19,16 @@ Apply this decision order before drawing any new geometric contour.
 > This gate is for picking the **highest-level faithful native construction**.
 > Do not hand-author a freeform merely because an SVG path is convenient.
 
-| Condition | Action |
-|---|---|
-| Plain rectangle, symmetric rounded rectangle, circle, or ellipse | Write the ordinary SVG primitive; the exporter already emits an editable native shape. |
-| Straight relationship, divider, or leader | Write `<line>`; use a registered marker only when direction is meaningful. |
-| One DrawingML preset exactly expresses the intended object | Run `preset_shape_svg.py render`, then insert its complete stdout fragment into the hand-authored page or canonical template. |
-| A stock `bentConnector*` / `curvedConnector*` contour exactly expresses a bent or curved relationship and endpoint attachment is not required | Run `preset_shape_svg.py render --object-kind connector`; the result is an unconnected native Connector shape. |
-| Two or more supported closed-shape / resolvable-text operands require Union, Combine, Fragment, Intersect, or Subtract | Run `shape_boolean_svg.py render`, then replace the operands with every stdout path; the result remains ordinary editable custom geometry. |
-| Basic primitives, one preset, and Boolean materialization cannot faithfully express the visual meaning or contour | Write ordinary `<path>` / `<polygon>` geometry; export keeps it as editable custom geometry. |
-| The shape only resembles a preset | Never infer a preset; continue to the Boolean gate, then use freeform only if no faithful construction exists. |
-| Mirror/preserve input already owns native-shape metadata | Keep the existing object and metadata; never reselect its preset. |
+| Condition                                                                                                                                     | Action                                                                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plain rectangle, symmetric rounded rectangle, circle, or ellipse                                                                              | Write the ordinary SVG primitive; the exporter already emits an editable native shape.                                                     |
+| Straight relationship, divider, or leader                                                                                                     | Write `<line>`; use a registered marker only when direction is meaningful.                                                                 |
+| One DrawingML preset exactly expresses the intended object                                                                                    | Run `preset_shape_svg.py render`, then insert its complete stdout fragment into the hand-authored page or canonical template.              |
+| A stock `bentConnector*` / `curvedConnector*` contour exactly expresses a bent or curved relationship and endpoint attachment is not required | Run `preset_shape_svg.py render --object-kind connector`; the result is an unconnected native Connector shape.                             |
+| Two or more supported closed-shape / resolvable-text operands require Union, Combine, Fragment, Intersect, or Subtract                        | Run `shape_boolean_svg.py render`, then replace the operands with every stdout path; the result remains ordinary editable custom geometry. |
+| Basic primitives, one preset, and Boolean materialization cannot faithfully express the visual meaning or contour                             | Write ordinary `<path>` / `<polygon>` geometry; export keeps it as editable custom geometry.                                               |
+| The shape only resembles a preset                                                                                                             | Never infer a preset; continue to the Boolean gate, then use freeform only if no faithful construction exists.                             |
+| Mirror/preserve input already owns native-shape metadata                                                                                      | Keep the existing object and metadata; never reselect its preset.                                                                          |
 
 **Hard rule**: `preset_shape_svg.py` is the only authoring entry for
 `data-pptx-authoring="preset"`. Never add `data-pptx-prst`, frame, adjustment,
@@ -47,22 +47,22 @@ first is exactly how presets get used instead of forgotten.
 gate before drawing a new object. It does not scan existing SVG, classify
 paths or contours, or upgrade ordinary SVG during export.
 
-| Visual intent | Candidate presets | Boundary |
-|---|---|---|
-| Literal geometric body | `triangle`, `diamond`, `pentagon`, `hexagon`, `octagon`, `star5` | Use only when the named geometry itself is the intent. |
-| Solid block direction | `rightArrow`, `leftArrow`, `upArrow`, `downArrow`, `leftRightArrow`, `upDownArrow`, `chevron` | Use `<line>` for a thin straight relationship; do not fake a solid directional object with a stroked path. |
-| Standard flowchart node | `flowChartProcess`, `flowChartDecision`, `flowChartInputOutput`, `flowChartTerminator`, `flowChartDocument` | Use only for an actual flowchart; ordinary content cards remain cards. |
-| Stock bent / curved relationship contour | `bentConnector*`, `curvedConnector*` | Prefer when the contour fits and endpoint attachment is not required. The authored object is an unconnected native Connector, so moving nodes does not reroute it. |
-| Stock callout | `wedgeRectCallout`, `wedgeRoundRectCallout`, `wedgeEllipseCallout`, `cloudCallout` | For a brand-specific or custom tail, continue through the Boolean gate; use freeform only if the result still cannot be expressed faithfully. |
-| Stock ribbon or scroll | `ribbon*`, `ellipseRibbon*`, `verticalScroll`, `horizontalScroll` | Select only when the stock contour is visually acceptable. |
-| Standalone math symbol | `mathPlus`, `mathMinus`, `mathMultiply`, `mathDivide`, `mathEqual`, `mathNotEqual` | Inline formulas and prose symbols remain text/formula assets. |
-| Literal Office symbol | `heart`, `sun`, `moon`, `lightningBolt`, `gear6`, `gear9` | Never replace an icon required by `spec_lock.icons`. |
+| Visual intent                            | Candidate presets                                                                                           | Boundary                                                                                                                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Literal geometric body                   | `triangle`, `diamond`, `pentagon`, `hexagon`, `octagon`, `star5`                                            | Use only when the named geometry itself is the intent.                                                                                                             |
+| Solid block direction                    | `rightArrow`, `leftArrow`, `upArrow`, `downArrow`, `leftRightArrow`, `upDownArrow`, `chevron`               | Use `<line>` for a thin straight relationship; do not fake a solid directional object with a stroked path.                                                         |
+| Standard flowchart node                  | `flowChartProcess`, `flowChartDecision`, `flowChartInputOutput`, `flowChartTerminator`, `flowChartDocument` | Use only for an actual flowchart; ordinary content cards remain cards.                                                                                             |
+| Stock bent / curved relationship contour | `bentConnector*`, `curvedConnector*`                                                                        | Prefer when the contour fits and endpoint attachment is not required. The authored object is an unconnected native Connector, so moving nodes does not reroute it. |
+| Stock callout                            | `wedgeRectCallout`, `wedgeRoundRectCallout`, `wedgeEllipseCallout`, `cloudCallout`                          | For a brand-specific or custom tail, continue through the Boolean gate; use freeform only if the result still cannot be expressed faithfully.                      |
+| Stock ribbon or scroll                   | `ribbon*`, `ellipseRibbon*`, `verticalScroll`, `horizontalScroll`                                           | Select only when the stock contour is visually acceptable.                                                                                                         |
+| Standalone math symbol                   | `mathPlus`, `mathMinus`, `mathMultiply`, `mathDivide`, `mathEqual`, `mathNotEqual`                          | Inline formulas and prose symbols remain text/formula assets.                                                                                                      |
+| Literal Office symbol                    | `heart`, `sun`, `moon`, `lightningBolt`, `gear6`, `gear9`                                                   | Never replace an icon required by `spec_lock.icons`.                                                                                                               |
 
 Use registry search for a less common literal shape:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/preset_shape_svg.py list --search arrow
-python3 ${SKILL_DIR}/scripts/preset_shape_svg.py describe rightArrow
+python ${SKILL_DIR}/scripts/preset_shape_svg.py list --search arrow
+python ${SKILL_DIR}/scripts/preset_shape_svg.py describe rightArrow
 ```
 
 **Shape-first diagram rule**: use `<line>` for straight thin relationships;
@@ -92,7 +92,7 @@ from the confirmed brief and template `design_spec.md`. Mirror/preserve input
 keeps the source object's paint instead of regenerating this authored form.
 
 ```bash
-python3 ${SKILL_DIR}/scripts/preset_shape_svg.py render rightArrow \
+python ${SKILL_DIR}/scripts/preset_shape_svg.py render rightArrow \
   --id p03-growth-arrow \
   --frame 160 210 320 112 \
   --fill "#2563EB" \
@@ -103,7 +103,7 @@ python3 ${SKILL_DIR}/scripts/preset_shape_svg.py render rightArrow \
 For a stock bent / curved contour that does not require endpoint attachment:
 
 ```bash
-python3 ${SKILL_DIR}/scripts/preset_shape_svg.py render bentConnector3 \
+python ${SKILL_DIR}/scripts/preset_shape_svg.py render bentConnector3 \
   --id p03-flow-connector \
   --object-kind connector \
   --frame 420 180 220 140 \
@@ -131,11 +131,11 @@ The helper emits one compact logical group. Metadata and base paint are written
 once on the group; its direct children are the visible paths regenerated from
 the locked preset registry.
 
-| Component | Ownership |
-|---|---|
-| Logical `<g data-pptx-authoring="preset">` | Stable id, object kind, preset, frame, adjustments, and explicit local base paint. |
-| Direct `<path>` children | Ordered browser-visible registry layers. A child writes only a path-specific fill/stroke override when the preset requires one. |
-| Deliberately absent transport fields | No hidden carrier, preview wrapper, `data-pptx-part`, or stored fingerprint belongs in project-authored SVG. Those fields remain part of expanded PPTX import/round-trip transport. |
+| Component                                  | Ownership                                                                                                                                                                           |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logical `<g data-pptx-authoring="preset">` | Stable id, object kind, preset, frame, adjustments, and explicit local base paint.                                                                                                  |
+| Direct `<path>` children                   | Ordered browser-visible registry layers. A child writes only a path-specific fill/stroke override when the preset requires one.                                                     |
+| Deliberately absent transport fields       | No hidden carrier, preview wrapper, `data-pptx-part`, or stored fingerprint belongs in project-authored SVG. Those fields remain part of expanded PPTX import/round-trip transport. |
 
 **Hard rule**: treat the returned group as atomic. Keep it as the content group
 when it stands alone. When it needs labels, icons, or other decorations, put
@@ -181,15 +181,15 @@ otherwise regenerate the complete compact group.
 
 ## 5. Boundaries
 
-| Concern | Behavior |
-|---|---|
-| Shape text | Keep visible SVG `<text>` outside the atomic fragment. It remains editable but may export as a grouped text box rather than the preset's own `p:txBody`. |
-| Connector attachment | Authoring helper v1 creates an unconnected `p:cxnSp` and does not accept endpoint/site metadata. Do not hand-add it. The imported-shape contract may preserve an attachment that already exists in a source PPTX; creating a new attached connector is currently unsupported. |
-| Action button behavior | `actionButton*` presets map visual geometry only. No action, navigation target, or hyperlink is created automatically. |
-| Gradient/pattern paint | Authoring helper v1 accepts solid HEX paint only. Use ordinary SVG when a complex paint treatment is essential. |
-| Multi-path darken/lighten | Direct visible layers use the shared normalized paint behavior from the PPTX importer. Their registry-derived HEX values are authorized derivatives of the selected base color and need no separate lock row. |
-| Expanded compatibility | Existing helper-authored carrier/preview fragments remain readable as ordinary Slide-local input and receive a non-blocking migration warning; they do not become structured fixed atoms or object-slot carriers. Imported expanded fragments remain the lossless mirror/preserve form. |
-| External edits | Any registry-path, style, or semantic mismatch fails quality check and export; regenerate the fragment. |
+| Concern                   | Behavior                                                                                                                                                                                                                                                                                |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape text                | Keep visible SVG `<text>` outside the atomic fragment. It remains editable but may export as a grouped text box rather than the preset's own `p:txBody`.                                                                                                                                |
+| Connector attachment      | Authoring helper v1 creates an unconnected `p:cxnSp` and does not accept endpoint/site metadata. Do not hand-add it. The imported-shape contract may preserve an attachment that already exists in a source PPTX; creating a new attached connector is currently unsupported.           |
+| Action button behavior    | `actionButton*` presets map visual geometry only. No action, navigation target, or hyperlink is created automatically.                                                                                                                                                                  |
+| Gradient/pattern paint    | Authoring helper v1 accepts solid HEX paint only. Use ordinary SVG when a complex paint treatment is essential.                                                                                                                                                                         |
+| Multi-path darken/lighten | Direct visible layers use the shared normalized paint behavior from the PPTX importer. Their registry-derived HEX values are authorized derivatives of the selected base color and need no separate lock row.                                                                           |
+| Expanded compatibility    | Existing helper-authored carrier/preview fragments remain readable as ordinary Slide-local input and receive a non-blocking migration warning; they do not become structured fixed atoms or object-slot carriers. Imported expanded fragments remain the lossless mirror/preserve form. |
+| External edits            | Any registry-path, style, or semantic mismatch fails quality check and export; regenerate the fragment.                                                                                                                                                                                 |
 
 **Validation**: `svg_quality_checker.py` independently rerenders every compact
 authored preset from registry metadata and compares its direct visible paths
@@ -209,23 +209,23 @@ not a prerequisite or tool command; Executor may adopt, adapt, or decline it
 from the actual content and explicit user/template constraints.
 
 ```bash
-python3 ${SKILL_DIR}/scripts/shape_boolean_svg.py render <svg-file> \
+python ${SKILL_DIR}/scripts/shape_boolean_svg.py render <svg-file> \
   --operation subtract \
   --source body \
   --source cutout \
   --id result
 ```
 
-| Concern | Contract |
-|---|---|
-| Sources | Closed `path`, `polygon`, `rect`, `circle`, `ellipse`, one validated compact authored shape preset, or supported horizontal implicit-LTR direct `<text>` with a resolvable exact OpenType weight/style (`--font-dir` adds search roots). Text becomes glyph geometry and is no longer editable text. Open geometry, groups, nested text, images, definitions, and nested SVG viewports fail closed. |
-| Primary shape | The first `--source` supplies result paint. For `subtract`, all later operands are removed from that primary geometry. Explicit paint flags override only their named channels. |
-| Coordinates | Ancestor and local transforms are baked into SVG-root coordinate space. Place stdout in the primary operand's z-order with no additional transform; never reinsert it under an original transformed ancestor. Root-coordinate space does not require each result path to be a direct `<svg>` child. |
-| Placement | Ordinary Slide-local results belong in the applicable untransformed direct-root semantic `<g>` with its normal `id` / `data-pptx-bounds`. Master/Layout results remain direct-root path atoms and redeclare `data-pptx-layer`. One non-fragment result may be the direct `data-pptx-carrier="true"` child of an `object` slot. |
-| Fragment roles | Fragment paths may share one ordinary Slide-local semantic group, but remain separate shapes and cannot collectively claim one carrier or one Master/Layout atom. Helper output inherits no structural role metadata from its operands; redeclare only the final layer/carrier/role contract. |
-| Result | `union`, `combine`, `intersect`, and `subtract` emit one ordinary `<path>`. `fragment` emits stable sibling paths named `<id>-1`, `<id>-2`, ... in top/left/bottom/right/area order. |
-| Winding | Results use explicit nonzero contour direction and never emit `fill-rule`, `clip-rule`, `clip-path`, `mask`, or Merge Shapes metadata. Operands that depend on even-odd fill, clipping, or masking fail closed. |
-| Preservation | This helper authors new geometry only. Never use it to merge or split mirror/preserve source structure. |
+| Concern        | Contract                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sources        | Closed `path`, `polygon`, `rect`, `circle`, `ellipse`, one validated compact authored shape preset, or supported horizontal implicit-LTR direct `<text>` with a resolvable exact OpenType weight/style (`--font-dir` adds search roots). Text becomes glyph geometry and is no longer editable text. Open geometry, groups, nested text, images, definitions, and nested SVG viewports fail closed. |
+| Primary shape  | The first `--source` supplies result paint. For `subtract`, all later operands are removed from that primary geometry. Explicit paint flags override only their named channels.                                                                                                                                                                                                                     |
+| Coordinates    | Ancestor and local transforms are baked into SVG-root coordinate space. Place stdout in the primary operand's z-order with no additional transform; never reinsert it under an original transformed ancestor. Root-coordinate space does not require each result path to be a direct `<svg>` child.                                                                                                 |
+| Placement      | Ordinary Slide-local results belong in the applicable untransformed direct-root semantic `<g>` with its normal `id` / `data-pptx-bounds`. Master/Layout results remain direct-root path atoms and redeclare `data-pptx-layer`. One non-fragment result may be the direct `data-pptx-carrier="true"` child of an `object` slot.                                                                      |
+| Fragment roles | Fragment paths may share one ordinary Slide-local semantic group, but remain separate shapes and cannot collectively claim one carrier or one Master/Layout atom. Helper output inherits no structural role metadata from its operands; redeclare only the final layer/carrier/role contract.                                                                                                       |
+| Result         | `union`, `combine`, `intersect`, and `subtract` emit one ordinary `<path>`. `fragment` emits stable sibling paths named `<id>-1`, `<id>-2`, ... in top/left/bottom/right/area order.                                                                                                                                                                                                                |
+| Winding        | Results use explicit nonzero contour direction and never emit `fill-rule`, `clip-rule`, `clip-path`, `mask`, or Merge Shapes metadata. Operands that depend on even-odd fill, clipping, or masking fail closed.                                                                                                                                                                                     |
+| Preservation   | This helper authors new geometry only. Never use it to merge or split mirror/preserve source structure.                                                                                                                                                                                                                                                                                             |
 
 Operation semantics match PowerPoint's visible Merge Shapes result: `union`
 keeps every covered region, `combine` keeps the symmetric difference,
@@ -296,11 +296,11 @@ gradient family per §7.1 so the stack reads as a single solid.
 Feathered edges are `Bake-required` ([`svg-effects.md`](./svg-effects.md) §6.12),
 but the four jobs they normally do are all reachable with gradients:
 
-| Intent | Build instead |
-|---|---|
-| Contact shadow under an object | Ellipse filled with a `radialGradient` from dark-transparent at the centre to fully transparent at the rim |
-| Spotlight / stage pool | Cone or ellipse filled with a gradient fading to transparent at its far end, at low opacity over the scene |
-| Object dissolving into the page | Overlay a rectangle whose gradient runs from transparent to the exact page background hex |
+| Intent                                 | Build instead                                                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Contact shadow under an object         | Ellipse filled with a `radialGradient` from dark-transparent at the centre to fully transparent at the rim             |
+| Spotlight / stage pool                 | Cone or ellipse filled with a gradient fading to transparent at its far end, at low opacity over the scene             |
+| Object dissolving into the page        | Overlay a rectangle whose gradient runs from transparent to the exact page background hex                              |
 | Hiding an object while keeping it live | Full transparency, or a background-registered fill ([`image-layout-patterns.md`](./image-layout-patterns.md) `#M1-08`) |
 
 A radial or linear alpha ramp reads the same as a feathered edge at slide scale

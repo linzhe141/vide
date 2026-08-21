@@ -5,14 +5,14 @@ PPT Master - Unified Markdown Converter
 Auto-detect source type and dispatch to the existing source_to_md converters.
 
 Usage:
-    python3 scripts/source_to_md.py <file_or_url_or_dir> [<file_or_url_or_dir> ...] [options]
+    python scripts/source_to_md.py <file_or_url_or_dir> [<file_or_url_or_dir> ...] [options]
 
 Examples:
-    python3 scripts/source_to_md.py paper.pdf
-    python3 scripts/source_to_md.py paper.pdf report.docx deck.pptx
-    python3 scripts/source_to_md.py ./sources -o ./markdown
-    python3 scripts/source_to_md.py report.docx -o report.md
-    python3 scripts/source_to_md.py deck.pptx --json
+    python scripts/source_to_md.py paper.pdf
+    python scripts/source_to_md.py paper.pdf report.docx deck.pptx
+    python scripts/source_to_md.py ./sources -o ./markdown
+    python scripts/source_to_md.py report.docx -o report.md
+    python scripts/source_to_md.py deck.pptx --json
 
 Dependencies:
     Same as the backend converter selected for the input.
@@ -329,12 +329,12 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 scripts/source_to_md.py paper.pdf
-  python3 scripts/source_to_md.py paper.pdf report.docx deck.pptx
-  python3 scripts/source_to_md.py ./sources -o ./markdown
-  python3 scripts/source_to_md.py report.docx -o output.md
-  python3 scripts/source_to_md.py deck.pptx --json
-  python3 scripts/source_to_md.py https://example.com/article -o article.md
+  python scripts/source_to_md.py paper.pdf
+  python scripts/source_to_md.py paper.pdf report.docx deck.pptx
+  python scripts/source_to_md.py ./sources -o ./markdown
+  python scripts/source_to_md.py report.docx -o output.md
+  python scripts/source_to_md.py deck.pptx --json
+  python scripts/source_to_md.py https://example.com/article -o article.md
 
 Backend-specific flags not listed here are passed through to the selected
 converter, so existing converter behavior remains the source of truth.

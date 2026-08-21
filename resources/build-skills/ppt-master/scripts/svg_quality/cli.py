@@ -4,10 +4,10 @@
 Parses the legacy command-line contract and delegates validation to the checker.
 
 Usage:
-    python3 scripts/svg_quality_checker.py <svg_file_or_project> [options]
+    python scripts/svg_quality_checker.py <svg_file_or_project> [options]
 
 Examples:
-    python3 scripts/svg_quality_checker.py projects/demo --stage final --json
+    python scripts/svg_quality_checker.py projects/demo --stage final --json
 
 Dependencies:
     Standard library plus local PPT Master validation modules.
@@ -58,16 +58,16 @@ def print_usage() -> None:
     """Print CLI usage information."""
     print("PPT Master - SVG Quality Check Tool\n")
     print("Usage:")
-    print("  python3 scripts/svg_quality_checker.py <svg_file>")
-    print("  python3 scripts/svg_quality_checker.py <directory>")
-    print("  python3 scripts/svg_quality_checker.py <workspace>/templates --template-mode")
-    print("  python3 scripts/svg_quality_checker.py --all examples")
+    print("  python scripts/svg_quality_checker.py <svg_file>")
+    print("  python scripts/svg_quality_checker.py <directory>")
+    print("  python scripts/svg_quality_checker.py <workspace>/templates --template-mode")
+    print("  python scripts/svg_quality_checker.py --all examples")
     print("\nExamples:")
-    print("  python3 scripts/svg_quality_checker.py examples/project/svg_output/slide_01.svg")
-    print("  python3 scripts/svg_quality_checker.py examples/project/svg_output")
-    print("  python3 scripts/svg_quality_checker.py examples/project")
-    print("  python3 scripts/svg_quality_checker.py templates/layouts/presentation_core/templates --template-mode")
-    print("  python3 scripts/svg_quality_checker.py templates/decks/中国电信/templates --template-mode")
+    print("  python scripts/svg_quality_checker.py examples/project/svg_output/slide_01.svg")
+    print("  python scripts/svg_quality_checker.py examples/project/svg_output")
+    print("  python scripts/svg_quality_checker.py examples/project")
+    print("  python scripts/svg_quality_checker.py templates/layouts/presentation_core/templates --template-mode")
+    print("  python scripts/svg_quality_checker.py templates/decks/中国电信/templates --template-mode")
     print("\nOptions:")
     print("  --format <ppt169|ppt43|...>   Expected canvas format")
     print("  --stage <first-page|final>     first-page checks only the first authored SVG")

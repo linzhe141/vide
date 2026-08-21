@@ -5,11 +5,11 @@ PPT Master - Workflow Log
 Append one manually selected important event to a project's cold audit log.
 
 Usage:
-    python3 scripts/workflow_log.py <project_path> <message>
+    python scripts/workflow_log.py <project_path> <message>
 
 Examples:
-    python3 scripts/workflow_log.py projects/demo "Strategist handoff complete"
-    python3 scripts/workflow_log.py projects/demo "Reworked P07 after source-label mismatch"
+    python scripts/workflow_log.py projects/demo "Strategist handoff complete"
+    python scripts/workflow_log.py projects/demo "Reworked P07 after source-label mismatch"
 
 Dependencies:
     None (standard library only)

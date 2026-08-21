@@ -6,12 +6,12 @@ List the bundled CC0 sound catalog or copy explicitly selected sounds into a
 project-local `sounds/` directory. The global library is never copied in bulk.
 
 Usage:
-    python3 scripts/sound_sync.py list [--query TERM]
-    python3 scripts/sound_sync.py <project_path> <sound_id> [<sound_id> ...]
+    python scripts/sound_sync.py list [--query TERM]
+    python scripts/sound_sync.py <project_path> <sound_id> [<sound_id> ...]
 
 Examples:
-    python3 scripts/sound_sync.py list --query whoosh
-    python3 scripts/sound_sync.py projects/deck bigsoundbank/1797 kenney-interface/click_001
+    python scripts/sound_sync.py list --query whoosh
+    python scripts/sound_sync.py projects/deck bigsoundbank/1797 kenney-interface/click_001
 
 Dependencies:
     None (standard library only).
@@ -266,7 +266,7 @@ def _run_sync(argv: list[str]) -> int:
         for sound_id in missing:
             print(f"     x {sound_id}", file=sys.stderr)
         print(
-            "Run `python3 skills/ppt-master/scripts/sound_sync.py list --query <term>` "
+            "Run `python skills/ppt-master/scripts/sound_sync.py list --query <term>` "
             "and select a listed ID.",
             file=sys.stderr,
         )

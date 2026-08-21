@@ -1348,7 +1348,7 @@ Recorded narration:
             )
             quick_flag = ' --quick-generate' if args.quick_generate else ''
             print(
-                "Run: python3 skills/ppt-master/scripts/svg_quality_checker.py "
+                "Run: python skills/ppt-master/scripts/svg_quality_checker.py "
                 f'"{project_path}"{quick_flag} --stage final --json',
                 file=sys.stderr,
             )

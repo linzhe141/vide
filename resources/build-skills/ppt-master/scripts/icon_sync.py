@@ -11,11 +11,11 @@ Project-local custom icons count as satisfied. In one resource-selection batch,
 real brand marks.
 
 Usage:
-    python3 scripts/icon_sync.py <project_path> <lib/name> [<lib/name> ...]
+    python scripts/icon_sync.py <project_path> <lib/name> [<lib/name> ...]
 
 Examples:
-    python3 scripts/icon_sync.py projects/deck tabler-outline/home tabler-outline/chart
-    python3 scripts/icon_sync.py projects/deck tabler-outline/home simple-icons/github
+    python scripts/icon_sync.py projects/deck tabler-outline/home tabler-outline/chart
+    python scripts/icon_sync.py projects/deck tabler-outline/home simple-icons/github
 
 Dependencies:
     None (standard library only).

@@ -6,7 +6,7 @@ document metadata. It uses only temporary files and does not add an automated
 test suite.
 
 ```bash
-PYTHONPATH="skills/ppt-master/scripts:skills/ppt-master/scripts/confirm_ui" python3 - <<'PY'
+PYTHONPATH="skills/ppt-master/scripts:skills/ppt-master/scripts/confirm_ui" python - <<'PY'
 import json
 import zipfile
 from pathlib import Path

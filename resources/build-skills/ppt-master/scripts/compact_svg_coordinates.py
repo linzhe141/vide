@@ -6,11 +6,11 @@ Compact model-facing page-space SVG coordinates to at most two decimal places
 without rounding normalized crop ratios or transform linear coefficients.
 
 Usage:
-    python3 scripts/compact_svg_coordinates.py <svg-file-or-directory> [--inplace]
+    python scripts/compact_svg_coordinates.py <svg-file-or-directory> [--inplace]
 
 Examples:
-    python3 scripts/compact_svg_coordinates.py projects/example/templates --inplace
-    python3 scripts/compact_svg_coordinates.py imported/authoring-svg
+    python scripts/compact_svg_coordinates.py projects/example/templates --inplace
+    python scripts/compact_svg_coordinates.py imported/authoring-svg
 
 Dependencies:
     None (standard library only).

@@ -5,12 +5,12 @@ Stable CLI entry point and compatibility import surface for SVG validation.
 Implementation lives in ``svg_quality/``.
 
 Usage:
-    python3 scripts/svg_quality_checker.py <svg_file>
-    python3 scripts/svg_quality_checker.py <directory>
-    python3 scripts/svg_quality_checker.py --all examples
+    python scripts/svg_quality_checker.py <svg_file>
+    python scripts/svg_quality_checker.py <directory>
+    python scripts/svg_quality_checker.py --all examples
 
 Examples:
-    python3 scripts/svg_quality_checker.py projects/demo --stage final --json
+    python scripts/svg_quality_checker.py projects/demo --stage final --json
 
 Dependencies:
     Same as svg_quality.cli.

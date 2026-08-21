@@ -28,39 +28,39 @@ Start with this exact heading order:
 
 ## I. Project Information
 
-| Item | Value |
-| --- | --- |
-| Project Name | <resolved project name> |
-| Canvas Format | <canonical format and dimensions> |
-| Page Count | <exact final count matching §IX> |
-| Primary Language | <confirmed canonical BCP-47 content tag> |
-| Target Audience | <confirmed audience> |
-| Communication Intent | <confirmed intent, including priority or sequence> |
-| Desired Audience Outcome | <confirmed observable outcome> |
-| Core Message / Ask / Action | <confirmed core message or ask> |
-| Delivery Context | <confirmed delivery context> |
-| Artifact Afterlife | <confirmed afterlife> |
-| Reading Mode | <text, balanced, presentation, or the active non-PPT equivalent> |
-| Content Strategy | <confirmed material-divergence prose or balanced default> |
-| Design Style | <resolved design direction> |
-| Formula Policy | <mixed, render-all, or text-only> |
-| AI Image Acquisition Path | <confirmed path or not applicable> |
-| Generation Mode | <continuous or split> |
-| Spec Refinement | <enabled or disabled> |
-| Speaker Notes | <enabled or disabled> — <explicit user instruction, final Stage-2 proactive policy, workflow default, or enabled Narration Audio dependency> |
-| Custom Animations | <enabled or disabled> — <explicit instruction and object/all-motion scope, final Stage-2 proactive policy, or workflow default> |
-| Narration Audio | <enabled or disabled> — <explicit user instruction, final Stage-2 proactive policy, or workflow default> |
-| Created Date | <YYYY-MM-DD> |
+| Item                        | Value                                                                                                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project Name                | <resolved project name>                                                                                                                      |
+| Canvas Format               | <canonical format and dimensions>                                                                                                            |
+| Page Count                  | <exact final count matching §IX>                                                                                                             |
+| Primary Language            | <confirmed canonical BCP-47 content tag>                                                                                                     |
+| Target Audience             | <confirmed audience>                                                                                                                         |
+| Communication Intent        | <confirmed intent, including priority or sequence>                                                                                           |
+| Desired Audience Outcome    | <confirmed observable outcome>                                                                                                               |
+| Core Message / Ask / Action | <confirmed core message or ask>                                                                                                              |
+| Delivery Context            | <confirmed delivery context>                                                                                                                 |
+| Artifact Afterlife          | <confirmed afterlife>                                                                                                                        |
+| Reading Mode                | <text, balanced, presentation, or the active non-PPT equivalent>                                                                             |
+| Content Strategy            | <confirmed material-divergence prose or balanced default>                                                                                    |
+| Design Style                | <resolved design direction>                                                                                                                  |
+| Formula Policy              | <mixed, render-all, or text-only>                                                                                                            |
+| AI Image Acquisition Path   | <confirmed path or not applicable>                                                                                                           |
+| Generation Mode             | <continuous or split>                                                                                                                        |
+| Spec Refinement             | <enabled or disabled>                                                                                                                        |
+| Speaker Notes               | <enabled or disabled> — <explicit user instruction, final Stage-2 proactive policy, workflow default, or enabled Narration Audio dependency> |
+| Custom Animations           | <enabled or disabled> — <explicit instruction and object/all-motion scope, final Stage-2 proactive policy, or workflow default>              |
+| Narration Audio             | <enabled or disabled> — <explicit user instruction, final Stage-2 proactive policy, or workflow default>                                     |
+| Created Date                | <YYYY-MM-DD>                                                                                                                                 |
 
 ## II. Canvas Specification
 
-| Property | Value |
-| --- | --- |
-| Format | <canonical format name> |
-| Dimensions | <width × height> |
-| viewBox | `<exact viewBox>` |
-| Margins | <safe margins> |
-| Content Area | <usable bounds> |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| Format       | <canonical format name> |
+| Dimensions   | <width × height>        |
+| viewBox      | `<exact viewBox>`       |
+| Margins      | <safe margins>          |
+| Content Area | <usable bounds>         |
 ```
 
 When a template workspace is active, append exactly one line after the §I table: `- **Template Application**: <confirmed or Strategist-resolved natural-language plan>`. Omit it for free design. Never replace this prose with internal reuse/adherence ids.
@@ -81,23 +81,23 @@ Use these exact subsections and field shapes:
 
 ### Color Scheme
 
-| Role | HEX | Purpose |
-| --- | --- | --- |
-| Background | <HEX> | <semantic use> |
+| Role                 | HEX   | Purpose        |
+| -------------------- | ----- | -------------- |
+| Background           | <HEX> | <semantic use> |
 | Secondary background | <HEX> | <semantic use> |
-| Primary | <HEX> | <semantic use> |
-| Accent | <HEX> | <semantic use> |
-| Secondary accent | <HEX> | <semantic use> |
-| Body text | <HEX> | <semantic use> |
+| Primary              | <HEX> | <semantic use> |
+| Accent               | <HEX> | <semantic use> |
+| Secondary accent     | <HEX> | <semantic use> |
+| Body text            | <HEX> | <semantic use> |
 
 ## IV. Typography System
 
 ### Font Plan
 
-| Role | Character (Reference) | Primary | English if non-English | Fallback tail |
-| --- | --- | --- | --- | --- |
-| Title | <category/modifier> | <family> | <family> | <fallback> |
-| Body | <category/modifier> | <family> | <family> | <fallback> |
+| Role  | Character (Reference) | Primary  | English if non-English | Fallback tail |
+| ----- | --------------------- | -------- | ---------------------- | ------------- |
+| Title | <category/modifier>   | <family> | <family>               | <fallback>    |
+| Body  | <category/modifier>   | <family> | <family>               | <fallback>    |
 
 - **Typography upgrade (Reference)**: <post-export role substitution after target installation; omit if none>
 - **Title stack**: <complete ordered stack>
@@ -105,11 +105,11 @@ Use these exact subsections and field shapes:
 
 ### Font Size Hierarchy
 
-| Purpose | Anchor Size (px) |
-| --- | ---: |
-| Body | <confirmed value> |
-| Title | <confirmed value> |
-| Subtitle | <confirmed value> |
+| Purpose    |  Anchor Size (px) |
+| ---------- | ----------------: |
+| Body       | <confirmed value> |
+| Title      | <confirmed value> |
+| Subtitle   | <confirmed value> |
 | Annotation | <confirmed value> |
 
 ## V. Layout Principles
@@ -122,11 +122,11 @@ Use these exact subsections and field shapes:
 
 ### Spacing Specification
 
-| Element | Current Project |
-| --- | --- |
-| Safe margin | <value> |
-| Content block gap | <value> |
-| Icon-text gap | <value> |
+| Element           | Current Project |
+| ----------------- | --------------- |
+| Safe margin       | <value>         |
+| Content block gap | <value>         |
+| Icon-text gap     | <value>         |
 
 ## VI. Icon Usage Specification
 
@@ -134,7 +134,7 @@ Use these exact subsections and field shapes:
 - **Brand-logo library**: <simple-icons when selected for real brand marks; omit otherwise>
 
 | Icon Path | Suitable Scenarios |
-| --- | --- |
+| --------- | ------------------ |
 ```
 
 Preserve Title/Body characters and resolved stacks; omit blank Typography upgrade and never place it in a stack. For each justified recurring family override, add the role to Font Plan plus `- **<Role> stack**: <complete ordered stack>`. Possible roles are `Annotation`, `Footer`, `Footnote`, `Data`, `Emphasis`, `Quote`, and `Code`; add only recurring, intentional differences. Add non-locked `Role rationale` only for an extra family. Do not collapse distinct Title/Body stacks or discard a declared optional role. Each Font Size Hierarchy value is a role anchor: Executor may vary one occurrence `±2px`; a short non-structural Hero/Display size may stay unlisted only while the same value is planned at most twice, and its third occurrence needs a named row. Add every recurring palette role and typography-size anchor established by the plan; do not enumerate one-off paint or font-family garnish. For confirmed custom directions, add the applicable `Mode References`, `Mode Behavior`, `Visual Style References`, and `Visual Style Behavior` lines under Theme Style. Include `Stroke Width` under §VI only for a stroke library. `simple-icons` may accompany the one primary bundled library and is recorded only when real brand marks were selected. The icon table records the curated synced pool and broad semantic scenarios, not exact page placement or mandatory use. User-provided, template-carried, imported, custom, and other prepared SVGs under the project `icons/` directory remain usable without being forced into that bundled selection. Leave the §VI table empty when no bundled or brand icons are prepared.
@@ -159,12 +159,12 @@ Use the §VII table only when at least one real Chart/Table catalog reference is
 ## VII. Visualization Reference List
 
 | Page | Family | Template | Usage |
-| --- | --- | --- | --- |
+| ---- | ------ | -------- | ----- |
 
 ## VIII. Image Resource List
 
 | Filename | Dimensions | Ratio | Purpose | Type | Layout pattern | Crop Policy | Acquire Via | Status | Reference | text_policy | page_role |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| -------- | ---------- | ----- | ------- | ---- | -------------- | ----------- | ----------- | ------ | --------- | ----------- | --------- |
 ```
 
 §VII lists at most one `chart|table` reference per page: canonical Template key
@@ -237,7 +237,7 @@ For free-design pages, describe `Layout` through relationships, hierarchy, regio
 ## 3. Machine validation
 
 ```bash
-python3 skills/ppt-master/scripts/project_manager.py validate <project_path>
+python skills/ppt-master/scripts/project_manager.py validate <project_path>
 ```
 
 Validation reads the Markdown directly. It reports missing or out-of-order I–X sections, unresolved `[fill...]` placeholders, missing per-slide `Audience move`, and a missing §III `AI Image Strategy` when an §VIII table selects `ai` acquisition.

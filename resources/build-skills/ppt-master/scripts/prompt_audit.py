@@ -7,13 +7,13 @@ exact o200k_base token counts, declared load-set budgets, Markdown references,
 registry claims, schema-definition candidates, and cross-file duplication.
 
 Usage:
-    python3 scripts/prompt_audit.py
-    python3 scripts/prompt_audit.py --json
-    python3 scripts/prompt_audit.py --root /path/to/ppt-master
+    python scripts/prompt_audit.py
+    python scripts/prompt_audit.py --json
+    python scripts/prompt_audit.py --root /path/to/ppt-master
 
 Examples:
-    python3 skills/ppt-master/scripts/prompt_audit.py
-    python3 skills/ppt-master/scripts/prompt_audit.py --json | python3 -m json.tool
+    python skills/ppt-master/scripts/prompt_audit.py
+    python skills/ppt-master/scripts/prompt_audit.py --json | python -m json.tool
 
 Dependencies:
     tiktoken (o200k_base encoding)

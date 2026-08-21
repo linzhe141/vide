@@ -6,12 +6,12 @@ Export public SVG prototypes as a structured review deck while retaining
 definition-only Layout prototypes in the native package.
 
 Usage:
-    python3 scripts/template_preview_pptx.py <template_workspace> [-o output.pptx]
+    python scripts/template_preview_pptx.py <template_workspace> [-o output.pptx]
 
 Examples:
-    python3 scripts/template_preview_pptx.py projects/my_template
-    python3 scripts/template_preview_pptx.py templates/decks/my_template -o review.pptx
-    python3 scripts/template_preview_pptx.py templates/decks/legacy --visual-only
+    python scripts/template_preview_pptx.py projects/my_template
+    python scripts/template_preview_pptx.py templates/decks/my_template -o review.pptx
+    python scripts/template_preview_pptx.py templates/decks/legacy --visual-only
 
 Dependencies:
     python-pptx

@@ -2,9 +2,9 @@
 """Propagate a spec_lock.md value change to both the lock file and svg_output/*.svg.
 
 Examples:
-    python3 update_spec.py <project_path> primary=#0066AA
-    python3 update_spec.py <project_path> colors.text=#111111
-    python3 update_spec.py <project_path> \\
+    python update_spec.py <project_path> primary=#0066AA
+    python update_spec.py <project_path> colors.text=#111111
+    python update_spec.py <project_path> \\
         typography.font_family='Arial, "Microsoft YaHei", sans-serif'
 
 v2 scope:
