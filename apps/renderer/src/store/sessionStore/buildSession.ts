@@ -128,11 +128,12 @@ function buildLogEvents(logs: WorkflowLogDto[]): WorkflowLogEvent[] {
 /** 依据 agent messages 派生 UI 的 SessionMessage[]。 */
 function buildMessages(
   agentMessages: { message: AgentMessage; createdAt: number }[],
-  _workflow: SessionWorkflowData
+  workflow: SessionWorkflowData
 ): SessionMessage[] {
   const messages: SessionMessage[] = []
   const deferredAskQuestionMessages: SessionMessage[] = []
   const toolCallStates = new Map<string, ToolCallState>()
+  const restoredToolResults = buildToolCallResultMap(workflow.logs)
 
   const scrollInto = <T extends SessionMessage>(m: T): T => {
     messages.push(m)
@@ -186,7 +187,10 @@ function buildMessages(
               }
               continue
             }
-            const state: ToolCallState = { toolCall }
+            const state: ToolCallState = {
+              toolCall,
+              result: restoredToolResults.get(tc.id),
+            }
             toolCallStates.set(tc.id, state)
             states.push(state)
           }
@@ -204,7 +208,7 @@ function buildMessages(
           tool_call_id?: string
         }
         const state = toolCallStates.get(toolMsg.tool_call_id ?? '')
-        if (state) {
+        if (state && !state.result) {
           let parsed = message.content
           if (typeof message.content === 'string') {
             try {
@@ -213,7 +217,13 @@ function buildMessages(
               /* keep raw */
             }
           }
-          state.result = { status: 'success', result: parsed }
+          state.result = {
+            status: 'success',
+            result: {
+              reason: 'call-llm',
+              result: parsed,
+            },
+          }
         }
         break
       }
@@ -238,4 +248,70 @@ function parseToolArguments(argumentsText: string): Record<string, unknown> | nu
   } catch {
     return null
   }
+}
+
+function buildToolCallResultMap(logs: WorkflowLogDto[]): Map<string, ToolCallState['result']> {
+  const results = new Map<string, ToolCallState['result']>()
+
+  for (const log of logs) {
+    const payload = parseWorkflowLogPayload(log.payload)
+    if (!payload || typeof payload !== 'object') continue
+
+    if (log.eventName === 'workflow.tool.call.success') {
+      const toolCallResult = (payload as { toolCallResult?: unknown }).toolCallResult
+      if (!isToolCallSuccessPayload(toolCallResult)) continue
+      results.set(toolCallResult.id, {
+        status: 'success',
+        result: toolCallResult.result,
+        startedAt: toolCallResult.startedAt,
+        finishedAt: toolCallResult.finishedAt,
+        durationMs: toolCallResult.durationMs,
+      })
+      continue
+    }
+
+    if (log.eventName === 'workflow.tool.call.error') {
+      const toolCallResult = (payload as { toolCallResult?: unknown }).toolCallResult
+      if (!isToolCallErrorPayload(toolCallResult)) continue
+      results.set(toolCallResult.id, {
+        status: 'error',
+        error: toolCallResult.error,
+      })
+    }
+  }
+
+  return results
+}
+
+function parseWorkflowLogPayload(payload: string | null): unknown {
+  if (!payload) return null
+  try {
+    return JSON.parse(payload)
+  } catch {
+    return null
+  }
+}
+
+function isToolCallSuccessPayload(value: unknown): value is {
+  id: string
+  result: unknown
+  startedAt: number
+  finishedAt: number
+  durationMs: number
+} {
+  if (!value || typeof value !== 'object') return false
+
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.startedAt === 'number' &&
+    typeof candidate.finishedAt === 'number' &&
+    typeof candidate.durationMs === 'number'
+  )
+}
+
+function isToolCallErrorPayload(value: unknown): value is { id: string; error: unknown } {
+  if (!value || typeof value !== 'object') return false
+
+  return typeof (value as { id?: unknown }).id === 'string'
 }
