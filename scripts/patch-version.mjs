@@ -29,18 +29,8 @@ if (!match) {
 }
 
 const nextVersion = match[1]
-const nextTag = rawVersion.startsWith('v') ? rawVersion : `v${nextVersion}`
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = path.resolve(scriptDirectory, '..')
-
-function runGitCommand(args, options = {}) {
-  return execFileSync('git', args, {
-    cwd: repositoryRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    ...options,
-  }).trim()
-}
 
 await Promise.all(
   workspacePackageFiles.map(async (relativeFilePath) => {
@@ -67,16 +57,4 @@ await Promise.all(
 
     console.log(`${relativeFilePath}: ${nextVersion}`)
   })
-)
-
-const existingTag = runGitCommand(['tag', '--list', nextTag])
-
-if (existingTag === nextTag) {
-  throw new Error(`Git tag already exists: ${nextTag}`)
-}
-
-runGitCommand(['tag', '-a', nextTag, '-m', `Release ${nextTag}`])
-console.log(`Created local git tag: ${nextTag}`)
-console.warn(
-  `Tag ${nextTag} points to the current HEAD. Commit the version file changes before pushing if you want the remote tag to include them.`
 )
