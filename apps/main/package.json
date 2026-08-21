@@ -5,10 +5,12 @@
   "type": "module",
   "main": "./dist/electron/main/index.js",
   "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",
     "build": "electron-vite build",
     "pack:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
+    "release:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
     "rebuild:electron": "electron-rebuild",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts"
   },
