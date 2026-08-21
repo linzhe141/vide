@@ -29,6 +29,7 @@ export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
   const { clearSessions } = useSessionStoreActions()
   const { clear } = useHistoryStoreActions()
+  const isDevMode = import.meta.env.DEV
   const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null)
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
 
@@ -225,41 +226,45 @@ export function GeneralSettings() {
             </div>
           </div>
 
-          <div className='bg-border h-px' />
+          {isDevMode ? (
+            <>
+              <div className='bg-border h-px' />
 
-          <div className='flex items-center justify-between'>
-            <div>
-              <div className='text-foreground font-medium'>Clear database</div>
-              <div className='text-text-secondary text-sm'>Only dev mode</div>
-            </div>
-
-            <div>
-              <Button
-                onClick={async () => {
-                  const confirmed = confirm('Delete all database records?')
-                  if (!confirmed) return
-
-                  try {
-                    await window.ipcRendererApi.invoke('dev-delete-database-rows')
-                    clearSessions()
-                    clear()
-                    alert('Database cleared successfully.')
-                  } catch (error) {
-                    console.error('Failed to delete database rows:', error)
-                    alert(
-                      'Failed to clear database: ' +
-                        (error instanceof Error ? error.message : String(error))
-                    )
-                  }
-                }}
-              >
-                <div className='flex items-center gap-2'>
-                  <Eraser size={14} />
-                  <div>Clear !</div>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <div className='text-foreground font-medium'>Clear database</div>
+                  <div className='text-text-secondary text-sm'>Only dev mode</div>
                 </div>
-              </Button>
-            </div>
-          </div>
+
+                <div>
+                  <Button
+                    onClick={async () => {
+                      const confirmed = confirm('Delete all database records?')
+                      if (!confirmed) return
+
+                      try {
+                        await window.ipcRendererApi.invoke('dev-delete-database-rows')
+                        clearSessions()
+                        clear()
+                        alert('Database cleared successfully.')
+                      } catch (error) {
+                        console.error('Failed to delete database rows:', error)
+                        alert(
+                          'Failed to clear database: ' +
+                            (error instanceof Error ? error.message : String(error))
+                        )
+                      }
+                    }}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <Eraser size={14} />
+                      <div>Clear !</div>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : null}
         </section>
       </div>
     </div>
