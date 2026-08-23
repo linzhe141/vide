@@ -115,6 +115,12 @@ export interface WorkflowToolCallErrorEvent {
   }
 }
 
+export interface WorkflowCustomEvent {
+  type: 'workflow.custom'
+  eventName: string
+  data: unknown
+}
+
 export interface SessionBackgroundCreateEvent {
   type: 'background-create-session'
   sessionId: string
@@ -174,6 +180,7 @@ export type WorkflowEvent =
   | WorkflowToolCallStartEvent
   | WorkflowToolCallSuccessEvent
   | WorkflowToolCallErrorEvent
+  | WorkflowCustomEvent
 
 export const workflowV2EventNames = [
   'workflow.start',
@@ -198,4 +205,5 @@ export const workflowV2EventNames = [
   'workflow.tool.call.start',
   'workflow.tool.call.success',
   'workflow.tool.call.error',
+  'workflow.custom',
 ] as const satisfies readonly WorkflowEvent['type'][]

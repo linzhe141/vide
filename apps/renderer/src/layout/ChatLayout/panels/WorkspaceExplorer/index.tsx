@@ -25,7 +25,6 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
   const preview = useWorkspaceExplorerPreview()
   const previewError = useWorkspaceExplorerStore((state) => state.previewError)
   const expandedPathList = useWorkspaceExplorerStore((state) => state.expandedPaths)
-  const showFileTreePane = useWorkspaceExplorerStore((state) => state.showFileTreePane)
   const actions = useWorkspaceExplorerActions()
   const [isCompact, setIsCompact] = useState(false)
   const [compactView, setCompactView] = useState<'tree' | 'preview'>('tree')
@@ -157,22 +156,13 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
           </div>
         </div>
       ) : (
-        <Group orientation='horizontal' className='h-0 flex-1'>
-          {showFileTreePane && (
-            <>
-              <Panel
-                defaultSize='320px'
-                minSize='240px'
-                maxSize='540px'
-                className='border-border border-r'
-              >
-                {treePane}
-              </Panel>
-              <Separator className='group relative w-3 cursor-col-resize bg-transparent'></Separator>
-            </>
-          )}
+        <Group className='h-0 flex-1'>
+          <Panel>{previewPane}</Panel>
+          <Separator className='group relative cursor-col-resize bg-transparent'></Separator>
 
-          <Panel minSize='320px'>{previewPane}</Panel>
+          <Panel minSize={240} maxSize={540} defaultSize={240} className='border-border border-l'>
+            {treePane}
+          </Panel>
         </Group>
       )}
     </div>

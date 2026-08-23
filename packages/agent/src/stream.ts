@@ -1,13 +1,20 @@
 import type { WorkflowEvent } from './event'
 
 type WorkflowEventContext = WorkflowEvent & {
-  ctx: { sessionId: string | null; workflowId: string | null }
+  ctx: {
+    sessionId: string | null
+    workflowId: string | null
+    namespace: string | null
+    mainWorkflowId: string | null
+  }
 }
 export class WorkflowStream {
   recordedEvents: WorkflowEventContext[] = []
   stream: ReadableStream<WorkflowEventContext>
   sessionId: string | null = null
   workflowId: string | null = null
+  namespace: string | null = null
+  mainWorkflowId: string | null = null
   signal: AbortSignal
   private abortController = new AbortController()
   private controller!: ReadableStreamDefaultController<WorkflowEventContext>
@@ -29,7 +36,12 @@ export class WorkflowStream {
   push(data: WorkflowEvent) {
     const record: WorkflowEventContext = {
       ...data,
-      ctx: { sessionId: this.sessionId, workflowId: this.workflowId },
+      ctx: {
+        sessionId: this.sessionId,
+        workflowId: this.workflowId,
+        namespace: this.namespace,
+        mainWorkflowId: this.mainWorkflowId,
+      },
     }
     this.recordedEvents.push(record)
     this.controller.enqueue(record)

@@ -53,8 +53,7 @@ function TreeNode({ node, level, selectedPath, expandedPaths, onToggle, onSelect
         onClick={() => {
           if (isFolder) {
             onToggle(node)
-          }
-          onSelect(node)
+          } else onSelect(node)
         }}
       >
         {isFolder ? (

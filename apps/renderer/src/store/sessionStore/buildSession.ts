@@ -1,16 +1,31 @@
 import { nanoid } from 'nanoid'
 import type { AgentMessage, ToolCall } from '@vide/ai'
+import type { WorkflowEvent } from '@vide/agent/event'
 import type { SessionDataDto, SessionWorkflowData, WorkflowLogDto } from '@vide/config'
 import type {
+  AssistantReasonSessionMessage,
+  AssistantTextSessionMessage,
   Session,
   SessionBranch,
   SessionMessage,
   ToolCallState,
   Workflow,
   WorkflowLogEvent,
+  WorkflowSessionMessage,
   WorkflowNode,
 } from './types'
 import { ASK_USER_QUESTION_TOOL_NAME, sanitizeAskUserQuestions } from './askQuestion'
+
+type WorkflowEventContext = {
+  sessionId: string | null
+  workflowId: string | null
+  namespace?: string | null
+  mainWorkflowId?: string | null
+}
+
+type WorkflowEventWithContext = WorkflowEvent & {
+  ctx: WorkflowEventContext
+}
 
 /**
  * 依据 SQLite 持久化的 session data 派生前端 UI 态：
@@ -87,6 +102,8 @@ function buildWorkflow(wf: SessionWorkflowData): Workflow {
     messages: buildMessages(decoded, wf),
     runtime: { status: runtimeStatus },
   }
+
+  restoreNestedWorkflowsFromLogs(workflow, wf.logs)
 
   return workflow
 }
@@ -241,6 +258,38 @@ function buildMessages(
   return messages
 }
 
+function restoreNestedWorkflowsFromLogs(workflow: Workflow, logs: WorkflowLogDto[]) {
+  for (const log of logs) {
+    if (log.eventName !== 'workflow.custom') {
+      continue
+    }
+
+    const payload = parseWorkflowLogPayload(log.payload)
+    if (!isSubAgentCustomEventPayload(payload)) {
+      continue
+    }
+
+    const nestedEvent = toWorkflowEventWithContext(payload.data)
+    if (!nestedEvent?.ctx.workflowId) {
+      continue
+    }
+
+    const nestedWorkflow = ensureNestedWorkflowFromEvent(workflow, nestedEvent)
+    if (!nestedWorkflow) {
+      continue
+    }
+
+    applyNestedWorkflowEvent(nestedWorkflow, nestedEvent)
+    nestedWorkflow.events ??= []
+    nestedWorkflow.events.push({
+      id: nanoid(),
+      type: nestedEvent.type,
+      createdAt: log.createdAt,
+      payload: sanitizeWorkflowEventPayload(nestedEvent),
+    })
+  }
+}
+
 /** 解析 tool call 的 arguments JSON。 */
 function parseToolArguments(argumentsText: string): Record<string, unknown> | null {
   try {
@@ -283,6 +332,193 @@ function buildToolCallResultMap(logs: WorkflowLogDto[]): Map<string, ToolCallSta
   return results
 }
 
+function findToolCallState(workflow: Workflow, toolCallId: string) {
+  for (let index = workflow.messages.length - 1; index >= 0; index -= 1) {
+    const message = workflow.messages[index]
+    if (message.role !== 'tool-call') continue
+    const toolCallState = message.toolCalls.find((item) => item.toolCall.id === toolCallId)
+    if (toolCallState) return toolCallState
+  }
+  return undefined
+}
+
+function ensureNestedWorkflowFromEvent(
+  workflow: Workflow,
+  event: WorkflowEventWithContext
+): WorkflowSessionMessage | undefined {
+  const nestedWorkflowId = event.ctx.workflowId
+  if (!nestedWorkflowId) {
+    return undefined
+  }
+
+  const existing = workflow.messages.find(
+    (message): message is WorkflowSessionMessage =>
+      message.role === 'workflow' && message.id === nestedWorkflowId
+  )
+  if (existing) {
+    workflow.subWorkflow = existing
+    return existing
+  }
+
+  if (event.type !== 'workflow.start') {
+    return undefined
+  }
+
+  const nestedWorkflow: WorkflowSessionMessage = {
+    role: 'workflow',
+    id: nestedWorkflowId,
+    input: event.input,
+    inputSource: event.inputSource,
+    feedback: null,
+    events: [],
+    messages: [
+      {
+        id: nanoid(),
+        role: 'user',
+        content: event.input,
+      },
+    ],
+    runtime: {
+      status: 'running',
+    },
+  }
+  workflow.messages.push(nestedWorkflow)
+  workflow.subWorkflow = nestedWorkflow
+  return nestedWorkflow
+}
+
+function applyNestedWorkflowEvent(workflow: Workflow, event: WorkflowEventWithContext) {
+  if (event.type === 'workflow.start') {
+    return
+  }
+
+  switch (event.type) {
+    case 'workflow.completed': {
+      workflow.runtime.status = 'finished'
+      break
+    }
+
+    case 'workflow.interrupted': {
+      workflow.runtime.status = 'interrupted'
+      break
+    }
+
+    case 'workflow.aborted': {
+      workflow.runtime.status = 'aborted'
+      break
+    }
+
+    case 'workflow.error': {
+      workflow.runtime.status = 'error'
+      break
+    }
+
+    case 'workflow.llm.error': {
+      workflow.runtime.status = 'error'
+      workflow.messages.push({
+        id: nanoid(),
+        role: 'error',
+        error: event.error,
+      })
+      break
+    }
+
+    case 'workflow.llm.reason.start': {
+      const reasoningMessage = ensureWorkflowTailMessage(workflow, 'assistant-reason')
+      reasoningMessage.reasoning = true
+      break
+    }
+
+    case 'workflow.llm.reason.delta': {
+      const reasoningMessage = ensureWorkflowTailMessage(workflow, 'assistant-reason')
+      reasoningMessage.content += event.chunk.delta
+      break
+    }
+
+    case 'workflow.llm.reason.end': {
+      const reasoningMessage = ensureWorkflowTailMessage(workflow, 'assistant-reason')
+      reasoningMessage.reasoning = false
+      break
+    }
+
+    case 'workflow.llm.text.start': {
+      const textMessage = ensureWorkflowTailMessage(workflow, 'assistant-text')
+      textMessage.streaming = true
+      break
+    }
+
+    case 'workflow.llm.text.delta': {
+      const textMessage = ensureWorkflowTailMessage(workflow, 'assistant-text')
+      textMessage.content += event.chunk.delta
+      break
+    }
+
+    case 'workflow.llm.text.end': {
+      const textMessage = ensureWorkflowTailMessage(workflow, 'assistant-text')
+      textMessage.streaming = false
+      break
+    }
+
+    case 'workflow.llm.tool.call.end': {
+      const askQuestionToolCalls = event.toolCall.filter(
+        (toolCall) => toolCall.function.name === ASK_USER_QUESTION_TOOL_NAME
+      )
+      for (const toolCall of askQuestionToolCalls) {
+        const args = parseToolArguments(toolCall.function.arguments)
+        const questions = sanitizeAskUserQuestions(args?.questions)
+        if (!questions.length) continue
+
+        workflow.messages.push({
+          id: nanoid(),
+          role: 'ask-user-question',
+          toolCallId: toolCall.id,
+          questions,
+        })
+      }
+
+      const visibleToolCalls = event.toolCall.filter(
+        (toolCall) => toolCall.function.name !== ASK_USER_QUESTION_TOOL_NAME
+      )
+      if (visibleToolCalls.length > 0) {
+        workflow.messages.push({
+          id: nanoid(),
+          role: 'tool-call',
+          toolCalls: visibleToolCalls.map((toolCall) => ({ toolCall })),
+        })
+      }
+      break
+    }
+
+    case 'workflow.tool.call.success': {
+      const toolCallState = findToolCallState(workflow, event.toolCallResult.id)
+      if (toolCallState) {
+        toolCallState.result = {
+          status: 'success',
+          result: event.toolCallResult.result,
+          startedAt: event.toolCallResult.startedAt,
+          finishedAt: event.toolCallResult.finishedAt,
+          durationMs: event.toolCallResult.durationMs,
+        }
+      }
+      break
+    }
+
+    case 'workflow.tool.call.error': {
+      const toolCallState = findToolCallState(workflow, event.toolCallResult.id)
+      if (toolCallState) {
+        toolCallState.result = {
+          status: 'error',
+          error: event.toolCallResult.error,
+        }
+      }
+      break
+    }
+
+    default:
+      break
+  }
+}
+
 function parseWorkflowLogPayload(payload: string | null): unknown {
   if (!payload) return null
   try {
@@ -290,6 +526,67 @@ function parseWorkflowLogPayload(payload: string | null): unknown {
   } catch {
     return null
   }
+}
+
+function sanitizeWorkflowEventPayload(workflowEvent: WorkflowEventWithContext) {
+  const { ctx: _ctx, ...payload } = workflowEvent
+  return payload
+}
+
+function ensureWorkflowTailMessage(
+  workflow: Workflow,
+  role: 'assistant-reason'
+): AssistantReasonSessionMessage
+function ensureWorkflowTailMessage(
+  workflow: Workflow,
+  role: 'assistant-text'
+): AssistantTextSessionMessage
+function ensureWorkflowTailMessage(
+  workflow: Workflow,
+  role: 'assistant-reason' | 'assistant-text'
+) {
+  const last = workflow.messages.at(-1)
+  if (last?.role === role) {
+    return last
+  }
+
+  if (role === 'assistant-reason') {
+    const message: AssistantReasonSessionMessage = {
+      id: nanoid(),
+      role,
+      content: '',
+      reasoning: false,
+    }
+    workflow.messages.push(message)
+    return message
+  }
+
+  const message: AssistantTextSessionMessage = {
+    id: nanoid(),
+    role,
+    content: '',
+    streaming: false,
+  }
+  workflow.messages.push(message)
+  return message
+}
+
+function isSubAgentCustomEventPayload(value: unknown): value is {
+  eventName: 'sub-agent.event'
+  data: unknown
+} {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as { eventName?: unknown; data?: unknown }
+  return candidate.eventName === 'sub-agent.event' && 'data' in candidate
+}
+
+function toWorkflowEventWithContext(data: unknown): WorkflowEventWithContext | null {
+  if (!data || typeof data !== 'object') return null
+  const candidate = data as Partial<WorkflowEventWithContext>
+  if (!candidate.type || !candidate.ctx || typeof candidate.ctx !== 'object') {
+    return null
+  }
+  return candidate as WorkflowEventWithContext
 }
 
 function isToolCallSuccessPayload(value: unknown): value is {

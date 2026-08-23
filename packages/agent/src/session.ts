@@ -1,6 +1,12 @@
 import type { AgentMessage } from '@vide/ai'
 import { WorkflowStream } from './stream'
-import { Workflow, type CallToolsPayload, type InterruptPayload, type StopReason } from './workflow'
+import {
+  Workflow,
+  WorkflowRuntimeContext,
+  type CallToolsPayload,
+  type InterruptPayload,
+  type StopReason,
+} from './workflow'
 import { v4 as uuid } from 'uuid'
 import { getBuildInTools } from './tools/buildinTools'
 import { buildSkillsChatMessage } from './tools/skill'
@@ -39,6 +45,11 @@ export interface SessionBranch {
 }
 
 export type SessionInputSource = 'desktop' | 'wechat-bot'
+
+interface InterruptedToolContext {
+  toolCalls: CallToolsPayload['toolCalls']
+  continueToolCallIndex?: number
+}
 
 export class Session {
   id: string = uuid()
@@ -101,24 +112,20 @@ export class Session {
     }
 
     const stream = new WorkflowStream()
-    const workflow = new Workflow({
+    const runtime = new WorkflowRuntimeContext({
       model: this.model,
       sessionId: this.id,
-      tools: getBuildInTools({
-        signal: stream.signal,
-        workspacePath: this.workspacePath,
-        agentSettings: this.agentSettings,
-      }),
       stream,
       thinkingMode: this.thinkingMode,
       getAutoApprove: () => this._autoApprove,
       getSessionAgentMessages: () => this.buildAgentMessages(),
+      workspacePath: this.workspacePath,
+      agentSettings: this.agentSettings,
     })
-    workflow.context.stream = stream
+    const workflow = new Workflow(runtime, getBuildInTools(runtime))
     stream.sessionId = this.id
     stream.workflowId = workflow.id
 
-    // 注入当前 workspace 可用的 skills 目录，让 LLM 知道可以调用 load-skill
     const skillsMessage = await buildSkillsChatMessage(this.workspacePath)
     if (skillsMessage) {
       workflow.messages.push(skillsMessage)
@@ -161,13 +168,14 @@ export class Session {
     }
 
     const interruptPayload = workflow.stepPayload as InterruptPayload
+    const interruptContext = interruptPayload.context as InterruptedToolContext
     const continuePayload: CallToolsPayload = {
       state: 'CALL_TOOLS',
-      toolCalls: interruptPayload.context.toolCalls.map((i: any) => ({
+      toolCalls: interruptContext.toolCalls.map((i) => ({
         ...i,
         status: 'human-approved',
       })),
-      continueToolCallIndex: interruptPayload.context.continueToolCallIndex,
+      continueToolCallIndex: interruptContext.continueToolCallIndex,
     }
     workflow.stepPayload = continuePayload
     workflow.continueRunLoop(workflow.stepPayload!).then((stopReason) => {

@@ -6,10 +6,10 @@ export interface ToolRuntime {
   signal: AbortSignal
   agentSettings: Agent['settings']
 }
-export abstract class ToolProvider {
-  protected runtime: ToolRuntime
+export abstract class ToolProvider<TRuntime extends ToolRuntime = ToolRuntime> {
+  protected runtime: TRuntime
 
-  constructor(runtime: ToolRuntime) {
+  constructor(runtime: TRuntime) {
     this.runtime = runtime
   }
 
