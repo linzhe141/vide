@@ -160,7 +160,13 @@ export function WorkspaceExplorerPane({ workspacePath, className }: WorkspaceExp
           <Panel>{previewPane}</Panel>
           <Separator className='group relative cursor-col-resize bg-transparent'></Separator>
 
-          <Panel minSize={240} maxSize={540} defaultSize={240} className='border-border border-l'>
+          <Panel
+            defaultSize={240}
+            groupResizeBehavior='preserve-pixel-size'
+            minSize={240}
+            maxSize={540}
+            className='border-border border-l'
+          >
             {treePane}
           </Panel>
         </Group>

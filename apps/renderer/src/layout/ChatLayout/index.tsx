@@ -125,6 +125,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
               <Panel
                 id={`chat-side-panel-${activePanel.id}`}
                 defaultSize={`${activePanel.defaultWidth}px`}
+                groupResizeBehavior='preserve-pixel-size'
                 minSize={`${activePanel.minWidth}px`}
                 maxSize={activePanel.maxWidth ? `${activePanel.maxWidth}px` : undefined}
                 className='border-border bg-background min-w-0 border-l'
