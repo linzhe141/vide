@@ -1,14 +1,16 @@
 {
   "name": "@vide/main",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.0-beta.9",
   "type": "module",
   "main": "./dist/electron/main/index.js",
   "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "dev": "chcp 65001 &&  electron-vite dev",
     "preview": "electron-vite preview",
     "build": "electron-vite build",
-    "pack:electron": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
+    "package": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
+    "release": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
     "rebuild:electron": "electron-rebuild",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts"
   },
@@ -16,7 +18,11 @@
     "./ipcRenderer": "./src/ipc/api/ipcRenderer.ts"
   },
   "dependencies": {
+    "@babel/core": "^8.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@types/babel__core": "^7.20.5",
     "better-sqlite3": "^12.10.0",
+    "chokidar": "^5.0.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "electron-log": "^5.4.3",
@@ -26,16 +32,15 @@
     "openai": "^6.37.0"
   },
   "devDependencies": {
-    "@vide/agent": "workspace:*",
-    "@vide/ai": "workspace:*",
-    "@vide/config": "workspace:*",
     "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.2.4",
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "babel-plugin-react-compiler": "^1.0.0",
+    "@vide/agent": "workspace:*",
+    "@vide/ai": "workspace:*",
+    "@vide/config": "workspace:*",
+    "@vitejs/plugin-react": "^6.0.5",
     "cross-env": "^10.1.0",
     "electron": "41.3.0",
     "electron-builder": "^26.8.1",

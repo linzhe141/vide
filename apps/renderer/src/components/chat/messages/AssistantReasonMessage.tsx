@@ -1,15 +1,25 @@
-import { useState } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { AssistantReasonSessionMessage } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 
-export function AssistantReasonMessage({ message }: { message: AssistantReasonSessionMessage }) {
+type AssistantReasonMessageProps = {
+  message: AssistantReasonSessionMessage
+}
+
+export const AssistantReasonMessage = memo(function AssistantReasonMessage({
+  message,
+}: AssistantReasonMessageProps) {
   const isReasoning = message.reasoning === true
   const [open, setOpen] = useState(isReasoning)
+  const toggleOpen = useCallback(() => {
+    setOpen((value) => !value)
+  }, [])
+
   return (
     <div className='space-y-4 text-xs'>
       <button
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggleOpen}
         className='text-text-secondary flex items-center gap-3 font-medium'
       >
         <span>{isReasoning ? 'Thinking' : 'Reason'}</span>
@@ -30,5 +40,16 @@ export function AssistantReasonMessage({ message }: { message: AssistantReasonSe
         </div>
       )}
     </div>
+  )
+}, areAssistantReasonMessagePropsEqual)
+
+function areAssistantReasonMessagePropsEqual(
+  prev: AssistantReasonMessageProps,
+  next: AssistantReasonMessageProps
+) {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.message.reasoning === next.message.reasoning
   )
 }

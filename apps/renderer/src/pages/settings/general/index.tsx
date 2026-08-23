@@ -1,12 +1,79 @@
-import { Eraser, Moon, Sun } from 'lucide-react'
-import { useTheme, themeColors, type ThemeColor } from '@/provider/ThemeProvider'
+import { Download, Eraser, Moon, RefreshCw, Sun } from 'lucide-react'
+import { themeColors } from '@/provider/ThemeProvider'
+import { type ThemeColor, useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/Button'
 import { useSessionStoreActions } from '@/store/sessionStore'
+import { useHistoryStoreActions } from '@/store/historyStore'
+import { Alert } from '@/ui/Alert'
+import { useEffect, useState } from 'react'
+
+type AppUpdateStatus = {
+  phase:
+    | 'idle'
+    | 'checking'
+    | 'available'
+    | 'not-available'
+    | 'downloading'
+    | 'downloaded'
+    | 'error'
+  message: string
+  currentVersion: string
+  latestVersion: string | null
+  downloadProgress: number | null
+  isPackaged: boolean
+  allowPrerelease: boolean
+}
 
 export function GeneralSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
   const { clearSessions } = useSessionStoreActions()
+  const { clear } = useHistoryStoreActions()
+  const isDevMode = import.meta.env.DEV
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null)
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    void window.ipcRendererApi.invoke('get-app-update-status').then((status) => {
+      if (mounted) setUpdateStatus(status)
+    })
+
+    const remove = window.ipcRendererApi.on('app-update-status', (status) => {
+      setUpdateStatus(status)
+      if (status.phase !== 'checking') {
+        setIsCheckingUpdates(false)
+      }
+    })
+
+    return () => {
+      mounted = false
+      remove()
+    }
+  }, [])
+
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdates(true)
+    const status = await window.ipcRendererApi.invoke('check-for-updates')
+    setUpdateStatus(status)
+    if (status.phase !== 'checking') {
+      setIsCheckingUpdates(false)
+    }
+  }
+
+  const handleInstallUpdate = async () => {
+    await window.ipcRendererApi.invoke('install-update-and-restart')
+  }
+
+  const updateAlertVariant =
+    updateStatus?.phase === 'error'
+      ? 'fail'
+      : updateStatus?.phase === 'downloaded'
+        ? 'success'
+        : updateStatus?.phase === 'available' || updateStatus?.phase === 'downloading'
+          ? 'warn'
+          : 'info'
 
   return (
     <div>
@@ -104,38 +171,100 @@ export function GeneralSettings() {
 
           <div className='bg-border h-px' />
 
-          <div className='flex items-center justify-between'>
-            <div>
-              <div className='text-foreground font-medium'>Clear database</div>
-              <div className='text-text-secondary text-sm'>Only dev mode</div>
+          <div className='flex items-start justify-between gap-6'>
+            <div className='flex-1 space-y-4'>
+              <div>
+                <div className='text-foreground font-medium'>Application updates</div>
+                <div className='text-text-secondary text-sm'>
+                  Current version {updateStatus?.currentVersion ?? '...'}
+                  {updateStatus?.latestVersion ? `, latest ${updateStatus.latestVersion}` : ''}
+                </div>
+              </div>
+
+              {updateStatus ? (
+                <Alert variant={updateAlertVariant}>{updateStatus.message}</Alert>
+              ) : null}
+
+              {typeof updateStatus?.downloadProgress === 'number' &&
+              updateStatus.phase === 'downloading' ? (
+                <div className='space-y-2'>
+                  <div className='bg-border h-2 overflow-hidden rounded-full'>
+                    <div
+                      className='bg-primary h-full rounded-full transition-all'
+                      style={{
+                        width: `${Math.max(0, Math.min(100, updateStatus.downloadProgress))}%`,
+                      }}
+                    />
+                  </div>
+                  <div className='text-text-secondary text-xs'>
+                    {Math.round(updateStatus.downloadProgress)}% downloaded
+                  </div>
+                </div>
+              ) : null}
             </div>
 
-            <div>
+            <div className='flex shrink-0 gap-3'>
               <Button
-                onClick={async () => {
-                  const confirmed = confirm('Delete all database records?')
-                  if (!confirmed) return
-
-                  try {
-                    await window.ipcRendererApi.invoke('dev-delete-database-rows')
-                    clearSessions()
-                    alert('Database cleared successfully.')
-                  } catch (error) {
-                    console.error('Failed to delete database rows:', error)
-                    alert(
-                      'Failed to clear database: ' +
-                        (error instanceof Error ? error.message : String(error))
-                    )
-                  }
-                }}
+                onClick={handleCheckForUpdates}
+                disabled={isCheckingUpdates}
+                variant='outline'
               >
                 <div className='flex items-center gap-2'>
-                  <Eraser size={14} />
-                  <div>Clear !</div>
+                  <RefreshCw size={14} className={cn(isCheckingUpdates && 'animate-spin')} />
+                  <div>Check for updates</div>
                 </div>
               </Button>
+
+              {updateStatus?.phase === 'downloaded' ? (
+                <Button onClick={handleInstallUpdate}>
+                  <div className='flex items-center gap-2'>
+                    <Download size={14} />
+                    <div>Restart to update</div>
+                  </div>
+                </Button>
+              ) : null}
             </div>
           </div>
+
+          {isDevMode ? (
+            <>
+              <div className='bg-border h-px' />
+
+              <div className='flex items-center justify-between'>
+                <div>
+                  <div className='text-foreground font-medium'>Clear database</div>
+                  <div className='text-text-secondary text-sm'>Only dev mode</div>
+                </div>
+
+                <div>
+                  <Button
+                    onClick={async () => {
+                      const confirmed = confirm('Delete all database records?')
+                      if (!confirmed) return
+
+                      try {
+                        await window.ipcRendererApi.invoke('dev-delete-database-rows')
+                        clearSessions()
+                        clear()
+                        alert('Database cleared successfully.')
+                      } catch (error) {
+                        console.error('Failed to delete database rows:', error)
+                        alert(
+                          'Failed to clear database: ' +
+                            (error instanceof Error ? error.message : String(error))
+                        )
+                      }
+                    }}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <Eraser size={14} />
+                      <div>Clear !</div>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : null}
         </section>
       </div>
     </div>

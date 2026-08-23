@@ -6,6 +6,8 @@ import { SessionIpcMainService } from './handlers/sessions'
 import { LLMSettingsIpcMainService } from './handlers/llmSettings'
 import { DevIpcMainService } from './handlers/dev'
 import { WorkspaceIpcMainService } from './handlers/workspace'
+import { WechatBotIpcMainService } from './handlers/wechatBot'
+import { AppUpdateIpcMainService } from './handlers/appUpdate'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -35,5 +37,11 @@ export class IpcService {
 
     const workspaceIpcMainService = new WorkspaceIpcMainService(this.appManager)
     workspaceIpcMainService.registerIpcMainHandle()
+
+    const wechatBotIpcMainService = new WechatBotIpcMainService(this.appManager)
+    wechatBotIpcMainService.registerIpcMainHandle()
+
+    const appUpdateIpcMainService = new AppUpdateIpcMainService(this.appManager)
+    appUpdateIpcMainService.registerIpcMainHandle()
   }
 }

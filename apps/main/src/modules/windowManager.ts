@@ -1,16 +1,16 @@
-import { BrowserWindow, shell } from 'electron'
+import { BrowserWindow, dialog, shell } from 'electron'
 import path from 'node:path'
 import { IS_DEV } from '../utils'
 import { ipcMainApi } from '../ipc/api/ipcMain'
 import type { AppManager } from '@/appManager'
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const iconPath = path.join(__dirname, '../../../resources/logo.png')
+const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
 
 export class WindowManager {
   mainWindow: BrowserWindow = null!
+  private allowClose = false
   constructor(private app: AppManager) {}
-  
+
   createWindow() {
     const minHeight = 800
     const minWidth = 1200
@@ -23,6 +23,7 @@ export class WindowManager {
       icon: iconPath,
       titleBarStyle: 'hidden',
       webPreferences: {
+        webSecurity: false,
         preload: path.join(__dirname, '../preload/index.mjs'),
         nodeIntegration: true,
         contextIsolation: false,
@@ -71,6 +72,34 @@ export class WindowManager {
     mainWindow.on('resize', () => {
       const isMaximized = mainWindow.isMaximized() ?? false
       ipcMainApi.send('changed-window-size', isMaximized)
+    })
+
+    mainWindow.on('close', async (event) => {
+      if (this.allowClose) return
+
+      const runningSessionCount = this.app.agentManager.countRunningSessions()
+      if (!runningSessionCount) return
+
+      event.preventDefault()
+      const result = await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['取消', '仍然退出'],
+        defaultId: 0,
+        cancelId: 0,
+        title: '存在未完成的会话',
+        message:
+          '当前存在正在运行的 session。现在关闭应用，未完成 workflow 的 agent message 和 stream event 可能不会被保存。',
+        detail:
+          runningSessionCount === 1
+            ? '建议等待当前 workflow 结束后再退出。'
+            : `当前共有 ${runningSessionCount} 个 session 仍在运行，建议等待它们结束后再退出。`,
+        noLink: true,
+      })
+
+      if (result.response === 1) {
+        this.allowClose = true
+        mainWindow.close()
+      }
     })
   }
 

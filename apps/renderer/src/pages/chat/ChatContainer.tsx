@@ -1,20 +1,21 @@
 import { useCallback } from 'react'
-import { useChatContext } from '../../components/chat/ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
+import { useChatLayoutScroll } from '@/hooks/useChatLayout'
 import { MessageList } from '../../components/chat/MessageList'
 import { ChatInput } from '../../components/chat/ChatInput'
+import { ChatLayout, ChatLayoutInput, ChatLayoutMessage } from '../../layout/ChatLayout'
 import {
-  ChatLayout,
-  ChatLayoutInput,
-  ChatLayoutMessage,
-  useChatLayout,
-} from '../../layout/ChatLayout'
-import { useSession, useSessionStoreActions } from '../../store/sessionStore'
+  useHasPendingAskQuestion,
+  useSession,
+  useSessionStoreActions,
+} from '../../store/sessionStore'
 
 export function ChatContainer() {
-  const { handleSend, running, sessionId, handleAbort } = useChatContext()
-  const { scrollToBottom } = useChatLayout()
+  const { handleSend, handleStop, running, sessionId } = useChatContext()
+  const { scrollToBottom } = useChatLayoutScroll()
   const session = useSession(sessionId)
-  const { switchSessionAutoApprove } = useSessionStoreActions()
+  const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
+  const { switchSessionAutoApprove, switchSessionThinkingMode } = useSessionStoreActions()
   const onSend = useCallback(
     (text: string) => {
       handleSend(text)
@@ -34,24 +35,45 @@ export function ChatContainer() {
     },
     [session, switchSessionAutoApprove]
   )
-  if (!session) return null
+
+  const onChangeThinkingMode = useCallback(
+    (newValue: boolean) => {
+      if (!session) return
+      switchSessionThinkingMode(session.sessionId, newValue)
+      window.ipcRendererApi.invoke('agent-session-switch-thinking-mode', {
+        sessionId: session.sessionId,
+        thinkingMode: newValue,
+      })
+    },
+    [session, switchSessionThinkingMode]
+  )
+
+  // if (!session) return null
   return (
     <ChatLayout>
-      <ChatLayoutMessage>
-        <MessageList />
-      </ChatLayoutMessage>
-      <ChatLayoutInput className='absolute bottom-5 left-1/2 -translate-x-1/2 z-10'>
-        <div className='px-10'>
-          <ChatInput
-            running={running}
-            workspacePath={session.workspacePath}
-            autoApprove={session.autoApprove}
-            onSend={onSend}
-            onAbort={handleAbort}
-            onChangeAutoApprove={onChangeAutoApprove}
-          />
-        </div>
-      </ChatLayoutInput>
+      {session ? (
+        <>
+          <ChatLayoutMessage>
+            <MessageList />
+          </ChatLayoutMessage>
+          {!hasPendingAskQuestion && (
+            <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
+              <div className='px-10'>
+                <ChatInput
+                  running={running}
+                  workspacePath={session.workspacePath}
+                  autoApprove={session.autoApprove}
+                  thinkingMode={session.thinkingMode}
+                  onSend={onSend}
+                  onStop={handleStop}
+                  onChangeAutoApprove={onChangeAutoApprove}
+                  onChangeThinkingMode={onChangeThinkingMode}
+                />
+              </div>
+            </ChatLayoutInput>
+          )}
+        </>
+      ) : null}
     </ChatLayout>
   )
 }

@@ -1,4 +1,4 @@
-import { FolderOpen, LoaderCircle, Send, Square, X, Zap } from 'lucide-react'
+import { Aperture, FolderOpen, Send, Square, X, Zap } from 'lucide-react'
 import { useState, useRef, useEffect, memo } from 'react'
 import { Textarea } from '../../../ui/Textarea'
 import { Button } from '../../../ui/Button'
@@ -6,21 +6,25 @@ import { Button } from '../../../ui/Button'
 export const ChatInput = memo(function ChatInput({
   running,
   onSend,
-  onAbort,
+  onStop,
   workspacePath,
   onSelectWorkspace,
   onClearWorkspace,
   autoApprove,
   onChangeAutoApprove,
+  thinkingMode,
+  onChangeThinkingMode,
 }: {
   running: boolean
   onSend: (input: string) => void
-  onAbort?: () => void
+  onStop?: () => void
   workspacePath?: string | null
   onSelectWorkspace?: () => void
   onClearWorkspace?: () => void
   autoApprove: boolean
   onChangeAutoApprove: (value: boolean) => void
+  thinkingMode: boolean
+  onChangeThinkingMode: (value: boolean) => void
 }) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -94,6 +98,19 @@ export const ChatInput = memo(function ChatInput({
         <div className='flex items-center gap-2'>
           <button
             type='button'
+            onClick={() => onChangeThinkingMode?.(!thinkingMode)}
+            className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
+              thinkingMode
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-text-secondary hover:text-foreground'
+            }`}
+            title='Auto approve bash commands for this workflow'
+          >
+            <Aperture className='size-4' />
+            <span>Thinking Mode</span>
+          </button>
+          <button
+            type='button'
             onClick={() => onChangeAutoApprove?.(!autoApprove)}
             className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
               autoApprove
@@ -105,29 +122,23 @@ export const ChatInput = memo(function ChatInput({
             <Zap className='size-4' />
             <span>Auto approve</span>
           </button>
-          {running && onAbort ? (
-            <Button
-              onClick={onAbort}
-              className='flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-red-600'
-              title='Abort workflow'
-            >
-              <Square className='size-4 fill-current' />
-              <span>Abort</span>
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!input.trim() || running}
-              className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
-            >
-              {running ? (
-                <LoaderCircle className='size-5 animate-spin' />
-              ) : (
+          <Button
+            onClick={running ? onStop : handleSubmit}
+            disabled={!running && !input.trim()}
+            className='bg-primary flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40'
+          >
+            {running ? (
+              <>
+                <Square className='size-4 fill-current' />
+                <span>Stop</span>
+              </>
+            ) : (
+              <>
                 <Send className='size-5' />
-              )}
-              <span>Send</span>
-            </Button>
-          )}
+                <span>Send</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>

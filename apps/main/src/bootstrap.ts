@@ -1,10 +1,12 @@
 import { app, BrowserWindow } from 'electron'
 import { initApp } from './initApp'
 import { logger } from './logger'
+import type { AppManager } from './appManager'
 
 const PROTOCOL_SCHEME = 'vide'
 
 export async function start() {
+  let appManager: AppManager | null = null
   const gotTheLock = app.requestSingleInstanceLock()
   if (!gotTheLock) {
     app.quit()
@@ -22,7 +24,7 @@ export async function start() {
   await app.whenReady()
   logger.info('App is ready')
 
-  initApp()
+  appManager = initApp()
 
   app.on('open-url', (event, url) => {
     event.preventDefault()
@@ -43,6 +45,9 @@ export async function start() {
 
   app.on('before-quit', () => {
     logger.info('App is quitting, performing cleanup...')
+    if (appManager) {
+      void appManager.wechatBotManager.dispose()
+    }
   })
 
   app.on('window-all-closed', () => {
@@ -54,7 +59,7 @@ export async function start() {
   // macOS activate TODO
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      initApp()
+      appManager = initApp()
     }
   })
 }

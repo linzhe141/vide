@@ -1,152 +1,53 @@
-import { MessageRole, type AssistantChatMessage, type ChatMessage } from '@vide/ai'
-import {
-  Session,
-  type SessionOrigin,
-  type SessionBranchSnapshot,
-  type SessionSnapshot,
-  type SessionType,
-  type SessionWorkflowSnapshot,
-} from './session'
-import type { WorkflowPlugin } from './plugin'
-
-type WorkflowData = {
-  id: string
-  userInput: string
-  parentWorkflowId: string | null
-  stopStatus: 'finished' | 'error' | 'aborted'
-  askUserSubmitValue?: string[]
-  messages: any
-}
+import { restoreSessionFromPersistedData, type PersistedSessionData } from './persistence'
+import { Session } from './session'
 
 export class Agent {
-  constructor() {}
-
-  createSession(options?: {
-    sessionType?: SessionType
-    origin?: SessionOrigin | null
-    workspacePath?: string | null
-    autoApprove?: boolean
-    plugins?: WorkflowPlugin[]
-  }) {
-    const session = new Session({
-      sessionType: options?.sessionType,
-      origin: options?.origin,
-      workspacePath: options?.workspacePath,
-      autoApprove: options?.autoApprove,
-      plugins: options?.plugins,
-    })
-    session.branchs[session.activeBranch] = { head: null, source: null }
-
-    return session
+  private webSearchConfig = {
+    apiKey: '',
+    apiUrl: '',
+  }
+  private generateImageConfig = {
+    apiKey: '',
+    baseUrl: '',
+    model: '',
   }
 
-  resumeSession(data: {
-    sessionId: string
-    sessionType: SessionType
-    origin: SessionOrigin | null
+  get settings() {
+    return {
+      webSearchConfig: this.webSearchConfig,
+      generateImageConfig: this.generateImageConfig,
+    }
+  }
+
+  setWebSearchConfig(config: { apiKey: string; apiUrl: string }) {
+    this.webSearchConfig.apiKey = config.apiKey
+    this.webSearchConfig.apiUrl = config.apiUrl
+  }
+
+  setGenerateImageConfig(config: { apiKey: string; baseUrl: string; model: string }) {
+    this.generateImageConfig.apiKey = config.apiKey
+    this.generateImageConfig.baseUrl = config.baseUrl
+    this.generateImageConfig.model = config.model
+  }
+
+  createSession(data: {
     workspacePath: string | null
-    activeBranch: string
-    branches: SessionBranchSnapshot[]
-    workflowData: WorkflowData[]
     autoApprove: boolean
-    plugins?: WorkflowPlugin[]
+    thinkingMode: boolean
   }) {
-    const workflows: SessionWorkflowSnapshot[] = data.workflowData.map((workflow) => ({
-      id: workflow.id,
-      stopStatus: workflow.stopStatus,
-      parentWorkflowId: workflow.parentWorkflowId,
-      messages: this.buildChatMessages(workflow.messages),
-    }))
-
-    const snapshot: SessionSnapshot = {
-      sessionId: data.sessionId,
-      sessionType: data.sessionType,
-      origin: data.origin,
-      workspacePath: data.workspacePath,
-      activeBranch: data.activeBranch,
-      workflows,
-      branches: data.branches,
-      autoApprove: data.autoApprove,
+    const newSession = new Session(this.settings)
+    // 设置默认分支 main 的 head 和 source 为 null
+    newSession.branches[newSession.activeBranch] = { head: null, source: null }
+    if (data.workspacePath) {
+      newSession.workspacePath = data.workspacePath
     }
+    newSession.autoApprove = data.autoApprove
+    newSession.thinkingMode = data.thinkingMode
 
-    return Session.resume(snapshot, { plugins: data.plugins })
+    return newSession
   }
 
-  forkSession(session: Session, targetWorkflowId: string) {
-    const targetNode = session.getWorkflowNode(targetWorkflowId)
-    if (!targetNode) {
-      throw new Error('Target workflow node not found: ' + targetWorkflowId)
-    }
-    const forkedSession = session.fork(targetNode)
-
-    return forkedSession
-  }
-
-  buildChatMessages(messages: WorkflowData['messages']): ChatMessage[] {
-    const chatMessages: ChatMessage[] = []
-    let assistantMessage: AssistantChatMessage | null = null
-    for (const message of messages) {
-      switch (message.role) {
-        case MessageRole.User: {
-          chatMessages.push({
-            role: 'user',
-            content: message.content || '',
-          })
-          break
-        }
-        case MessageRole.Abort: {
-          chatMessages.push({
-            role: 'user',
-            content: message.content || 'The user aborted this workflow before it completed.',
-          })
-          break
-        }
-        case MessageRole.AssistantText: {
-          assistantMessage = {
-            role: 'assistant',
-            content: message.content || '',
-          }
-          chatMessages.push(assistantMessage)
-          break
-        }
-        case MessageRole.ToolCalls: {
-          if (assistantMessage) {
-            assistantMessage.tool_calls = JSON.parse(message.payload || '[]')
-          } else {
-            chatMessages.push({
-              role: 'assistant',
-              content: '',
-              tool_calls: JSON.parse(message.payload || '[]'),
-            })
-          }
-          break
-        }
-        case MessageRole.Tool: {
-          const toolResult = JSON.parse(message.payload || '{}') as
-            | { id: string; toolName: string; result: any }
-            | { id: string; toolName: string; error: any }
-          if ('result' in toolResult) {
-            chatMessages.push({
-              role: 'tool',
-              tool_call_id: toolResult.id,
-              content: JSON.stringify(toolResult.result),
-            })
-          } else if ('error' in toolResult) {
-            const error = toolResult.error
-            chatMessages.push({
-              role: 'tool',
-              tool_call_id: toolResult.id,
-              content: 'An exception occurred while executing toolCall: ' + String(error),
-            })
-          }
-
-          break
-        }
-        default: {
-          break
-        }
-      }
-    }
-    return chatMessages
+  restoreSession(data: PersistedSessionData) {
+    return restoreSessionFromPersistedData(data, this.settings)
   }
 }

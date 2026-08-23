@@ -1,20 +1,10 @@
 import { ToolCallError } from '../../error'
 import { defineTool, ToolProvider } from '../toolProvider'
 import { Readability } from '@mozilla/readability'
-import { JSDOM } from 'jsdom'
+import { Window } from 'happy-dom'
 import TurndownService from 'turndown'
 // @ts-expect-error ignore missing types
 import { gfm } from 'turndown-plugin-gfm'
-
-const webSearchConfig = {
-  apiKey: '',
-  searchUrl: '',
-}
-
-export function setWebSearchConfig(config: { apiKey: string; searchUrl: string }) {
-  webSearchConfig.apiKey = config.apiKey
-  webSearchConfig.searchUrl = config.searchUrl
-}
 
 export const WEBSEARCH_TOOL_NAMES = {
   SEARCH: 'websearch',
@@ -90,14 +80,14 @@ export class WebSearch extends ToolProvider {
         throw new ToolCallError('Search query is required')
       }
 
-      const searchUrl = webSearchConfig.searchUrl?.trim()
-      const apiKey = webSearchConfig.apiKey?.trim()
+      const apiUrl = this.runtime.agentSettings.webSearchConfig?.apiUrl?.trim()
+      const apiKey = this.runtime.agentSettings.webSearchConfig?.apiKey?.trim()
 
-      if (!searchUrl || !apiKey) {
+      if (!apiUrl || !apiKey) {
         throw new ToolCallError('Web search is not configured. Please goto Web Search Settings.')
       }
 
-      const response = await fetch(searchUrl, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'X-API-KEY': apiKey,
@@ -225,22 +215,24 @@ async function fetchPageContent(url: string): Promise<string> {
     }
 
     const html = await response.text()
-    const dom = new JSDOM(html, { url })
-    const reader = new Readability(dom.window.document)
+    const articleWindow = createHtmlWindow(html, url)
+    const reader = new Readability(articleWindow.document as unknown as Document)
     const article = reader.parse()
+    articleWindow.close()
 
     if (article && article.content) {
       return htmlToMarkdown(article.content).substring(0, 5000)
     }
 
     // Fallback: try to get main content
-    const fallbackDoc = new JSDOM(html, { url })
-    const body = fallbackDoc.window.document
+    const fallbackWindow = createHtmlWindow(html, url)
+    const body = fallbackWindow.document
     body
       .querySelectorAll('script, style, noscript, nav, header, footer, aside')
       .forEach((el) => el.remove())
     const main = body.querySelector("main, article, [role='main'], .content, #content") || body.body
     const text = main?.textContent || ''
+    fallbackWindow.close()
 
     if (text.trim().length > 100) {
       return text.trim().substring(0, 5000)
@@ -250,4 +242,11 @@ async function fetchPageContent(url: string): Promise<string> {
   } catch (e: any) {
     return `(Error: ${e.message})`
   }
+}
+
+function createHtmlWindow(html: string, url: string) {
+  const window = new Window({ url })
+  window.document.write(html)
+  window.document.close()
+  return window
 }

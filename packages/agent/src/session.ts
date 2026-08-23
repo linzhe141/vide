@@ -1,9 +1,16 @@
+import type { AgentMessage, Tool } from '@vide/ai'
+import { WorkflowStream } from './stream'
+import {
+  Workflow,
+  WorkflowRuntimeContext,
+  type CallToolsPayload,
+  type InterruptPayload,
+  type StopReason,
+} from './workflow'
 import { v4 as uuid } from 'uuid'
-import type { PlanStep, WaitHumanApprovePayload } from './types'
-import { Workflow, WorkflowRuntimeContext } from './workflow'
-import type { AgentMessage, ChatMessage } from '@vide/ai'
-import { WorkflowStream } from './event/stream'
-import type { WorkflowPlugin } from './plugin'
+import { getBuildInTools } from './tools/buildinTools'
+import { buildSkillsChatMessage } from './tools/skill'
+import type { Agent } from './agent'
 
 export type SessionType = 'normal' | 'fork'
 
@@ -12,10 +19,22 @@ export interface SessionOrigin {
   workflowId: string | null
 }
 
+export class LoadedWorkflow {
+  constructor(
+    public id: string,
+    public messages: AgentMessage[]
+  ) {}
+}
+
+export type SessionWorkflow = Workflow | LoadedWorkflow
+
+function isRuntimeWorkflow(workflow: SessionWorkflow): workflow is Workflow {
+  return workflow instanceof Workflow
+}
+
 export interface SessionWorkflowNode {
-  id: string
-  stopStatus: 'finished' | 'error' | 'aborted'
-  messages: AgentMessage[]
+  stopStatus?: 'completed' | 'error' | 'aborted'
+  workflow: SessionWorkflow
   parent: SessionWorkflowNode | null
   children: SessionWorkflowNode[]
 }
@@ -25,198 +44,215 @@ export interface SessionBranch {
   source: SessionWorkflowNode | null
 }
 
-export interface SessionWorkflowSnapshot {
-  id: string
-  stopStatus: 'finished' | 'error' | 'aborted'
-  parentWorkflowId: string | null
-  messages: ChatMessage[]
+export type SessionInputSource = 'desktop' | 'wechat-bot'
+
+export interface SessionPromptOptions {
+  inputSource?: SessionInputSource
+  extraTools?: Tool[]
 }
 
-export interface SessionBranchSnapshot {
-  name: string
-  headWorkflowId: string | null
-  sourceWorkflowId: string | null
-}
-
-export interface SessionSnapshot {
-  sessionId: string
-  sessionType: SessionType
-  origin: SessionOrigin | null
-  workspacePath: string | null
-  activeBranch: string
-  autoApprove: boolean
-  workflows: SessionWorkflowSnapshot[]
-  branches: SessionBranchSnapshot[]
+interface InterruptedToolContext {
+  toolCalls: CallToolsPayload['toolCalls']
+  continueToolCallIndex?: number
 }
 
 export class Session {
-  sessionId: string
-  sessionType: SessionType
+  id: string = uuid()
+  model: { name: string; baseURL: string; apiKey: string } | null = null
+
+  // metadata (UI 侧由 historyStore 维护展示，这里仅是后端侧的最小持久/事件来源)
+  title: string = ''
+  createdAt = Date.now()
+  updatedAt = Date.now()
+
   // config context
-  workspacePath: string | null
-  autoApprove: boolean
-  plugins: WorkflowPlugin[]
+  private _workspacePath: string | null = null
+  private _autoApprove: boolean = false
+  private _thinkingMode: boolean = false
 
   // workflow graph context
+  sessionType: SessionType = 'normal'
   activeBranch = 'main'
-  branchs: Record<string, SessionBranch> = {}
-  workflowNodeMap = new Map<string, SessionWorkflowNode>()
-  origin: SessionOrigin | null
+  branches: Record<string, SessionBranch> = {}
+  sessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
+  // workflowMap: Map<string, Workflow> = new Map()
 
-  watiHumanWorkflow: Workflow | null = null
-  runningWorkflow: Workflow | null = null
-  planners: SessionPlaner[] = []
+  // 这里可以存放 等待 human approve 的workflow
+  pendingSessionWorkflowNodes: Record<string, SessionWorkflowNode> = {}
 
-  constructor(options?: {
-    sessionId?: string
-    activeBranch?: string
-    sessionType?: SessionType
-    origin?: SessionOrigin | null
-    workspacePath?: string | null
-    autoApprove?: boolean
-    plugins?: WorkflowPlugin[]
-  }) {
-    this.sessionId = options?.sessionId || uuid()
-    this.activeBranch = options?.activeBranch || 'main'
-    this.sessionType = options?.sessionType || 'normal'
-    this.origin = options?.origin || null
-    this.workspacePath = options?.workspacePath || null
-    this.autoApprove = options?.autoApprove || false
-    this.plugins = options?.plugins || []
-  }
+  constructor(public agentSettings: Agent['settings']) {}
 
   get currentBranch() {
-    return this.branchs[this.activeBranch]
+    return this.branches[this.activeBranch]
   }
 
-  send(userInput: string) {
+  get workspacePath(): string | null {
+    return this._workspacePath
+  }
+  set workspacePath(path: string | null) {
+    this._workspacePath = path
+  }
+
+  get autoApprove(): boolean {
+    return this._autoApprove
+  }
+  set autoApprove(value: boolean) {
+    this._autoApprove = value
+  }
+
+  get thinkingMode(): boolean {
+    return this._thinkingMode
+  }
+  set thinkingMode(value: boolean) {
+    this._thinkingMode = value
+  }
+
+  setupModel(model: { name: string; baseURL: string; apiKey: string }) {
+    this.model = model
+  }
+
+  async prompt(input: string, options?: SessionPromptOptions) {
+    if (!this.model) {
+      throw new Error('Model is not set for this session.')
+    }
+
     const stream = new WorkflowStream()
-    this.runWorkflow(userInput, stream)
+    const runtime = new WorkflowRuntimeContext({
+      model: this.model,
+      sessionId: this.id,
+      stream,
+      thinkingMode: this.thinkingMode,
+      getAutoApprove: () => this._autoApprove,
+      getSessionAgentMessages: () => this.buildAgentMessages(),
+      workspacePath: this.workspacePath,
+      agentSettings: this.agentSettings,
+    })
+    const workflow = new Workflow(runtime, [
+      ...getBuildInTools(runtime),
+      ...(options?.extraTools ?? []),
+    ])
+    stream.sessionId = this.id
+    stream.workflowId = workflow.id
+
+    const skillsMessage = await buildSkillsChatMessage(this.workspacePath)
+    if (skillsMessage) {
+      workflow.messages.push(skillsMessage)
+    }
+
+    const workflowCommitNode = this.commitWorkflow(workflow)
+    this.sessionWorkflowNodes[workflow.id] = workflowCommitNode
+
+    workflow.run(input, { inputSource: options?.inputSource ?? 'desktop' }).then((stopReason) => {
+      this.processWorkflowStopReason(stopReason, workflowCommitNode)
+    })
+
     return stream
   }
 
-  createWorkflow(stream: WorkflowStream) {
-    const workflowRuntimeContext = new WorkflowRuntimeContext({
-      sessionId: this.sessionId,
-      workspacePath: this.workspacePath,
-      getAutoApprove: () => this.autoApprove,
-      stream,
-      buildAgentMessages: () => this.buildAgentMessages(),
-      plugins: this.plugins,
+  // 中断当前分支上正在运行的 workflow
+  abort() {
+    const workflow = this.currentBranch?.head?.workflow
+    if (!workflow || !isRuntimeWorkflow(workflow)) {
+      return
+    }
+    workflow.abort()
+    //TODO 对于 INTERRUPT workflow，已经不再 while loop了， 需要手动抛出 abort stream event
+    if (workflow?.state === 'INTERRUPT') {
+      workflow.stream.push({ type: 'workflow.aborted' })
+      workflow.stream.end()
+    }
+  }
+
+  humanApprove(workflowId: string) {
+    const workflowCommitNode = this.pendingSessionWorkflowNodes[workflowId]
+    if (!workflowCommitNode) {
+      throw new Error(`No pending workflow found with ID: ${workflowId}`)
+    }
+    delete this.pendingSessionWorkflowNodes[workflowId]
+
+    const workflow = workflowCommitNode.workflow
+    if (!isRuntimeWorkflow(workflow)) {
+      throw new Error(`Workflow ${workflowId} is not resumable`)
+    }
+
+    const interruptPayload = workflow.stepPayload as InterruptPayload
+    const interruptContext = interruptPayload.context as InterruptedToolContext
+    const continuePayload: CallToolsPayload = {
+      state: 'CALL_TOOLS',
+      toolCalls: interruptContext.toolCalls.map((i) => ({
+        ...i,
+        status: 'human-approved',
+      })),
+      continueToolCallIndex: interruptContext.continueToolCallIndex,
+    }
+    workflow.stepPayload = continuePayload
+    workflow.continueRunLoop(workflow.stepPayload!).then((stopReason) => {
+      this.processWorkflowStopReason(stopReason, workflowCommitNode)
     })
+  }
+
+  processWorkflowStopReason(stopReason: StopReason | void, workflowNode: SessionWorkflowNode) {
+    if (stopReason === 'interrupted') {
+      // 这里是可恢复的中断
+      this.pendingSessionWorkflowNodes[workflowNode.workflow.id] = workflowNode
+    }
+    if (stopReason === 'completed' || stopReason === 'error' || stopReason === 'aborted') {
+      // 这里才是真正的结束了
+      workflowNode.stopStatus = stopReason
+    }
+  }
+
+  // 将 workflow 作为一个整体 commit node 添加到当前分支的 workflow graph 中
+  commitWorkflow(workflow: Workflow) {
     const workflowCommitNode: SessionWorkflowNode = {
-      id: workflowRuntimeContext.workflowId,
-      stopStatus: null as any,
-      messages: workflowRuntimeContext.workflowMessages.getMessages(),
+      workflow,
       parent: null,
       children: [],
     }
-    this.workflowNodeMap.set(workflowCommitNode.id, workflowCommitNode)
-    const workflow = new Workflow(workflowRuntimeContext)
-    workflowRuntimeContext.workflow = workflow
-    return {
-      workflowCommitNode,
-      workflow,
+    const currentHead = this.currentBranch.head
+    if (!currentHead) {
+      this.currentBranch.head = workflowCommitNode
+      if (!this.currentBranch.source) {
+        this.currentBranch.source = workflowCommitNode
+      }
+    } else {
+      workflowCommitNode.parent = currentHead
+      currentHead.children.push(workflowCommitNode)
+      this.currentBranch.head = workflowCommitNode
+    }
+    return workflowCommitNode
+  }
+
+  createBranch(branchName: string, source: SessionWorkflowNode | null) {
+    if (this.branches[branchName]) {
+      console.error(`Branch ${branchName} already exists`)
+      return
+    }
+    this.branches[branchName] = {
+      head: source,
+      source,
     }
   }
 
-  async runWorkflow(userInput: string, stream: WorkflowStream) {
-    try {
-      const { workflow, workflowCommitNode } = this.createWorkflow(stream)
-      this.runningWorkflow = workflow
-      const currentHead = this.currentBranch.head
-      if (!currentHead) {
-        this.currentBranch.head = workflowCommitNode
-        if (!this.currentBranch.source) {
-          this.currentBranch.source = workflowCommitNode
-        }
-      } else {
-        workflowCommitNode.parent = currentHead
-        currentHead.children.push(workflowCommitNode)
-        this.currentBranch.head = workflowCommitNode
-      }
-
-      const result = await workflow.run(userInput)
-      if (result === 'COMPLETED') {
-        this.finishWorkflow(workflow)
-      } else if (result === 'WAIT_HUMAN_APPROVE') {
-        this.watiHumanWorkflow = workflow
-      }
-    } finally {
-      this.runningWorkflow = null
+  switchBranch(branchName: string) {
+    if (!this.branches[branchName]) {
+      console.error(`Branch ${branchName} does not exist`)
+      return
     }
-  }
-
-  finishWorkflow(workflow: Workflow) {
-    const workflowNode = this.getWorkflowNode(workflow.runtime.workflowId)
-    if (!workflowNode) return
-    workflowNode.stopStatus = 'finished'
-  }
-
-  fork(targetCommitNode: SessionWorkflowNode) {
-    const forkedSession = new Session({
-      sessionType: 'fork',
-      origin: {
-        sessionId: this.sessionId,
-        workflowId: targetCommitNode.id,
-      },
-      workspacePath: this.workspacePath,
-      autoApprove: this.autoApprove,
-      plugins: this.plugins,
-    })
-    forkedSession.branchs[forkedSession.activeBranch] = { head: null, source: null }
-
-    const lineage: SessionWorkflowNode[] = []
-    let current: SessionWorkflowNode | null = targetCommitNode
-    while (current) {
-      lineage.unshift(current)
-      current = current.parent
-    }
-
-    let previousClonedNode: SessionWorkflowNode | null = null
-    for (const sourceNode of lineage) {
-      const clonedNode: SessionWorkflowNode = {
-        id: uuid(),
-        stopStatus: sourceNode.stopStatus,
-        messages: deepCloneMessages(sourceNode.messages),
-        parent: previousClonedNode,
-        children: [],
-      }
-      if (previousClonedNode) {
-        previousClonedNode.children.push(clonedNode)
-      }
-      forkedSession.workflowNodeMap.set(clonedNode.id, clonedNode)
-      previousClonedNode = clonedNode
-    }
-
-    forkedSession.currentBranch.head = previousClonedNode
-    return forkedSession
-  }
-
-  // 在分支上切换到一个已经存在的工作流节点，重新生成后续的工作流
-  //    a
-  //   /
-  //  b (click regenerate)
-  //
-  //    a(a`) 在真正启动 工作流之前，先切换到 a`，然后重新生成后续的工作流
-  //   / \
-  //  b   c (finished a`)
-  checkoutRegeneratedWorkflow(branchName: string, source: SessionWorkflowNode) {
     this.activeBranch = branchName
-    const parentNode = source.parent
-    this.branchs[branchName] = {
-      head: parentNode,
-      source: parentNode,
-    }
   }
 
   buildAgentMessages() {
     const currentHead = this.currentBranch?.head ?? null
     if (!currentHead) return []
+    // 不需要正在运行的 workflow 的 messages， 因为它还没有完成，可能还会有新的 messages
+    // running workflow 自行 拼接
+    const targetWorkflow = currentHead.stopStatus == undefined ? currentHead.parent : currentHead
+    if (!targetWorkflow) return []
 
     function traverse(node: SessionWorkflowNode, result: AgentMessage[] = []): AgentMessage[] {
-      if (node.stopStatus !== 'aborted' && node.stopStatus !== 'error') {
-        result.unshift(...node.messages)
+      if (node.stopStatus !== 'error') {
+        result.unshift(...node.workflow.messages)
       }
       if (node.parent) {
         traverse(node.parent, result)
@@ -224,127 +260,6 @@ export class Session {
       return result
     }
 
-    return traverse(currentHead)
+    return traverse(targetWorkflow)
   }
-
-  compact() {
-    // TODO implement compact to reduce message/token size for long sessions.
-  }
-
-  getWorkflowNode(workflowId: string) {
-    return this.workflowNodeMap.get(workflowId) ?? null
-  }
-
-  abortWorkflow() {
-    console.log('\nabortWorkflow\n')
-    if (this.runningWorkflow) {
-      const runtime = this.runningWorkflow.runtime
-      runtime.abort()
-      this.runningWorkflow = null
-    }
-    if (this.watiHumanWorkflow) {
-      const workflow = this.watiHumanWorkflow
-      const runtime = workflow.runtime
-      this.watiHumanWorkflow = null
-      runtime.abort()
-      runtime.workflowMessages.addAbortMessage()
-
-      runtime.emit({
-        eventName: 'workflow-aborted',
-        data: {
-          chunkData: {
-            reasoning: runtime.assistantReasoningChunk,
-            text: runtime.assistantChunk,
-          },
-        },
-      })
-    }
-  }
-
-  async humanApprove(workflowId: string, payload: WaitHumanApprovePayload) {
-    console.log('humanApprove', workflowId, payload)
-    const targetWorkflow = this.watiHumanWorkflow
-    if (!targetWorkflow) return
-    this.watiHumanWorkflow = null
-    const result = await targetWorkflow.approveHumanApprove(payload)
-    if (result === 'COMPLETED') {
-      this.finishWorkflow(targetWorkflow)
-    } else if (result === 'WAIT_HUMAN_APPROVE') {
-      this.watiHumanWorkflow = targetWorkflow
-    }
-  }
-
-  async rejectHumanApprove(workflowId: string, payload: WaitHumanApprovePayload) {
-    console.log('rejectHumanApprove', workflowId, payload)
-    const targetWorkflow = this.watiHumanWorkflow
-    if (!targetWorkflow) return
-    this.watiHumanWorkflow = null
-    const result = await targetWorkflow.rejectHumanApprove(payload)
-    if (result === 'COMPLETED') {
-      this.finishWorkflow(targetWorkflow)
-    } else if (result === 'WAIT_HUMAN_APPROVE') {
-      this.watiHumanWorkflow = targetWorkflow
-    }
-  }
-
-  static resume(snapshot: SessionSnapshot, options?: { plugins?: WorkflowPlugin[] }) {
-    const session = new Session({
-      sessionId: snapshot.sessionId,
-      activeBranch: snapshot.activeBranch,
-      sessionType: snapshot.sessionType,
-      origin: snapshot.origin,
-      workspacePath: snapshot.workspacePath,
-      autoApprove: snapshot.autoApprove,
-      plugins: options?.plugins,
-    })
-    const workflowNodeMap = new Map<string, SessionWorkflowNode>()
-
-    for (const workflow of snapshot.workflows) {
-      const node = {
-        id: workflow.id,
-        stopStatus: workflow.stopStatus,
-        messages: workflow.messages,
-        parent: null,
-        children: [],
-      }
-      workflowNodeMap.set(workflow.id, node)
-      session.workflowNodeMap.set(workflow.id, node)
-    }
-
-    for (const workflow of snapshot.workflows) {
-      if (!workflow.parentWorkflowId) continue
-      const node = workflowNodeMap.get(workflow.id)
-      const parentNode = workflowNodeMap.get(workflow.parentWorkflowId)
-      if (!node || !parentNode) continue
-      node.parent = parentNode
-      parentNode.children.push(node)
-    }
-
-    for (const branch of snapshot.branches) {
-      session.branchs[branch.name] = {
-        head: branch.headWorkflowId ? (workflowNodeMap.get(branch.headWorkflowId) ?? null) : null,
-        source: branch.sourceWorkflowId
-          ? (workflowNodeMap.get(branch.sourceWorkflowId) ?? null)
-          : null,
-      }
-    }
-
-    if (!(session.activeBranch in session.branchs)) {
-      session.branchs[session.activeBranch] = { head: null, source: null }
-    }
-
-    return session
-  }
-}
-
-export class SessionPlaner {
-  id: string
-
-  constructor(public plans: PlanStep[]) {
-    this.id = uuid()
-  }
-}
-
-function deepCloneMessages(messages: AgentMessage[]) {
-  return JSON.parse(JSON.stringify(messages)) as AgentMessage[]
 }

@@ -1,19 +1,16 @@
-import { defineTool } from '../../tools/toolProvider'
-import type { PlanStep } from '../../types'
-import { SubAgent } from '..'
-import { v4 as uuid } from 'uuid'
-import { getPrompt } from './prompt'
 import type { Tool } from '@vide/ai'
-import type { WorkflowRuntimeContext } from '../../workflow'
+import { v4 as uuid } from 'uuid'
+import { SubAgent } from '..'
+import { getPrompt } from './prompt'
+import type { CompletedPayload, WorkflowRuntimeContext } from '../../workflow'
+import type { WorkflowPlugin } from '../../plugin'
 import { Grep } from '../../tools/grep'
 import { Read } from '../../tools/fileRead'
-import type { WorkflowPlugin } from '../../plugin'
+import { defineTool } from '../../tools/toolProvider'
 
-type PlannerTodosUpdatedPayload = {
-  planner: {
-    id: string
-    plan: PlanStep[]
-  }
+export interface PlanStep {
+  id: string
+  description: string
 }
 
 export const PLANNER_TOOL_NAMES = {
@@ -23,161 +20,96 @@ export const PLANNER_TOOL_NAMES = {
 export class PlannerAgent extends SubAgent {
   name = 'planner'
   prompt = getPrompt()
-  description = 'Creates implementation plans from context and requirements'
+  description = 'Explores context with read-only tools and returns a concrete execution plan'
 
   plan: PlanStep[] = []
-  executionMode = false
+  planText = ''
 
   plugins: WorkflowPlugin[] = [
     {
-      name: 'planner-plugin',
-      beforeWorkflowStart: async (_input, runtime) => {
-        runtime.workflowMessages.addMessage({
+      name: 'planner-system-prompt',
+      beforeWorkflowStart: async (payload, runtime) => {
+        runtime.addMessage({
           role: 'system',
           content: this.prompt,
         })
+        return payload
+      },
+      beforeWorkflowFinish: async (payload) => {
+        return this.overrideCompletedResult(payload)
       },
     },
   ]
 
-  injectMainWorkflowPlugins(): WorkflowPlugin[] {
+  private buildPlanText() {
     return [
-      {
-        name: 'main-planner-plugin',
-        // 如果当前的 main workflow 没有完成，需要在下次对话的时候继续执行剩余的步骤
-        // 比如在执行plan的时候 agent ask question，这时就会break main workflow
-        // 待用户补充后，会启动新的 main workflow 等到下次对话的时候就需要继续执行剩余的步骤
-        beforeWorkflowStart: async (_input, runtime) => {
-          const todos = this.plan.filter((i) => i.status !== 'completed')
-          if (todos.length > 0 && this.executionMode) {
-            const nextStep = todos[0]
-            if (nextStep.status !== 'running') {
-              nextStep.status = 'running'
-              this.emitPlannerTodosUpdated(runtime)
-              runtime.workflowMessages.addContextMessage(
-                'planner',
-                `[EXECUTING PLAN - Full tool access enabled]
-
-Executing step [${this.plan.indexOf(nextStep) + 1}]: ${nextStep.description}
-After completing this step, include a [DONE:${this.plan.indexOf(nextStep) + 1}] tag in your response.`
-              )
-            }
-          }
-        },
-
-        afterAIEnd: async (assistantMessage, runtime) => {
-          if (this.executionMode) {
-            const doneRegex = /\[DONE:(\d+)\]/g
-            let match
-            let hasChanges = false
-            while ((match = doneRegex.exec(assistantMessage)) !== null) {
-              const stepIndex = parseInt(match[1], 10) - 1
-              if (this.plan[stepIndex] && this.plan[stepIndex].status !== 'completed') {
-                this.plan[stepIndex].status = 'completed'
-                hasChanges = true
-              }
-            }
-            if (hasChanges) {
-              this.emitPlannerTodosUpdated(runtime)
-            }
-            const todos = this.plan.filter((i) => i.status !== 'completed')
-            if (todos.length > 0) {
-              const nextStep = todos[0]
-              if (nextStep.status !== 'running') {
-                nextStep.status = 'running'
-                this.emitPlannerTodosUpdated(runtime)
-                runtime.workflow.state = 'INPUT'
-                runtime.workflow.runLoop({
-                  input: `[EXECUTING PLAN - Full tool access enabled]
-
-Executing step [${this.plan.indexOf(nextStep) + 1}]: ${nextStep.description}
-After completing this step, include a [DONE:${this.plan.indexOf(nextStep) + 1}] tag in your response.`,
-                })
-              }
-            }
-          }
-        },
-        beforeWorkflowFinish: async (_content, runtime) => {
-          if (this.executionMode) {
-            const hasCompletedAllSteps = this.plan.every((step) => step.status === 'completed')
-            if (hasCompletedAllSteps) {
-              this.executionMode = false
-              this.emitPlannerTodosUpdated(runtime)
-              // this.plan = []
-            }
-          }
-        },
-      },
-    ]
+      'Planner execution plan:',
+      ...this.plan.map((step, index) => `${index + 1}. ${step.description}`),
+    ].join('\n')
   }
 
-  private emitPlannerTodosUpdated(runtime: WorkflowRuntimeContext) {
-    if (!runtime) return
-    const plannerId = runtime.stream.mainWorkflowId ?? runtime.workflowId
-    const payload: PlannerTodosUpdatedPayload = {
-      planner: {
-        id: plannerId,
-        plan: this.plan.map((step) => ({ ...step })),
-      },
+  private overrideCompletedResult(payload: CompletedPayload) {
+    if (!this.planText.trim()) {
+      return payload
     }
-    runtime.emitCustom({
-      eventName: 'planner-todos-updated',
-      data: payload,
-    })
+
+    return {
+      state: 'COMPLETED' as const,
+      result: this.planText,
+    }
   }
 
   registerTools(workflowRuntimeContext: WorkflowRuntimeContext): Tool[] {
-    // only read level tools
     const grep = new Grep(workflowRuntimeContext)
     const read = new Read(workflowRuntimeContext)
 
-    return [grep.search, read.readFile, this.createSubmitPlanTool(workflowRuntimeContext)]
+    return [grep.search, read.readFile, this.createSubmitPlanTool()]
   }
 
-  private createSubmitPlanTool(workflowRuntimeContext: WorkflowRuntimeContext) {
+  private createSubmitPlanTool() {
     return defineTool({
       name: PLANNER_TOOL_NAMES.SUBMIT_PLAN,
       type: 'function',
       function: {
         name: PLANNER_TOOL_NAMES.SUBMIT_PLAN,
         description: `
-Submit a complete execution plan in ONE call.
+Submit a complete execution plan in one call.
 
-Use this when the task requires multiple sequential steps or tool usage.
-Do NOT use for simple questions answerable in a single step.
-
-Each step should be ONE atomic, sequential action that moves the task toward the goal.
-
-Returns a plannerId and the created steps (with ids).
-`,
+Use this after you have explored enough context with the read-only tools.
+Each step must be atomic, sequential, and executable by the main agent.
+        `.trim(),
         parameters: {
           type: 'object',
           properties: {
             steps: {
               type: 'array',
-              description: 'Ordered list of step descriptions. Each item is one atomic action.',
+              description: 'Ordered list of plan step descriptions.',
               items: { type: 'string' },
             },
           },
           required: ['steps'],
         },
       },
-      executor: async (args) => {
-        const steps: string[] = Array.isArray(args?.steps) ? args.steps : []
-        const planSteps: PlanStep[] = steps.map((description) => ({
+      executor: async (args: { steps?: unknown } = {}) => {
+        const stepDescriptions = Array.isArray(args.steps)
+          ? args.steps.filter(
+              (step): step is string => typeof step === 'string' && step.trim().length > 0
+            )
+          : []
+
+        const planSteps: PlanStep[] = stepDescriptions.map((description) => ({
           id: uuid(),
-          status: 'pending',
-          description,
+          description: description.trim(),
         }))
 
         this.plan = planSteps
-        this.executionMode = true
-        this.emitPlannerTodosUpdated(workflowRuntimeContext)
+        this.planText = this.buildPlanText()
+
         return {
           reason: 'call-llm',
           result: {
-            content: `Plan submitted. plan steps=${planSteps.length}`,
-            plans: planSteps,
+            content: this.planText,
+            plan: this.plan.map((step) => ({ ...step })),
           },
         }
       },

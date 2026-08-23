@@ -1,5 +1,5 @@
 import type { ToolCall } from '@vide/ai'
-import type { ToolResultSessionMessage } from '@/store/sessionStore/types'
+import type { ToolCallState } from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -13,11 +13,12 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
-import { CodeBlock } from '@/components/codeblock'
+import { DiffPreview } from './DiffPreview'
+import { PreviewFileButton } from './PreviewFileButton'
 
 type SearchReplaceToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 
 export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallProps) {
@@ -44,6 +45,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
         replacements?: number
       }
     | undefined
+  const previewPath = getPreviewPath(editResult?.path, filePath)
 
   return (
     <div className='space-y-2'>
@@ -96,12 +98,15 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
         <div className='border-border/80 bg-background/80 rounded-[22px] border p-4'>
           <div className='space-y-4'>
             <section className='space-y-2'>
-              <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <FileEdit size={13} />
-                File
+              <div className='flex items-center justify-between gap-3'>
+                <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
+                  <FileEdit size={13} />
+                  File
+                </div>
+                <PreviewFileButton path={previewPath} disabled={!isSuccess} />
               </div>
               <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                {filePath || 'N/A'}
+                {previewPath || filePath || 'N/A'}
               </pre>
             </section>
 
@@ -130,9 +135,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Diff
                 </div>
-                <pre className='bg-foreground/[0.04] text-text-secondary overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                  {editResult.diff}
-                </pre>
+                <DiffPreview diff={editResult.diff} />
               </section>
             )}
 
@@ -168,7 +171,7 @@ export function SearchReplaceToolCall({ tool, result }: SearchReplaceToolCallPro
 
 type EditFileToolCallProps = {
   tool: ToolCall
-  result?: ToolResultSessionMessage
+  result?: ToolCallState['result']
 }
 
 export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
@@ -194,6 +197,7 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
         replacements?: number
       }
     | undefined
+  const previewPath = getPreviewPath(editResult?.path, filePath)
 
   return (
     <div className='space-y-2'>
@@ -246,12 +250,15 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
         <div className='border-border/80 bg-background/80 rounded-[22px] border p-4'>
           <div className='space-y-4'>
             <section className='space-y-2'>
-              <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <FileEdit size={13} />
-                File
+              <div className='flex items-center justify-between gap-3'>
+                <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
+                  <FileEdit size={13} />
+                  File
+                </div>
+                <PreviewFileButton path={previewPath} disabled={!isSuccess} />
               </div>
               <pre className='bg-foreground/[0.04] text-foreground overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                {filePath || 'N/A'}
+                {previewPath || filePath || 'N/A'}
               </pre>
             </section>
 
@@ -284,10 +291,7 @@ export function EditFileToolCall({ tool, result }: EditFileToolCallProps) {
                 <div className='text-text-secondary text-[12px] font-medium tracking-[0.16em] uppercase'>
                   Diff
                 </div>
-                <pre className='bg-foreground/[0.04] text-text-secondary overflow-x-auto rounded-2xl p-3 font-mono text-xs leading-6'>
-                  {editResult.diff}
-                </pre>
-                <CodeBlock lang='diff' code={editResult.diff} />
+                <DiffPreview diff={editResult.diff} />
               </section>
             )}
 
@@ -356,4 +360,9 @@ function formatDuration(durationMs?: number) {
   if (seconds < 10) return `${seconds.toFixed(1)}s`
 
   return `${Math.round(seconds)}s`
+}
+
+function getPreviewPath(resultPath: string | undefined, argumentPath: string) {
+  if (typeof resultPath === 'string' && resultPath) return resultPath
+  return argumentPath || null
 }

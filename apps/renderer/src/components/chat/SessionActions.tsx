@@ -1,83 +1,78 @@
-import { useState } from 'react'
+import { memo, useCallback, useState } from 'react'
 import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  GitBranch,
   RefreshCcw,
   Sparkles,
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react'
-import { useChatContext } from './ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSession, useSessionStoreActions, useWorkflowBranches } from '../../store/sessionStore'
-import { type Workflow } from '../../store/sessionStore/types'
-import { useNavigate } from 'react-router'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '@/ui/Button'
 
-export function SessionActions({ workflow }: { workflow: Workflow }) {
-  const { handleFork, handleRegenerate, sessionId } = useChatContext()
+type SessionActionsProps = {
+  workflowId: string
+  workflowInput: string
+  feedback: 'like' | 'dislike' | null
+}
+
+export const SessionActions = memo(function SessionActions({
+  workflowId,
+  workflowInput,
+  feedback,
+}: SessionActionsProps) {
+  const { handleRegenerate, sessionId } = useChatContext()
   const { setWorkflowFeedback } = useSessionStoreActions()
-  const navigate = useNavigate()
   const [memoryQueued, setMemoryQueued] = useState(false)
   const [dislikeOpen, setDislikeOpen] = useState(false)
   const [dislikeReason, setDislikeReason] = useState('')
 
-  async function onClickFork() {
-    const nextSessionId = await handleFork(workflow.id)
-    navigate(`/chat/${nextSessionId}`)
-  }
-
-  function onClickRegenerate() {
+  const onClickRegenerate = useCallback(() => {
     const regenerateBranchName = createBranchPayload({
       type: 'regenerate',
       branchName: `regenerate-${Date.now()}`,
-      workflowId: workflow.id,
+      workflowId,
     })
-    handleRegenerate(workflow.id, regenerateBranchName, workflow.input)
-  }
+    handleRegenerate(workflowId, regenerateBranchName, workflowInput)
+  }, [handleRegenerate, workflowId, workflowInput])
 
-  function submitUserMemoryFeedback(rating: 'manual' | 'like' | 'dislike', reason?: string) {
-    setMemoryQueued(true)
-    window.setTimeout(() => setMemoryQueued(false), 1600)
+  const submitUserMemoryFeedback = useCallback(
+    (rating: 'manual' | 'like' | 'dislike', reason?: string) => {
+      setMemoryQueued(true)
+      window.setTimeout(() => setMemoryQueued(false), 1600)
 
-    if (rating === 'like' || rating === 'dislike') {
-      setWorkflowFeedback({ sessionId, workflowId: workflow.id, feedback: rating })
-    }
-    setDislikeOpen(false)
-    setDislikeReason('')
+      if (rating === 'like' || rating === 'dislike') {
+        setWorkflowFeedback({ sessionId, workflowId, feedback: rating })
+      }
+      setDislikeOpen(false)
+      setDislikeReason('')
 
-    window.ipcRendererApi
-      .invoke('agent-update-user-memory', {
-        sessionId,
-        workflowId: workflow.id,
-        feedback: {
-          rating,
-          reason: reason?.trim() || undefined,
-        },
-      })
-      .catch((error) => {
-        console.error('Failed to update user memory:', error)
-      })
-  }
+      window.ipcRendererApi
+        .invoke('agent-update-user-memory', {
+          sessionId,
+          workflowId,
+          feedback: {
+            rating,
+            reason: reason?.trim() || undefined,
+          },
+        })
+        .catch((error) => {
+          console.error('Failed to update user memory:', error)
+        })
+    },
+    [sessionId, setWorkflowFeedback, workflowId]
+  )
 
-  const liked = workflow.feedback === 'like'
-  const disliked = workflow.feedback === 'dislike'
+  const liked = feedback === 'like'
+  const disliked = feedback === 'dislike'
 
   return (
     <div className='space-y-3'>
       <div className='space-y-3'>
         <div className='flex flex-wrap items-center gap-2'>
-          <button
-            type='button'
-            onClick={onClickFork}
-            className='border-foreground/10 bg-foreground/3 hover:bg-foreground/6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition'
-          >
-            <GitBranch size={13} />
-            Fork here
-          </button>
-
           <button
             type='button'
             onClick={onClickRegenerate}
@@ -150,28 +145,37 @@ export function SessionActions({ workflow }: { workflow: Workflow }) {
       </div>
     </div>
   )
+}, areSessionActionsPropsEqual)
+
+type RegeneratedBranchSwitcherProps = {
+  workflowId: string
 }
 
-export function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) {
+export const RegeneratedBranchSwitcher = memo(function RegeneratedBranchSwitcher({
+  workflowId,
+}: RegeneratedBranchSwitcherProps) {
   const { sessionId } = useChatContext()
   const session = useSession(sessionId)
   const { switchBranch } = useSessionStoreActions()
-  const parentNodeId = session?.workflowNodesMap[workflow.id].parent ?? null
+  const parentNodeId = session?.workflowNodesMap[workflowId]?.parent ?? null
   const branchOptions = useWorkflowBranches(sessionId, parentNodeId)
   if (!session || branchOptions.length <= 1) return null
 
   const siblingVariants = getSiblingVariants(branchOptions, parentNodeId)
   const currentVariantIndex = siblingVariants.findIndex((option) => {
-    return getDirectChildId(option.path, parentNodeId) === workflow.id
+    return getDirectChildId(option.path, parentNodeId) === workflowId
   })
 
-  function switchVariant(direction: number) {
-    if (currentVariantIndex === -1) return
-    const nextIndex =
-      (currentVariantIndex + direction + siblingVariants.length) % siblingVariants.length
-    const nextBranch = siblingVariants[nextIndex]
-    switchBranch(session!.sessionId, nextBranch.name)
-  }
+  const switchVariant = useCallback(
+    (direction: number) => {
+      if (currentVariantIndex === -1) return
+      const nextIndex =
+        (currentVariantIndex + direction + siblingVariants.length) % siblingVariants.length
+      const nextBranch = siblingVariants[nextIndex]
+      switchBranch(session.sessionId, nextBranch.name)
+    },
+    [currentVariantIndex, session, siblingVariants, switchBranch]
+  )
 
   return (
     <div className='space-y-3'>
@@ -209,6 +213,21 @@ export function RegeneratedBranchSwitcher({ workflow }: { workflow: Workflow }) 
       </div>
     </div>
   )
+}, areRegeneratedBranchSwitcherPropsEqual)
+
+function areSessionActionsPropsEqual(prev: SessionActionsProps, next: SessionActionsProps) {
+  return (
+    prev.workflowId === next.workflowId &&
+    prev.workflowInput === next.workflowInput &&
+    prev.feedback === next.feedback
+  )
+}
+
+function areRegeneratedBranchSwitcherPropsEqual(
+  prev: RegeneratedBranchSwitcherProps,
+  next: RegeneratedBranchSwitcherProps
+) {
+  return prev.workflowId === next.workflowId
 }
 
 export function createBranchPayload(payload: {

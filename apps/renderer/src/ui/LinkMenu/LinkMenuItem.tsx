@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { NavLink } from 'react-router'
 import { cn } from '../../lib/utils'
-import { useLinkMenu } from './provider'
+import { useLinkMenu } from '@/hooks/useLinkMenu'
 
 interface LinkMenuItemProps {
   label: string

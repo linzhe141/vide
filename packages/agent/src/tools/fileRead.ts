@@ -1,5 +1,4 @@
 ﻿import fs from 'fs/promises'
-import path from 'path'
 import { defineTool, ToolProvider } from './toolProvider'
 import { resolveWorkspacePath } from './../workspace'
 import { ToolCallError } from './../error'
@@ -25,6 +24,9 @@ Read file content by path. Supports absolute and relative paths. Returns up to 1
 - The path can be absolute or relative to the workspace root.
 - Automatically handles encoding detection and fallback to base64 if necessary.
 - For large files, only the first 1MB is returned with a truncation flag.
+
+${this.runtime.workspacePath ? `Workspace: ${this.runtime.workspacePath}` : 'No workspace path set'}
+
       `.trim(),
       parameters: {
         type: 'object',
@@ -65,8 +67,6 @@ Read file content by path. Supports absolute and relative paths. Returns up to 1
   private async readFileSmart(filePath: string, encoding: BufferEncoding = 'utf8') {
     const fullPath = resolveWorkspacePath(this.runtime.workspacePath, filePath)
 
-    this.assertPathAllowed(fullPath)
-
     const stat = await fs.stat(fullPath)
 
     if (!stat.isFile()) {
@@ -102,16 +102,6 @@ Read file content by path. Supports absolute and relative paths. Returns up to 1
       sizeFormatted: this.formatBytes(stat.size),
       truncated,
       content,
-    }
-  }
-
-  /** 路径权限验证 */
-  private assertPathAllowed(resolvedPath: string) {
-    if (!CONFIG.ENABLE_PATH_RESTRICTION) return
-
-    const root = path.resolve(CONFIG.FS_ROOT)
-    if (!resolvedPath.startsWith(root)) {
-      throw new Error('Access denied: path is outside allowed root')
     }
   }
 

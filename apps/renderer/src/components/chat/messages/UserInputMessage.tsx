@@ -1,32 +1,82 @@
+import { memo, useCallback, useEffect, useState, type PropsWithChildren } from 'react'
 import type { UserInputSessionMessage, Workflow } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
-import { Check, Copy, Pen, X } from 'lucide-react'
-import { useEffect, useState, type PropsWithChildren } from 'react'
+import { Check, Copy, Monitor, MessageCircle, Pen, X } from 'lucide-react'
 import { createBranchPayload } from '../SessionActions'
-import { useChatContext } from '../ChatProvider'
+import { useChatContext } from '@/hooks/useChatContext'
 import { useSessionStoreActions } from '../../../store/sessionStore'
+import { parseAskQuestionAnswerPayload } from '../../../store/sessionStore/askQuestion'
 
-export function UserInputMessage({
-  message,
-  workflow,
-}: {
+type UserInputMessageProps = {
   message: UserInputSessionMessage
-  workflow: Workflow
-}) {
+  workflowId: string
+  workflowInputSource: Workflow['inputSource']
+}
+
+export const UserInputMessage = memo(function UserInputMessage({
+  message,
+  workflowId,
+  workflowInputSource,
+}: UserInputMessageProps) {
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(message.content)
   const { sessionId, handleRegenerate } = useChatContext()
   const { changeWorkflowInput } = useSessionStoreActions()
+  const isWechatBotInput = workflowInputSource === 'wechat-bot'
+  const sourceLabel = isWechatBotInput ? 'WeChat Bot' : 'Desktop'
+  const SourceIcon = isWechatBotInput ? MessageCircle : Monitor
+  const handleEdit = useCallback(() => {
+    setEditing(true)
+  }, [])
+
+  const handleSave = useCallback(() => {
+    setEditing(false)
+    changeWorkflowInput({
+      sessionId,
+      workflowId,
+      newInput: content,
+    })
+    const regenerateBranchName = createBranchPayload({
+      type: 'regenerate',
+      branchName: `regenerate-${Date.now()}`,
+      workflowId,
+    })
+    handleRegenerate(workflowId, regenerateBranchName, content)
+  }, [changeWorkflowInput, content, handleRegenerate, sessionId, workflowId])
+
+  const handleCancel = useCallback(() => {
+    setEditing(false)
+    setContent(message.content)
+  }, [message.content])
+
+  if (workflowInputSource === 'desktop' && parseAskQuestionAnswerPayload(message.content)) {
+    return null
+  }
 
   return (
     <div className='group flex justify-end px-3 py-2'>
-      <div className='max-w-[min(78%,720px)] space-y-2'>
-        <div
-          className={`border-border/60 bg-foreground/[0.03] group-hover:border-border relative overflow-hidden rounded-[26px] rounded-br-md border px-5 py-3.5 text-[15px] leading-7 shadow-sm backdrop-blur-xl transition-all duration-200 group-hover:shadow-md dark:border-white/[0.08] dark:bg-white/[0.045]`}
-        >
+      <div className='max-w-[min(78%,720px)] space-y-1.5'>
+        <div className='flex justify-end'>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm ${
+              isWechatBotInput
+                ? 'border-emerald-500/20 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300'
+                : 'border-border/60 bg-background/80 text-text-secondary'
+            }`}
+          >
+            <SourceIcon size={12} strokeWidth={2.1} />
+            <span>{sourceLabel}</span>
+          </span>
+        </div>
+        <div className='border-border/65 bg-background/92 group-hover:border-border relative overflow-hidden rounded-3xl rounded-br-lg border px-5 py-4 text-[15px] leading-7 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_20px_42px_-24px_rgba(15,23,42,0.42)] dark:bg-white/4'>
+          <div
+            className={`absolute inset-y-4 right-0 w-1 rounded-full ${
+              isWechatBotInput ? 'bg-emerald-500/65' : 'bg-sky-500/45'
+            }`}
+          />
           {editing ? (
             <textarea
-              className='w-[460px] resize-none'
+              className='border-border/70 focus:border-primary/45 focus:ring-primary/12 w-115 resize-none rounded-2xl border bg-transparent px-3 py-2 outline-none focus:ring-2'
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={8}
@@ -43,30 +93,23 @@ export function UserInputMessage({
             message={message}
             editing={editing}
             actions={{
-              onEdit: () => setEditing(true),
-              onSave: () => {
-                setEditing(false)
-                changeWorkflowInput({
-                  sessionId: sessionId,
-                  workflowId: workflow.id,
-                  newInput: content,
-                })
-                const regenerateBranchName = createBranchPayload({
-                  type: 'regenerate',
-                  branchName: `regenerate-${Date.now()}`,
-                  workflowId: workflow.id,
-                })
-                handleRegenerate(workflow.id, regenerateBranchName, content)
-              },
-              onCancel: () => {
-                setEditing(false)
-                setContent(message.content)
-              },
+              onEdit: handleEdit,
+              onSave: handleSave,
+              onCancel: handleCancel,
             }}
           />
         </div>
       </div>
     </div>
+  )
+}, areUserInputMessagePropsEqual)
+
+function areUserInputMessagePropsEqual(prev: UserInputMessageProps, next: UserInputMessageProps) {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.content === next.message.content &&
+    prev.workflowId === next.workflowId &&
+    prev.workflowInputSource === next.workflowInputSource
   )
 }
 
@@ -143,7 +186,7 @@ function ActionButton({ onClick, children }: PropsWithChildren<{ onClick?: () =>
     <button
       type='button'
       onClick={() => onClick?.()}
-      className={`text-text-secondary hover:border-border hover:bg-foreground/[0.04] hover:text-foreground flex items-center gap-1.5 rounded-full border border-transparent px-2.5 py-1.5 transition-all duration-200 active:scale-95`}
+      className={`text-text-secondary hover:border-border hover:bg-foreground/4 hover:text-foreground flex items-center gap-1.5 rounded-full border border-transparent px-2.5 py-1.5 transition-all duration-200 active:scale-95`}
     >
       {children}
     </button>

@@ -15,24 +15,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.5.1
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
+          node-version: 24
+
+      - run: npm install -g pnpm@10.5.1
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm prebuild
-
-      - run: pnpm exec electron-builder --config electron-builder.config.ts --publish always
+      - run: pnpm release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

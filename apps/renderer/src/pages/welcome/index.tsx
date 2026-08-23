@@ -1,23 +1,24 @@
 import { useNavigate } from 'react-router'
 import { context } from '../../hooks/chatContenxt'
-import LOGOIMG from './logo.png'
-import { useSessionStoreActions } from '../../store/sessionStore'
 import { ChatInput } from '../../components/chat/ChatInput'
 import { useState } from 'react'
+import { appLogoUrl } from '@/lib/appLogo'
 
 export function Welcome() {
-  const { createSession } = useSessionStoreActions()
   const [workspacePath, setWorkspacePath] = useState<string | null>(null)
   const [autoApprove, setAutoApprove] = useState(false)
+  const [thinkingMode, setThinkingMode] = useState(false)
   const navigate = useNavigate()
   const handleSend = async (input: string) => {
     context.firstInput = input
     context.firstInputAutoApprove = autoApprove
+    // 创建 session（后端会广播 background-create-session，由全局 useAgentSessionEvent
+    // 写入 sessionStore/historyStore），这里只拿 sessionId 去导航。
     const sessionId = await window.ipcRendererApi.invoke('agent-create-session', {
       workspacePath,
       autoApprove,
+      thinkingMode,
     })
-    createSession({ sessionId, workspacePath, autoApprove })
     navigate('/chat/' + sessionId)
   }
 
@@ -30,10 +31,14 @@ export function Welcome() {
 
   return (
     <div className='flex h-full w-full flex-col items-center justify-center gap-12 px-6'>
-      {/* 标题和描述 */}
       <div className='flex flex-col items-center text-center'>
-        {/* <img className='size-80' src={LOGOIMG}></img> */}
-        <p className='text-text-secondary -mt-10 max-w-md text-lg'>
+        <img
+          className='mb-6 size-28 rounded-[1.75rem] shadow-lg'
+          src={appLogoUrl}
+          alt='vide logo'
+        />
+        <h1 className='text-foreground text-3xl font-semibold tracking-tight'>vide</h1>
+        <p className='text-text-secondary mt-3 max-w-md text-lg'>
           Start a conversation with your AI assistant. Ask anything, explore ideas, or get help with
           your tasks.
         </p>
@@ -49,6 +54,8 @@ export function Welcome() {
           onClearWorkspace={() => setWorkspacePath(null)}
           autoApprove={autoApprove}
           onChangeAutoApprove={setAutoApprove}
+          thinkingMode={thinkingMode}
+          onChangeThinkingMode={setThinkingMode}
         />
 
         {/* 提示建议 */}

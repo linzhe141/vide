@@ -1,23 +1,23 @@
-﻿import type { Workflow } from '@/store/sessionStore/types'
+﻿import type { Workflow, ToolCallState } from '@/store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
-import { findToolResult } from '.'
 import { MessageView } from '../../MessageView'
 import { Bot, Clock, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
 export function SubAgentToolCall({
   workflow,
-  toolCall,
+  toolCallState,
 }: {
   workflow: Workflow
-  toolCall: ToolCall
+  toolCallState: ToolCallState
 }) {
   const [isExpanded, setIsExpanded] = useState(true)
-  const result = findToolResult(workflow, toolCall.id)
+  const toolCall: ToolCall = toolCallState.toolCall
+  const result = toolCallState.result
   const duration = formatDuration(result?.durationMs)
   const toolCallMessageIndex = workflow.messages.findIndex(
-    (i) => i.role === 'tool-call' && i.toolCalls.some((t) => t.id === toolCall.id)
+    (i) => i.role === 'tool-call' && i.toolCalls.some((t) => t.toolCall.id === toolCall.id)
   )
 
   let subAgentWorkflow: Workflow | undefined

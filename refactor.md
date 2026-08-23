@@ -1,0 +1,13 @@
+agent
+- createSession
+  - session
+    - branch
+    - workunit
+      - messages(各种workunit 级别的agent message)
+    - agent loop(context: workunit, tool,signal)
+    - send() output stream
+    - abort signal
+    - 
+- setting(llm 相关)
+- tool
+- plugin 可以扩展各个hookPP

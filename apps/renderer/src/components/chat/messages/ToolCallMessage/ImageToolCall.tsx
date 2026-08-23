@@ -1,23 +1,20 @@
 ﻿import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import type { Workflow } from '@/store/sessionStore/types'
+import type { ToolCallState } from '@/store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
-import { findToolResult } from '.'
-import { CodeBlock } from '../../../codeblock'
-function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: ToolCall }) {
+function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['result'] }) {
   const [imageLoaded, setImageLoaded] = useState(false)
-
-  const result = findToolResult(workflow, toolCall.id)
   const isRunning = !result
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-  const imageUrl = result?.result?.url
-
+  const imageUrl = result?.result?.result?.url
+  const errorMessage = getErrorMessage(result?.error)
+  const isAbortError = /abort|cancel/i.test(errorMessage)
   if (isRunning) {
     return (
-      <div className='group border-primary/20 from-primary/5 relative overflow-hidden rounded-xl border bg-gradient-to-br to-transparent p-4'>
-        <div className='via-primary/10 animate-shimmer absolute inset-0 bg-gradient-to-r from-transparent to-transparent' />
+      <div className='group border-primary/20 from-primary/5 relative overflow-hidden rounded-xl border bg-linear-to-br to-transparent p-4'>
+        <div className='via-primary/10 animate-shimmer absolute inset-0 bg-linear-to-r from-transparent to-transparent' />
         <div className='relative flex items-center gap-3'>
           <div className='bg-primary/10 rounded-full p-2'>
             <Sparkles className='text-primary h-4 w-4 animate-pulse' />
@@ -38,22 +35,37 @@ function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: T
 
   if (isError) {
     return (
-      <div className='rounded-xl border border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent p-4'>
-        <div>
-          <p className='flex items-center gap-1 text-sm font-semibold text-red-500'>
-            <XCircle className='h-4 w-4 text-red-500' />
-            Generation Failed
-          </p>
-          <p className='text-text-secondary mt-1 text-xs'>
-            <CodeBlock
-              code={JSON.stringify(
-                result?.error instanceof Error ? result.error.message : result?.error,
-                null,
-                2
+      <div className='group relative overflow-hidden rounded-xl border border-red-500/15 bg-linear-to-br from-red-500/6 via-transparent to-transparent p-4'>
+        <div className='absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-red-500/40 to-transparent' />
+        <div className='flex items-start gap-3'>
+          <div className='rounded-full bg-red-500/10 p-2 text-red-500'>
+            <XCircle className='h-4 w-4' />
+          </div>
+          <div className='min-w-0 flex-1'>
+            <div className='flex items-center justify-between gap-3'>
+              <div>
+                <p className='text-sm font-semibold text-red-500'>
+                  {isAbortError ? 'Generation Stopped' : 'Generation Failed'}
+                </p>
+                <p className='text-text-secondary mt-1 text-xs'>
+                  {isAbortError
+                    ? 'Image generation was canceled before completion.'
+                    : 'The image request did not complete successfully.'}
+                </p>
+              </div>
+              {duration && (
+                <div className='shrink-0 rounded-full border border-red-500/15 bg-red-500/8 px-2.5 py-1 text-xs text-red-500'>
+                  <span className='flex items-center gap-1.5'>
+                    <Clock3 className='h-3 w-3' />
+                    {duration}
+                  </span>
+                </div>
               )}
-              lang='text'
-            ></CodeBlock>
-          </p>
+            </div>
+            <div className='mt-3 rounded-lg border border-red-500/10 bg-black/3 px-3 py-2 text-sm leading-6 text-red-700 dark:bg-white/3 dark:text-red-200'>
+              {errorMessage}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -62,7 +74,7 @@ function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: T
   if (!imageUrl) return null
 
   return (
-    <div className='group from-primary/5 border-primary/10 relative overflow-hidden rounded-xl border bg-gradient-to-br to-transparent'>
+    <div className='group from-primary/5 border-primary/10 relative overflow-hidden rounded-xl border bg-linear-to-br to-transparent'>
       <style>{styles}</style>
       {/* Image Container */}
       <div className='relative flex items-center justify-center'>
@@ -87,7 +99,7 @@ function ImageToolCall({ workflow, toolCall }: { workflow: Workflow; toolCall: T
         />
 
         {/* Overlay Actions */}
-        <div className='absolute inset-0 rounded-t-xl bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+        <div className='absolute inset-0 rounded-t-xl bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
           <div className='absolute right-4 bottom-4 left-4 flex items-center justify-between gap-2'>
             <a
               href={imageUrl}
@@ -124,6 +136,18 @@ function formatDuration(ms?: number): string | null {
   if (!ms) return null
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(1)}s`
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error == null) return 'Unknown error'
+
+  try {
+    return JSON.stringify(error, null, 2)
+  } catch {
+    return String(error)
+  }
 }
 
 // Add animation keyframes to your global CSS or Tailwind config

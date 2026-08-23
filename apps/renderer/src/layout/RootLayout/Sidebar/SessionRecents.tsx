@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { GitBranch, LoaderCircle } from 'lucide-react'
+import { GitBranch, LoaderCircle, MessageCircle } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
-import { useSessionStore, useSessionStoreActions } from '@/store/sessionStore'
+import { useSessionStore } from '@/store/sessionStore'
+import { useHistoryItems, useHistoryStoreActions } from '@/store/historyStore'
 
 export function SessionRecents() {
-  const sessions = useSessionStore((state) => state.sessions)
-  const { mergeSessionsList } = useSessionStoreActions()
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
-    [sessions]
+  const historyItems = useHistoryItems()
+  const historyActions = useHistoryStoreActions()
+  const sortedHistory = useMemo(
+    () => [...historyItems].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)),
+    [historyItems]
   )
 
-  const fetchChats = useCallback(async () => {
-    const result = await window.ipcRendererApi.invoke('get-sessions-list')
-    mergeSessionsList(result)
-  }, [mergeSessionsList])
+  const fetchChats = useCallback(() => {
+    void historyActions.fetch()
+  }, [historyActions])
 
   useEffect(() => {
     fetchChats()
@@ -23,11 +23,8 @@ export function SessionRecents() {
 
   useEffect(() => {
     const disposers = [
-      window.ipcRendererApi.on('workflow-llm-start', () => {
+      window.ipcRendererApi.on('workflow.llm.start', () => {
         setTimeout(fetchChats, 250)
-      }),
-      window.ipcRendererApi.on('agent-session-forked', () => {
-        setTimeout(fetchChats, 50)
       }),
     ]
 
@@ -38,38 +35,68 @@ export function SessionRecents() {
 
   return (
     <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto px-2'>
-      {sortedSessions.map((session) => (
-        <NavLink
-          key={session.sessionId}
-          to={`/chat/${session.sessionId}`}
-          className={({ isActive }) =>
-            cn(
-              'rounded-md px-3 py-1.5',
-              'text-sm',
-              'text-text-secondary',
-              'transition-colors',
-              'hover:bg-foreground/5 hover:text-foreground',
-              isActive && 'bg-foreground/8 text-foreground font-medium'
-            )
-          }
-        >
-          <div className='flex items-center gap-2'>
-            {session.sessionType === 'fork' ? (
-              <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
-                <GitBranch size={11} />
-              </span>
-            ) : null}
-            <span className='block flex-1 truncate'>{session.title || 'Untitled'}</span>
-            {session.runtime.running ? (
-              <LoaderCircle size={13} className='text-text-info animate-spin' />
-            ) : null}
-          </div>
-        </NavLink>
+      {sortedHistory.map((history) => (
+        <HistoryNavItem
+          key={history.sessionId}
+          sessionId={history.sessionId}
+          title={history.title}
+          type={history.type}
+          sessionSource={history.sessionSource}
+        />
       ))}
 
-      {sortedSessions.length === 0 && (
+      {sortedHistory.length === 0 && (
         <div className='text-text-info px-3 py-4 text-sm'>No active sessions</div>
       )}
     </div>
+  )
+}
+
+function HistoryNavItem({
+  sessionId,
+  title,
+  type,
+  sessionSource,
+}: {
+  sessionId: string
+  title: string
+  type: 'normal' | 'fork'
+  sessionSource: 'desktop' | 'wechat-bot'
+}) {
+  const running = useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    return session?.runtime.running ?? false
+  })
+
+  return (
+    <NavLink
+      key={sessionId}
+      to={`/chat/${sessionId}`}
+      className={({ isActive }) =>
+        cn(
+          'rounded-md px-3 py-1.5',
+          'text-sm',
+          'text-text-secondary',
+          'transition-colors',
+          'hover:bg-foreground/5 hover:text-foreground',
+          isActive && 'bg-foreground/8 text-foreground font-medium'
+        )
+      }
+    >
+      <div className='flex items-center gap-2'>
+        {type === 'fork' ? (
+          <span className='text-primary inline-flex h-5 w-5 items-center justify-center rounded-full bg-current/10'>
+            <GitBranch size={11} />
+          </span>
+        ) : null}
+        {sessionSource === 'wechat-bot' ? (
+          <span className='inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:text-emerald-300'>
+            <MessageCircle size={11} />
+          </span>
+        ) : null}
+        <span className='block flex-1 truncate'>{title || 'Untitled'}</span>
+        {running ? <LoaderCircle size={13} className='text-text-info animate-spin' /> : null}
+      </div>
+    </NavLink>
   )
 }

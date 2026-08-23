@@ -1,19 +1,19 @@
 import type { Tool } from '@vide/ai'
-import type { WorkflowRuntimeContext } from '../workflow'
-import type { WorkflowEvent } from '../event/channels'
+import type { Agent } from '../agent'
 
-export abstract class ToolProvider {
-  protected runtime: WorkflowRuntimeContext
+export interface ToolRuntime {
+  workspacePath: string | null
+  signal: AbortSignal
+  agentSettings: Agent['settings']
+}
+export abstract class ToolProvider<TRuntime extends ToolRuntime = ToolRuntime> {
+  protected runtime: TRuntime
 
-  constructor(runtime: WorkflowRuntimeContext) {
+  constructor(runtime: TRuntime) {
     this.runtime = runtime
   }
 
   abstract getTools(): Tool[]
-
-  emit(data: WorkflowEvent) {
-    return this.runtime.emit(data)
-  }
 }
 
 export function defineTool(tool: Tool) {

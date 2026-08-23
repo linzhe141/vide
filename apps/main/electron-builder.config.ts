@@ -3,6 +3,7 @@ import type { Configuration } from 'electron-builder'
 export default {
   appId: 'me.vide',
   productName: 'vide',
+  icon: '../../resources/logo.png',
 
   directories: {
     buildResources: '../../resources',
@@ -23,6 +24,8 @@ export default {
       provider: 'github',
       owner: 'linzhe141',
       repo: 'vide',
+      vPrefixedTagName: true,
+      releaseType: 'release',
     },
   ],
 
@@ -34,18 +37,15 @@ export default {
   ],
 
   win: {
-    icon: 'resources/logo.ico',
+    icon: '../../resources/logo.png',
     target: ['nsis'],
   },
   nsis: {
-    oneClick: false,
+    oneClick: true,
     perMachine: true,
-    allowToChangeInstallationDirectory: true,
   },
   mac: {
+    icon: '../../resources/logo.png',
     target: 'dmg',
-  },
-  linux: {
-    target: 'AppImage',
   },
 } satisfies Configuration
