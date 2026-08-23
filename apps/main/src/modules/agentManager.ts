@@ -1,6 +1,7 @@
 import { Agent, Workflow } from '@vide/agent'
 import type { Session } from '@vide/agent'
 import type { WorkflowEvent } from '@vide/agent'
+import type { Tool } from '@vide/ai'
 import type { AppManager } from '@/appManager'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
 import { settingsStore } from '@/modules/settingsStore'
@@ -152,10 +153,11 @@ export class AgentManager {
     session: Session,
     input: string,
     onEvent?: PromptObserver,
-    inputSource: SessionSource = 'desktop'
+    inputSource: SessionSource = 'desktop',
+    extraTools?: Tool[]
   ): Promise<string> {
     const branchName = session.activeBranch
-    const stream = await session.prompt(input, { inputSource })
+    const stream = await session.prompt(input, { inputSource, extraTools })
     const workflowId = stream.workflowId!
 
     this.persister.markPending(workflowId)
@@ -247,23 +249,25 @@ export class AgentManager {
   async prompt(
     sessionId: string,
     input: string,
-    inputSource: SessionSource = 'desktop'
+    inputSource: SessionSource = 'desktop',
+    extraTools?: Tool[]
   ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
     await this.ensureSessionTitle(this.getSession(sessionId), input)
-    return this.runPrompt(this.getSession(sessionId), input, undefined, inputSource)
+    return this.runPrompt(this.getSession(sessionId), input, undefined, inputSource, extraTools)
   }
 
   async backgroundPrompt(
     sessionId: string,
     input: string,
     onEvent?: PromptObserver,
-    inputSource: SessionSource = 'desktop'
+    inputSource: SessionSource = 'desktop',
+    extraTools?: Tool[]
   ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
     await this.ensureSessionTitle(this.getSession(sessionId), input)
     ipcMainApi.send('agent-session-background-send', { sessionId })
-    return this.runPrompt(this.getSession(sessionId), input, onEvent, inputSource)
+    return this.runPrompt(this.getSession(sessionId), input, onEvent, inputSource, extraTools)
   }
 
   listSessionIds(): string[] {

@@ -1,5 +1,7 @@
 import type { WechatBotRuntimeStatus, WechatBotSessionRecord } from '@vide/config'
 import type { WorkflowEvent } from '@vide/agent'
+import { ToolCallError } from '@vide/agent'
+import type { Tool } from '@vide/ai'
 import { shell } from 'electron'
 import type { AppManager } from '@/appManager'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
@@ -326,6 +328,7 @@ export class WechatBotManager {
   private async runAgent(senderId: string, contextToken: string, input: string): Promise<string> {
     const sessionId = await this.getOrCreateActiveSessionId()
     let askQuestionSent = false
+    const extraTools = [createSendFileToConnectorTool(this.connector, senderId, contextToken)]
 
     try {
       const finalText = await this.appManager.agentManager.backgroundPrompt(
@@ -341,7 +344,8 @@ export class WechatBotManager {
             logger.error('wechat sendText ask-question error:', err)
           }
         },
-        'wechat-bot'
+        'wechat-bot',
+        extraTools
       )
       if (!finalText) {
         if (askQuestionSent) return ''
@@ -438,6 +442,58 @@ function buildWechatAskQuestionText(event: WorkflowEvent): string | null {
   if (!blocks.length) return null
 
   return ['📝 Agent 需要你补充信息：', '', ...blocks, '', '请直接回复你的答案。'].join('\n')
+}
+
+function createSendFileToConnectorTool(
+  connector: Connector,
+  senderId: string,
+  contextToken: string
+): Tool {
+  return {
+    name: 'sendFileToConnector',
+    type: 'function',
+    function: {
+      name: 'sendFileToConnector',
+      description: `
+Send a local file back to the current Weixin Bot conversation.
+Use this after another tool has already created a local file, such as generate-image.
+The filePath must be an existing local file path on disk. Do not use remote URLs.
+      `,
+      parameters: {
+        type: 'object',
+        properties: {
+          filePath: {
+            type: 'string',
+            description:
+              'Absolute local path of the file to send to the current Weixin conversation',
+          },
+          caption: {
+            type: 'string',
+            description: 'Optional text to send before the file',
+          },
+        },
+        required: ['filePath'],
+      },
+    },
+    executor: async (args: any = {}) => {
+      const filePath = typeof args.filePath === 'string' ? args.filePath.trim() : ''
+      const caption = typeof args.caption === 'string' ? args.caption : ''
+
+      if (!filePath) {
+        throw new ToolCallError('filePath is required')
+      }
+
+      await connector.sendFile(senderId, filePath, contextToken, caption)
+      return {
+        reason: 'call-llm',
+        result: {
+          sent: true,
+          filePath,
+          caption,
+        },
+      }
+    },
+  }
 }
 
 function parseToolArguments(raw: string): { questions?: unknown } | null {

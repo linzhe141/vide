@@ -36,4 +36,5 @@ export interface Connector {
   checkAuthStatus(qrcode: string): Promise<ConnectorAuthStatus>
   pullTextMessages(cursor: string): Promise<ConnectorPullTextResult>
   sendText(targetId: string, text: string, contextToken: string): Promise<void>
+  sendFile(targetId: string, filePath: string, contextToken: string, text?: string): Promise<void>
 }

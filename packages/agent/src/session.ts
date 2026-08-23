@@ -1,4 +1,4 @@
-import type { AgentMessage } from '@vide/ai'
+import type { AgentMessage, Tool } from '@vide/ai'
 import { WorkflowStream } from './stream'
 import {
   Workflow,
@@ -45,6 +45,11 @@ export interface SessionBranch {
 }
 
 export type SessionInputSource = 'desktop' | 'wechat-bot'
+
+export interface SessionPromptOptions {
+  inputSource?: SessionInputSource
+  extraTools?: Tool[]
+}
 
 interface InterruptedToolContext {
   toolCalls: CallToolsPayload['toolCalls']
@@ -106,7 +111,7 @@ export class Session {
     this.model = model
   }
 
-  async prompt(input: string, options?: { inputSource?: SessionInputSource }) {
+  async prompt(input: string, options?: SessionPromptOptions) {
     if (!this.model) {
       throw new Error('Model is not set for this session.')
     }
@@ -122,7 +127,10 @@ export class Session {
       workspacePath: this.workspacePath,
       agentSettings: this.agentSettings,
     })
-    const workflow = new Workflow(runtime, getBuildInTools(runtime))
+    const workflow = new Workflow(runtime, [
+      ...getBuildInTools(runtime),
+      ...(options?.extraTools ?? []),
+    ])
     stream.sessionId = this.id
     stream.workflowId = workflow.id
 
