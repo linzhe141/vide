@@ -450,6 +450,6 @@ export class UpdaterManager {
     if (!message) return false
     if (!/cannot find/i.test(message)) return false
     if (!/\b404\b/.test(message)) return false
-    return /\b(?:latest|stable|nightly|canary)(?:-[\da-z]+)?\.yml\b/i.test(message)
+    return /\blatest(?:-[\da-z]+)?\.yml\b/i.test(message)
   }
 }
