@@ -10,6 +10,9 @@ export class AppUpdateIpcMainService implements IpcMainService {
       Promise.resolve(this.appManager.getUpdateStatus())
     )
     ipcMainApi.handle('check-for-updates', () => this.appManager.checkForUpdates())
+    ipcMainApi.handle('install-update-later', () =>
+      Promise.resolve(this.appManager.installUpdateLater())
+    )
     ipcMainApi.handle('install-update-and-restart', () => {
       this.appManager.installUpdateAndRestart()
       return Promise.resolve()

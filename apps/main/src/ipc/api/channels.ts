@@ -77,6 +77,9 @@ export type AppUpdateStatus = {
   downloadProgress: number | null
   isPackaged: boolean
   allowPrerelease: boolean
+  updateAvailable: boolean
+  errorMessage: string | null
+  willInstallOnQuit: boolean
 }
 
 export interface RenderChannel {
@@ -85,6 +88,7 @@ export interface RenderChannel {
   'dispatch-settings-store': (data: Record<string, unknown>) => void
   'get-app-update-status': () => Promise<AppUpdateStatus>
   'check-for-updates': () => Promise<AppUpdateStatus>
+  'install-update-later': () => Promise<AppUpdateStatus>
   'install-update-and-restart': () => Promise<void>
 
   // window

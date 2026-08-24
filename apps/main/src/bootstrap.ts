@@ -46,7 +46,7 @@ export async function start() {
   app.on('before-quit', () => {
     logger.info('App is quitting, performing cleanup...')
     if (appManager) {
-      void appManager.wechatBotManager.dispose()
+      void appManager.dispose()
     }
   })
 

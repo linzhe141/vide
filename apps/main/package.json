@@ -18,12 +18,8 @@
     "./ipcRenderer": "./src/ipc/api/ipcRenderer.ts"
   },
   "dependencies": {
-    "@babel/core": "^8.0.1",
-    "@rolldown/plugin-babel": "^0.2.3",
-    "@types/babel__core": "^7.20.5",
     "better-sqlite3": "^12.10.0",
     "chokidar": "^5.0.0",
-    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",
@@ -33,7 +29,10 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
+    "@babel/core": "^8.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
     "@tailwindcss/vite": "^4.2.4",
+    "@types/babel__core": "^7.20.5",
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -42,6 +41,7 @@
     "@vide/config": "workspace:*",
     "@vitejs/plugin-react": "^6.0.5",
     "cross-env": "^10.1.0",
+    "drizzle-kit": "^0.31.10",
     "electron": "41.3.0",
     "electron-builder": "^26.8.1",
     "electron-vite": "6.0.0-beta.1",

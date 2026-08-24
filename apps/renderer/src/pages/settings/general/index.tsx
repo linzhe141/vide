@@ -23,6 +23,9 @@ type AppUpdateStatus = {
   downloadProgress: number | null
   isPackaged: boolean
   allowPrerelease: boolean
+  updateAvailable: boolean
+  errorMessage: string | null
+  willInstallOnQuit: boolean
 }
 
 export function GeneralSettings() {
@@ -64,6 +67,11 @@ export function GeneralSettings() {
 
   const handleInstallUpdate = async () => {
     await window.ipcRendererApi.invoke('install-update-and-restart')
+  }
+
+  const handleInstallUpdateLater = async () => {
+    const status = await window.ipcRendererApi.invoke('install-update-later')
+    setUpdateStatus(status)
   }
 
   const updateAlertVariant =
@@ -206,7 +214,7 @@ export function GeneralSettings() {
             <div className='flex shrink-0 gap-3'>
               <Button
                 onClick={handleCheckForUpdates}
-                disabled={isCheckingUpdates}
+                disabled={isCheckingUpdates || !updateStatus?.isPackaged}
                 variant='outline'
               >
                 <div className='flex items-center gap-2'>
@@ -216,12 +224,25 @@ export function GeneralSettings() {
               </Button>
 
               {updateStatus?.phase === 'downloaded' ? (
-                <Button onClick={handleInstallUpdate}>
-                  <div className='flex items-center gap-2'>
-                    <Download size={14} />
-                    <div>Restart to update</div>
-                  </div>
-                </Button>
+                <>
+                  <Button onClick={handleInstallUpdateLater} variant='outline'>
+                    <div className='flex items-center gap-2'>
+                      <Download size={14} />
+                      <div>
+                        {updateStatus.willInstallOnQuit
+                          ? 'Installs on next quit'
+                          : 'Install on quit'}
+                      </div>
+                    </div>
+                  </Button>
+
+                  <Button onClick={handleInstallUpdate}>
+                    <div className='flex items-center gap-2'>
+                      <Download size={14} />
+                      <div>Restart to update</div>
+                    </div>
+                  </Button>
+                </>
               ) : null}
             </div>
           </div>
