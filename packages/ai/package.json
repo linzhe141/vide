@@ -1,6 +1,6 @@
 {
   "name": "@vide/ai",
-  "version": "0.0.0-beta.11",
+  "version": "0.0.0-beta.12",
   "type": "module",
   "exports": {
     ".": {
