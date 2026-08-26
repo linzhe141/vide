@@ -61,7 +61,9 @@ function shutdown(code) {
 }
 
 function start() {
-  const renderer = spawnChild(process.execPath, [viteBin, '--config', 'vite.renderer.config.ts'])
+  const rendererConfig = path.resolve(desktopRoot, '../renderer/vite.config.ts')
+  const renderer = spawnChild(process.execPath, [viteBin, '--config', rendererConfig])
+
   const mainBuilder = spawnChild(process.execPath, [
     viteBin,
     'build',

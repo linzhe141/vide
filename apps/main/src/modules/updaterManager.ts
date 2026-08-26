@@ -1,5 +1,5 @@
 import { BrowserWindow, app } from 'electron'
-import electronUpdater from 'electron-updater'
+import { autoUpdater } from 'electron-updater'
 import type { AppUpdateStatus } from '@/ipc/api/channels'
 import { ipcMainApi } from '@/ipc/api/ipcMain'
 import { logger } from '@/logger'
@@ -45,7 +45,6 @@ export class UpdaterManager {
 
     runtimeState.initialized = true
 
-    const { autoUpdater } = electronUpdater
     autoUpdater.logger = logger
     autoUpdater.autoDownload = false
     autoUpdater.autoInstallOnAppQuit = false
@@ -114,7 +113,7 @@ export class UpdaterManager {
     }
 
     runtimeState.checking = true
-    const { autoUpdater } = electronUpdater
+
     autoUpdater.allowPrerelease = this.allowPrerelease()
     this.configureProvider()
 
@@ -169,7 +168,6 @@ export class UpdaterManager {
       return this.getUpdateStatus()
     }
 
-    const { autoUpdater } = electronUpdater
     runtimeState.downloading = true
     this.setStatus({
       phase: 'downloading',
@@ -201,7 +199,6 @@ export class UpdaterManager {
   installUpdateAndRestart() {
     if (this.getUpdateStatus().phase !== 'downloaded') return
 
-    const { autoUpdater } = electronUpdater
     logger.info('Installing update now...')
 
     if (process.platform !== 'win32') {
@@ -222,7 +219,6 @@ export class UpdaterManager {
   installUpdateLater() {
     if (this.getUpdateStatus().phase !== 'downloaded') return this.getUpdateStatus()
 
-    const { autoUpdater } = electronUpdater
     autoUpdater.autoInstallOnAppQuit = true
     runtimeState.installLaterVersion = this.getUpdateStatus().latestVersion
 
@@ -238,8 +234,6 @@ export class UpdaterManager {
   }
 
   private registerEvents() {
-    const { autoUpdater } = electronUpdater
-
     autoUpdater.on('checking-for-update', () => {
       logger.info('checking for updates...')
     })
@@ -344,8 +338,6 @@ export class UpdaterManager {
   }
 
   private configureProvider() {
-    const { autoUpdater } = electronUpdater
-
     if (this.allowPrerelease()) {
       autoUpdater.setFeedURL({
         provider: 'generic',

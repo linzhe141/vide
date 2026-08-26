@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "dev": "node ./scripts/dev.mjs",
-    "build": "vite build --mode production --config vite.renderer.config.ts && vite build --mode production --config vite.main.config.ts && vite build --mode production --config vite.preload.config.ts",
+    "build": "pnpm --dir ../renderer build && vite build --mode production --config vite.main.config.ts && vite build --mode production --config vite.preload.config.ts",
     "package": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
     "release": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
     "rebuild:electron": "electron-rebuild",
@@ -16,34 +16,26 @@
     "./ipcRenderer": "./src/ipc/api/ipcRenderer.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0",
+    "better-sqlite3": "^12.10.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@types/better-sqlite3": "^7.6.13",
+    "@vide/agent": "workspace:*",
+    "@vide/ai": "workspace:*",
+    "@vide/config": "workspace:*",
     "chokidar": "^5.0.0",
+    "cross-env": "^10.1.0",
+    "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
+    "electron": "41.3.0",
+    "electron-builder": "^26.8.1",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
     "isbinaryfile": "^6.0.0",
-    "openai": "^6.37.0"
-  },
-  "devDependencies": {
-    "@electron/rebuild": "^4.0.4",
-    "@babel/core": "^8.0.1",
-    "@rolldown/plugin-babel": "^0.2.3",
-    "@tailwindcss/vite": "^4.2.4",
-    "@types/babel__core": "^7.20.5",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vide/agent": "workspace:*",
-    "@vide/ai": "workspace:*",
-    "@vide/config": "workspace:*",
-    "@vitejs/plugin-react": "^6.0.5",
-    "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.10",
-    "electron": "41.3.0",
-    "electron-builder": "^26.8.1",
     "node-abi": "4.31.0",
-    "tailwindcss": "^4.2.4",
+    "openai": "^6.37.0",
     "vite": "^8.0.11"
   }
 }

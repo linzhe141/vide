@@ -57,12 +57,40 @@ importers:
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.11.1
+    devDependencies:
+      '@electron/rebuild':
+        specifier: ^4.0.4
+        version: 4.0.4
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
+      '@vide/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
+      '@vide/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@vide/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.11.1)
+      electron:
+        specifier: 41.3.0
+        version: 41.3.0
+      electron-builder:
+        specifier: ^26.8.1
+        version: 26.15.3(electron-builder-squirrel-windows@26.0.12)
       electron-log:
         specifier: ^5.4.3
         version: 5.4.3
@@ -75,64 +103,12 @@ importers:
       isbinaryfile:
         specifier: ^6.0.0
         version: 6.0.0
-      openai:
-        specifier: ^6.37.0
-        version: 6.42.0(ws@8.21.3)(zod@4.4.3)
-    devDependencies:
-      '@babel/core':
-        specifier: ^8.0.1
-        version: 8.0.1
-      '@electron/rebuild':
-        specifier: ^4.0.4
-        version: 4.0.4
-      '@rolldown/plugin-babel':
-        specifier: ^0.2.3
-        version: 0.2.3(@babel/core@8.0.1)(@babel/runtime@8.0.0)(rolldown@1.1.2)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
-      '@tailwindcss/vite':
-        specifier: ^4.2.4
-        version: 4.3.1(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
-      '@types/babel__core':
-        specifier: ^7.20.5
-        version: 7.20.5
-      '@types/better-sqlite3':
-        specifier: ^7.6.13
-        version: 7.6.13
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.17)
-      '@vide/agent':
-        specifier: workspace:*
-        version: link:../../packages/agent
-      '@vide/ai':
-        specifier: workspace:*
-        version: link:../../packages/ai
-      '@vide/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@vitejs/plugin-react':
-        specifier: ^6.0.5
-        version: 6.0.5(@rolldown/plugin-babel@0.2.3(@babel/core@8.0.1)(@babel/runtime@8.0.0)(rolldown@1.1.2)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
-      cross-env:
-        specifier: ^10.1.0
-        version: 10.1.0
-      drizzle-kit:
-        specifier: ^0.31.10
-        version: 0.31.10
-      electron:
-        specifier: 41.3.0
-        version: 41.3.0
-      electron-builder:
-        specifier: ^26.8.1
-        version: 26.15.3(electron-builder-squirrel-windows@26.0.12)
       node-abi:
         specifier: 4.31.0
         version: 4.31.0
-      tailwindcss:
-        specifier: ^4.2.4
-        version: 4.3.1
+      openai:
+        specifier: ^6.37.0
+        version: 6.42.0(ws@8.21.3)(zod@4.4.3)
       vite:
         specifier: ^8.0.11
         version: 8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0)
@@ -215,9 +191,21 @@ importers:
         specifier: ^5.0.13
         version: 5.0.14(@types/react@19.2.17)(immer@11.1.8)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
+      '@babel/core':
+        specifier: ^8.0.1
+        version: 8.0.1
+      '@rolldown/plugin-babel':
+        specifier: ^0.2.3
+        version: 0.2.3(@babel/core@8.0.1)(@babel/runtime@8.0.0)(rolldown@1.1.2)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.19(tailwindcss@4.3.1)
+      '@tailwindcss/vite':
+        specifier: ^4.2.4
+        version: 4.3.1(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -239,9 +227,15 @@ importers:
       '@vide/main':
         specifier: workspace:*
         version: link:../main
+      '@vitejs/plugin-react':
+        specifier: ^6.0.5
+        version: 6.0.5(@rolldown/plugin-babel@0.2.3(@babel/core@8.0.1)(@babel/runtime@8.0.0)(rolldown@1.1.2)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0))
       tailwindcss:
         specifier: ^4.2.4
         version: 4.3.1
+      vite:
+        specifier: ^8.0.11
+        version: 8.0.16(@types/node@24.13.2)(esbuild@0.27.2)(jiti@2.7.0)(tsx@4.21.0)
 
   packages/agent:
     dependencies:
@@ -576,8 +570,8 @@ packages:
     resolution: {integrity: sha512-F+nKc0xW+kVbBRhFzaMgPy3KwmuNTYX1fx6+FxxoSnNgwYX6LD7AKBTWkU0MQ6IBoe7dz069CNkR673sPAgkCQ==}
     engines: {node: '>=14'}
 
-  '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+  '@electron/node-gyp@git+https://github.com/electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2':
+    resolution: {commit: 06b29aafb7708acef8b3669835c8a7857ebc92d2, repo: https://github.com/electron/node-gyp.git, type: git}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -6054,7 +6048,7 @@ snapshots:
 
   '@babel/code-frame@8.0.0':
     dependencies:
-      '@babel/helper-validator-identifier': 8.0.2
+      '@babel/helper-validator-identifier': 8.0.4
       js-tokens: 10.0.0
 
   '@babel/compat-data@7.29.7': {}
@@ -6087,10 +6081,10 @@ snapshots:
       '@babel/generator': 8.0.0
       '@babel/helper-compilation-targets': 8.0.0
       '@babel/helpers': 8.0.0
-      '@babel/parser': 8.0.0
+      '@babel/parser': 8.0.4
       '@babel/template': 8.0.0
       '@babel/traverse': 8.0.4
-      '@babel/types': 8.0.0
+      '@babel/types': 8.0.4
       '@types/gensync': 1.0.5
       convert-source-map: 2.0.0
       empathic: 2.0.1
@@ -6179,7 +6173,7 @@ snapshots:
   '@babel/helpers@8.0.0':
     dependencies:
       '@babel/template': 8.0.0
-      '@babel/types': 8.0.0
+      '@babel/types': 8.0.4
 
   '@babel/parser@7.28.5':
     dependencies:
@@ -6210,8 +6204,8 @@ snapshots:
   '@babel/template@8.0.0':
     dependencies:
       '@babel/code-frame': 8.0.0
-      '@babel/parser': 8.0.0
-      '@babel/types': 8.0.0
+      '@babel/parser': 8.0.4
+      '@babel/types': 8.0.4
 
   '@babel/traverse@7.29.7':
     dependencies:
@@ -6363,7 +6357,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
+  '@electron/node-gyp@git+https://github.com/electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2':
     dependencies:
       env-paths: 2.2.1
       exponential-backoff: 3.1.2
@@ -6411,7 +6405,7 @@ snapshots:
 
   '@electron/rebuild@3.7.0':
     dependencies:
-      '@electron/node-gyp': https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2
+      '@electron/node-gyp': git+https://github.com/electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
       debug: 4.4.3

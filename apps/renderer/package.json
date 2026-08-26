@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0-beta.11",
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@lobehub/ui": "^5.29.0",
@@ -31,7 +35,11 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tailwindcss/vite": "^4.2.4",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/babel__core": "^7.20.5",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/react": "^19.2.14",
@@ -39,6 +47,8 @@
     "@vide/ai": "workspace:*",
     "@vide/config": "workspace:*",
     "@vide/main": "workspace:*",
-    "tailwindcss": "^4.2.4"
+    "@vitejs/plugin-react": "^6.0.5",
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.11"
   }
 }

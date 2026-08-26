@@ -6,20 +6,20 @@ import tailwindcss from '@tailwindcss/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const appRoot = path.dirname(fileURLToPath(import.meta.url))
-const rendererRoot = path.resolve(appRoot, '../renderer/src')
+const rendererRoot = path.dirname(fileURLToPath(import.meta.url))
+const rendererSrcRoot = path.resolve(rendererRoot, 'src')
 const rendererPort = 1412
 
 export default defineConfig(async () => ({
   base: './',
-  root: rendererRoot,
+  root: rendererSrcRoot,
   build: {
     emptyOutDir: true,
     minify: false,
-    outDir: path.resolve(appRoot, 'dist/app'),
+    outDir: path.resolve(rendererRoot, '../main/dist/app'),
     rollupOptions: {
       input: {
-        main: path.resolve(rendererRoot, 'index.html'),
+        main: path.resolve(rendererSrcRoot, 'index.html'),
       },
       output: {
         manualChunks(id: string) {
@@ -31,7 +31,7 @@ export default defineConfig(async () => ({
     target: 'esnext',
   },
   resolve: {
-    alias: [{ find: '@', replacement: rendererRoot }],
+    alias: [{ find: '@', replacement: rendererSrcRoot }],
   },
   plugins: [
     react(),

@@ -20,14 +20,15 @@ export default defineConfig({
         index: path.resolve(appRoot, 'src/preload/index.ts'),
       },
       output: {
-        entryFileNames: 'index.js',
+        chunkFileNames: '[name]-[hash].js',
         format: 'cjs',
       },
     },
     sourcemap: true,
-    ssr: path.resolve(appRoot, 'src/preload/index.ts'),
-    ssrEmitAssets: true,
     target: 'es2022',
+    ssr: path.resolve(appRoot, 'src/preload/index.ts'),
+
+    ssrEmitAssets: true,
   },
   resolve: {
     alias: [{ find: '@', replacement: path.resolve(appRoot, 'src') }],

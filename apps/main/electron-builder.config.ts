@@ -1,4 +1,17 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import type { Configuration } from 'electron-builder'
+
+const appRoot = path.dirname(fileURLToPath(import.meta.url))
+const runtimeExternalModules = Object.keys(
+  (
+    JSON.parse(readFileSync(path.join(appRoot, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+    }
+  ).dependencies ?? {}
+)
 
 export default {
   appId: 'me.vide',
@@ -14,11 +27,14 @@ export default {
     './dist/app/**/*',
     './dist/electron/**/*',
     './src/drizzle/**/*',
-    '../../package.json',
     '../../resources/**',
+    '!**/*.map',
+    '!**/*.tsbuildinfo',
   ],
-  asar: true,
-  asarUnpack: ['node_modules/**'],
+  asar: {
+    smartUnpack: false,
+  },
+  asarUnpack: runtimeExternalModules.map((moduleName) => `node_modules/${moduleName}/**/*`),
   publish: [
     {
       provider: 'github',
