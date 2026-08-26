@@ -33,7 +33,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
     // 非首条输入：若是尚未加载的持久化 session，则从 SQLite 拉取
     if (!currentSession && !loadedRef.current) {
       loadedRef.current = true
-      void loadSession(sessionId)
+      loadSession(sessionId)
     }
   }, [sessionId, handleSend, createSession, loadSession, currentSession])
 

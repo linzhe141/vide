@@ -174,7 +174,7 @@ export function CommandPalette() {
     if (!open) return
 
     if (historyItems.length === 0) {
-      void historyActions.fetch()
+      historyActions.fetch()
     }
 
     queueMicrotask(() => inputRef.current?.focus())

@@ -31,7 +31,7 @@ export class AgentIpcMainService implements IpcMainService {
     ipcMainApi.handle('agent-session-send', async ({ sessionId, input, inputSource }) => {
       logger.info('agent-session-send ', sessionId, input)
       // fire-and-forget：事件由 AgentManager.prompt 广播到 renderer
-      void agentManager.prompt(sessionId, input, inputSource ?? 'desktop')
+      agentManager.prompt(sessionId, input, inputSource ?? 'desktop')
     })
 
     ipcMainApi.handle('agent-resume-session', async ({ sessionId }) => {

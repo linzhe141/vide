@@ -252,7 +252,7 @@ export class UpdaterManager {
         willInstallOnQuit: false,
       })
 
-      void this.downloadUpdate()
+      this.downloadUpdate()
     })
 
     autoUpdater.on('update-not-available', (info) => {
@@ -368,11 +368,11 @@ export class UpdaterManager {
     if (runtimeState.autoCheckTimer || runtimeState.autoCheckInterval) return
 
     runtimeState.autoCheckTimer = setTimeout(() => {
-      void this.checkForUpdates()
+      this.checkForUpdates()
     }, AUTO_CHECK_DELAY_MS)
 
     runtimeState.autoCheckInterval = setInterval(() => {
-      void this.checkForUpdates()
+      this.checkForUpdates()
     }, AUTO_CHECK_INTERVAL_MS)
   }
 

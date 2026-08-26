@@ -68,7 +68,7 @@ export class WechatBotManager {
     await shell.openExternal(data.imageUrl)
     logger.info('opened wechat qrcode in default browser:', data.imageUrl)
 
-    void this.waitForScan(data.qrcode)
+    this.waitForScan(data.qrcode)
     return { ok: true }
   }
 

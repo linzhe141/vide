@@ -39,7 +39,7 @@ export function GeneralSettings() {
   useEffect(() => {
     let mounted = true
 
-    void window.ipcRendererApi.invoke('get-app-update-status').then((status) => {
+    window.ipcRendererApi.invoke('get-app-update-status').then((status) => {
       if (mounted) setUpdateStatus(status)
     })
 

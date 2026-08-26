@@ -112,7 +112,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
           currentState.root
         ) {
           if (currentState.requestedPreviewPath) {
-            void ensurePreviewPath(
+            ensurePreviewPath(
               nextWorkspacePath,
               currentState.requestedPreviewPath,
               currentState.requestId
@@ -135,7 +135,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
         })
 
         if (!nextWorkspacePath) return
-        void initializeWorkspace(nextWorkspacePath, requestId, currentState.requestedPreviewPath)
+        initializeWorkspace(nextWorkspacePath, requestId, currentState.requestedPreviewPath)
         startWatching(nextWorkspacePath)
       },
       closeWorkspace() {
@@ -157,7 +157,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
           state.root = createRootNode(workspacePath)
           state.expandedPaths = [workspacePath]
         })
-        void initializeWorkspace(workspacePath, requestId, requestedPreviewPath)
+        initializeWorkspace(workspacePath, requestId, requestedPreviewPath)
       },
       toggleFileTreePane() {
         set((state) => {
@@ -181,7 +181,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
 
         const currentNode = findNode(root, node.target)
         if (!isExpanded && currentNode?.children === undefined) {
-          void loadDirectory(workspacePath, node.target, requestId)
+          loadDirectory(workspacePath, node.target, requestId)
         }
       },
       selectNode(node) {
@@ -211,7 +211,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
 
         const cachedNode = findNode(root, node.target)
         if (cachedNode?.content) return
-        void loadFileContent(workspacePath, node.target, requestId)
+        loadFileContent(workspacePath, node.target, requestId)
       },
       previewPath(workspacePath, path) {
         const nextWorkspacePath = workspacePath ?? null
@@ -233,7 +233,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
           })
 
           startWatching(nextWorkspacePath)
-          void initializeWorkspace(nextWorkspacePath, requestId, path)
+          initializeWorkspace(nextWorkspacePath, requestId, path)
           return
         }
 
@@ -242,7 +242,7 @@ export const useWorkspaceExplorerStore = create<WorkspaceExplorerStore>()(
           state.requestedPreviewPath = path
         })
 
-        void ensurePreviewPath(nextWorkspacePath, path, currentState.requestId)
+        ensurePreviewPath(nextWorkspacePath, path, currentState.requestId)
       },
     },
   }))
@@ -388,13 +388,13 @@ function startWatching(workspacePath: string) {
     state.watchStopper = remove
   })
 
-  void window.ipcRendererApi.invoke('workspace-files-watch-start', { workspacePath })
+  window.ipcRendererApi.invoke('workspace-files-watch-start', { workspacePath })
 }
 
 function stopWatching(state: WorkspaceExplorerStore) {
   state.watchStopper?.()
   if (state.workspacePath) {
-    void window.ipcRendererApi.invoke('workspace-files-watch-stop', {
+    window.ipcRendererApi.invoke('workspace-files-watch-stop', {
       workspacePath: state.workspacePath,
     })
   }
@@ -431,7 +431,7 @@ function handleWorkspaceFileChanged(event: WorkspaceFileChangedEvent) {
       Boolean(activePreview && sameTarget(activePreview.target, event.target)))
 
   if (shouldRefreshContent) {
-    void loadFileContent(workspacePath, event.target, requestId)
+    loadFileContent(workspacePath, event.target, requestId)
   }
 }
 

@@ -14,7 +14,7 @@ export function SessionRecents() {
   )
 
   const fetchChats = useCallback(() => {
-    void historyActions.fetch()
+    historyActions.fetch()
   }, [historyActions])
 
   useEffect(() => {

@@ -28,7 +28,7 @@ export abstract class SubAgent {
     subAgentStream.namespace = this.name
     subAgentStream.mainWorkflowId = this.rootSessionConfig.getMainWorkflowId()
     const workflow = this.createWorkflow(subAgentStream)
-    void workflow.run(input)
+    workflow.run(input)
     return subAgentStream
   }
 

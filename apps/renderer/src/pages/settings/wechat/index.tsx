@@ -12,7 +12,7 @@ export function WechatBotSettings() {
   useEffect(() => {
     let disposed = false
 
-    void window.ipcRendererApi.invoke('wechat-get-runtime-status').then((status) => {
+    window.ipcRendererApi.invoke('wechat-get-runtime-status').then((status) => {
       if (disposed) return
       setAuthenticated(status.authenticated)
     })
