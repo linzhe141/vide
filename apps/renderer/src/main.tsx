@@ -20,8 +20,11 @@ function syncAppFavicon() {
   }
 }
 
+const time = performance.now()
+console.log(`renderer init start, time: ${time}ms`)
 await Promise.all([createElectronSettingStore(), initShikiHighlighter()])
 
 syncAppFavicon()
 
 createRoot(document.getElementById('root')!).render(<App />)
+console.log(`renderer init done, took ${performance.now() - time}ms`)

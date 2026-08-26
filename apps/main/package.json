@@ -2,13 +2,11 @@
   "name": "@vide/main",
   "private": true,
   "version": "0.0.0-beta.11",
-  "type": "module",
   "main": "./dist/electron/main/index.js",
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "dev": "chcp 65001 &&  electron-vite dev",
-    "preview": "electron-vite preview",
-    "build": "electron-vite build",
+    "dev": "node ./scripts/dev.mjs",
+    "build": "vite build --mode production --config vite.renderer.config.ts && vite build --mode production --config vite.main.config.ts && vite build --mode production --config vite.preload.config.ts",
     "package": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts",
     "release": "cross-env NODE_ENV=production electron-builder --config electron-builder.config.ts --publish always",
     "rebuild:electron": "electron-rebuild",
@@ -44,7 +42,6 @@
     "drizzle-kit": "^0.31.10",
     "electron": "41.3.0",
     "electron-builder": "^26.8.1",
-    "electron-vite": "6.0.0-beta.1",
     "node-abi": "4.31.0",
     "tailwindcss": "^4.2.4",
     "vite": "^8.0.11"

@@ -8,6 +8,7 @@
     "@lobehub/ui": "^5.29.0",
     "@shikijs/core": "^4.2.0",
     "@shikijs/langs": "^4.2.0",
+    "@vide/agent": "workspace:*",
     "clsx": "^2.1.1",
     "immer": "^11.1.7",
     "lucide-react": "^1.14.0",

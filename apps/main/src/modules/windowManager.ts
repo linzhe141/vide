@@ -1,10 +1,20 @@
+import { existsSync } from 'node:fs'
 import { BrowserWindow, dialog, shell } from 'electron'
 import path from 'node:path'
-import { IS_DEV } from '../utils'
 import { ipcMainApi } from '../ipc/api/ipcMain'
 import type { AppManager } from '@/appManager'
 
 const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
+const rendererIndexPath = path.join(__dirname, '../../app/index.html')
+
+function resolvePreloadPath() {
+  const preloadCandidates = [
+    path.join(__dirname, '../preload/index.js'),
+    path.join(__dirname, '../preload/index.mjs'),
+  ]
+
+  return preloadCandidates.find((candidate) => existsSync(candidate)) ?? preloadCandidates[0]
+}
 
 export class WindowManager {
   mainWindow: BrowserWindow = null!
@@ -24,7 +34,7 @@ export class WindowManager {
       titleBarStyle: 'hidden',
       webPreferences: {
         webSecurity: false,
-        preload: path.join(__dirname, '../preload/index.mjs'),
+        preload: resolvePreloadPath(),
         nodeIntegration: true,
         contextIsolation: false,
         sandbox: false,
@@ -34,12 +44,12 @@ export class WindowManager {
     this.mainWindow = mainWindow
     this.setupExternalNavigation(mainWindow)
 
-    if (IS_DEV) {
-      mainWindow.loadURL('http://localhost:1412')
+    const rendererUrl = process.env.ELECTRON_RENDERER_URL
+    if (rendererUrl) {
+      mainWindow.loadURL(rendererUrl)
       mainWindow.webContents.openDevTools({ mode: 'detach' })
     } else {
-      // Load your file
-      mainWindow.loadFile('dist/app/index.html')
+      mainWindow.loadFile(rendererIndexPath)
     }
 
     return mainWindow

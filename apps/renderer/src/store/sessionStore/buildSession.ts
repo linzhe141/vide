@@ -1,4 +1,4 @@
-import { nanoid } from 'nanoid'
+import { uuid as nanoid } from '@/lib/uuid'
 import type { AgentMessage, ToolCall } from '@vide/ai'
 import type { WorkflowEvent } from '@vide/agent/event'
 import type { SessionDataDto, SessionWorkflowData, WorkflowLogDto } from '@vide/config'

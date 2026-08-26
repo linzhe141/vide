@@ -8,7 +8,7 @@
     "types": ["./vite-env.d.ts"],
     "declarationMap": false,
     "declaration": false,
-    "lib": ["es2023", "dom"],
+    "lib": ["es2023", "dom"]
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]

@@ -1,4 +1,4 @@
-import { nanoid } from 'nanoid'
+import { v4 as nanoid } from 'uuid'
 import type { AskQuestionOption, AskUserQuestionItem } from './types'
 
 /** ask-user-question 工具的（llm tool call）名字。 */
