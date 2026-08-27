@@ -70,6 +70,15 @@ const settingItems: CommandItem[] = [
     to: '/settings/wechat',
     meta: 'Settings',
   },
+  {
+    id: 'setting-github-auth',
+    title: 'GitHub OAuth',
+    subtitle: 'External browser sign-in and desktop callback',
+    kind: 'setting',
+    keywords: ['settings', 'github', 'oauth', 'login', 'auth', 'callback', 'protocol'],
+    to: '/settings/github',
+    meta: 'Settings',
+  },
 ]
 
 function normalize(value: string) {

@@ -65,6 +65,25 @@ export type WechatBotSessionRecord = {
   lastUsedAt: number
 }
 
+export type GitHubAuthUser = {
+  id: string
+  githubId: string
+  username: string
+  avatarUrl: string | null
+  email: string | null
+  createdAt: number
+  updatedAt: number
+}
+
+export type GitHubAuthRuntimeStatus = {
+  configured: boolean
+  authenticated: boolean
+  pending: boolean
+  callbackUrl: string
+  lastError: string | null
+  user: GitHubAuthUser | null
+}
+
 // IPC Types
 export type FileNode = {
   name: string

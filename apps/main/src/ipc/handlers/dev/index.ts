@@ -6,6 +6,7 @@ import {
   sessionBranches,
   sessions,
   sessionWorkflows,
+  users,
   workflowLogs,
   workflowMessages,
 } from '@/db/schema'
@@ -21,6 +22,7 @@ export class DevIpcMainService implements IpcMainService {
       await db.delete(sessionBranches)
       await db.delete(sessionWorkflows)
       await db.delete(sessions)
+      await db.delete(users)
     })
   }
 }

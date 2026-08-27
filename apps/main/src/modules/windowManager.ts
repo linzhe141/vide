@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import path from 'node:path'
 import { ipcMainApi } from '../ipc/api/ipcMain'
 import type { AppManager } from '@/appManager'
@@ -61,7 +61,7 @@ export class WindowManager {
   }
 
   closeWindow() {
-    this.mainWindow!.close()
+    this.hideWindowToTray()
   }
 
   maximizeWindow() {
@@ -77,6 +77,35 @@ export class WindowManager {
     this.mainWindow!.minimize()
   }
 
+  showWindow() {
+    const mainWindow = this.mainWindow
+    if (!mainWindow || mainWindow.isDestroyed()) return
+
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore()
+    }
+
+    if (!mainWindow.isVisible()) {
+      mainWindow.show()
+    }
+
+    mainWindow.focus()
+  }
+
+  async requestAppQuit() {
+    const mainWindow = this.mainWindow
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      app.quit()
+      return
+    }
+
+    const confirmed = await this.confirmAppQuit()
+    if (!confirmed) return
+
+    this.allowClose = true
+    app.quit()
+  }
+
   setupWindowListener() {
     const mainWindow = this.mainWindow!
     mainWindow.on('resize', () => {
@@ -87,30 +116,43 @@ export class WindowManager {
     mainWindow.on('close', async (event) => {
       if (this.allowClose) return
 
-      const runningSessionCount = this.app.agentManager.countRunningSessions()
-      if (!runningSessionCount) return
-
       event.preventDefault()
-      const result = await dialog.showMessageBox(mainWindow, {
-        type: 'warning',
-        buttons: ['取消', '仍然退出'],
-        defaultId: 0,
-        cancelId: 0,
-        title: '存在未完成的会话',
-        message:
-          '当前存在正在运行的 session。现在关闭应用，未完成 workflow 的 agent message 和 stream event 可能不会被保存。',
-        detail:
-          runningSessionCount === 1
-            ? '建议等待当前 workflow 结束后再退出。'
-            : `当前共有 ${runningSessionCount} 个 session 仍在运行，建议等待它们结束后再退出。`,
-        noLink: true,
-      })
-
-      if (result.response === 1) {
-        this.allowClose = true
-        mainWindow.close()
-      }
+      this.hideWindowToTray()
     })
+  }
+
+  private hideWindowToTray() {
+    const mainWindow = this.mainWindow
+    if (!mainWindow || mainWindow.isDestroyed()) return
+
+    mainWindow.hide()
+    this.app.trayManager.showCloseToTrayMessage()
+  }
+
+  private async confirmAppQuit() {
+    const runningSessionCount = this.app.agentManager.countRunningSessions()
+    if (!runningSessionCount) return true
+
+    const options = {
+      type: 'warning' as const,
+      buttons: ['取消', '仍然退出'],
+      defaultId: 0,
+      cancelId: 0,
+      title: '存在未完成的会话',
+      message:
+        '当前存在正在运行的 session。现在关闭应用，未完成 workflow 的 agent message 和 stream event 可能不会被保存。',
+      detail:
+        runningSessionCount === 1
+          ? '建议等待当前 workflow 结束后再退出。'
+          : `当前共有 ${runningSessionCount} 个 session 仍在运行，建议等待它们结束后再退出。`,
+      noLink: true,
+    }
+
+    const result = this.mainWindow.isVisible()
+      ? await dialog.showMessageBox(this.mainWindow, options)
+      : await dialog.showMessageBox(options)
+
+    return result.response === 1
   }
 
   private setupExternalNavigation(mainWindow: BrowserWindow) {

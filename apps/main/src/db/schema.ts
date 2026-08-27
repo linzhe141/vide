@@ -106,6 +106,23 @@ export const workflowLogs = sqliteTable('workflow_logs', {
   createdAt: integer('created_at').notNull(),
 })
 
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    githubId: text('github_id').notNull(),
+    username: text('username').notNull(),
+    avatarUrl: text('avatar_url'),
+    email: text('email'),
+    accessToken: text('access_token').notNull(),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => ({
+    githubIdUnique: uniqueIndex('users_github_id_unique').on(table.githubId),
+  })
+)
+
 export const sessionsRelations = relations(sessions, ({ many }) => ({
   workflows: many(sessionWorkflows),
   branches: many(sessionBranches),

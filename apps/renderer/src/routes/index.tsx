@@ -12,6 +12,7 @@ import { Chat } from '../pages/chat'
 import { LlmSettings } from '../pages/settings/llm'
 import { WebSearchSettings } from '../pages/settings/webSearch'
 import { WechatBotSettings } from '../pages/settings/wechat'
+import { GitHubAuthSettings } from '../pages/settings/github'
 import { SkillsPage } from '../pages/skills'
 
 export const router = createHashRouter([
@@ -47,6 +48,10 @@ export const router = createHashRouter([
           {
             path: 'wechat',
             Component: WechatBotSettings,
+          },
+          {
+            path: 'github',
+            Component: GitHubAuthSettings,
           },
         ],
       },

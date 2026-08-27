@@ -7,6 +7,7 @@ import type {
   SessionDataDto,
   WebSearchConfig,
   WechatBotRuntimeStatus,
+  GitHubAuthRuntimeStatus,
 } from '@vide/config'
 import type { WorkflowEvent, SessionEvent } from '@vide/agent'
 
@@ -146,6 +147,10 @@ export interface RenderChannel {
   'wechat-stop-bot': () => Promise<void>
   'wechat-logout': () => Promise<void>
   'wechat-get-runtime-status': () => WechatBotRuntimeStatus
+
+  'github-auth-start': () => Promise<{ ok: true }>
+  'github-auth-logout': () => Promise<void>
+  'github-auth-get-runtime-status': () => Promise<GitHubAuthRuntimeStatus>
   // only dev
   'dev-delete-database-rows': () => void
 
@@ -194,6 +199,7 @@ export type MainChannel = {
   'app-update-status': (status: AppUpdateStatus) => void
 
   'weixin-bot-auth-success': () => void
+  'github-auth-status-changed': (status: GitHubAuthRuntimeStatus) => void
 
   'workspace-file-changed': (data: {
     workspacePath: string

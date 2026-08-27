@@ -20,6 +20,7 @@ export function Layout() {
             <LinkMenuItem label='Generate Image' link='/settings/generateImage'></LinkMenuItem>
             <LinkMenuItem label='Web Search' link='/settings/webSearch'></LinkMenuItem>
             <LinkMenuItem label='WeChat Bot' link='/settings/wechat'></LinkMenuItem>
+            <LinkMenuItem label='GitHub OAuth' link='/settings/github'></LinkMenuItem>
           </LinkMenu>
         </div>
       </div>

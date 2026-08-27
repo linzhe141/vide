@@ -8,6 +8,7 @@ import { DevIpcMainService } from './handlers/dev'
 import { WorkspaceIpcMainService } from './handlers/workspace'
 import { WechatBotIpcMainService } from './handlers/wechatBot'
 import { AppUpdateIpcMainService } from './handlers/appUpdate'
+import { GitHubAuthIpcMainService } from './handlers/githubAuth'
 
 export interface IpcMainService {
   registerIpcMainHandle(): void
@@ -43,5 +44,8 @@ export class IpcService {
 
     const appUpdateIpcMainService = new AppUpdateIpcMainService(this.appManager)
     appUpdateIpcMainService.registerIpcMainHandle()
+
+    const gitHubAuthIpcMainService = new GitHubAuthIpcMainService(this.appManager)
+    gitHubAuthIpcMainService.registerIpcMainHandle()
   }
 }

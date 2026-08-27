@@ -111,7 +111,8 @@ function start() {
       poll = null
 
       console.log('[desktop-dev] starting electron')
-      const electron = spawnChild(electronBin, ['.', ...electronArgs], {
+      // 改成 . 会影响 schema
+      const electron = spawnChild(electronBin, [desktopRoot, ...electronArgs], {
         ELECTRON_RENDERER_URL: `http://127.0.0.1:${rendererPort}`,
         NODE_ENV: 'development',
       })

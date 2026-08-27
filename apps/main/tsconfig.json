@@ -8,6 +8,6 @@
     "composite": true,
     "types": ["./global.d.ts"]
   },
-  "include": ["src", "global.d.ts"],
+  "include": ["src", "global.d.ts", "dev.config.ts"],
   "exclude": ["dist", "node_modules"]
 }
