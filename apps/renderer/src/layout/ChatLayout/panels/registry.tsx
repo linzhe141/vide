@@ -1,11 +1,12 @@
-import { FileClock, FolderTree, Search, type LucideIcon } from 'lucide-react'
+import { FileClock, FolderTree, Image as ImageIcon, Search, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type { Session } from '@/store/sessionStore/types'
+import { ImagePreviewPane } from './ImagePreviewPane'
 import { SessionLogPane } from './SessionLogPane'
 import { WebSearchDisplay } from './WebSearchDisplay'
 import { WorkspaceExplorerPane } from './WorkspaceExplorer'
 
-export type ChatPanelId = 'file-explorer' | 'web-search' | 'logs'
+export type ChatPanelId = 'file-explorer' | 'web-search' | 'logs' | 'image-preview'
 
 export type ChatPanelComponentProps = {
   session: Session | undefined
@@ -34,6 +35,10 @@ function LogsPanel() {
   return <SessionLogPane />
 }
 
+function ImagePreviewPanel() {
+  return <ImagePreviewPane />
+}
+
 export const chatPanelDefinitions = [
   {
     id: 'logs',
@@ -56,6 +61,16 @@ export const chatPanelDefinitions = [
     Component: FileExplorerPanel,
   },
   {
+    id: 'image-preview',
+    title: 'Image preview',
+    icon: ImageIcon,
+    showInToolbar: false,
+    defaultWidth: 720,
+    minWidth: 420,
+    maxWidth: 1320,
+    Component: ImagePreviewPanel,
+  },
+  {
     id: 'web-search',
     title: 'Web search',
     icon: Search,
@@ -69,6 +84,7 @@ export const chatPanelDefinitions = [
 
 export const defaultChatPanelId: ChatPanelId = 'file-explorer'
 export const webSearchPanelId: ChatPanelId = 'web-search'
+export const imagePreviewPanelId: ChatPanelId = 'image-preview'
 
 export const toolbarChatPanelDefinitions = chatPanelDefinitions.filter(
   (panel) => panel.showInToolbar

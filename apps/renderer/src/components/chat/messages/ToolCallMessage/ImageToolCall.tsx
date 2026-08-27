@@ -1,16 +1,44 @@
-﻿import { Clock3, XCircle, CheckCircle2, Download, Sparkles } from 'lucide-react'
-import { useState } from 'react'
+﻿import { CheckCircle2, Clock3, Eye, FolderOpen, Sparkles, XCircle } from 'lucide-react'
+import { useState, type KeyboardEvent } from 'react'
+import { useChatLayout } from '@/hooks/useChatLayout'
+import { getContainingDirectoryPath, getLocalAssetUrl } from '@/lib/localAsset'
+import { imagePreviewPanelId } from '@/layout/ChatLayout/panels'
+import { useImagePreviewStoreActions } from '@/store/imagePreviewStore'
 import type { ToolCallState } from '@/store/sessionStore/types'
 import type { ToolCall } from '@vide/ai'
 
 function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['result'] }) {
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const { openPanel } = useChatLayout()
+  const imagePreviewActions = useImagePreviewStoreActions()
   const isRunning = !result
   const isError = result?.status === 'error'
   const duration = formatDuration(result?.durationMs)
-  const imageUrl = result?.result?.result?.url
+  const imagePath = result?.result?.result?.url
+  const imageSrc = imagePath ? getLocalAssetUrl(imagePath) : null
   const errorMessage = getErrorMessage(result?.error)
   const isAbortError = /abort|cancel/i.test(errorMessage)
+
+  const handlePreview = () => {
+    if (!imagePath) return
+
+    imagePreviewActions.selectPath(imagePath)
+    openPanel(imagePreviewPanelId)
+  }
+
+  const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    handlePreview()
+  }
+
+  const handleOpenFolder = () => {
+    if (!imagePath) return
+
+    window.ipcRendererApi.invoke('reveal-path-in-explorer', {
+      path: getContainingDirectoryPath(imagePath),
+    })
+  }
+
   if (isRunning) {
     return (
       <div className='group border-primary/20 from-primary/5 relative overflow-hidden rounded-xl border bg-linear-to-br to-transparent p-4'>
@@ -71,53 +99,19 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
     )
   }
 
-  if (!imageUrl) return null
+  if (!imagePath || !imageSrc) return null
 
   return (
     <div className='group from-primary/5 border-primary/10 relative overflow-hidden rounded-xl border bg-linear-to-br to-transparent'>
       <style>{styles}</style>
-      {/* Image Container */}
-      <div className='relative flex items-center justify-center'>
-        {/* Loading skeleton */}
-        {!imageLoaded && (
-          <div className='bg-muted/20 absolute inset-0 flex items-center justify-center'>
-            <div className='flex flex-col items-center gap-2'>
-              <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-              <p className='text-text-secondary text-xs'>Loading image...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Actual Image */}
-        <img
-          src={imageUrl}
-          alt='AI Generated Image'
-          className={`w-1/2 transition-opacity duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setImageLoaded(true)}
-        />
-
-        {/* Overlay Actions */}
-        <div className='absolute inset-0 rounded-t-xl bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
-          <div className='absolute right-4 bottom-4 left-4 flex items-center justify-between gap-2'>
-            <a
-              href={imageUrl}
-              className='flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-white/20 disabled:opacity-50'
-            >
-              <Download className='h-3.5 w-3.5' />
-              Download
-            </a>
-
-            {duration && (
-              <div className='flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1 text-xs text-white backdrop-blur-md'>
-                <Clock3 className='h-3 w-3' />
-                {duration}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <GeneratedImagePreview
+        key={imageSrc}
+        imageSrc={imageSrc}
+        duration={duration}
+        onPreview={handlePreview}
+        onPreviewKeyDown={handlePreviewKeyDown}
+        onOpenFolder={handleOpenFolder}
+      />
 
       {/* Footer Info */}
       <div className='border-primary/10 bg-background/50 flex items-center justify-between border-t px-4 py-3'>
@@ -126,6 +120,101 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
           <span className='text-text-secondary text-xs font-medium'>Generated successfully</span>
         </div>
         {duration && <span className='text-text-info text-xs'>{duration}</span>}
+      </div>
+    </div>
+  )
+}
+
+function GeneratedImagePreview({
+  imageSrc,
+  duration,
+  onPreview,
+  onPreviewKeyDown,
+  onOpenFolder,
+}: {
+  imageSrc: string
+  duration: string | null
+  onPreview: () => void
+  onPreviewKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+  onOpenFolder: () => void
+}) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
+
+  return (
+    <div
+      className='relative flex cursor-zoom-in items-center justify-center'
+      role='button'
+      tabIndex={0}
+      onClick={onPreview}
+      onKeyDown={onPreviewKeyDown}
+      aria-label='Preview image in side panel'
+    >
+      {!imageLoaded && !imageFailed && (
+        <div className='bg-muted/20 absolute inset-0 flex items-center justify-center'>
+          <div className='flex flex-col items-center gap-2'>
+            <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
+            <p className='text-text-secondary text-xs'>Loading image...</p>
+          </div>
+        </div>
+      )}
+
+      {imageFailed && (
+        <div className='bg-muted/20 absolute inset-0 flex items-center justify-center'>
+          <div className='rounded-lg border border-red-500/15 bg-red-500/6 px-4 py-3 text-sm text-red-500'>
+            Unable to load the local image preview.
+          </div>
+        </div>
+      )}
+
+      <img
+        src={imageSrc}
+        alt='AI Generated Image'
+        className={`w-1/2 object-contain transition-opacity duration-300 ${
+          imageLoaded && !imageFailed ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() => setImageLoaded(true)}
+        onError={() => {
+          setImageLoaded(true)
+          setImageFailed(true)
+        }}
+      />
+
+      <div className='absolute inset-0 rounded-t-xl bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+        <div className='absolute right-4 bottom-4 left-4 flex items-center justify-between gap-2'>
+          <div className='flex items-center gap-2'>
+            <button
+              type='button'
+              onClick={(event) => {
+                event.stopPropagation()
+                onPreview()
+              }}
+              className='flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-white/20'
+            >
+              <Eye className='h-3.5 w-3.5' />
+              Preview
+            </button>
+
+            <button
+              type='button'
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenFolder()
+              }}
+              className='flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-white/20'
+            >
+              <FolderOpen className='h-3.5 w-3.5' />
+              Open folder
+            </button>
+          </div>
+
+          {duration && (
+            <div className='flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1 text-xs text-white backdrop-blur-md'>
+              <Clock3 className='h-3 w-3' />
+              {duration}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

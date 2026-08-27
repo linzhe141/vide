@@ -1,9 +1,9 @@
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 import chokidar, { type FSWatcher } from 'chokidar'
 import { isBinaryFile } from 'isbinaryfile'
+import { buildLocalAssetUrl } from '@vide/config'
 import type { WorkspaceExplorerNode, WorkspaceFilePreview } from '../../api/channels'
 
 type WorkspaceWatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
@@ -140,7 +140,7 @@ export async function getWorkspaceFileContent(data: {
     return {
       kind: 'image',
       path: targetPath,
-      fileUrl: pathToFileURL(targetPath).toString(),
+      fileUrl: buildLocalAssetUrl(targetPath),
     }
   }
 
@@ -148,7 +148,7 @@ export async function getWorkspaceFileContent(data: {
     return {
       kind: 'video',
       path: targetPath,
-      fileUrl: pathToFileURL(targetPath).toString(),
+      fileUrl: buildLocalAssetUrl(targetPath),
     }
   }
 

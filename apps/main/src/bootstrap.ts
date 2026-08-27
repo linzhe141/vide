@@ -1,11 +1,14 @@
 import { app, BrowserWindow } from 'electron'
 import { initApp } from './initApp'
+import { installLocalAssetProtocol, registerLocalAssetProtocolScheme } from './localAssetProtocol'
 import { logger } from './logger'
 import type { AppManager } from './appManager'
 
 const PROTOCOL_SCHEME = 'vide'
 
 export async function start() {
+  registerLocalAssetProtocolScheme()
+
   let appManager: AppManager | null = null
   const gotTheLock = app.requestSingleInstanceLock()
   if (!gotTheLock) {
@@ -22,6 +25,7 @@ export async function start() {
   }
 
   await app.whenReady()
+  installLocalAssetProtocol()
   logger.info('App is ready')
 
   appManager = initApp()

@@ -22,6 +22,14 @@ export type Settings = {
   wechatBotConfig: WechatBotConfig
 }
 
+export const LOCAL_ASSET_PROTOCOL = 'vide-file'
+export const LOCAL_ASSET_PATH_QUERY = 'path'
+
+export function buildLocalAssetUrl(filePath: string) {
+  const params = new URLSearchParams([[LOCAL_ASSET_PATH_QUERY, filePath]])
+  return `${LOCAL_ASSET_PROTOCOL}://local?${params.toString()}`
+}
+
 export type Theme = Settings['theme']
 export type ThemeColor = Settings['themeColor']
 export type LLMConfig = Settings['llmConfig']

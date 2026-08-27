@@ -33,7 +33,6 @@ export class WindowManager {
       icon: iconPath,
       titleBarStyle: 'hidden',
       webPreferences: {
-        webSecurity: false,
         preload: resolvePreloadPath(),
         nodeIntegration: true,
         contextIsolation: false,

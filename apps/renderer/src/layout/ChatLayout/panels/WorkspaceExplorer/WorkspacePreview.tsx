@@ -7,6 +7,7 @@ import {
   Video,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { getContainingDirectoryPath } from '@/lib/localAsset'
 import type { WorkspaceFilePreview } from '@/store/workspaceExplorerStore'
 
 type WorkspacePreviewProps = {
@@ -142,9 +143,9 @@ function PreviewHeader({
   deleted?: boolean
 }) {
   const openContainingFolder = () => {
-    const separatorIndex = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
-    const directoryPath = separatorIndex > 0 ? path.slice(0, separatorIndex) : path
-    window.ipcRendererApi.invoke('reveal-path-in-explorer', { path: directoryPath })
+    window.ipcRendererApi.invoke('reveal-path-in-explorer', {
+      path: getContainingDirectoryPath(path),
+    })
   }
 
   return (
