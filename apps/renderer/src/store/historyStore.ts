@@ -97,3 +97,5 @@ export const useHistoryStore = create<HistoryState & HistoryActions>((set) => ({
 
 export const useHistoryItems = () => useHistoryStore((state) => state.items)
 export const useHistoryStoreActions = () => useHistoryStore((state) => state.actions)
+export const useHistoryItem = (sessionId: string) =>
+  useHistoryStore((state) => state.items.find((item) => item.sessionId === sessionId))

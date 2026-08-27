@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
@@ -59,6 +60,72 @@ type SessionActions = {
       feedback: Workflow['feedback']
     }) => void
   }
+}
+
+function findSession(sessions: Session[], sessionId: string) {
+  return sessions.find((item) => item.sessionId === sessionId)
+}
+
+function findActiveBranch(session: Session | undefined) {
+  if (!session) return null
+  return session.branches.find((item) => item.name === session.activeBranch) ?? null
+}
+
+function buildWorkflowChain(workflowNodesMap: Session['workflowNodesMap'], headWorkflowId: string) {
+  const chain: string[] = []
+  let currentWorkflowId: string | undefined = headWorkflowId
+  const visited = new Set<string>()
+
+  while (currentWorkflowId) {
+    if (visited.has(currentWorkflowId)) {
+      debugger
+      throw new Error(`Cycle detected: ${currentWorkflowId}`)
+    }
+
+    visited.add(currentWorkflowId)
+
+    const currentNode = workflowNodesMap[currentWorkflowId]
+    if (!currentNode) {
+      debugger
+      throw new Error(`Node not found: ${currentWorkflowId}`)
+    }
+
+    chain.push(currentWorkflowId)
+    currentWorkflowId = currentNode.parent ?? undefined
+  }
+
+  return chain
+}
+
+function buildWorkflowPath(
+  workflowNodesMap: Session['workflowNodesMap'],
+  headWorkflowId: string,
+  stopAtWorkflowId: string | null
+) {
+  const path: string[] = []
+  let currentWorkflowId: string | null = headWorkflowId
+
+  while (currentWorkflowId) {
+    path.unshift(currentWorkflowId)
+
+    const currentNode = workflowNodesMap[currentWorkflowId]
+    if (!currentNode) {
+      debugger
+      throw new Error(`Node not found: ${currentWorkflowId}`)
+    }
+
+    if (stopAtWorkflowId && currentNode.workflow.id === stopAtWorkflowId) {
+      break
+    }
+
+    if (!currentNode.parent) {
+      break
+    }
+
+    currentWorkflowId = currentNode.parent
+  }
+
+  return path
 }
 
 export const useSessionStore = create<SessionState & SessionActions>()(
@@ -241,151 +308,112 @@ export const useSessionStore = create<SessionState & SessionActions>()(
 export const useSessionStoreActions = () => useSessionStore((state) => state.actions)
 
 export const useSession = (sessionId: string) =>
-  useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId))
+  useSessionStore((state) => findSession(state.sessions, sessionId))
+
+export const useHasSession = (sessionId: string) =>
+  useSessionStore((state) => findSession(state.sessions, sessionId) != null)
+
+export const useSessionWorkspacePath = (sessionId: string) =>
+  useSessionStore((state) => findSession(state.sessions, sessionId)?.workspacePath)
+
+export const useSessionAutoApprove = (sessionId: string) =>
+  useSessionStore((state) => findSession(state.sessions, sessionId)?.autoApprove)
+
+export const useSessionThinkingMode = (sessionId: string) =>
+  useSessionStore((state) => findSession(state.sessions, sessionId)?.thinkingMode)
+
+export const useSessionRunning = (sessionId: string) =>
+  useSessionStore((state) => findSession(state.sessions, sessionId)?.runtime.running ?? false)
 
 export const useSessionWorkflows = (sessionId: string) => {
-  const session = useSession(sessionId)
-  if (!session) return undefined
+  const workflowNodesMap = useSessionStore(
+    (state) => findSession(state.sessions, sessionId)?.workflowNodesMap
+  )
+  const headWorkflowId = useSessionStore(
+    (state) => findActiveBranch(findSession(state.sessions, sessionId))?.headWorkflowId ?? null
+  )
 
-  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-  if (!activeBranch || !activeBranch.headWorkflowId) return undefined
+  return useMemo(() => {
+    if (!workflowNodesMap || !headWorkflowId) return undefined
 
-  // function traverse(nodeId: string, result: Workflow[] = []) {
-  //   const node = session!.workflowNodesMap[nodeId]
-  //   if (node == null) {
-  //     debugger
-  //   }
-  //   result.unshift(node.workflow)
-  //   if (node.parent) {
-  //     traverse(node.parent, result)
-  //   }
-  //   return result
-  // }
-  function traverse(nodeId: string, result: Workflow[] = [], visited = new Set<string>()) {
-    if (visited.has(nodeId)) {
-      debugger // 找到环了
-      throw new Error(`Cycle detected: ${nodeId}`)
-    }
-
-    visited.add(nodeId)
-
-    const node = session!.workflowNodesMap[nodeId]
-
-    if (!node) {
-      debugger
-      throw new Error(`Node not found: ${nodeId}`)
-    }
-
-    result.unshift(node.workflow)
-
-    if (node.parent) {
-      traverse(node.parent, result, visited)
-    }
-
-    return result
-  }
-
-  return traverse(activeBranch.headWorkflowId)
+    return buildWorkflowChain(workflowNodesMap, headWorkflowId)
+      .reverse()
+      .map((workflowId) => workflowNodesMap[workflowId]!.workflow)
+  }, [headWorkflowId, workflowNodesMap])
 }
 
 export const useWorkflowBranches = (sessionId: string, workflowId: string | null) => {
-  const session = useSession(sessionId)
-  if (!session) return []
+  const branches = useSessionStore((state) => findSession(state.sessions, sessionId)?.branches)
+  const workflowNodesMap = useSessionStore(
+    (state) => findSession(state.sessions, sessionId)?.workflowNodesMap
+  )
 
-  const branchPath: { path: string[]; branchName: string }[] = []
+  return useMemo(() => {
+    if (!branches || !workflowNodesMap) return []
 
-  for (const branch of session.branches) {
-    const path: string[] = []
-    let currentWorkflowId = branch.headWorkflowId
-
-    while (currentWorkflowId) {
-      path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
-
-      const currentNode = session.workflowNodesMap[currentWorkflowId]
-
-      // 如果当前节点是 sourceWorkflowId，停止收集
-      if (branch.sourceWorkflowId && currentNode.workflow.id === branch.sourceWorkflowId) {
-        break
-      }
-      // 如果当前节点没有父节点了，停止收集
-      if (!currentNode.parent) {
-        break
-      }
-      // 继续向上遍历父节点
-      currentWorkflowId = currentNode.parent
-    }
-    branchPath.push({ path, branchName: branch.name })
-  }
-  if (!workflowId) {
-    // 收集所有的root 级别的 branch
-    return session.branches
-      .filter((i) => i.sourceWorkflowId === null)
-      .map((i) => ({
-        path: branchPath.find((b) => b.branchName === i.name)?.path || [],
-        ...i,
-      }))
-  }
-  const targetBranches: string[] = []
-  for (const { path, branchName } of branchPath) {
-    if (path.includes(workflowId)) {
-      targetBranches.push(branchName)
-    }
-  }
-  return session.branches
-    .filter((branch) => targetBranches.includes(branch.name))
-    .map((i) => ({
-      path: branchPath.find((b) => b.branchName === i.name)?.path || [],
-      ...i,
+    const branchPath = branches.map((branch) => ({
+      path: branch.headWorkflowId
+        ? buildWorkflowPath(workflowNodesMap, branch.headWorkflowId, branch.sourceWorkflowId)
+        : [],
+      branchName: branch.name,
     }))
+
+    if (!workflowId) {
+      return branches
+        .filter((branch) => branch.sourceWorkflowId === null)
+        .map((branch) => ({
+          path: branchPath.find((item) => item.branchName === branch.name)?.path || [],
+          ...branch,
+        }))
+    }
+
+    const targetBranches = branchPath
+      .filter((item) => item.path.includes(workflowId))
+      .map((item) => item.branchName)
+
+    return branches
+      .filter((branch) => targetBranches.includes(branch.name))
+      .map((branch) => ({
+        path: branchPath.find((item) => item.branchName === branch.name)?.path || [],
+        ...branch,
+      }))
+  }, [branches, workflowId, workflowNodesMap])
 }
 
 export const useActiveBranchPath = (sessionId: string) => {
-  const session = useSession(sessionId)
-  if (!session) return []
+  const activeBranch = useSessionStore((state) =>
+    findActiveBranch(findSession(state.sessions, sessionId))
+  )
+  const workflowNodesMap = useSessionStore(
+    (state) => findSession(state.sessions, sessionId)?.workflowNodesMap
+  )
 
-  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-  if (!activeBranch) return []
+  return useMemo(() => {
+    if (!activeBranch?.headWorkflowId || !workflowNodesMap) return []
 
-  const path: string[] = []
-  let currentWorkflowId = activeBranch.headWorkflowId
-
-  while (currentWorkflowId) {
-    path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
-
-    const currentNode = session.workflowNodesMap[currentWorkflowId]
-
-    // 如果当前节点是 sourceWorkflowId，停止收集
-    if (
-      activeBranch.sourceWorkflowId &&
-      currentNode.workflow.id === activeBranch.sourceWorkflowId
-    ) {
-      break
-    }
-    // 如果当前节点没有父节点了，停止收集
-    if (!currentNode.parent) {
-      break
-    }
-    // 继续向上遍历父节点
-    currentWorkflowId = currentNode.parent
-  }
-  return path
+    return buildWorkflowPath(
+      workflowNodesMap,
+      activeBranch.headWorkflowId,
+      activeBranch.sourceWorkflowId
+    )
+  }, [activeBranch, workflowNodesMap])
 }
 
 export const useSessionRuntime = (sessionId: string) =>
-  useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId)?.runtime)
+  useSessionStore((state) => findSession(state.sessions, sessionId)?.runtime)
 
-export const useHasPendingAskQuestion = (sessionId: string) =>
-  useSessionStore((state) => {
-    const session = state.sessions.find((item) => item.sessionId === sessionId)
-    if (!session) return false
+export const useHasPendingAskQuestion = (sessionId: string) => {
+  const headWorkflowMessages = useSessionStore((state) => {
+    const session = findSession(state.sessions, sessionId)
+    const headWorkflowId = findActiveBranch(session)?.headWorkflowId
+    if (!session || !headWorkflowId) return undefined
+    return session.workflowNodesMap[headWorkflowId]?.workflow.messages
+  })
 
-    const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-    if (!activeBranch?.headWorkflowId) return false
+  return useMemo(() => {
+    if (!headWorkflowMessages) return false
 
-    const headWorkflowNode = session.workflowNodesMap[activeBranch.headWorkflowId]
-    if (!headWorkflowNode) return false
-
-    const latestMessage = [...headWorkflowNode.workflow.messages]
+    const latestMessage = [...headWorkflowMessages]
       .reverse()
       .find((message) => message.role !== 'workflow')
 
@@ -393,7 +421,8 @@ export const useHasPendingAskQuestion = (sessionId: string) =>
     // head workflow 是 active branch 最新的 workflow，后面不会有子节点，
     // 因此 head 若以 ask-question 结尾 → 该问题尚未提交 → 隐藏下方 ChatInput（不能两个输入入口）。
     return latestMessage?.role === 'ask-user-question'
-  })
+  }, [headWorkflowMessages])
+}
 
 /**
  * 取 active branch 上、紧跟在 `workflowId` 之后的「下一个 workflow」（子节点）。
@@ -407,28 +436,21 @@ export const useHasPendingAskQuestion = (sessionId: string) =>
 export const useSessionWorkflowNext = (
   sessionId: string,
   workflowId: string
-): Workflow | undefined =>
-  useSessionStore((state) => {
-    const session = state.sessions.find((item) => item.sessionId === sessionId)
-    if (!session || !workflowId) return undefined
+): Workflow | undefined => {
+  const workflowNodesMap = useSessionStore(
+    (state) => findSession(state.sessions, sessionId)?.workflowNodesMap
+  )
+  const headWorkflowId = useSessionStore(
+    (state) => findActiveBranch(findSession(state.sessions, sessionId))?.headWorkflowId ?? null
+  )
 
-    const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-    if (!activeBranch?.headWorkflowId) return undefined
+  return useMemo(() => {
+    if (!workflowNodesMap || !workflowId || !headWorkflowId) return undefined
 
-    // 从 head 往回沿 parent 收集线性链：chain[0]=head(最新) ... chain[last]=root(最旧)。
-    // 某节点的子节点在链上更靠近 head，即出现在更小 index。
-    const chain: string[] = []
-    let currentId: string | undefined = activeBranch.headWorkflowId
-    const visited = new Set<string>()
-    while (currentId && !visited.has(currentId)) {
-      visited.add(currentId)
-      chain.push(currentId)
-      currentId = session.workflowNodesMap[currentId]?.parent ?? undefined
-    }
-
+    const chain = buildWorkflowChain(workflowNodesMap, headWorkflowId)
     const selfIndex = chain.indexOf(workflowId)
-    // selfIndex===0 表示该 workflow 就是 head，其后无节点。
     const nextId = selfIndex > 0 ? chain[selfIndex - 1] : undefined
     if (!nextId) return undefined
-    return session.workflowNodesMap[nextId]?.workflow
-  })
+    return workflowNodesMap[nextId]?.workflow
+  }, [headWorkflowId, workflowId, workflowNodesMap])
+}

@@ -28,10 +28,12 @@ type Actions = {
   setWechatBotConfig: (config: WechatBotConfig) => void
 }
 
-export let useElectronSettingStore: UseBoundStore<StoreApi<State & Actions>> = null!
+type ElectronSettingStore = State & Actions
+
+export let useElectronSettingStore: UseBoundStore<StoreApi<ElectronSettingStore>> = null!
 export async function createElectronSettingStore() {
   const initState = await window.ipcRendererApi.invoke('get-settings-store')
-  useElectronSettingStore = create<State & Actions>(
+  useElectronSettingStore = create<ElectronSettingStore>(
     forwardToElectronStore(
       (set) => ({
         ...initState,
@@ -58,3 +60,31 @@ export async function createElectronSettingStore() {
     )
   )
 }
+
+export const useThemeSetting = () => useElectronSettingStore((state) => state.theme)
+
+export const useSetTheme = () => useElectronSettingStore((state) => state.setTheme)
+
+export const useThemeColorSetting = () => useElectronSettingStore((state) => state.themeColor)
+
+export const useSetThemeColor = () => useElectronSettingStore((state) => state.setThemeColor)
+
+export const useLLMConfig = () => useElectronSettingStore((state) => state.llmConfig)
+
+export const useSetLLMConfig = () => useElectronSettingStore((state) => state.setLLMConfig)
+
+export const useGenerateImageConfig = () =>
+  useElectronSettingStore((state) => state.generateImageConfig)
+
+export const useSetGenerateImageConfig = () =>
+  useElectronSettingStore((state) => state.setGenerateImageConfig)
+
+export const useWebSearchConfig = () => useElectronSettingStore((state) => state.webSearchConfig)
+
+export const useSetWebSearchConfig = () =>
+  useElectronSettingStore((state) => state.setWebSearchConfig)
+
+export const useWechatBotConfig = () => useElectronSettingStore((state) => state.wechatBotConfig)
+
+export const useSetWechatBotConfig = () =>
+  useElectronSettingStore((state) => state.setWechatBotConfig)

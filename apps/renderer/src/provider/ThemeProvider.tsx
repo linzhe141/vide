@@ -1,6 +1,11 @@
 import { useMemo, type PropsWithChildren } from 'react'
 import type { Theme } from '@vide/config'
-import { useElectronSettingStore } from '../store/electronSettingStore'
+import {
+  useSetTheme,
+  useSetThemeColor,
+  useThemeColorSetting,
+  useThemeSetting,
+} from '../store/electronSettingStore'
 import { ThemeContext, type ThemeColor } from '@/hooks/useTheme'
 
 export const themeColors = {
@@ -19,7 +24,10 @@ export const themeColors = {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const { theme, setTheme, themeColor, setThemeColor } = useElectronSettingStore()
+  const theme = useThemeSetting()
+  const setTheme = useSetTheme()
+  const themeColor = useThemeColorSetting()
+  const setThemeColor = useSetThemeColor()
 
   const value = useMemo(() => {
     function setThemeHandler(newTheme: Theme) {

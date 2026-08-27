@@ -6,14 +6,20 @@ import { ChatInput } from '../../components/chat/ChatInput'
 import { ChatLayout, ChatLayoutInput, ChatLayoutMessage } from '../../layout/ChatLayout'
 import {
   useHasPendingAskQuestion,
-  useSession,
+  useHasSession,
+  useSessionAutoApprove,
+  useSessionThinkingMode,
+  useSessionWorkspacePath,
   useSessionStoreActions,
 } from '../../store/sessionStore'
 
 export function ChatContainer() {
   const { handleSend, handleStop, running, sessionId } = useChatContext()
   const { scrollToBottom } = useChatLayoutScroll()
-  const session = useSession(sessionId)
+  const hasSession = useHasSession(sessionId)
+  const workspacePath = useSessionWorkspacePath(sessionId)
+  const autoApprove = useSessionAutoApprove(sessionId) ?? false
+  const thinkingMode = useSessionThinkingMode(sessionId) ?? false
   const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
   const { switchSessionAutoApprove, switchSessionThinkingMode } = useSessionStoreActions()
   const onSend = useCallback(
@@ -26,32 +32,32 @@ export function ChatContainer() {
 
   const onChangeAutoApprove = useCallback(
     (newValue: boolean) => {
-      if (!session) return
-      switchSessionAutoApprove(session.sessionId, newValue)
+      if (!hasSession) return
+      switchSessionAutoApprove(sessionId, newValue)
       window.ipcRendererApi.invoke('agent-session-switch-auto-approve', {
-        sessionId: session.sessionId,
+        sessionId,
         autoApprove: newValue,
       })
     },
-    [session, switchSessionAutoApprove]
+    [hasSession, sessionId, switchSessionAutoApprove]
   )
 
   const onChangeThinkingMode = useCallback(
     (newValue: boolean) => {
-      if (!session) return
-      switchSessionThinkingMode(session.sessionId, newValue)
+      if (!hasSession) return
+      switchSessionThinkingMode(sessionId, newValue)
       window.ipcRendererApi.invoke('agent-session-switch-thinking-mode', {
-        sessionId: session.sessionId,
+        sessionId,
         thinkingMode: newValue,
       })
     },
-    [session, switchSessionThinkingMode]
+    [hasSession, sessionId, switchSessionThinkingMode]
   )
 
   // if (!session) return null
   return (
     <ChatLayout>
-      {session ? (
+      {hasSession ? (
         <>
           <ChatLayoutMessage>
             <MessageList />
@@ -61,9 +67,9 @@ export function ChatContainer() {
               <div className='px-10'>
                 <ChatInput
                   running={running}
-                  workspacePath={session.workspacePath}
-                  autoApprove={session.autoApprove}
-                  thinkingMode={session.thinkingMode}
+                  workspacePath={workspacePath}
+                  autoApprove={autoApprove}
+                  thinkingMode={thinkingMode}
                   onSend={onSend}
                   onStop={handleStop}
                   onChangeAutoApprove={onChangeAutoApprove}

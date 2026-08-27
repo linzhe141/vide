@@ -4,11 +4,12 @@ import { SearchIcon } from 'lucide-react'
 import { Alert } from '@/ui/Alert'
 import { Button } from '@/ui/Button'
 import { Input } from '@/ui/Input'
-import { useElectronSettingStore } from '@/store/electronSettingStore'
+import { useSetWebSearchConfig, useWebSearchConfig } from '@/store/electronSettingStore'
 import type { WebSearchConfig } from '@vide/config'
 
 export function WebSearchSettings() {
-  const { webSearchConfig, setWebSearchConfig } = useElectronSettingStore()
+  const webSearchConfig = useWebSearchConfig()
+  const setWebSearchConfig = useSetWebSearchConfig()
 
   const {
     register,

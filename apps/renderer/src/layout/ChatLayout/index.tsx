@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo, type PropsWithChildr
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { cn } from '../../lib/utils'
 import { useSessionWorkflows, useSession } from '../../store/sessionStore'
-import { useHistoryItems } from '../../store/historyStore'
+import { useHistoryItem } from '../../store/historyStore'
 import { useChatContext } from '@/hooks/useChatContext'
 import {
   ChatLayoutContext,
@@ -142,7 +142,7 @@ export function ChatLayout({ children }: PropsWithChildren) {
 
 export function ChatLayoutMessage({ children }: PropsWithChildren) {
   const { sessionId, running } = useChatContext()
-  const historyItem = useHistoryItems().find((item) => item.sessionId === sessionId)
+  const historyItem = useHistoryItem(sessionId)
   const workflows = useSessionWorkflows(sessionId)
   const placeholderRef = useRef<HTMLDivElement>(null)
   const [showToBottomButton, setShowToBottomButton] = useState(false)

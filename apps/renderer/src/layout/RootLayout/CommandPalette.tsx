@@ -10,7 +10,7 @@ import { Clock3, CornerDownLeft, Search, Settings2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useHistoryItems, useHistoryStoreActions } from '@/store/historyStore'
-import { useSessionStore } from '@/store/sessionStore'
+import { useSessionRunning } from '@/store/sessionStore'
 import { Input } from '@/ui/Input'
 
 type CommandItem = {
@@ -21,7 +21,7 @@ type CommandItem = {
   keywords: string[]
   to: string
   meta?: string
-  running?: boolean
+  sessionId?: string
 }
 
 const settingItems: CommandItem[] = [
@@ -104,8 +104,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const historyItems = useHistoryItems()
-  const historyActions = useHistoryStoreActions()
-  const sessions = useSessionStore((state) => state.sessions)
+  const { fetch: fetchHistory } = useHistoryStoreActions()
 
   const closePalette = useCallback(() => {
     setOpen(false)
@@ -133,6 +132,7 @@ export function CommandPalette() {
       .slice(0, 20)
       .map((item) => ({
         id: `session-${item.sessionId}`,
+        sessionId: item.sessionId,
         title: item.title || 'Untitled',
         subtitle:
           item.sessionSource === 'wechat-bot' ? 'Recent session · WeChat Bot' : 'Recent session',
@@ -140,11 +140,8 @@ export function CommandPalette() {
         keywords: [item.type, item.sessionSource, item.sessionId],
         to: `/chat/${item.sessionId}`,
         meta: item.sessionSource === 'wechat-bot' ? 'WeChat' : 'Desktop',
-        running:
-          sessions.find((session) => session.sessionId === item.sessionId)?.runtime.running ??
-          false,
       }))
-  }, [historyItems, sessions])
+  }, [historyItems])
 
   const results = useMemo(() => {
     const normalizedQuery = normalize(query)
@@ -174,11 +171,11 @@ export function CommandPalette() {
     if (!open) return
 
     if (historyItems.length === 0) {
-      historyActions.fetch()
+      fetchHistory()
     }
 
     queueMicrotask(() => inputRef.current?.focus())
-  }, [open, historyActions, historyItems.length])
+  }, [fetchHistory, open, historyItems.length])
 
   const activeItem = results[selectedIndex]
 
@@ -247,51 +244,13 @@ export function CommandPalette() {
             results.map((item, index) => {
               const isActive = index === selectedIndex
               return (
-                <button
+                <CommandPaletteItem
                   key={item.id}
-                  type='button'
+                  item={item}
+                  isActive={isActive}
                   onMouseEnter={() => setSelectedIndex(index)}
                   onClick={() => handleSelect(item)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors',
-                    isActive ? 'bg-foreground/8' : 'hover:bg-foreground/5'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                      item.kind === 'setting'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-foreground/6 text-text-secondary'
-                    )}
-                  >
-                    {item.kind === 'setting' ? (
-                      <Settings2 className='size-4' />
-                    ) : (
-                      <Clock3 className='size-4' />
-                    )}
-                  </span>
-
-                  <span className='min-w-0 flex-1'>
-                    <span className='text-foreground block truncate text-sm font-medium'>
-                      {item.title}
-                    </span>
-                    <span className='text-text-secondary block truncate text-xs'>
-                      {item.subtitle}
-                    </span>
-                  </span>
-
-                  <span className='flex items-center gap-2'>
-                    {item.running ? (
-                      <span className='bg-primary/10 text-primary rounded-full px-2 py-1 text-[11px]'>
-                        Running
-                      </span>
-                    ) : null}
-                    <span className='text-text-info rounded-md border px-2 py-1 text-[11px]'>
-                      {item.meta}
-                    </span>
-                  </span>
-                </button>
+                />
               )
             })
           ) : (
@@ -315,5 +274,56 @@ export function CommandPalette() {
         </div>
       </div>
     </div>
+  )
+}
+
+function CommandPaletteItem({
+  item,
+  isActive,
+  onClick,
+  onMouseEnter,
+}: {
+  item: CommandItem
+  isActive: boolean
+  onClick: () => void
+  onMouseEnter: () => void
+}) {
+  const running = useSessionRunning(item.sessionId ?? '')
+
+  return (
+    <button
+      type='button'
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors',
+        isActive ? 'bg-foreground/8' : 'hover:bg-foreground/5'
+      )}
+    >
+      <span
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-lg',
+          item.kind === 'setting'
+            ? 'bg-primary/10 text-primary'
+            : 'bg-foreground/6 text-text-secondary'
+        )}
+      >
+        {item.kind === 'setting' ? <Settings2 className='size-4' /> : <Clock3 className='size-4' />}
+      </span>
+
+      <span className='min-w-0 flex-1'>
+        <span className='text-foreground block truncate text-sm font-medium'>{item.title}</span>
+        <span className='text-text-secondary block truncate text-xs'>{item.subtitle}</span>
+      </span>
+
+      <span className='flex items-center gap-2'>
+        {item.kind === 'session' && running ? (
+          <span className='bg-primary/10 text-primary rounded-full px-2 py-1 text-[11px]'>
+            Running
+          </span>
+        ) : null}
+        <span className='text-text-info rounded-md border px-2 py-1 text-[11px]'>{item.meta}</span>
+      </span>
+    </button>
   )
 }

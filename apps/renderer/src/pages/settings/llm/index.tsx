@@ -4,7 +4,7 @@ import { Button } from '@/ui/Button'
 import { SettingsIcon } from 'lucide-react'
 import { Input } from '@/ui/Input'
 import { Alert } from '@/ui/Alert'
-import { useElectronSettingStore } from '@/store/electronSettingStore'
+import { useLLMConfig, useSetLLMConfig } from '@/store/electronSettingStore'
 import type { LLMConfig } from '@vide/config'
 import { useRef, useCallback, useEffect } from 'react'
 
@@ -52,7 +52,8 @@ export function useAutoDismiss<T>(duration = 3000) {
 }
 
 export function LlmSettings() {
-  const { llmConfig, setLLMConfig } = useElectronSettingStore()
+  const llmConfig = useLLMConfig()
+  const setLLMConfig = useSetLLMConfig()
 
   const {
     register,
