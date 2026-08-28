@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vide multi-window demo</title>
+  </head>
+  <body>
+    <div class="demo-shell">
+      <header class="demo-titlebar drag-region">
+        <div>
+          <p class="demo-kicker">Multi-window IPC demo</p>
+          <h1 id="window-title">foo.html</h1>
+        </div>
+        <button id="close-window" class="demo-close no-drag-region" type="button">Close</button>
+      </header>
+
+      <div class="demo-header">
+        <p id="window-role" class="demo-subtitle"></p>
+        <p id="message-state" class="demo-subtitle"></p>
+      </div>
+
+      <main class="demo-grid">
+        <section class="demo-panel">
+          <div class="demo-actions">
+            <button id="send-hello" class="no-drag-region" type="button">foo 点击了 hello</button>
+            <button id="send-done" class="no-drag-region" type="button">foo 点击了 done</button>
+            <button id="send-sync" class="no-drag-region" type="button">foo 点击了 sync</button>
+          </div>
+        </section>
+
+        <section class="demo-panel">
+          <div class="demo-log-header">
+            <h2>Messages</h2>
+            <button id="clear-log" class="no-drag-region" type="button">Clear</button>
+          </div>
+          <ul id="message-log" class="demo-log"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./foo.ts"></script>
+  </body>
+</html>

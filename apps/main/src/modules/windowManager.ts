@@ -1,11 +1,13 @@
 import { existsSync } from 'node:fs'
-import { app, BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell, type BrowserWindowConstructorOptions } from 'electron'
 import path from 'node:path'
 import { ipcMainApi } from '../ipc/api/ipcMain'
+import type { DemoWindowRole } from '../ipc/api/channels'
 import type { AppManager } from '@/appManager'
 
 const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
-const rendererIndexPath = path.join(__dirname, '../../app/index.html')
+const rendererAppPath = path.join(__dirname, '../../app')
+const demoEntryName = 'foo.html'
 
 function resolvePreloadPath() {
   const preloadCandidates = [
@@ -19,37 +21,27 @@ function resolvePreloadPath() {
 export class WindowManager {
   mainWindow: BrowserWindow = null!
   private allowClose = false
+  private demoWindows = new Map<'foo', BrowserWindow>()
   constructor(private app: AppManager) {}
 
   createWindow() {
     const minHeight = 800
     const minWidth = 1200
-    const mainWindow = new BrowserWindow({
+    const rendererEntry = this.resolveInitialRendererEntry()
+    const mainWindow = this.createBrowserWindow({
       title: 'vide',
       width: minWidth,
       height: minHeight,
       minWidth,
       minHeight,
-      icon: iconPath,
-      titleBarStyle: 'hidden',
-      webPreferences: {
-        webSecurity: false,
-        preload: resolvePreloadPath(),
-        nodeIntegration: true,
-        contextIsolation: false,
-        sandbox: false,
-      },
     })
 
     this.mainWindow = mainWindow
-    this.setupExternalNavigation(mainWindow)
 
-    const rendererUrl = process.env.ELECTRON_RENDERER_URL
-    if (rendererUrl) {
-      mainWindow.loadURL(rendererUrl)
+    this.loadRendererPage(mainWindow, rendererEntry.htmlFile, rendererEntry.query)
+
+    if (process.env.ELECTRON_RENDERER_URL) {
       mainWindow.webContents.openDevTools({ mode: 'detach' })
-    } else {
-      mainWindow.loadFile(rendererIndexPath)
     }
 
     return mainWindow
@@ -75,6 +67,79 @@ export class WindowManager {
 
   minimizeWindow() {
     this.mainWindow!.minimize()
+  }
+
+  openMultiWindowDemo(role: DemoWindowRole = 'foo') {
+    if (role !== 'foo') return
+
+    const fooWindow = this.ensureDemoWindow('foo')
+    const notify = () => {
+      if (fooWindow.isDestroyed()) return
+      fooWindow.webContents.send('multi-window-demo-message', {
+        source: 'main',
+        target: 'foo',
+        message: 'Main clicked open foo',
+        sentAt: new Date().toISOString(),
+      })
+    }
+
+    if (fooWindow.webContents.isLoadingMainFrame()) {
+      fooWindow.webContents.once('did-finish-load', notify)
+      return
+    }
+
+    notify()
+  }
+
+  private ensureDemoWindow(role: 'foo') {
+    const existingWindow = this.demoWindows.get(role)
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      existingWindow.focus()
+      return existingWindow
+    }
+
+    const demoWindow = this.createBrowserWindow({
+      title: `vide demo ${role}`,
+      width: 640,
+      height: 520,
+      minWidth: 480,
+      minHeight: 420,
+      show: false,
+    })
+
+    this.trackDemoWindow(role, demoWindow)
+    this.loadRendererPage(demoWindow, demoEntryName, { role })
+
+    demoWindow.once('ready-to-show', () => {
+      demoWindow.show()
+    })
+
+    return demoWindow
+  }
+
+  sendMultiWindowDemoMessage(source: DemoWindowRole, message: string, target: DemoWindowRole) {
+    const payload = {
+      source,
+      target,
+      message,
+      sentAt: new Date().toISOString(),
+    }
+
+    if (target === 'main') {
+      if (!this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('multi-window-demo-message', payload)
+      }
+      return
+    }
+
+    if (source === 'main' && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('multi-window-demo-message', payload)
+    }
+
+    const targetWindow = this.demoWindows.get(target)
+    if (!targetWindow || targetWindow.isDestroyed()) return
+
+    targetWindow.webContents.send('multi-window-demo-message', payload)
   }
 
   showWindow() {
@@ -173,6 +238,65 @@ export class WindowManager {
       const currentUrl = mainWindow.webContents.getURL()
       if (url !== currentUrl && openExternal(url)) {
         event.preventDefault()
+      }
+    })
+  }
+
+  private createBrowserWindow(options: BrowserWindowConstructorOptions) {
+    const window = new BrowserWindow({
+      icon: iconPath,
+      titleBarStyle: 'hidden',
+      webPreferences: {
+        webSecurity: false,
+        preload: resolvePreloadPath(),
+        nodeIntegration: true,
+        contextIsolation: false,
+        sandbox: false,
+      },
+      ...options,
+    })
+
+    this.setupExternalNavigation(window)
+
+    return window
+  }
+
+  private loadRendererPage(
+    window: BrowserWindow,
+    htmlFile: string,
+    query: Record<string, string> = {}
+  ) {
+    const rendererUrl = process.env.ELECTRON_RENDERER_URL
+    const search = new URLSearchParams(query).toString()
+
+    if (rendererUrl) {
+      const url = new URL(htmlFile, `${rendererUrl}/`)
+      url.search = search
+      window.loadURL(url.toString())
+      return
+    }
+
+    window.loadFile(path.join(rendererAppPath, htmlFile), {
+      search,
+    })
+  }
+
+  private resolveInitialRendererEntry() {
+    const rendererEntryArg = process.argv.find((arg) => arg.startsWith('--renderer-entry='))
+    const htmlFile = rendererEntryArg?.slice('--renderer-entry='.length) || 'index.html'
+    const query: Record<string, string> = htmlFile === demoEntryName ? { role: 'foo' } : {}
+
+    return {
+      htmlFile,
+      query,
+    }
+  }
+
+  private trackDemoWindow(role: 'foo', window: BrowserWindow) {
+    this.demoWindows.set(role, window)
+    window.on('closed', () => {
+      if (this.demoWindows.get(role) === window) {
+        this.demoWindows.delete(role)
       }
     })
   }

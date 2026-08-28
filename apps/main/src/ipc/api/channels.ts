@@ -22,6 +22,15 @@ export type RunningWorkflowReplay = {
   recordedEvents: WorkflowEventWithContext[]
 }
 
+export type DemoWindowRole = 'main' | 'foo'
+
+export type MultiWindowDemoMessage = {
+  source: DemoWindowRole
+  target: DemoWindowRole
+  message: string
+  sentAt: string
+}
+
 export type WorkspaceExplorerNode = {
   name: string
   type: 'file' | 'folder'
@@ -96,6 +105,13 @@ export interface RenderChannel {
   'maxmize-window': () => void
   'minmize-window': () => void
   'close-window': () => void
+  'close-current-window': () => void
+  'open-multi-window-demo': (data?: { role?: DemoWindowRole }) => void
+  'multi-window-demo-send': (data: {
+    source: DemoWindowRole
+    target: DemoWindowRole
+    message: string
+  }) => void
 
   // agent
   'agent-create-session': (data: {
@@ -197,6 +213,7 @@ export interface RenderChannel {
 export type MainChannel = {
   'changed-window-size': (isMaximized: boolean) => void
   'app-update-status': (status: AppUpdateStatus) => void
+  'multi-window-demo-message': (data: MultiWindowDemoMessage) => void
 
   'weixin-bot-auth-success': () => void
   'github-auth-status-changed': (status: GitHubAuthRuntimeStatus) => void

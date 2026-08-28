@@ -20,6 +20,7 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: path.resolve(rendererSrcRoot, 'index.html'),
+        foo: path.resolve(rendererSrcRoot, 'foo.html'),
       },
       output: {
         manualChunks(id: string) {

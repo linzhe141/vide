@@ -14,6 +14,7 @@ import { WebSearchSettings } from '../pages/settings/webSearch'
 import { WechatBotSettings } from '../pages/settings/wechat'
 import { GitHubAuthSettings } from '../pages/settings/github'
 import { SkillsPage } from '../pages/skills'
+import { MultiWindowDemoPage } from '../pages/multiWindowDemo'
 
 export const router = createHashRouter([
   {
@@ -58,6 +59,10 @@ export const router = createHashRouter([
       {
         path: '/skills',
         Component: SkillsPage,
+      },
+      {
+        path: '/multi-window-demo',
+        Component: MultiWindowDemoPage,
       },
     ],
   },
