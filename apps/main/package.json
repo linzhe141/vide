@@ -1,7 +1,7 @@
 {
   "name": "@vide/main",
   "private": true,
-  "version": "0.0.0-beta.12",
+  "version": "0.0.0-beta.13",
   "main": "./dist/electron/main/index.js",
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
