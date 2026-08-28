@@ -314,6 +314,13 @@ export class Workflow {
     ])
 
     if (!this.ai) {
+      if (
+        this.runtime.model.apiKey === '' ||
+        this.runtime.model.baseURL === '' ||
+        this.runtime.model.name === ''
+      ) {
+        throw new Error('Invalid AI model configuration, check your settings and try again.')
+      }
       this.ai = createAIClient(this.runtime.model)
     }
 

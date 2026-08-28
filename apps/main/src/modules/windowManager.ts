@@ -34,9 +34,9 @@ export class WindowManager {
       titleBarStyle: 'hidden',
       webPreferences: {
         preload: resolvePreloadPath(),
-        nodeIntegration: true,
-        contextIsolation: false,
-        sandbox: false,
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
       },
     })
 

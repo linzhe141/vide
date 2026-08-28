@@ -138,6 +138,11 @@ function applyWorkflowEventToWorkflow(
         session.runtime.running = false
       }
       workflow.runtime.status = 'error'
+      workflow.messages.push({
+        id: nanoid(),
+        role: 'error',
+        error: workflowEvent.error,
+      })
       break
     }
 
