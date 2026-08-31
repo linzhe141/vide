@@ -1,7 +1,7 @@
 import { Eye } from 'lucide-react'
 import { useChatContext } from '@/hooks/useChatContext'
 import { useChatLayout } from '@/hooks/useChatLayout'
-import { useSession } from '@/store/sessionStore'
+import { useSessionWorkspacePath } from '@/store/sessionStore'
 import { useWorkspaceExplorerActions } from '@/store/workspaceExplorerStore'
 
 type PreviewFileButtonProps = {
@@ -16,15 +16,15 @@ export function PreviewFileButton({
   label = 'Preview',
 }: PreviewFileButtonProps) {
   const { sessionId } = useChatContext()
-  const session = useSession(sessionId)
+  const workspacePath = useSessionWorkspacePath(sessionId)
   const { openPanel } = useChatLayout()
   const actions = useWorkspaceExplorerActions()
 
-  const canPreview = Boolean(path && session?.workspacePath && !disabled)
+  const canPreview = Boolean(path && workspacePath && !disabled)
 
   const handleClick = () => {
-    if (!canPreview || !path || !session?.workspacePath) return
-    actions.previewPath(session.workspacePath, path)
+    if (!canPreview || !path || !workspacePath) return
+    actions.previewPath(workspacePath, path)
     openPanel('file-explorer')
   }
 

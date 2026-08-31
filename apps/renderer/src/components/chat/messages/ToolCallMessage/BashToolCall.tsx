@@ -1,5 +1,5 @@
 ﻿import type { ToolCall } from '@vide/ai'
-import type { Workflow, ToolCallState } from '@/store/sessionStore/types'
+import type { ToolCallState, Workflow } from '@/store/sessionStore/types'
 import {
   Check,
   CheckCircle2,
@@ -19,11 +19,12 @@ import { useSessionStoreActions } from '@/store/sessionStore'
 type BashToolCallProps = {
   tool: ToolCall
   result?: ToolCallState['result']
-  workflow: Workflow
+  workflowId: string
+  workflowStatus: Workflow['runtime']['status']
 }
 
 function BashToolCall(props: BashToolCallProps) {
-  const { tool, workflow, result } = props
+  const { tool, workflowId, workflowStatus, result } = props
   const { sessionId } = useChatContext()
   const { changeToolCallStatus } = useSessionStoreActions()
   const [open, setOpen] = useState(false)
@@ -51,39 +52,40 @@ function BashToolCall(props: BashToolCallProps) {
   const humanApproveToolCall = () => {
     changeToolCallStatus({
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
       toolCallId: tool.id,
       newStatus: 'human-approved',
     })
     window.ipcRendererApi.invoke('agent-human-approved', {
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
     })
   }
 
   const humanRejectToolCall = () => {
     changeToolCallStatus({
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
       toolCallId: tool.id,
       newStatus: 'human-rejected',
     })
     window.ipcRendererApi.invoke('agent-human-rejected', {
       sessionId,
-      workflowId: workflow.id,
+      workflowId,
     })
   }
 
   return (
     <div className='space-y-2'>
-      <div
-        onClick={() => setOpen((value) => !value)}
-        className='border-border/80 bg-background flex w-full flex-col gap-2 rounded-lg border px-4 py-3 text-left'
-      >
-        {/* 第一行：图标 + 命令 + 状态徽章/操作按钮 */}
-        <div className='flex w-full items-center gap-3'>
+      <div className='border-border/80 bg-background overflow-hidden rounded-xl border'>
+        <button
+          type='button'
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          className='hover:bg-foreground/3 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors'
+        >
           <div className='bg-foreground/6 text-foreground shrink-0 rounded-md p-2'>
-            <SquareTerminal size={17} strokeWidth={1.8} />
+            <SquareTerminal size={17} strokeWidth={1.8} aria-hidden='true' />
           </div>
           <span className='text-foreground min-w-0 flex-1 truncate font-mono text-[14px] font-medium'>
             {command}
@@ -94,40 +96,48 @@ function BashToolCall(props: BashToolCallProps) {
           <div className='text-text-secondary flex items-center gap-3 text-[13px]'>
             {duration && (
               <span className='flex items-center gap-1.5'>
-                <Clock3 size={14} />
+                <Clock3 size={14} aria-hidden='true' />
                 {duration}
               </span>
             )}
-            {isRunning && <Ellipsis size={16} className='animate-pulse' />}
+            {isRunning && <Ellipsis size={16} className='animate-pulse' aria-hidden='true' />}
             {isSuccess && (
-              <CheckCircle2 size={16} className='text-emerald-500 dark:text-emerald-300' />
+              <CheckCircle2
+                size={16}
+                className='text-emerald-500 dark:text-emerald-300'
+                aria-hidden='true'
+              />
             )}
-            {isError && <XCircle size={16} className='text-red-500 dark:text-red-300' />}
-            {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isError && (
+              <XCircle size={16} className='text-red-500 dark:text-red-300' aria-hidden='true' />
+            )}
+            {open ? (
+              <ChevronDown size={16} aria-hidden='true' />
+            ) : (
+              <ChevronRight size={16} aria-hidden='true' />
+            )}
           </div>
-        </div>
+        </button>
 
-        {/* 第二行：元信息 + Approval 区域 */}
-        <div className='flex w-full items-center justify-between'>
+        <div className='border-border/60 flex w-full items-center justify-between border-t px-4 py-2'>
           <div className='text-text-secondary flex items-center gap-2 text-xs'>
-            <Code2 size={12} />
-            <span>Bash command</span>
+            <Code2 size={12} aria-hidden='true' />
+            <span>Bash Command</span>
             {typeof bashResult?.exitCode === 'number' && <span>exit {bashResult.exitCode}</span>}
           </div>
-          {(workflow.runtime.status === 'running' || workflow.runtime.status === 'interrupted') &&
+          {(workflowStatus === 'running' || workflowStatus === 'interrupted') &&
             tool.status === 'waiting-human' && (
               <ApprovalActions onApprove={humanApproveToolCall} onReject={humanRejectToolCall} />
             )}
         </div>
       </div>
 
-      {/* 详情区域 - 保留过渡动画 */}
       {open && (
-        <div className='border-border/80 bg-background/80 rounded-lg border p-4 transition-all duration-200 ease-in-out'>
+        <div className='border-border/80 bg-background/80 rounded-lg border p-4 transition-[opacity,transform] duration-200 ease-in-out'>
           <div className='space-y-4'>
             <section className='space-y-2'>
               <div className='text-text-secondary flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase'>
-                <Play size={13} />
+                <Play size={13} aria-hidden='true' />
                 Command
               </div>
               <pre className='bg-foreground/4 text-foreground overflow-x-auto rounded-md p-3 font-mono text-xs leading-6'>
@@ -175,20 +185,20 @@ function ApprovalActions({ onApprove, onReject }: { onApprove: () => void; onRej
           e.stopPropagation()
           onApprove()
         }}
-        className='rounded-full bg-emerald-500 p-1.5 text-white hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700'
+        className='rounded-full bg-emerald-500 p-1.5 text-white transition-colors hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700'
         aria-label='Approve'
       >
-        <Check size={14} />
+        <Check size={14} aria-hidden='true' />
       </button>
       <button
         onClick={(e) => {
           e.stopPropagation()
           onReject()
         }}
-        className='rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700'
+        className='rounded-full bg-red-500 p-1.5 text-white transition-colors hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700'
         aria-label='Reject'
       >
-        <XCircle size={14} />
+        <XCircle size={14} aria-hidden='true' />
       </button>
     </div>
   )

@@ -1,4 +1,5 @@
-import type { Workflow, ToolCallSessionMessage, ToolCallState } from '@/store/sessionStore/types'
+import { memo } from 'react'
+import type { ToolCallSessionMessage, ToolCallState, Workflow } from '@/store/sessionStore/types'
 import {
   CheckCircle2,
   ChevronDown,
@@ -19,11 +20,16 @@ import { SubAgentToolCall } from './SubAgentToolCall'
 import TodoToolCall from './TodoToolCall'
 
 type ToolCallViewProps = {
-  workflow: Workflow
+  workflowId: string
+  workflowStatus: Workflow['runtime']['status']
   message: ToolCallSessionMessage
 }
 
-export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
+export const ToolCallMessage = memo(function ToolCallMessage({
+  workflowId,
+  workflowStatus,
+  message,
+}: ToolCallViewProps) {
   const visibleTools = message.toolCalls.filter((item) => shouldShowToolCall(item.toolCall))
   if (!visibleTools.length) return null
   return (
@@ -36,7 +42,13 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
 
         if (tool.function.name === 'execute-bash-command') {
           return (
-            <BashToolCall key={tool.id} tool={tool} result={state.result} workflow={workflow} />
+            <BashToolCall
+              key={tool.id}
+              tool={tool}
+              result={state.result}
+              workflowId={workflowId}
+              workflowStatus={workflowStatus}
+            />
           )
         }
 
@@ -57,7 +69,7 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
         }
 
         if (tool.function.name === 'call-sub-agent') {
-          return <SubAgentToolCall key={tool.id} workflow={workflow} toolCallState={state} />
+          return <SubAgentToolCall key={tool.id} workflowId={workflowId} toolCallState={state} />
         }
 
         if (tool.function.name === 'edit-file') {
@@ -72,7 +84,7 @@ export function ToolCallMessage({ workflow, message }: ToolCallViewProps) {
       })}
     </div>
   )
-}
+})
 
 const HIDDEN_TOOL_NAMES = new Set<string>([
   'ask-user-question-generate',
@@ -98,11 +110,13 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
   return (
     <div className='space-y-1.5'>
       <button
+        type='button'
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left transition-all duration-200'
+        aria-expanded={open}
+        className='border-border bg-background/80 hover:bg-foreground/3 dark:bg-background/60 dark:hover:bg-foreground/5 flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left transition-colors duration-200'
       >
         <div className='text-text-secondary shrink-0'>
-          <SquareTerminal size={15} strokeWidth={1.8} />
+          <SquareTerminal size={15} strokeWidth={1.8} aria-hidden='true' />
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-2'>
@@ -129,14 +143,18 @@ function ToolCallButton({ tool, result }: ToolCallButtonProps) {
         <div className='text-text-secondary flex items-center gap-2 text-[11px]'>
           {duration && (
             <span className='flex items-center gap-1'>
-              <Clock3 size={12} />
+              <Clock3 size={12} aria-hidden='true' />
               {duration}
             </span>
           )}
-          {isRunning && <Ellipsis size={14} className='animate-pulse' />}
-          {isSuccess && <CheckCircle2 size={14} className='text-success' />}
-          {isError && <XCircle size={14} className='text-danger' />}
-          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {isRunning && <Ellipsis size={14} className='animate-pulse' aria-hidden='true' />}
+          {isSuccess && <CheckCircle2 size={14} className='text-success' aria-hidden='true' />}
+          {isError && <XCircle size={14} className='text-danger' aria-hidden='true' />}
+          {open ? (
+            <ChevronDown size={14} aria-hidden='true' />
+          ) : (
+            <ChevronRight size={14} aria-hidden='true' />
+          )}
         </div>
       </button>
 

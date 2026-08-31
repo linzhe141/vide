@@ -1,6 +1,6 @@
 import { app, BrowserWindow, protocol } from 'electron'
 import { initApp } from './initApp'
-import { logger } from './logger'
+import { logger, logStartupStep } from './logger'
 import type { AppManager } from './appManager'
 
 const PROTOCOL_SCHEME = 'vide'
@@ -21,6 +21,11 @@ function findProtocolUrl(argv: string[]) {
 }
 
 export async function start() {
+  logStartupStep('bootstrap.start', {
+    mode: app.isPackaged ? 'production' : 'development',
+    pid: process.pid,
+  })
+
   let appManager: AppManager | null = null
   const queuedProtocolUrls: string[] = []
   const routeProtocolUrl = (url: string) => {
@@ -54,11 +59,14 @@ export async function start() {
   } else {
     app.setAsDefaultProtocolClient(PROTOCOL_SCHEME)
   }
-
+  app.disableDomainBlockingFor3DAPIs()
   await app.whenReady()
+  logStartupStep('app.whenReady')
   logger.info('App is ready')
 
+  logStartupStep('initApp.start')
   appManager = await initApp()
+  logStartupStep('initApp.complete')
   if (initialProtocolUrl) {
     routeProtocolUrl(initialProtocolUrl)
   }
@@ -107,10 +115,25 @@ export async function start() {
     }
   })
 
+  app.on('child-process-gone', (_event, details) => {
+    logger.error('electron child process gone', details)
+  })
+
   // macOS activate TODO
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      appManager = initApp()
+      if (appManager) {
+        try {
+          appManager.windowManager.init()
+        } catch (error) {
+          logger.error('failed to recreate main window on activate', error)
+          throw error
+        }
+      } else {
+        logStartupStep('initApp.start.activate')
+        appManager = await initApp()
+        logStartupStep('initApp.complete.activate')
+      }
       return
     }
 

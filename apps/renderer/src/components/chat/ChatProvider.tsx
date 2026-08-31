@@ -1,17 +1,15 @@
 import { type PropsWithChildren, useCallback, useMemo } from 'react'
-import { ChatContext, type ChatContextType } from '@/hooks/useChatContext'
-import { useSessionRuntime, useSessionStoreActions } from '../../store/sessionStore'
+import { ChatContext, ChatRunningContext, type ChatContextType } from '@/hooks/useChatContext'
+import { useSessionRunning, useSessionStoreActions } from '../../store/sessionStore'
 
 export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessionId: string }>) {
-  const sessionRuntime = useSessionRuntime(sessionId)!
-  const running = !!sessionRuntime?.running
+  const running = useSessionRunning(sessionId)
   const { regenerateWorkflow } = useSessionStoreActions()
 
   // workflow 事件由全局 useAgentSessionEvent 统一分发到 session store，
   // 这里只是 fire-and-forget 触发主进程，不再自己开 stream / 监听 ipc
   const handleSend = useCallback(
     (input: string) => {
-      if (running) return
       window.ipcRendererApi.invoke('agent-session-send', {
         sessionId,
         input,
@@ -19,7 +17,7 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
       })
       return
     },
-    [running, sessionId]
+    [sessionId]
   )
 
   const handleStop = useCallback(() => {
@@ -45,14 +43,17 @@ export function ChatProvider({ sessionId, children }: PropsWithChildren<{ sessio
 
   const value: ChatContextType = useMemo(
     () => ({
-      running,
       handleSend,
       handleStop,
       handleRegenerate,
       sessionId,
     }),
-    [handleSend, handleStop, handleRegenerate, running, sessionId]
+    [handleSend, handleStop, handleRegenerate, sessionId]
   )
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
+  return (
+    <ChatRunningContext.Provider value={running}>
+      <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
+    </ChatRunningContext.Provider>
+  )
 }

@@ -1,4 +1,4 @@
-import { useSession, useSessionStoreActions } from '../../store/sessionStore'
+import { useHasSession, useSessionStoreActions } from '../../store/sessionStore'
 import { useEffect, useRef } from 'react'
 import { context } from '../../hooks/chatContenxt'
 import { useChatContext } from '@/hooks/useChatContext'
@@ -15,7 +15,7 @@ import { useChatContext } from '@/hooks/useChatContext'
 export function InitSession({ sessionId }: { sessionId: string }) {
   const { handleSend } = useChatContext()
   const { createSession, loadSession } = useSessionStoreActions()
-  const currentSession = useSession(sessionId)
+  const hasSession = useHasSession(sessionId)
   const loadedRef = useRef(false)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function InitSession({ sessionId }: { sessionId: string }) {
 
     if (firstInput) {
       context.firstInput = ''
-      if (!currentSession) {
+      if (!hasSession) {
         createSession({ sessionId })
       }
       handleSend(firstInput)
@@ -31,11 +31,11 @@ export function InitSession({ sessionId }: { sessionId: string }) {
     }
 
     // 非首条输入：若是尚未加载的持久化 session，则从 SQLite 拉取
-    if (!currentSession && !loadedRef.current) {
+    if (!hasSession && !loadedRef.current) {
       loadedRef.current = true
       loadSession(sessionId)
     }
-  }, [sessionId, handleSend, createSession, loadSession, currentSession])
+  }, [sessionId, handleSend, createSession, loadSession, hasSession])
 
   return null
 }

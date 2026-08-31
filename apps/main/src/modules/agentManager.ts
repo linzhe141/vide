@@ -20,6 +20,10 @@ type SessionStopStatus = 'completed' | 'error' | 'aborted'
 
 type PromptObserver = (event: StreamEvent) => void | Promise<void>
 
+type SendUserMessageResult =
+  | { kind: 'started-workflow' }
+  | { kind: 'queued-steering'; workflowId: string; messageId: string }
+
 export class AgentManager {
   agent: Agent
   sessions = new Map<string, Session>()
@@ -27,7 +31,7 @@ export class AgentManager {
   private loaded = new Set<string>()
   private persister = new WorkflowPersister()
 
-  constructor(_app: AppManager) {
+  constructor(private readonly app: AppManager) {
     this.agent = new Agent()
     this.agent.setWebSearchConfig({
       apiKey: settingsStore.get('webSearchConfig').apiKey,
@@ -87,7 +91,7 @@ export class AgentManager {
       sourceWorkflowId: null,
     })
 
-    ipcMainApi.send('background-create-session', {
+    this.app.rendererEventBridge.publish({
       type: 'background-create-session',
       sessionId: session.id,
       title: data.title ?? '',
@@ -136,11 +140,50 @@ export class AgentManager {
     session.title = input.trim().slice(0, 60)
     session.updatedAt = Date.now()
     await SessionRepository.setSessionTitle(session.id, session.title)
-    ipcMainApi.send('session-title', {
+    this.app.rendererEventBridge.publish({
       type: 'session-title',
       sessionId: session.id,
       title: session.title,
     })
+  }
+
+  private async publishSessionUpdated(session: Session) {
+    await SessionRepository.touchSession(session.id, session.updatedAt)
+    this.app.rendererEventBridge.publish({
+      type: 'session-updated',
+      sessionId: session.id,
+      title: session.title,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    })
+  }
+
+  private async queueSteeringMessageIfRunning(
+    session: Session,
+    input: string,
+    inputSource: SessionSource
+  ): Promise<Extract<SendUserMessageResult, { kind: 'queued-steering' }> | null> {
+    const queued = session.enqueueSteeringMessage({ input, inputSource })
+    if (!queued) {
+      return null
+    }
+
+    await this.publishSessionUpdated(session)
+    this.app.rendererEventBridge.publish({
+      type: 'session-steering-queued',
+      sessionId: session.id,
+      workflowId: queued.workflowId,
+      messageId: queued.messageId,
+      content: queued.input,
+      inputSource: queued.inputSource,
+      createdAt: queued.createdAt,
+    })
+
+    return {
+      kind: 'queued-steering',
+      workflowId: queued.workflowId,
+      messageId: queued.messageId,
+    }
   }
 
   /**
@@ -170,7 +213,7 @@ export class AgentManager {
         if (onEvent) {
           await onEvent(v2Event)
         }
-        ipcMainApi.send(v2Event.type as any, v2Event as any)
+        this.app.rendererEventBridge.publish(v2Event)
 
         switch (event.type) {
           case 'workflow.llm.text.end':
@@ -253,8 +296,30 @@ export class AgentManager {
     extraTools?: Tool[]
   ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
-    await this.ensureSessionTitle(this.getSession(sessionId), input)
-    return this.runPrompt(this.getSession(sessionId), input, undefined, inputSource, extraTools)
+    const session = this.getSession(sessionId)
+    await this.ensureSessionTitle(session, input)
+    session.updatedAt = Date.now()
+    await this.publishSessionUpdated(session)
+    return this.runPrompt(session, input, undefined, inputSource, extraTools)
+  }
+
+  async sendUserMessage(
+    sessionId: string,
+    input: string,
+    inputSource: SessionSource = 'desktop'
+  ): Promise<SendUserMessageResult> {
+    await this.ensureSessionLoaded(sessionId)
+    const session = this.getSession(sessionId)
+
+    const queued = await this.queueSteeringMessageIfRunning(session, input, inputSource)
+    if (queued) {
+      return queued
+    }
+
+    this.prompt(sessionId, input, inputSource).catch((error) => {
+      logger.error('agent-manager sendUserMessage failed', error)
+    })
+    return { kind: 'started-workflow' }
   }
 
   async backgroundPrompt(
@@ -265,9 +330,17 @@ export class AgentManager {
     extraTools?: Tool[]
   ): Promise<string> {
     await this.ensureSessionLoaded(sessionId)
-    await this.ensureSessionTitle(this.getSession(sessionId), input)
+    const session = this.getSession(sessionId)
+    const queued = await this.queueSteeringMessageIfRunning(session, input, inputSource)
+    if (queued) {
+      return '已加入补充消息，当前 workflow 会在本轮工具执行结束或完成前继续处理。'
+    }
+
+    await this.ensureSessionTitle(session, input)
+    session.updatedAt = Date.now()
+    await this.publishSessionUpdated(session)
     ipcMainApi.send('agent-session-background-send', { sessionId })
-    return this.runPrompt(this.getSession(sessionId), input, onEvent, inputSource, extraTools)
+    return this.runPrompt(session, input, onEvent, inputSource, extraTools)
   }
 
   listSessionIds(): string[] {

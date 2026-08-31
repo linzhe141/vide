@@ -20,7 +20,7 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
             <Sparkles className='text-primary h-4 w-4 animate-pulse' />
           </div>
           <div className='flex-1'>
-            <p className='text-foreground text-sm font-medium'>Generating your image...</p>
+            <p className='text-foreground text-sm font-medium'>Generating Your Image…</p>
             <p className='text-text-secondary mt-0.5 text-xs'>This may take a few seconds</p>
           </div>
           <div className='flex items-center gap-1.5'>
@@ -83,7 +83,7 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
           <div className='bg-muted/20 absolute inset-0 flex items-center justify-center'>
             <div className='flex flex-col items-center gap-2'>
               <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-              <p className='text-text-secondary text-xs'>Loading image...</p>
+              <p className='text-text-secondary text-xs'>Loading Image…</p>
             </div>
           </div>
         )}
@@ -103,7 +103,9 @@ function ImageToolCall({ result }: { tool: ToolCall; result?: ToolCallState['res
           <div className='absolute right-4 bottom-4 left-4 flex items-center justify-between gap-2'>
             <a
               href={imageUrl}
-              className='flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-white/20 disabled:opacity-50'
+              className='flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-50'
+              target='_blank'
+              rel='noreferrer'
             >
               <Download className='h-3.5 w-3.5' />
               Download

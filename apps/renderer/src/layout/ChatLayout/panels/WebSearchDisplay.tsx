@@ -25,12 +25,15 @@ export function WebSearchDisplay({ className }: { className?: string }) {
             )}
           </div>
         </div>
-        <div>
-          <X
-            className='text-text-secondary hover:text-foreground size-4.5 cursor-pointer'
-            onClick={closePane}
-          />
-        </div>
+        <button
+          type='button'
+          className='text-text-secondary hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg transition-colors'
+          onClick={closePane}
+          aria-label='Close web search results'
+          title='Close web search results'
+        >
+          <X className='size-4.5' aria-hidden='true' />
+        </button>
       </div>
 
       <div className='h-0 flex-1 overflow-y-auto p-3'>
@@ -49,7 +52,13 @@ function WebSearchResultCard({ item }: { item: WebSearchResultItem }) {
     <div className='border-border bg-background hover:border-primary/30 hover:bg-primary/4 overflow-hidden rounded-xl border p-3'>
       <div className='flex items-start gap-3'>
         <div className='rounded-lg border'>
-          <img src={getSiteIcon(item.link)} alt='' className='size-4 rounded-sm' />
+          <img
+            src={getSiteIcon(item.link)}
+            alt=''
+            width={16}
+            height={16}
+            className='size-4 rounded-sm'
+          />
         </div>
         <div className='w-0 flex-1'>
           <div className='text-foreground flex items-center gap-2 text-sm font-medium'>

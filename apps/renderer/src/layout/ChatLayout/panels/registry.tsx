@@ -1,6 +1,6 @@
 import { FileClock, FolderTree, Search, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
-import type { Session } from '@/store/sessionStore/types'
+import { useSessionWorkspacePath } from '@/store/sessionStore'
 import { SessionLogPane } from './SessionLogPane'
 import { WebSearchDisplay } from './WebSearchDisplay'
 import { WorkspaceExplorerPane } from './WorkspaceExplorer'
@@ -8,7 +8,7 @@ import { WorkspaceExplorerPane } from './WorkspaceExplorer'
 export type ChatPanelId = 'file-explorer' | 'web-search' | 'logs'
 
 export type ChatPanelComponentProps = {
-  session: Session | undefined
+  sessionId: string
 }
 
 export type ChatPanelDefinition = {
@@ -22,8 +22,9 @@ export type ChatPanelDefinition = {
   Component: ComponentType<ChatPanelComponentProps>
 }
 
-function FileExplorerPanel({ session }: ChatPanelComponentProps) {
-  return <WorkspaceExplorerPane workspacePath={session?.workspacePath} />
+function FileExplorerPanel({ sessionId }: ChatPanelComponentProps) {
+  const workspacePath = useSessionWorkspacePath(sessionId)
+  return <WorkspaceExplorerPane workspacePath={workspacePath} />
 }
 
 function WebSearchPanel() {

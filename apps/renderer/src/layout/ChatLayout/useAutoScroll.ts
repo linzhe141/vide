@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useSessionRuntime, useSessionWorkflows } from '@/store/sessionStore'
+import { useCallback, useEffect, useRef } from 'react'
+import { useSessionRenderVersion, useSessionRunning } from '@/store/sessionStore'
 
 type UseAutoScrollOptions = {
   sessionId: string
@@ -8,9 +8,9 @@ type UseAutoScrollOptions = {
 
 export function useAutoScroll({ sessionId, threshold = 100 }: UseAutoScrollOptions) {
   const ref = useRef<HTMLDivElement>(null)
-  const runtime = useSessionRuntime(sessionId)
-  const sessionWorkflows = useSessionWorkflows(sessionId)
-  const workflows = useMemo(() => sessionWorkflows ?? [], [sessionWorkflows])
+  const frameRef = useRef<number | null>(null)
+  const running = useSessionRunning(sessionId)
+  const renderVersion = useSessionRenderVersion(sessionId)
 
   const updateNearBottom = useCallback(
     (el: HTMLDivElement) => {
@@ -19,6 +19,33 @@ export function useAutoScroll({ sessionId, threshold = 100 }: UseAutoScrollOptio
     },
     [threshold]
   )
+
+  const syncScrollPosition = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+
+    if (!running) {
+      updateNearBottom(el)
+      return
+    }
+
+    if (el.dataset.nearBottom !== 'false') {
+      el.scrollTop = el.scrollHeight
+    }
+
+    updateNearBottom(el)
+  }, [running, updateNearBottom])
+
+  const scheduleScrollSync = useCallback(() => {
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current)
+    }
+
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null
+      syncScrollPosition()
+    })
+  }, [syncScrollPosition])
 
   // 标记是否接近底部
   useEffect(() => {
@@ -36,19 +63,29 @@ export function useAutoScroll({ sessionId, threshold = 100 }: UseAutoScrollOptio
   }, [updateNearBottom])
 
   useEffect(() => {
+    scheduleScrollSync()
+  }, [renderVersion, running, scheduleScrollSync])
+
+  useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || typeof ResizeObserver === 'undefined') return
 
-    if (!runtime?.running) {
-      updateNearBottom(el)
-      return
-    }
+    const observer = new ResizeObserver(() => {
+      scheduleScrollSync()
+    })
 
-    if (el.dataset.nearBottom !== 'false') {
-      el.scrollTop = el.scrollHeight
-      updateNearBottom(el)
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [scheduleScrollSync])
+
+  useEffect(() => {
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current)
+      }
     }
-  }, [runtime?.running, updateNearBottom, workflows])
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     const el = ref.current

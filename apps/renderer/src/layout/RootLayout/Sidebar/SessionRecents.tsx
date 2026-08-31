@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { GitBranch, LoaderCircle, MessageCircle } from 'lucide-react'
-import { NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useSessionStore } from '@/store/sessionStore'
 import { useHistoryItems, useHistoryStoreActions } from '@/store/historyStore'
+import { RouterLink } from '@/components/RouterLink'
 
 export function SessionRecents() {
   const historyItems = useHistoryItems()
@@ -19,18 +19,6 @@ export function SessionRecents() {
 
   useEffect(() => {
     fetchChats()
-  }, [fetchChats])
-
-  useEffect(() => {
-    const disposers = [
-      window.ipcRendererApi.on('workflow.llm.start', () => {
-        setTimeout(fetchChats, 250)
-      }),
-    ]
-
-    return () => {
-      disposers.forEach((dispose) => dispose())
-    }
   }, [fetchChats])
 
   return (
@@ -69,7 +57,7 @@ function HistoryNavItem({
   })
 
   return (
-    <NavLink
+    <RouterLink
       key={sessionId}
       to={`/chat/${sessionId}`}
       className={({ isActive }) =>
@@ -97,6 +85,6 @@ function HistoryNavItem({
         <span className='block flex-1 truncate'>{title || 'Untitled'}</span>
         {running ? <LoaderCircle size={13} className='text-text-info animate-spin' /> : null}
       </div>
-    </NavLink>
+    </RouterLink>
   )
 }

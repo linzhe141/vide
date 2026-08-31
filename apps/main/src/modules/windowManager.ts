@@ -4,8 +4,10 @@ import path from 'node:path'
 import { ipcMainApi } from '../ipc/api/ipcMain'
 import type { DemoWindowRole } from '../ipc/api/channels'
 import type { AppManager } from '@/appManager'
+import { logger, logStartupStep } from '@/logger'
+import { resolveRuntimeResourcePath } from '@/utils'
 
-const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
+const iconPath = resolveRuntimeResourcePath('logo.png')
 const rendererAppPath = path.join(__dirname, '../../app')
 const demoEntryName = 'foo.html'
 
@@ -28,6 +30,13 @@ export class WindowManager {
     const minHeight = 800
     const minWidth = 1200
     const rendererEntry = this.resolveInitialRendererEntry()
+    const rendererMode = process.env.ELECTRON_RENDERER_URL ? 'http' : 'file'
+
+    logStartupStep('mainWindow.create.start', {
+      rendererMode,
+      entry: rendererEntry.htmlFile,
+    })
+
     const mainWindow = this.createBrowserWindow({
       title: 'vide',
       width: minWidth,
@@ -37,11 +46,21 @@ export class WindowManager {
     })
 
     this.mainWindow = mainWindow
+    this.attachWindowDiagnostics(mainWindow, 'mainWindow')
+    this.attachMainWindowStartupObservers(mainWindow)
 
-    this.loadRendererPage(mainWindow, rendererEntry.htmlFile, rendererEntry.query)
+    this.loadRendererPage(mainWindow, rendererEntry.htmlFile, rendererEntry.query).catch(
+      (error) => {
+        logger.error('failed to load main renderer page', {
+          error,
+          entry: rendererEntry.htmlFile,
+          query: rendererEntry.query,
+        })
+      }
+    )
 
-    if (process.env.ELECTRON_RENDERER_URL) {
-      mainWindow.webContents.openDevTools({ mode: 'detach' })
+    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+      this.openWindowDevTools(mainWindow, 'dev-auto-open')
     }
 
     return mainWindow
@@ -67,6 +86,17 @@ export class WindowManager {
 
   minimizeWindow() {
     this.mainWindow!.minimize()
+  }
+
+  openMainWindowDevTools() {
+    const mainWindow = this.mainWindow
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      logger.warn('failed to open renderer devtools because main window is unavailable')
+      return
+    }
+
+    this.showWindow()
+    this.openWindowDevTools(mainWindow, 'tray')
   }
 
   openMultiWindowDemo(role: DemoWindowRole = 'foo') {
@@ -107,8 +137,14 @@ export class WindowManager {
       show: false,
     })
 
+    this.attachWindowDiagnostics(demoWindow, `demoWindow:${role}`)
     this.trackDemoWindow(role, demoWindow)
-    this.loadRendererPage(demoWindow, demoEntryName, { role })
+    this.loadRendererPage(demoWindow, demoEntryName, { role }).catch((error) => {
+      logger.error('failed to load demo renderer page', {
+        error,
+        role,
+      })
+    })
 
     demoWindow.once('ready-to-show', () => {
       demoWindow.show()
@@ -221,8 +257,26 @@ export class WindowManager {
   }
 
   private setupExternalNavigation(mainWindow: BrowserWindow) {
+    // skip localhost or 127.0.0.1
+
     const openExternal = (url: string) => {
+      // Check if URL starts with http:// or https://
       if (!/^https?:\/\//i.test(url)) return false
+
+      // Check if it's localhost or 127.0.0.1
+      try {
+        const urlObj = new URL(url)
+        const hostname = urlObj.hostname.toLowerCase()
+
+        // Skip localhost and 127.0.0.1
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return false
+        }
+      } catch {
+        // If URL parsing fails, treat as invalid
+        return false
+      }
+
       shell.openExternal(url)
       return true
     }
@@ -243,9 +297,18 @@ export class WindowManager {
   }
 
   private createBrowserWindow(options: BrowserWindowConstructorOptions) {
+    if (!existsSync(iconPath)) {
+      logger.warn('browser window icon path does not exist', { iconPath })
+    }
+
     const window = new BrowserWindow({
       icon: iconPath,
       titleBarStyle: 'hidden',
+      titleBarOverlay: {
+        height: 36,
+        // dark
+        ...{ color: '#030303', symbolColor: '#7E7E7E' },
+      },
       webPreferences: {
         webSecurity: false,
         preload: resolvePreloadPath(),
@@ -261,6 +324,88 @@ export class WindowManager {
     return window
   }
 
+  private attachMainWindowStartupObservers(window: BrowserWindow) {
+    window.once('ready-to-show', () => {
+      logStartupStep('mainWindow.ready-to-show')
+    })
+
+    window.webContents.once('dom-ready', () => {
+      logStartupStep('mainWindow.dom-ready', {
+        url: window.webContents.getURL(),
+      })
+    })
+
+    window.webContents.once('did-finish-load', () => {
+      logStartupStep('mainWindow.did-finish-load', {
+        url: window.webContents.getURL(),
+      })
+    })
+  }
+
+  private attachWindowDiagnostics(window: BrowserWindow, label: string) {
+    window.on('unresponsive', () => {
+      logger.error('browser window became unresponsive', {
+        label,
+        id: window.id,
+        url: window.webContents.getURL(),
+      })
+    })
+
+    window.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      if (level < 2) return
+
+      logger.error('renderer console error', {
+        label,
+        id: window.id,
+        level,
+        message,
+        line,
+        sourceId,
+        url: window.webContents.getURL(),
+      })
+    })
+
+    window.webContents.on('preload-error', (_event, path, error) => {
+      logger.error('renderer preload script failed', {
+        label,
+        id: window.id,
+        path,
+        error,
+      })
+    })
+
+    window.webContents.on('render-process-gone', (_event, details) => {
+      logger.error('renderer process gone', {
+        label,
+        id: window.id,
+        details,
+        url: window.webContents.getURL(),
+      })
+    })
+
+    window.webContents.on(
+      'did-fail-load',
+      (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+        logger.error('renderer page failed to load', {
+          label,
+          id: window.id,
+          errorCode,
+          errorDescription,
+          validatedURL,
+          isMainFrame,
+        })
+      }
+    )
+  }
+
+  private openWindowDevTools(window: BrowserWindow, reason: 'dev-auto-open' | 'tray') {
+    logger.info('opening renderer devtools', {
+      reason,
+      url: window.webContents.getURL(),
+    })
+    window.webContents.openDevTools({ mode: 'detach' })
+  }
+
   private loadRendererPage(
     window: BrowserWindow,
     htmlFile: string,
@@ -272,11 +417,20 @@ export class WindowManager {
     if (rendererUrl) {
       const url = new URL(htmlFile, `${rendererUrl}/`)
       url.search = search
-      window.loadURL(url.toString())
-      return
+      logStartupStep('renderer.load.start', {
+        mode: 'http',
+        target: url.toString(),
+      })
+      return window.loadURL(url.toString())
     }
 
-    window.loadFile(path.join(rendererAppPath, htmlFile), {
+    const filePath = path.join(rendererAppPath, htmlFile)
+    logStartupStep('renderer.load.start', {
+      mode: 'file',
+      target: filePath,
+    })
+
+    return window.loadFile(filePath, {
       search,
     })
   }

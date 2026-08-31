@@ -10,7 +10,7 @@ interface ButtonProps extends React.ComponentProps<'button'> {
 }
 
 const baseClass =
-  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none'
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:ring-primary/30 focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'
 
 const variantClassMap: Record<ButtonVariant, string> = {
   solid: `

@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './style.css'
+import 'streamdown/styles.css'
 import App from './App'
 // import App from './MarkDownStreamRender'
 import { createElectronSettingStore } from '@/store/electronSettingStore'

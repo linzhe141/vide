@@ -140,10 +140,14 @@ export function LlmSettings() {
       >
         {/* API Key */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>API Key</label>
+          <label htmlFor='llm-api-key' className='text-foreground text-sm font-medium'>
+            API Key
+          </label>
           <Input
+            id='llm-api-key'
             type='password'
-            placeholder='sk-...'
+            autoComplete='off'
+            placeholder='sk-…'
             {...register('apiKey', { required: 'API Key is required' })}
           />
           {errors.apiKey && <p className='text-xs text-red-500'>{errors.apiKey.message}</p>}
@@ -151,9 +155,13 @@ export function LlmSettings() {
 
         {/* Base URL */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>Base URL</label>
+          <label htmlFor='llm-base-url' className='text-foreground text-sm font-medium'>
+            Base URL
+          </label>
           <Input
+            id='llm-base-url'
             type='url'
+            autoComplete='off'
             placeholder='https://api.openai.com'
             {...register('baseUrl', { required: 'Base URL is required' })}
           />
@@ -162,9 +170,13 @@ export function LlmSettings() {
 
         {/* Model */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>Model</label>
+          <label htmlFor='llm-model' className='text-foreground text-sm font-medium'>
+            Model
+          </label>
           <Input
+            id='llm-model'
             type='text'
+            autoComplete='off'
             placeholder='gpt-4'
             {...register('model', { required: 'Model is required' })}
           />
@@ -180,7 +192,7 @@ export function LlmSettings() {
         {/* Actions */}
         <div className='flex items-center gap-3 pt-4'>
           <Button type='button' onClick={handleVerify} disabled={verifying} variant='outline'>
-            {verifying ? 'Verifying...' : 'Verify Connection'}
+            {verifying ? 'Verifying…' : 'Verify Connection'}
           </Button>
           <Button type='submit'>Save Settings</Button>
         </div>

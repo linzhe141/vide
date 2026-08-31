@@ -11,6 +11,8 @@ import {
   workflowMessages,
 } from '@/db/schema'
 
+const SQLITE_BULK_INSERT_BATCH_SIZE = 100
+
 export class SessionRepository {
   static async ensureSession(data: {
     id: string
@@ -82,6 +84,10 @@ export class SessionRepository {
       .update(sessions)
       .set({ thinkingMode, updatedAt: Date.now() })
       .where(eq(sessions.id, sessionId))
+  }
+
+  static async touchSession(sessionId: string, updatedAt = Date.now()): Promise<void> {
+    await db.update(sessions).set({ updatedAt }).where(eq(sessions.id, sessionId))
   }
 
   /** upsert 一个分支：headWorkflowId 需要时更新，name 唯一（session + name）。 */
@@ -191,7 +197,12 @@ export class SessionRepository {
         updatedAt: time + index,
       }
     })
-    await db.insert(workflowMessages).values(serialized)
+
+    for (let index = 0; index < serialized.length; index += SQLITE_BULK_INSERT_BATCH_SIZE) {
+      await db
+        .insert(workflowMessages)
+        .values(serialized.slice(index, index + SQLITE_BULK_INSERT_BATCH_SIZE))
+    }
   }
 
   /** 追加一条 workflow stream 日志事件。eventName 对应 WorkflowEvent['type']。 */
@@ -217,15 +228,19 @@ export class SessionRepository {
   ): Promise<void> {
     if (!entries.length) return
     const time = Date.now()
-    await db.insert(workflowLogs).values(
-      entries.map((entry, index) => ({
-        id: uuid(),
-        workflowId,
-        eventName: entry.eventName,
-        payload: entry.payload === undefined ? null : JSON.stringify(entry.payload),
-        createdAt: entry.createdAt ?? time + index,
-      }))
-    )
+    const serialized = entries.map((entry, index) => ({
+      id: uuid(),
+      workflowId,
+      eventName: entry.eventName,
+      payload: entry.payload === undefined ? null : JSON.stringify(entry.payload),
+      createdAt: entry.createdAt ?? time + index,
+    }))
+
+    for (let index = 0; index < serialized.length; index += SQLITE_BULK_INSERT_BATCH_SIZE) {
+      await db
+        .insert(workflowLogs)
+        .values(serialized.slice(index, index + SQLITE_BULK_INSERT_BATCH_SIZE))
+    }
   }
 
   /** 列表用：返回所有 session 的轻量元数据。 */

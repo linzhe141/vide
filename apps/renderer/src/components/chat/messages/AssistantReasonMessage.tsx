@@ -1,7 +1,8 @@
-import { memo, useCallback, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { memo, useMemo, useState } from 'react'
 import type { AssistantReasonSessionMessage } from '../../../store/sessionStore/types'
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
+
+const PREVIEW_CHAR_LIMIT = 400
 
 type AssistantReasonMessageProps = {
   message: AssistantReasonSessionMessage
@@ -11,33 +12,33 @@ export const AssistantReasonMessage = memo(function AssistantReasonMessage({
   message,
 }: AssistantReasonMessageProps) {
   const isReasoning = message.reasoning === true
-  const [open, setOpen] = useState(isReasoning)
-  const toggleOpen = useCallback(() => {
-    setOpen((value) => !value)
-  }, [])
+  const canExpand = message.content.trim().length > PREVIEW_CHAR_LIMIT
+  const [expanded, setExpanded] = useState(false)
+  const visibleContent = useMemo(() => {
+    if (!canExpand || expanded) {
+      return message.content
+    }
+
+    return `${message.content.slice(0, PREVIEW_CHAR_LIMIT).trimEnd()}…`
+  }, [canExpand, expanded, message.content])
 
   return (
-    <div className='space-y-4 text-xs'>
-      <button
-        onClick={toggleOpen}
-        className='text-text-secondary flex items-center gap-3 font-medium'
+    <div className='space-y-2'>
+      <MarkdownRenderer
+        animation={isReasoning && expanded}
+        className='text-text-secondary text-[12px]'
       >
-        <span>{isReasoning ? 'Thinking' : 'Reason'}</span>
-        {open ? (
-          <ChevronDown size={16} strokeWidth={2} />
-        ) : (
-          <ChevronRight size={16} strokeWidth={2} />
-        )}
-      </button>
+        {visibleContent}
+      </MarkdownRenderer>
 
-      {open && (
-        <div className='space-y-4 pl-2'>
-          <div className='border-border border-l pl-5'>
-            <MarkdownRenderer animation={isReasoning} className='text-text-secondary text-[12px]'>
-              {message.content}
-            </MarkdownRenderer>
-          </div>
-        </div>
+      {canExpand && (
+        <button
+          type='button'
+          onClick={() => setExpanded((value) => !value)}
+          className='text-text-info hover:text-foreground text-[12px] font-medium transition-colors'
+        >
+          {expanded ? '收起' : '展开'}
+        </button>
       )}
     </div>
   )

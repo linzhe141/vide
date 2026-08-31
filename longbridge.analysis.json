@@ -1,0 +1,34 @@
+{
+  "totalLines": 17464,
+  "totalParsedEvents": 5821,
+  "uniqueEvents": 10,
+  "eventCounts": {
+    "chat_started": 1,
+    "workflow_started": 1,
+    "thinking_started": 1,
+    "message": 5719,
+    "ping": 55,
+    "thinking_finished": 1,
+    "chat_title_updated": 1,
+    "token_usage": 4,
+    "node_tool_use_started": 19,
+    "node_tool_use_finished": 19
+  },
+  "topRuns": [
+    {
+      "id": "105461635141182500",
+      "count": 5766,
+      "events": {
+        "chat_started": 1,
+        "workflow_started": 1,
+        "thinking_started": 1,
+        "message": 5719,
+        "thinking_finished": 1,
+        "chat_title_updated": 1,
+        "token_usage": 4,
+        "node_tool_use_started": 19,
+        "node_tool_use_finished": 19
+      }
+    }
+  ]
+}

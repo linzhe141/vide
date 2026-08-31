@@ -1,1 +1,1 @@
-export const appLogoUrl = new URL('../../../../resources/logo.png', import.meta.url).href
+export const appLogoUrl = new URL('../../../main/resources/logo.png', import.meta.url).href

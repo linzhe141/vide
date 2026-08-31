@@ -3,6 +3,13 @@ import { spawn } from 'node:child_process'
 import { DEFAULT_VIDE_HOME } from '../../workspace'
 import { ToolCallError } from '../../error'
 
+const MAX_CAPTURED_OUTPUT_CHARS = 64_000
+
+type OutputBuffer = {
+  text: string
+  omittedChars: number
+}
+
 const getShellCommand = (command: string) => {
   if (process.platform === 'win32') {
     return {
@@ -20,6 +27,30 @@ const getShellCommand = (command: string) => {
 export const BASH_TOOL_NAMES = {
   EXECUTE_BASH_COMMAND: `execute-bash-command`,
 } as const
+
+function appendOutput(buffer: OutputBuffer, chunk: string): OutputBuffer {
+  const combined = buffer.text + chunk
+  if (combined.length <= MAX_CAPTURED_OUTPUT_CHARS) {
+    return {
+      text: combined,
+      omittedChars: buffer.omittedChars,
+    }
+  }
+
+  const overflow = combined.length - MAX_CAPTURED_OUTPUT_CHARS
+  return {
+    text: combined.slice(-MAX_CAPTURED_OUTPUT_CHARS),
+    omittedChars: buffer.omittedChars + overflow,
+  }
+}
+
+function finalizeOutput(buffer: OutputBuffer): string {
+  if (!buffer.omittedChars) {
+    return buffer.text
+  }
+
+  return `...[truncated ${buffer.omittedChars} chars]\n${buffer.text}`
+}
 
 export class Bash extends ToolProvider {
   executeCommand = defineTool({
@@ -68,8 +99,8 @@ and you can continue to use the agent while the command is running in the backgr
           windowsHide: true,
         })
 
-        let stdout = ''
-        let stderr = ''
+        let stdout: OutputBuffer = { text: '', omittedChars: 0 }
+        let stderr: OutputBuffer = { text: '', omittedChars: 0 }
 
         // signal
 
@@ -103,11 +134,11 @@ and you can continue to use the agent while the command is running in the backgr
         }
 
         proc.stdout.on('data', (data) => {
-          stdout += data.toString()
+          stdout = appendOutput(stdout, data.toString())
         })
 
         proc.stderr.on('data', (data) => {
-          stderr += data.toString()
+          stderr = appendOutput(stderr, data.toString())
         })
 
         const successHandler = (exitCode: number | null) => {
@@ -117,8 +148,10 @@ and you can continue to use the agent while the command is running in the backgr
           resolve({
             reason: 'call-llm',
             result: {
-              stdout,
-              stderr,
+              stdout: finalizeOutput(stdout),
+              stderr: finalizeOutput(stderr),
+              stdoutTruncated: stdout.omittedChars > 0,
+              stderrTruncated: stderr.omittedChars > 0,
               exitCode: exitCode ?? 0,
             },
           })

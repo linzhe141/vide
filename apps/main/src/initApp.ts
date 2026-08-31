@@ -1,6 +1,6 @@
 import { AppManager } from './appManager'
-export function initApp() {
+export async function initApp() {
   const appManager = new AppManager()
-  appManager.init()
+  await appManager.init()
   return appManager
 }

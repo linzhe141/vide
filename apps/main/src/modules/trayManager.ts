@@ -1,9 +1,9 @@
-import path from 'node:path'
-import { Menu, Tray, dialog, nativeImage } from 'electron'
+import { Menu, Tray, nativeImage } from 'electron'
 import type { AppManager } from '@/appManager'
 import { logger } from '@/logger'
+import { resolveRuntimeResourcePath } from '@/utils'
 
-const iconPath = path.resolve(__dirname, '../../../../../resources/logo.png')
+const iconPath = resolveRuntimeResourcePath('logo.png')
 
 export class TrayManager {
   private tray: Tray | null = null
@@ -15,7 +15,11 @@ export class TrayManager {
     if (this.tray) return
 
     const trayIcon = nativeImage.createFromPath(iconPath)
-    this.tray = new Tray(trayIcon.isEmpty() ? iconPath : trayIcon)
+    if (trayIcon.isEmpty()) {
+      logger.error('tray icon failed to load', { iconPath })
+      return
+    }
+    this.tray = new Tray(trayIcon)
     this.tray.setToolTip('vide')
     this.tray.setContextMenu(this.buildContextMenu())
     this.tray.on('click', () => {
@@ -44,17 +48,15 @@ export class TrayManager {
   private buildContextMenu() {
     return Menu.buildFromTemplate([
       {
-        label: 'Hello World',
-        click: () => {
-          this.handleHelloWorldClick().catch((error) => {
-            logger.error('failed to show tray hello world dialog', error)
-          })
-        },
-      },
-      {
         label: '显示主窗口',
         click: () => {
           this.app.windowManager.showWindow()
+        },
+      },
+      {
+        label: '打开渲染 DevTools',
+        click: () => {
+          this.app.windowManager.openMainWindowDevTools()
         },
       },
       { type: 'separator' },
@@ -67,16 +69,5 @@ export class TrayManager {
         },
       },
     ])
-  }
-
-  private async handleHelloWorldClick() {
-    await dialog.showMessageBox({
-      type: 'info',
-      title: 'Hello World',
-      message: 'Hello World',
-      detail: '托盘菜单已经接通，可以在这里继续扩展右键功能。',
-      buttons: ['确定'],
-      noLink: true,
-    })
   }
 }

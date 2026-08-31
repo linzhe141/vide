@@ -16,11 +16,13 @@
     "./ipcRenderer": "./src/ipc/api/ipcRenderer.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0"
+    "better-sqlite3": "^12.10.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/ws": "^8.18.1",
     "@vide/agent": "workspace:*",
     "@vide/ai": "workspace:*",
     "@vide/config": "workspace:*",

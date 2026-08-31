@@ -1,6 +1,7 @@
 import type { AgentMessage, Tool } from '@vide/ai'
 import { WorkflowStream } from './stream'
 import {
+  type ContextInputMessage,
   Workflow,
   WorkflowRuntimeContext,
   type CallToolsPayload,
@@ -49,6 +50,11 @@ export type SessionInputSource = 'desktop' | 'wechat-bot'
 export interface SessionPromptOptions {
   inputSource?: SessionInputSource
   extraTools?: Tool[]
+}
+
+export interface QueuedSteeringMessage extends ContextInputMessage {
+  workflowId: string
+  createdAt: number
 }
 
 interface InterruptedToolContext {
@@ -147,6 +153,40 @@ export class Session {
     })
 
     return stream
+  }
+
+  enqueueSteeringMessage(data: {
+    input: string
+    inputSource: SessionInputSource
+    messageId?: string
+  }): QueuedSteeringMessage | null {
+    const input = data.input.trim()
+    if (!input) {
+      return null
+    }
+
+    const workflowNode = this.currentBranch?.head ?? null
+    if (!workflowNode || workflowNode.stopStatus) {
+      return null
+    }
+
+    const workflow = workflowNode.workflow
+    if (!isRuntimeWorkflow(workflow) || !workflow.canAcceptSteeringMessages()) {
+      return null
+    }
+
+    const messageId = data.messageId ?? uuid()
+    const queuedMessage: QueuedSteeringMessage = {
+      workflowId: workflow.id,
+      messageId,
+      input,
+      inputSource: data.inputSource,
+      createdAt: Date.now(),
+    }
+
+    workflow.enqueueSteeringMessage(queuedMessage)
+    this.updatedAt = queuedMessage.createdAt
+    return queuedMessage
   }
 
   // 中断当前分支上正在运行的 workflow

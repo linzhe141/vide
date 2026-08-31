@@ -97,10 +97,14 @@ export function GenerateImageSettings() {
       >
         {/* API Key */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>API Key</label>
+          <label htmlFor='generate-image-api-key' className='text-foreground text-sm font-medium'>
+            API Key
+          </label>
           <Input
+            id='generate-image-api-key'
             type='password'
-            placeholder='sk-...'
+            autoComplete='off'
+            placeholder='sk-…'
             {...register('apiKey', { required: 'API Key is required' })}
           />
           {errors.apiKey && <p className='text-xs text-red-500'>{errors.apiKey.message}</p>}
@@ -108,9 +112,13 @@ export function GenerateImageSettings() {
 
         {/* Base URL */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>Base URL</label>
+          <label htmlFor='generate-image-base-url' className='text-foreground text-sm font-medium'>
+            Base URL
+          </label>
           <Input
+            id='generate-image-base-url'
             type='url'
+            autoComplete='off'
             placeholder='https://api.openai.com'
             {...register('baseUrl', { required: 'Base URL is required' })}
           />
@@ -119,9 +127,13 @@ export function GenerateImageSettings() {
 
         {/* Model */}
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>Model</label>
+          <label htmlFor='generate-image-model' className='text-foreground text-sm font-medium'>
+            Model
+          </label>
           <Input
+            id='generate-image-model'
             type='text'
+            autoComplete='off'
             placeholder='gpt-4'
             {...register('model', { required: 'Model is required' })}
           />

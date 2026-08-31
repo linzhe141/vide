@@ -27,7 +27,13 @@ export type InputPayload = {
 
 export type ContextInputPayload = {
   state: 'CONTEXT_INPUT'
+  messages: ContextInputMessage[]
+}
+
+export type ContextInputMessage = {
+  messageId: string
   input: string
+  inputSource: 'desktop' | 'wechat-bot'
 }
 
 export type CallLLMPayload = {
@@ -172,6 +178,8 @@ export class Workflow {
   messages: AgentMessage[] = []
   ai: AI | null = null
   stepPayload: StepPayload | null = null
+  private terminalStopReason: Exclude<StopReason, 'interrupted'> | null = null
+  private steeringMessages: ContextInputMessage[] = []
 
   constructor(
     public runtime: WorkflowRuntimeContext,
@@ -192,6 +200,14 @@ export class Workflow {
     this.stream.abort()
   }
 
+  enqueueSteeringMessage(message: ContextInputMessage) {
+    this.steeringMessages.push(message)
+  }
+
+  canAcceptSteeringMessages() {
+    return this.terminalStopReason === null
+  }
+
   async run(input: string, options?: { inputSource?: 'desktop' | 'wechat-bot' }) {
     this.stream.push({
       type: 'workflow.start',
@@ -209,21 +225,37 @@ export class Workflow {
   async runLoop(initialPayload: StepPayload): Promise<StopReason | void> {
     this.stepPayload = initialPayload
     this.state = initialPayload.state
+    let pendingMessages = this.drainSteeringMessages()
 
     while (true) {
       try {
+        pendingMessages = this.collectPendingSteeringMessages(pendingMessages)
+        this.stepPayload = this.applyPendingMessagesAtCheckpoint(this.stepPayload, pendingMessages)
+        if (this.stepPayload.state === 'CONTEXT_INPUT') {
+          pendingMessages = []
+        }
+        this.state = this.stepPayload.state
+
         this.signal.throwIfAborted()
         this.stream.push({ type: 'workflow.step.start', payload: this.stepPayload })
 
         let nextStep = await this.runStep()
 
-        if (nextStep.state === 'COMPLETED') {
+        pendingMessages = this.collectPendingSteeringMessages(pendingMessages)
+        if (nextStep.state === 'COMPLETED' && pendingMessages.length === 0) {
           nextStep = await this.runtime.runBeforeWorkflowFinishHooks(nextStep)
+          pendingMessages = this.collectPendingSteeringMessages(pendingMessages)
+        }
+
+        nextStep = this.applyPendingMessagesAtCheckpoint(nextStep, pendingMessages)
+        if (nextStep.state === 'CONTEXT_INPUT') {
+          pendingMessages = []
         }
 
         this.stream.push({ type: 'workflow.step.end', result: nextStep })
 
         if (nextStep.state === 'COMPLETED') {
+          this.terminalStopReason = 'completed'
           this.stream.push({ type: 'workflow.completed', result: nextStep.result })
           this.stream.end()
           return 'completed'
@@ -240,11 +272,13 @@ export class Workflow {
         this.state = nextStep.state
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
+          this.terminalStopReason = 'aborted'
           this.stream.push({ type: 'workflow.aborted' })
           this.stream.end()
           return 'aborted'
         }
 
+        this.terminalStopReason = 'error'
         this.stream.push({
           type: 'workflow.error',
           error: error instanceof Error ? error.message : String(error),
@@ -278,7 +312,17 @@ export class Workflow {
 
   async stateContextInput(): Promise<StepPayload> {
     const payload = this.stepPayload as ContextInputPayload
-    this.messages.push({ role: 'user', content: payload.input })
+
+    for (const message of payload.messages) {
+      this.stream.push({
+        type: 'workflow.context.input',
+        messageId: message.messageId,
+        input: message.input,
+        inputSource: message.inputSource,
+      })
+      this.messages.push({ role: 'user', content: message.input })
+    }
+
     return { state: 'CALL_LLM' }
   }
 
@@ -479,5 +523,49 @@ export class Workflow {
     })
 
     return toolResult.reason
+  }
+
+  private drainSteeringMessages(): ContextInputMessage[] {
+    if (!this.steeringMessages.length) {
+      return []
+    }
+
+    return this.steeringMessages.splice(0, this.steeringMessages.length)
+  }
+
+  private collectPendingSteeringMessages(
+    pendingMessages: ContextInputMessage[]
+  ): ContextInputMessage[] {
+    if (!this.steeringMessages.length) {
+      return pendingMessages
+    }
+
+    pendingMessages.push(...this.drainSteeringMessages())
+    return pendingMessages
+  }
+
+  private applyPendingMessagesAtCheckpoint(
+    step: StepPayload,
+    pendingMessages: ContextInputMessage[]
+  ): StepPayload {
+    if (!pendingMessages.length) {
+      return step
+    }
+
+    if (step.state === 'CONTEXT_INPUT') {
+      return {
+        state: 'CONTEXT_INPUT',
+        messages: [...step.messages, ...pendingMessages],
+      }
+    }
+
+    if (step.state === 'CALL_LLM' || step.state === 'COMPLETED') {
+      return {
+        state: 'CONTEXT_INPUT',
+        messages: [...pendingMessages],
+      }
+    }
+
+    return step
   }
 }

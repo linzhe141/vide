@@ -37,11 +37,14 @@ export function parseAskQuestionAnswerPayload(content: string): AskQuestionAnswe
 }
 
 /** 清洗 LLM 输出的 questions 数组，产出符合 UI 类型的 AskUserQuestionItem。 */
-export function sanitizeAskUserQuestions(questions: unknown): AskUserQuestionItem[] {
+export function sanitizeAskUserQuestions(
+  questions: unknown,
+  options?: { createId?: (index: number) => string }
+): AskUserQuestionItem[] {
   if (!Array.isArray(questions)) return []
 
   const normalized = questions
-    .map((item): AskUserQuestionItem | null => {
+    .map((item, index): AskUserQuestionItem | null => {
       if (!item || typeof item !== 'object') return null
       const question = item as {
         id?: unknown
@@ -51,16 +54,18 @@ export function sanitizeAskUserQuestions(questions: unknown): AskUserQuestionIte
         answer?: unknown
       }
       const id =
-        typeof question.id === 'string' && question.id.trim() ? question.id.trim() : nanoid()
+        typeof question.id === 'string' && question.id.trim()
+          ? question.id.trim()
+          : (options?.createId?.(index) ?? nanoid())
       const title = typeof question.title === 'string' ? question.title.trim() : ''
       const description =
         typeof question.description === 'string' ? question.description.trim() : ''
-      const options = sanitizeAskQuestionOptions(question.options)
-      if (!title || !options.length) return null
+      const normalizedOptions = sanitizeAskQuestionOptions(question.options)
+      if (!title || !normalizedOptions.length) return null
       const result: AskUserQuestionItem = {
         id,
         title,
-        options,
+        options: normalizedOptions,
         answer: null,
       }
       if (description) result.description = description

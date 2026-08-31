@@ -16,10 +16,10 @@ const runtimeExternalModules = Object.keys(
 export default {
   appId: 'me.vide',
   productName: 'vide',
-  icon: '../../resources/logo.png',
+  icon: './resources/logo.png',
 
   directories: {
-    buildResources: '../../resources',
+    buildResources: './resources',
     output: './dist/electron-pack',
   },
 
@@ -27,13 +27,15 @@ export default {
     './dist/app/**/*',
     './dist/electron/**/*',
     './src/drizzle/**/*',
-    '../../resources/**',
     '!**/*.map',
+    'resources',
     '!**/*.tsbuildinfo',
   ],
+
   asar: {
     smartUnpack: false,
   },
+  electronLanguages: ['en', 'en_GB', 'en_US', 'en-GB', 'en-US'],
   asarUnpack: runtimeExternalModules.map((moduleName) => `node_modules/${moduleName}/**/*`),
   publish: [
     {
@@ -53,7 +55,7 @@ export default {
   ],
 
   win: {
-    icon: '../../resources/logo.png',
+    icon: './resources/logo.png',
     target: ['nsis'],
   },
   nsis: {
@@ -62,7 +64,7 @@ export default {
     createDesktopShortcut: 'always',
   },
   mac: {
-    icon: '../../resources/logo.png',
+    icon: './resources/logo.png',
     target: 'dmg',
   },
 } satisfies Configuration

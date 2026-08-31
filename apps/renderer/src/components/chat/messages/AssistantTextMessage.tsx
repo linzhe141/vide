@@ -3,6 +3,8 @@ import type { AssistantTextSessionMessage, ToolCallState } from '../../../store/
 import { MarkdownRenderer } from '../../markdown/MarkdownRenderer'
 import { useWebSearchStoreActions, type WebSearchResult } from '@/store/webSearchStore'
 
+const EMPTY_WEB_SEARCH_RESULTS: WebSearchResult['results'] = []
+
 type AssistantTextMessageProps = {
   message: AssistantTextSessionMessage
   latestWebSearchToolCall?: ToolCallState | null
@@ -13,7 +15,8 @@ export const AssistantTextMessage = memo(function AssistantTextMessage({
   latestWebSearchToolCall,
 }: AssistantTextMessageProps) {
   const { select } = useWebSearchStoreActions()
-  const webSearchResults = latestWebSearchToolCall?.result?.result?.result?.results ?? []
+  const webSearchResults =
+    latestWebSearchToolCall?.result?.result?.result?.results ?? EMPTY_WEB_SEARCH_RESULTS
 
   // 把 [number] 替换为对应的搜索结果链接
   const formatContent = useMemo(() => {
@@ -39,8 +42,12 @@ export const AssistantTextMessage = memo(function AssistantTextMessage({
   }, [latestWebSearchToolCall, select])
 
   return (
-    <div className='max-w-none'>
-      <MarkdownRenderer animation={message.streaming} onCitationClick={handleCitationClick}>
+    <div className='max-w-none' aria-live={message.streaming ? 'polite' : undefined}>
+      <MarkdownRenderer
+        animation={message.streaming}
+        onCitationClick={handleCitationClick}
+        className='text-[15px] leading-7'
+      >
         {formatContent}
       </MarkdownRenderer>
     </div>

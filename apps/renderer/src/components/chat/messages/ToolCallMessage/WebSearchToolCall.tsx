@@ -62,6 +62,8 @@ function WebSearchToolCall({ tool, result }: WebSearchToolCallProps) {
                         key={`${item.link}-${index}`}
                         src={getSiteIcon(item.link)}
                         alt=''
+                        width={20}
+                        height={20}
                         className='border-background bg-background size-5 rounded-md border'
                       />
                     ) : null

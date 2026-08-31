@@ -54,8 +54,10 @@ function TodoToolCall({ result }: TodoToolCallProps) {
   return (
     <div className='space-y-1.5'>
       <button
+        type='button'
         onClick={() => setOpen((value) => !value)}
-        className='border-border bg-background hover:bg-foreground/3 dark:hover:bg-foreground/5 flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all duration-200'
+        aria-expanded={open}
+        className='border-border bg-background hover:bg-foreground/3 dark:hover:bg-foreground/5 flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors duration-200'
       >
         <div className='bg-primary/8 text-primary border-primary/10 shrink-0 rounded-lg border p-1.5'>
           <ListTodo size={15} strokeWidth={1.9} />

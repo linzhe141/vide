@@ -10,7 +10,7 @@ import { Clock3, CornerDownLeft, Search, Settings2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { cn } from '@/lib/utils'
 import { useHistoryItems, useHistoryStoreActions } from '@/store/historyStore'
-import { useSessionStore } from '@/store/sessionStore'
+import { useSessionRunning } from '@/store/sessionStore'
 import { Input } from '@/ui/Input'
 
 type CommandItem = {
@@ -21,7 +21,7 @@ type CommandItem = {
   keywords: string[]
   to: string
   meta?: string
-  running?: boolean
+  sessionId?: string
 }
 
 const settingItems: CommandItem[] = [
@@ -114,7 +114,6 @@ export function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const historyItems = useHistoryItems()
   const historyActions = useHistoryStoreActions()
-  const sessions = useSessionStore((state) => state.sessions)
 
   const closePalette = useCallback(() => {
     setOpen(false)
@@ -149,11 +148,9 @@ export function CommandPalette() {
         keywords: [item.type, item.sessionSource, item.sessionId],
         to: `/chat/${item.sessionId}`,
         meta: item.sessionSource === 'wechat-bot' ? 'WeChat' : 'Desktop',
-        running:
-          sessions.find((session) => session.sessionId === item.sessionId)?.runtime.running ??
-          false,
+        sessionId: item.sessionId,
       }))
-  }, [historyItems, sessions])
+  }, [historyItems])
 
   const results = useMemo(() => {
     const normalizedQuery = normalize(query)
@@ -291,10 +288,8 @@ export function CommandPalette() {
                   </span>
 
                   <span className='flex items-center gap-2'>
-                    {item.running ? (
-                      <span className='bg-primary/10 text-primary rounded-full px-2 py-1 text-[11px]'>
-                        Running
-                      </span>
+                    {item.kind === 'session' && item.sessionId ? (
+                      <SessionCommandRunningBadge sessionId={item.sessionId} />
                     ) : null}
                     <span className='text-text-info rounded-md border px-2 py-1 text-[11px]'>
                       {item.meta}
@@ -324,5 +319,14 @@ export function CommandPalette() {
         </div>
       </div>
     </div>
+  )
+}
+
+function SessionCommandRunningBadge({ sessionId }: { sessionId: string }) {
+  const running = useSessionRunning(sessionId)
+  if (!running) return null
+
+  return (
+    <span className='bg-primary/10 text-primary rounded-full px-2 py-1 text-[11px]'>Running</span>
   )
 }

@@ -1,7 +1,15 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import type { AskQuestionAnswer, AskUserQuestionSessionMessage } from '@/store/sessionStore/types'
-import { Check, ChevronLeft, ChevronRight, Circle, MessageSquareHeart, Send } from 'lucide-react'
-import { useChatContext } from '@/hooks/useChatContext'
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  MessageSquareHeart,
+  Send,
+  Square,
+} from 'lucide-react'
+import { useChatContext, useChatRunning } from '@/hooks/useChatContext'
 import { useSessionStoreActions, useSessionWorkflowNext } from '@/store/sessionStore'
 import {
   ASK_QUESTION_ANSWER_TYPE,
@@ -20,7 +28,8 @@ export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
   workflowId,
   message,
 }: AskUserQuestionMessageProps) {
-  const { handleSend, running, sessionId } = useChatContext()
+  const { handleSend, handleStop, sessionId } = useChatContext()
+  const running = useChatRunning()
   const { updateAskQuestionAnswer } = useSessionStoreActions()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sending, setSending] = useState(false)
@@ -76,15 +85,18 @@ export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
     !isLast && (readOnly || (!running && question.answer !== null && otherValid(question)))
   const canGoPrev = !isFirst && (readOnly || !running)
 
-  const saveAnswer = (answer: AskQuestionAnswer) => {
-    updateAskQuestionAnswer({
-      sessionId,
-      workflowId,
-      messageId: message.id,
-      questionId: question.id,
-      answer,
-    })
-  }
+  const saveAnswer = useCallback(
+    (answer: AskQuestionAnswer) => {
+      updateAskQuestionAnswer({
+        sessionId,
+        workflowId,
+        messageId: message.id,
+        questionId: question.id,
+        answer,
+      })
+    },
+    [message.id, question.id, sessionId, updateAskQuestionAnswer, workflowId]
+  )
 
   const handleSelect = (value: string) => {
     if (readOnly || running || sending) return
@@ -146,7 +158,7 @@ export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
   }
 
   return (
-    <div className='border-border bg-background my-2 overflow-hidden rounded-3xl border p-4 shadow-sm'>
+    <div className='border-border bg-background my-2 overflow-hidden rounded-2xl border p-4'>
       <div className='mb-4 flex items-start gap-3'>
         <div className='bg-primary/12 text-primary mt-0.5 rounded-xl p-2'>
           <MessageSquareHeart size={18} />
@@ -197,11 +209,14 @@ export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
       {!readOnly && isOther && (
         <div className='mt-3'>
           <textarea
+            aria-label='补充说明'
+            name='ask-question-other'
+            autoComplete='off'
             value={otherText}
             onChange={(e) => handleOtherChange(e.target.value)}
-            placeholder='请补充你的具体想法...'
+            placeholder='请补充你的具体想法…'
             rows={3}
-            className='border-border/80 bg-background/90 text-foreground placeholder:text-text-info focus:border-primary/55 focus:ring-primary/20 w-full resize-none rounded-2xl border px-3.5 py-2.5 text-[14px] leading-6 transition outline-none focus:ring-2'
+            className='border-border/80 bg-background/90 text-foreground placeholder:text-text-info focus:border-primary/55 focus:ring-primary/20 w-full resize-none rounded-2xl border px-3.5 py-2.5 text-[14px] leading-6 transition focus:ring-2'
           />
         </div>
       )}
@@ -261,26 +276,29 @@ export const AskUserQuestionMessage = memo(function AskUserQuestionMessage({
             )}
           </div>
 
-          {isLast && (
-            <button
-              type='button'
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className='bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45'
-            >
-              <Send size={14} />
-              {sending || running ? '发送中...' : '提交选择'}
-            </button>
-          )}
+          {isLast &&
+            (running ? (
+              <button
+                type='button'
+                onClick={handleStop}
+                className='border-danger/30 text-danger hover:border-danger/50 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-[13px] font-semibold transition'
+              >
+                <Square size={14} aria-hidden='true' />
+                停止运行
+              </button>
+            ) : (
+              <button
+                type='button'
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className='bg-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45'
+              >
+                <Send size={14} aria-hidden='true' />
+                {sending ? '发送中…' : '提交选择'}
+              </button>
+            ))}
         </div>
       )}
     </div>
   )
-}, areAskUserQuestionMessagePropsEqual)
-
-function areAskUserQuestionMessagePropsEqual(
-  prev: AskUserQuestionMessageProps,
-  next: AskUserQuestionMessageProps
-) {
-  return prev.workflowId === next.workflowId && prev.message === next.message
-}
+})

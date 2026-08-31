@@ -1,10 +1,18 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import { immer } from 'zustand/middleware/immer'
 import type { ToolCall } from '@vide/ai'
 import type { SessionSource } from '@vide/config'
 import type { WorkflowState } from '../../hooks/useAgentSessionEvent'
 import { handleWorkflowEvent } from './eventHandlers/handleWorkflowEvent'
 import { buildSessionFromData } from './buildSession'
+import {
+  findAskUserQuestionMessage,
+  findSubAgentWorkflowForToolCall,
+  findWorkflowInSession,
+  getLastVisibleMessage,
+  rebuildWorkflowMessages,
+} from './workflowMessageModel'
 import type { AskUserQuestionSessionMessage, Workflow, Session, SessionBranch } from './types'
 
 type SessionState = {
@@ -26,9 +34,20 @@ type UpdateAskQuestionAnswerData = {
   answer: AskUserQuestionSessionMessage['questions'][number]['answer']
 }
 
+type QueueSteeringMessageData = {
+  sessionId: string
+  workflowId: string
+  messageId: string
+  content: string
+  inputSource: SessionSource
+  createdAt: number
+}
+
 type SessionActions = {
   actions: {
     handleEvent: (event: WorkflowState) => void
+    handleEvents: (events: WorkflowState[]) => void
+    queueSteeringMessage: (data: QueueSteeringMessageData) => void
     changeToolCallStatus: (data: ChangeToolCallStatusData) => void
     updateAskQuestionAnswer: (data: UpdateAskQuestionAnswerData) => void
 
@@ -69,6 +88,57 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       handleEvent(event) {
         set((state) => {
           handleWorkflowEvent(state, event)
+          bumpSessionRenderVersion(state.sessions, event.ctx.sessionId)
+        })
+      },
+      handleEvents(events) {
+        if (!events.length) return
+
+        set((state) => {
+          const touchedSessionIds = new Set<string>()
+
+          for (const event of events) {
+            handleWorkflowEvent(state, event)
+            if (event.ctx.sessionId) {
+              touchedSessionIds.add(event.ctx.sessionId)
+            }
+          }
+
+          for (const sessionId of touchedSessionIds) {
+            bumpSessionRenderVersion(state.sessions, sessionId)
+          }
+        })
+      },
+      queueSteeringMessage(data: QueueSteeringMessageData) {
+        set((state) => {
+          const session = state.sessions.find((item) => item.sessionId === data.sessionId)
+          if (!session) return
+
+          const workflow = findWorkflowInSession(session, data.workflowId)
+          if (!workflow) return
+
+          workflow.runtime.pendingSteeringMessages ??= []
+          const existingMessage = workflow.runtime.pendingSteeringMessages.find(
+            (message) => message.id === data.messageId
+          )
+
+          if (existingMessage) {
+            existingMessage.content = data.content
+            existingMessage.inputSource = data.inputSource
+            existingMessage.kind = 'steering'
+            existingMessage.pending = true
+          } else {
+            workflow.runtime.pendingSteeringMessages.push({
+              id: data.messageId,
+              role: 'user',
+              content: data.content,
+              inputSource: data.inputSource,
+              kind: 'steering',
+              pending: true,
+            })
+          }
+
+          bumpSessionRenderVersion(state.sessions, data.sessionId)
         })
       },
       changeToolCallStatus(data: ChangeToolCallStatusData) {
@@ -76,16 +146,11 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const { sessionId, workflowId, toolCallId, newStatus } = data
           const session = state.sessions.find((item) => item.sessionId === sessionId)
           if (!session) return
-          const workflowNode = session.workflowNodesMap[workflowId]
-          if (!workflowNode) return
-          const toolCallMessage = workflowNode.workflow.messages
-            .filter((item) => item.role === 'tool-call')
-            .map((i) => i.toolCalls.map((call) => call.toolCall))
-            .flat()
-          if (!toolCallMessage.length) return
-          const targetToolCall = toolCallMessage.find((t) => t.id === toolCallId)
-          if (!targetToolCall) return
-          targetToolCall.status = newStatus
+          const workflow = findWorkflowInSession(session, workflowId)
+          if (!workflow) return
+          workflow.runtime.toolCallStatusOverrides ??= {}
+          workflow.runtime.toolCallStatusOverrides[toolCallId] = newStatus
+          rebuildWorkflowMessages(workflow, session.thinkingMode)
         })
       },
       updateAskQuestionAnswer(data: UpdateAskQuestionAnswerData) {
@@ -93,12 +158,10 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           const { sessionId, workflowId, messageId, questionId, answer } = data
           const session = state.sessions.find((item) => item.sessionId === sessionId)
           if (!session) return
-          const workflowNode = session.workflowNodesMap[workflowId]
-          if (!workflowNode) return
-          const targetMessage = workflowNode.workflow.messages.find(
-            (message) => message.role === 'ask-user-question' && message.id === messageId
-          )
-          if (!targetMessage || targetMessage.role !== 'ask-user-question') return
+          const workflow = findWorkflowInSession(session, workflowId)
+          if (!workflow) return
+          const targetMessage = findAskUserQuestionMessage(workflow, messageId)
+          if (!targetMessage) return
           const targetQuestion = targetMessage.questions.find(
             (question) => question.id === questionId
           )
@@ -194,6 +257,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             workflowNodesMap: {},
             runtime: {
               running: false,
+              renderVersion: 0,
             },
           }
           const existingIndex = state.sessions.findIndex((item) => item.sessionId === sessionId)
@@ -243,6 +307,63 @@ export const useSessionStoreActions = () => useSessionStore((state) => state.act
 export const useSession = (sessionId: string) =>
   useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId))
 
+export const useHasSession = (sessionId: string) =>
+  useSessionStore((state) => state.sessions.some((item) => item.sessionId === sessionId))
+
+export const useSessionWorkspacePath = (sessionId: string) =>
+  useSessionStore(
+    (state) => state.sessions.find((item) => item.sessionId === sessionId)?.workspacePath ?? null
+  )
+
+export const useSessionAutoApprove = (sessionId: string) =>
+  useSessionStore(
+    (state) => state.sessions.find((item) => item.sessionId === sessionId)?.autoApprove ?? false
+  )
+
+export const useSessionThinkingMode = (sessionId: string) =>
+  useSessionStore(
+    (state) => state.sessions.find((item) => item.sessionId === sessionId)?.thinkingMode ?? false
+  )
+
+export const useSessionWorkflowIds = (sessionId: string) =>
+  useSessionStore(
+    useShallow((state) => {
+      const session = state.sessions.find((item) => item.sessionId === sessionId)
+      if (!session) return EMPTY_WORKFLOW_IDS
+
+      const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+      if (!activeBranch?.headWorkflowId) return EMPTY_WORKFLOW_IDS
+
+      return getCachedWorkflowIds(session, activeBranch.headWorkflowId)
+    })
+  )
+
+export const useSessionWorkflow = (sessionId: string, workflowId: string) =>
+  useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    if (!session) return undefined
+
+    return session.workflowNodesMap[workflowId]?.workflow
+  })
+
+export const useSubAgentWorkflow = (sessionId: string, workflowId: string, toolCallId: string) =>
+  useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    if (!session) return undefined
+
+    const workflow = session.workflowNodesMap[workflowId]?.workflow
+    if (!workflow) return undefined
+
+    return findSubAgentWorkflowForToolCall(workflow, toolCallId)
+  })
+
+export const useWorkflowParentId = (sessionId: string, workflowId: string) =>
+  useSessionStore(
+    (state) =>
+      state.sessions.find((item) => item.sessionId === sessionId)?.workflowNodesMap[workflowId]
+        ?.parent ?? null
+  )
+
 export const useSessionWorkflows = (sessionId: string) => {
   const session = useSession(sessionId)
   if (!session) return undefined
@@ -250,48 +371,54 @@ export const useSessionWorkflows = (sessionId: string) => {
   const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
   if (!activeBranch || !activeBranch.headWorkflowId) return undefined
 
-  // function traverse(nodeId: string, result: Workflow[] = []) {
-  //   const node = session!.workflowNodesMap[nodeId]
-  //   if (node == null) {
-  //     debugger
-  //   }
-  //   result.unshift(node.workflow)
-  //   if (node.parent) {
-  //     traverse(node.parent, result)
-  //   }
-  //   return result
-  // }
-  function traverse(nodeId: string, result: Workflow[] = [], visited = new Set<string>()) {
-    if (visited.has(nodeId)) {
-      debugger // 找到环了
-      throw new Error(`Cycle detected: ${nodeId}`)
-    }
-
-    visited.add(nodeId)
-
-    const node = session!.workflowNodesMap[nodeId]
-
-    if (!node) {
-      debugger
-      throw new Error(`Node not found: ${nodeId}`)
-    }
-
-    result.unshift(node.workflow)
-
-    if (node.parent) {
-      traverse(node.parent, result, visited)
-    }
-
-    return result
-  }
-
-  return traverse(activeBranch.headWorkflowId)
+  return collectWorkflowIds(session, activeBranch.headWorkflowId)
+    .map((workflowId) => session.workflowNodesMap[workflowId]?.workflow)
+    .filter((workflow): workflow is Workflow => Boolean(workflow))
 }
 
 export const useWorkflowBranches = (sessionId: string, workflowId: string | null) => {
   const session = useSession(sessionId)
+  if (!session) return EMPTY_WORKFLOW_BRANCH_OPTIONS
+
+  return getWorkflowBranches(session, workflowId)
+}
+
+export const useActiveBranchPath = (sessionId: string) => {
+  const session = useSession(sessionId)
   if (!session) return []
 
+  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+  if (!activeBranch) return []
+
+  const path: string[] = []
+  let currentWorkflowId = activeBranch.headWorkflowId
+
+  while (currentWorkflowId) {
+    path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
+
+    const currentNode = session.workflowNodesMap[currentWorkflowId]
+
+    // 如果当前节点是 sourceWorkflowId，停止收集
+    if (
+      activeBranch.sourceWorkflowId &&
+      currentNode.workflow.id === activeBranch.sourceWorkflowId
+    ) {
+      break
+    }
+    // 如果当前节点没有父节点了，停止收集
+    if (!currentNode.parent) {
+      break
+    }
+    // 继续向上遍历父节点
+    currentWorkflowId = currentNode.parent
+  }
+  return path
+}
+
+type WorkflowBranchOption = SessionBranch & { path: string[] }
+const EMPTY_WORKFLOW_BRANCH_OPTIONS: WorkflowBranchOption[] = []
+
+function getWorkflowBranches(session: Session, workflowId: string | null): WorkflowBranchOption[] {
   const branchPath: { path: string[]; branchName: string }[] = []
 
   for (const branch of session.branches) {
@@ -339,40 +466,36 @@ export const useWorkflowBranches = (sessionId: string, workflowId: string | null
     }))
 }
 
-export const useActiveBranchPath = (sessionId: string) => {
-  const session = useSession(sessionId)
-  if (!session) return []
-
-  const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
-  if (!activeBranch) return []
-
-  const path: string[] = []
-  let currentWorkflowId = activeBranch.headWorkflowId
-
-  while (currentWorkflowId) {
-    path.unshift(currentWorkflowId) // 从头部插入，保持从上到下的顺序
-
-    const currentNode = session.workflowNodesMap[currentWorkflowId]
-
-    // 如果当前节点是 sourceWorkflowId，停止收集
-    if (
-      activeBranch.sourceWorkflowId &&
-      currentNode.workflow.id === activeBranch.sourceWorkflowId
-    ) {
-      break
-    }
-    // 如果当前节点没有父节点了，停止收集
-    if (!currentNode.parent) {
-      break
-    }
-    // 继续向上遍历父节点
-    currentWorkflowId = currentNode.parent
-  }
-  return path
-}
-
 export const useSessionRuntime = (sessionId: string) =>
   useSessionStore((state) => state.sessions.find((item) => item.sessionId === sessionId)?.runtime)
+
+export const useSessionRunning = (sessionId: string) =>
+  useSessionStore(
+    (state) => state.sessions.find((item) => item.sessionId === sessionId)?.runtime.running ?? false
+  )
+
+export const useSessionRenderVersion = (sessionId: string) =>
+  useSessionStore(
+    (state) =>
+      state.sessions.find((item) => item.sessionId === sessionId)?.runtime.renderVersion ?? 0
+  )
+
+export const useSessionActiveBranchEventCount = (sessionId: string) =>
+  useSessionStore((state) => {
+    const session = state.sessions.find((item) => item.sessionId === sessionId)
+    if (!session) return 0
+
+    const activeBranch = session.branches.find((item) => item.name === session.activeBranch)
+    if (!activeBranch?.headWorkflowId) return 0
+
+    const workflowIds = getCachedWorkflowIds(session, activeBranch.headWorkflowId)
+    let totalEvents = 0
+    for (const workflowId of workflowIds) {
+      totalEvents += session.workflowNodesMap[workflowId]?.workflow.events?.length ?? 0
+    }
+
+    return totalEvents
+  })
 
 export const useHasPendingAskQuestion = (sessionId: string) =>
   useSessionStore((state) => {
@@ -385,9 +508,7 @@ export const useHasPendingAskQuestion = (sessionId: string) =>
     const headWorkflowNode = session.workflowNodesMap[activeBranch.headWorkflowId]
     if (!headWorkflowNode) return false
 
-    const latestMessage = [...headWorkflowNode.workflow.messages]
-      .reverse()
-      .find((message) => message.role !== 'workflow')
+    const latestMessage = getLastVisibleMessage(headWorkflowNode.workflow)
 
     // ask-question 属于某个 workflow，提交答案会产生下一个 workflow（子节点）。
     // head workflow 是 active branch 最新的 workflow，后面不会有子节点，
@@ -432,3 +553,76 @@ export const useSessionWorkflowNext = (
     if (!nextId) return undefined
     return session.workflowNodesMap[nextId]?.workflow
   })
+
+const EMPTY_WORKFLOW_IDS: string[] = []
+const workflowIdsCache = new WeakMap<Session, string[]>()
+
+function collectWorkflowIds(session: Session, headWorkflowId: string) {
+  return traverseWorkflowIds(session, headWorkflowId)
+}
+
+function getCachedWorkflowIds(session: Session, headWorkflowId: string) {
+  const cached = workflowIdsCache.get(session)
+  if (cached) {
+    return cached
+  }
+
+  const workflowIds = collectWorkflowIds(session, headWorkflowId)
+  workflowIdsCache.set(session, workflowIds)
+  return workflowIds
+}
+
+function traverseWorkflowIds(
+  session: Session,
+  nodeId: string,
+  result: string[] = [],
+  visited = new Set<string>()
+): string[] {
+  if (visited.has(nodeId)) {
+    debugger
+    throw new Error(`Cycle detected: ${nodeId}`)
+  }
+
+  visited.add(nodeId)
+
+  const node = session.workflowNodesMap[nodeId]
+  if (!node) {
+    debugger
+    throw new Error(`Node not found: ${nodeId}`)
+  }
+
+  result.unshift(node.workflow.id)
+
+  if (node.parent) {
+    traverseWorkflowIds(session, node.parent, result, visited)
+  }
+
+  return result
+}
+
+function areStringArraysEqual(previous: string[], next: string[]) {
+  if (previous === next) {
+    return true
+  }
+
+  if (previous.length !== next.length) {
+    return false
+  }
+
+  for (let index = 0; index < next.length; index += 1) {
+    if (previous[index] !== next[index]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function bumpSessionRenderVersion(sessions: Session[], sessionId: string | null | undefined) {
+  if (!sessionId) return
+
+  const session = sessions.find((item) => item.sessionId === sessionId)
+  if (!session) return
+
+  session.runtime.renderVersion += 1
+}

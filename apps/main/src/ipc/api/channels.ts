@@ -22,6 +22,10 @@ export type RunningWorkflowReplay = {
   recordedEvents: WorkflowEventWithContext[]
 }
 
+export type AgentEventStreamConnectInfo = {
+  url: string
+}
+
 export type DemoWindowRole = 'main' | 'foo'
 
 export type MultiWindowDemoMessage = {
@@ -119,6 +123,7 @@ export interface RenderChannel {
     autoApprove: boolean
     thinkingMode: boolean
   }) => Promise<string>
+  'agent-event-stream-connect-info': () => Promise<AgentEventStreamConnectInfo>
   'agent-resume-session': (data: { sessionId: string }) => Promise<SessionDataDto | null>
   'agent-session-send': (data: {
     sessionId: string

@@ -1,27 +1,29 @@
+import { memo } from 'react'
 import type { SessionMessage, ToolCallState, Workflow } from '@/store/sessionStore/types'
 import { UserInputMessage } from './messages/UserInputMessage'
 import { AssistantTextMessage } from './messages/AssistantTextMessage'
 import { AssistantReasonMessage } from './messages/AssistantReasonMessage'
 import { ToolCallMessage } from './messages/ToolCallMessage'
 import { AskUserQuestionMessage } from './messages/AskUserQuestionMessage'
+import { ReasoningBlockMessage } from './messages/ReasoningBlockMessage'
 import { MarkdownRenderer } from '../markdown/MarkdownRenderer'
 
 type MessageViewProps = {
-  workflow: Workflow
   message: SessionMessage
+  workflowId: string
+  workflowStatus: Workflow['runtime']['status']
   latestWebSearchToolCall?: ToolCallState | null
 }
 
-export function MessageView({ workflow, message, latestWebSearchToolCall }: MessageViewProps) {
+export const MessageView = memo(function MessageView({
+  message,
+  workflowId,
+  workflowStatus,
+  latestWebSearchToolCall,
+}: MessageViewProps) {
   switch (message.role) {
     case 'user':
-      return (
-        <UserInputMessage
-          message={message}
-          workflowId={workflow.id}
-          workflowInputSource={workflow.inputSource}
-        />
-      )
+      return <UserInputMessage message={message} workflowId={workflowId} />
 
     case 'assistant-text':
       return (
@@ -31,11 +33,26 @@ export function MessageView({ workflow, message, latestWebSearchToolCall }: Mess
     case 'assistant-reason':
       return <AssistantReasonMessage message={message} />
 
+    case 'reasoning-block':
+      return (
+        <ReasoningBlockMessage
+          workflowId={workflowId}
+          workflowStatus={workflowStatus}
+          message={message}
+        />
+      )
+
     case 'tool-call':
-      return <ToolCallMessage workflow={workflow} message={message} />
+      return (
+        <ToolCallMessage
+          workflowId={workflowId}
+          workflowStatus={workflowStatus}
+          message={message}
+        />
+      )
 
     case 'ask-user-question':
-      return <AskUserQuestionMessage workflowId={workflow.id} message={message} />
+      return <AskUserQuestionMessage workflowId={workflowId} message={message} />
 
     case 'error':
       return (
@@ -46,4 +63,4 @@ export function MessageView({ workflow, message, latestWebSearchToolCall }: Mess
         </div>
       )
   }
-}
+})

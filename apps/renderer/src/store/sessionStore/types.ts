@@ -5,6 +5,9 @@ export interface UserInputSessionMessage {
   id: string
   role: 'user'
   content: string
+  inputSource: SessionSource
+  kind: 'root' | 'steering'
+  pending: boolean
 }
 
 export interface AssistantReasonSessionMessage {
@@ -25,6 +28,18 @@ export interface ToolCallSessionMessage {
   id: string
   role: 'tool-call'
   toolCalls: ToolCallState[]
+}
+
+export type ReasoningBlockItem =
+  | AssistantReasonSessionMessage
+  | ToolCallSessionMessage
+  | ErrorSessionMessage
+  | WorkflowSessionMessage
+
+export interface ReasoningBlockSessionMessage {
+  id: string
+  role: 'reasoning-block'
+  items: ReasoningBlockItem[]
 }
 
 export interface ToolCallResult {
@@ -86,6 +101,7 @@ export type WorkflowSessionMessage = {
 
 export type SessionMessage =
   | UserInputSessionMessage
+  | ReasoningBlockSessionMessage
   | AssistantReasonSessionMessage
   | AssistantTextSessionMessage
   | ToolCallSessionMessage
@@ -102,6 +118,8 @@ export type Workflow = {
   messages: SessionMessage[]
   runtime: {
     status: 'running' | 'finished' | 'error' | 'aborted' | 'interrupted' // 这里的 interrupted 是可恢复的中断， 也就是 human approve
+    toolCallStatusOverrides?: Record<string, ToolCall['status']>
+    pendingSteeringMessages?: UserInputSessionMessage[]
   }
   nextSubWorkflow?: Workflow
   // 指向真正运行的子工作流
@@ -110,6 +128,7 @@ export type Workflow = {
 
 export type SessionRuntime = {
   running: boolean
+  renderVersion: number
 }
 
 export type WorkflowNode = {

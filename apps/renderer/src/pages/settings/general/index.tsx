@@ -113,9 +113,10 @@ export function GeneralSettings() {
               )}
             >
               <button
+                type='button'
                 onClick={() => setTheme('light')}
                 className={cn(
-                  'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all',
+                  'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors transition-shadow',
                   theme === 'light'
                     ? 'bg-background text-foreground shadow'
                     : 'text-text-secondary hover:text-foreground'
@@ -126,9 +127,10 @@ export function GeneralSettings() {
               </button>
 
               <button
+                type='button'
                 onClick={() => setTheme('dark')}
                 className={cn(
-                  'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all',
+                  'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors transition-shadow',
                   theme === 'dark'
                     ? 'bg-background text-foreground border-border border shadow'
                     : 'text-text-secondary hover:text-foreground'
@@ -158,12 +160,15 @@ export function GeneralSettings() {
                 return (
                   <button
                     key={colorKey}
+                    type='button'
                     onClick={() => setThemeColor(colorKey)}
                     className={cn(
-                      'relative size-11 rounded-full transition-all',
-                      'hover:scale-110 focus:outline-none',
+                      'relative size-11 rounded-full transition-transform',
+                      'hover:scale-110',
                       isSelected ? 'ring-primary/30 ring-4' : 'ring-border ring-1'
                     )}
+                    aria-label={`Use ${colorKey} accent color`}
+                    title={`Use ${colorKey} accent color`}
                     style={{ backgroundColor: colorValue }}
                   >
                     {isSelected && (
@@ -184,7 +189,7 @@ export function GeneralSettings() {
               <div>
                 <div className='text-foreground font-medium'>Application updates</div>
                 <div className='text-text-secondary text-sm'>
-                  Current version {updateStatus?.currentVersion ?? '...'}
+                  Current version {updateStatus?.currentVersion ?? '…'}
                   {updateStatus?.latestVersion ? `, latest ${updateStatus.latestVersion}` : ''}
                 </div>
               </div>
@@ -198,7 +203,7 @@ export function GeneralSettings() {
                 <div className='space-y-2'>
                   <div className='bg-border h-2 overflow-hidden rounded-full'>
                     <div
-                      className='bg-primary h-full rounded-full transition-all'
+                      className='bg-primary h-full rounded-full transition-[width]'
                       style={{
                         width: `${Math.max(0, Math.min(100, updateStatus.downloadProgress))}%`,
                       }}

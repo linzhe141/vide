@@ -6,6 +6,13 @@ export interface WorkflowStartEvent {
   inputSource: 'desktop' | 'wechat-bot'
 }
 
+export interface WorkflowContextInputEvent {
+  type: 'workflow.context.input'
+  messageId: string
+  input: string
+  inputSource: 'desktop' | 'wechat-bot'
+}
+
 export interface WorkflowCompletedEvent {
   type: 'workflow.completed'
   result: string
@@ -141,6 +148,16 @@ export interface SessionTitleEvent {
   title: string
 }
 
+export interface SessionSteeringQueuedEvent {
+  type: 'session-steering-queued'
+  sessionId: string
+  workflowId: string
+  messageId: string
+  content: string
+  inputSource: 'desktop' | 'wechat-bot'
+  createdAt: number
+}
+
 export interface SessionUpdatedEvent {
   type: 'session-updated'
   sessionId: string
@@ -149,16 +166,22 @@ export interface SessionUpdatedEvent {
   updatedAt: number
 }
 
-export type SessionEvent = SessionBackgroundCreateEvent | SessionTitleEvent | SessionUpdatedEvent
+export type SessionEvent =
+  | SessionBackgroundCreateEvent
+  | SessionTitleEvent
+  | SessionSteeringQueuedEvent
+  | SessionUpdatedEvent
 
 export const sessionEventNames = [
   'background-create-session',
   'session-title',
+  'session-steering-queued',
   'session-updated',
 ] as const satisfies readonly SessionEvent['type'][]
 
 export type WorkflowEvent =
   | WorkflowStartEvent
+  | WorkflowContextInputEvent
   | WorkflowStepStartEvent
   | WorkflowStepEndEvent
   | WorkflowCompletedEvent
@@ -184,6 +207,7 @@ export type WorkflowEvent =
 
 export const workflowV2EventNames = [
   'workflow.start',
+  'workflow.context.input',
   'workflow.step.start',
   'workflow.step.end',
   'workflow.completed',

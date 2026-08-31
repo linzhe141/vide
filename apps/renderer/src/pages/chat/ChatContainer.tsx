@@ -1,19 +1,26 @@
 import { useCallback } from 'react'
-import { useChatContext } from '@/hooks/useChatContext'
+import { useChatContext, useChatRunning } from '@/hooks/useChatContext'
 import { useChatLayoutScroll } from '@/hooks/useChatLayout'
 import { MessageList } from '../../components/chat/MessageList'
 import { ChatInput } from '../../components/chat/ChatInput'
 import { ChatLayout, ChatLayoutInput, ChatLayoutMessage } from '../../layout/ChatLayout'
 import {
+  useHasSession,
   useHasPendingAskQuestion,
-  useSession,
+  useSessionAutoApprove,
+  useSessionThinkingMode,
+  useSessionWorkspacePath,
   useSessionStoreActions,
 } from '../../store/sessionStore'
 
 export function ChatContainer() {
-  const { handleSend, handleStop, running, sessionId } = useChatContext()
+  const { handleSend, handleStop, sessionId } = useChatContext()
+  const running = useChatRunning()
   const { scrollToBottom } = useChatLayoutScroll()
-  const session = useSession(sessionId)
+  const hasSession = useHasSession(sessionId)
+  const workspacePath = useSessionWorkspacePath(sessionId)
+  const autoApprove = useSessionAutoApprove(sessionId)
+  const thinkingMode = useSessionThinkingMode(sessionId)
   const hasPendingAskQuestion = useHasPendingAskQuestion(sessionId)
   const { switchSessionAutoApprove, switchSessionThinkingMode } = useSessionStoreActions()
   const onSend = useCallback(
@@ -26,44 +33,41 @@ export function ChatContainer() {
 
   const onChangeAutoApprove = useCallback(
     (newValue: boolean) => {
-      if (!session) return
-      switchSessionAutoApprove(session.sessionId, newValue)
+      switchSessionAutoApprove(sessionId, newValue)
       window.ipcRendererApi.invoke('agent-session-switch-auto-approve', {
-        sessionId: session.sessionId,
+        sessionId,
         autoApprove: newValue,
       })
     },
-    [session, switchSessionAutoApprove]
+    [sessionId, switchSessionAutoApprove]
   )
 
   const onChangeThinkingMode = useCallback(
     (newValue: boolean) => {
-      if (!session) return
-      switchSessionThinkingMode(session.sessionId, newValue)
+      switchSessionThinkingMode(sessionId, newValue)
       window.ipcRendererApi.invoke('agent-session-switch-thinking-mode', {
-        sessionId: session.sessionId,
+        sessionId,
         thinkingMode: newValue,
       })
     },
-    [session, switchSessionThinkingMode]
+    [sessionId, switchSessionThinkingMode]
   )
 
-  // if (!session) return null
   return (
     <ChatLayout>
-      {session ? (
+      {hasSession ? (
         <>
           <ChatLayoutMessage>
             <MessageList />
           </ChatLayoutMessage>
           {!hasPendingAskQuestion && (
-            <ChatLayoutInput className='absolute bottom-5 left-1/2 z-10 -translate-x-1/2'>
-              <div className='px-10'>
+            <ChatLayoutInput>
+              <div className='px-1 sm:px-6'>
                 <ChatInput
                   running={running}
-                  workspacePath={session.workspacePath}
-                  autoApprove={session.autoApprove}
-                  thinkingMode={session.thinkingMode}
+                  workspacePath={workspacePath}
+                  autoApprove={autoApprove}
+                  thinkingMode={thinkingMode}
                   onSend={onSend}
                   onStop={handleStop}
                   onChangeAutoApprove={onChangeAutoApprove}

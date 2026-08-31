@@ -28,10 +28,14 @@ export class AgentIpcMainService implements IpcMainService {
       return sessionId
     })
 
+    ipcMainApi.handle('agent-event-stream-connect-info', async () => {
+      return this.appManager.rendererEventBridge.getConnectionInfo()
+    })
+
     ipcMainApi.handle('agent-session-send', async ({ sessionId, input, inputSource }) => {
       logger.info('agent-session-send ', sessionId, input)
-      // fire-and-forget：事件由 AgentManager.prompt 广播到 renderer
-      agentManager.prompt(sessionId, input, inputSource ?? 'desktop')
+      // fire-and-forget：空闲时启动 workflow，运行中则把消息排进当前 workflow 的 steering 队列。
+      await agentManager.sendUserMessage(sessionId, input, inputSource ?? 'desktop')
     })
 
     ipcMainApi.handle('agent-resume-session', async ({ sessionId }) => {

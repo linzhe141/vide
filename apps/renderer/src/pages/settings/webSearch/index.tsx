@@ -45,9 +45,13 @@ export function WebSearchSettings() {
         className='bg-card border-border space-y-6 rounded-2xl border p-8'
       >
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>Search URL</label>
+          <label htmlFor='web-search-url' className='text-foreground text-sm font-medium'>
+            Search URL
+          </label>
           <Input
+            id='web-search-url'
             type='url'
+            autoComplete='off'
             placeholder='https://google.serper.dev/search'
             {...register('searchUrl', { required: 'Search URL is required' })}
           />
@@ -55,9 +59,13 @@ export function WebSearchSettings() {
         </div>
 
         <div className='space-y-2'>
-          <label className='text-foreground text-sm font-medium'>API Key</label>
+          <label htmlFor='web-search-api-key' className='text-foreground text-sm font-medium'>
+            API Key
+          </label>
           <Input
+            id='web-search-api-key'
             type='password'
+            autoComplete='off'
             placeholder='Serper API key'
             {...register('apiKey', { required: 'API Key is required' })}
           />

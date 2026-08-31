@@ -9,7 +9,11 @@ import {
   ThumbsUp,
 } from 'lucide-react'
 import { useChatContext } from '@/hooks/useChatContext'
-import { useSession, useSessionStoreActions, useWorkflowBranches } from '../../store/sessionStore'
+import {
+  useSessionStoreActions,
+  useWorkflowBranches,
+  useWorkflowParentId,
+} from '../../store/sessionStore'
 import { Textarea } from '../../ui/Textarea'
 import { Button } from '@/ui/Button'
 
@@ -145,7 +149,7 @@ export const SessionActions = memo(function SessionActions({
       </div>
     </div>
   )
-}, areSessionActionsPropsEqual)
+})
 
 type RegeneratedBranchSwitcherProps = {
   workflowId: string
@@ -155,11 +159,10 @@ export const RegeneratedBranchSwitcher = memo(function RegeneratedBranchSwitcher
   workflowId,
 }: RegeneratedBranchSwitcherProps) {
   const { sessionId } = useChatContext()
-  const session = useSession(sessionId)
+  const parentNodeId = useWorkflowParentId(sessionId, workflowId)
   const { switchBranch } = useSessionStoreActions()
-  const parentNodeId = session?.workflowNodesMap[workflowId]?.parent ?? null
   const branchOptions = useWorkflowBranches(sessionId, parentNodeId)
-  if (!session || branchOptions.length <= 1) return null
+  if (branchOptions.length <= 1) return null
 
   const siblingVariants = getSiblingVariants(branchOptions, parentNodeId)
   const currentVariantIndex = siblingVariants.findIndex((option) => {
@@ -172,17 +175,17 @@ export const RegeneratedBranchSwitcher = memo(function RegeneratedBranchSwitcher
       const nextIndex =
         (currentVariantIndex + direction + siblingVariants.length) % siblingVariants.length
       const nextBranch = siblingVariants[nextIndex]
-      switchBranch(session.sessionId, nextBranch.name)
+      switchBranch(sessionId, nextBranch.name)
     },
-    [currentVariantIndex, session, siblingVariants, switchBranch]
+    [currentVariantIndex, sessionId, siblingVariants, switchBranch]
   )
 
   return (
     <div className='space-y-3'>
-      <div className='border-foreground/10 from-foreground/3 to-primary/8 rounded-2xl border bg-linear-to-r via-transparent px-3 py-2.5'>
+      <div className='border-border bg-background rounded-xl border px-3 py-2.5'>
         <div className='flex items-center justify-between gap-3'>
           <div className='flex min-w-0 items-center gap-3'>
-            <div className='bg-primary/12 text-primary flex h-8 w-8 items-center justify-center rounded-full'>
+            <div className='bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg'>
               <Sparkles size={14} />
             </div>
             <div className='min-w-0'>
@@ -213,22 +216,7 @@ export const RegeneratedBranchSwitcher = memo(function RegeneratedBranchSwitcher
       </div>
     </div>
   )
-}, areRegeneratedBranchSwitcherPropsEqual)
-
-function areSessionActionsPropsEqual(prev: SessionActionsProps, next: SessionActionsProps) {
-  return (
-    prev.workflowId === next.workflowId &&
-    prev.workflowInput === next.workflowInput &&
-    prev.feedback === next.feedback
-  )
-}
-
-function areRegeneratedBranchSwitcherPropsEqual(
-  prev: RegeneratedBranchSwitcherProps,
-  next: RegeneratedBranchSwitcherProps
-) {
-  return prev.workflowId === next.workflowId
-}
+})
 
 export function createBranchPayload(payload: {
   branchName: string

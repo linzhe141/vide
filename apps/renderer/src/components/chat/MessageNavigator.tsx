@@ -1,23 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
-type MessageNavigatorItem = {
-  id: string
-  label: string
-  index: number
-}
-
 type MessageNavigatorProps = {
-  items: MessageNavigatorItem[]
+  workflowIds: string[]
 }
 
-export function MessageNavigator({ items }: MessageNavigatorProps) {
+export function MessageNavigator({ workflowIds }: MessageNavigatorProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const visibleIds = useRef<string[]>([])
   useEffect(() => {
-    const anchors = items
-      .map((item) => document.getElementById(item.id))
+    const anchors = workflowIds
+      .map((workflowId) => document.getElementById(workflowId))
       .filter(Boolean) as HTMLElement[]
 
     if (!anchors.length) return
@@ -33,12 +27,12 @@ export function MessageNavigator({ items }: MessageNavigatorProps) {
         }
         if (!visibleIds.current.length) return
 
-        const nextActive = items
-          .filter((item) => visibleIds.current.includes(item.id))
-          .sort((a, b) => a.index - b.index)[0]
+        const nextActiveId = workflowIds.find((workflowId) =>
+          visibleIds.current.includes(workflowId)
+        )
 
-        if (nextActive) {
-          setActiveId(nextActive.id)
+        if (nextActiveId) {
+          setActiveId(nextActiveId)
         }
       },
       {
@@ -51,27 +45,30 @@ export function MessageNavigator({ items }: MessageNavigatorProps) {
     anchors.forEach((el) => observerRef.current!.observe(el))
 
     return () => observerRef.current?.disconnect()
-  }, [items])
+  }, [workflowIds])
 
   return (
     <div className='absolute top-1/2 right-4 z-50 -translate-y-1/2'>
       <ul className='flex flex-col gap-2'>
-        {items.map((item) => {
-          const active = item.id === activeId
+        {workflowIds.map((workflowId, index) => {
+          const active = workflowId === activeId
           return (
-            <li
-              key={item.id}
-              className={cn(
-                'h-1.5 w-5 cursor-pointer rounded-full transition-all',
-                active ? 'bg-primary scale-125' : 'bg-border hover:bg-primary/60'
-              )}
-              title={item.label}
-              onClick={() => {
-                document
-                  .getElementById(item.id)
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
-            />
+            <li key={workflowId}>
+              <button
+                type='button'
+                className={cn(
+                  'inline-flex h-2.5 w-8 rounded-full border border-transparent transition',
+                  active ? 'bg-primary scale-110' : 'bg-border hover:bg-primary/60'
+                )}
+                title={`Workflow ${index + 1}`}
+                aria-label={`Jump to workflow ${index + 1}`}
+                onClick={() => {
+                  document
+                    .getElementById(workflowId)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              />
+            </li>
           )
         })}
       </ul>
